@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "cnsp_datasets"
 version = "0.1.0"
-description = "Neural signal processing toolkit"
+description = "tool for obtaining and standardising continuous-event neural data"
 authors = ["Mike Thornton <mike.d.thornton@fau.de>"]
 readme = "README.md"
 license = "MIT"
