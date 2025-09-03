@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "cnsp_datasets"
+version = "0.1.0"
+description = "Neural signal processing toolkit"
+authors = ["Mike Thornton <mike.d.thornton@fau.de>"]
+readme = "README.md"
+license = "MIT"
+packages = [{ include = "cnsp_datasets" }]
+include = ["cnsp_datasets/download/dataset_registry.json"]
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+numpy = "2.2.5"
+requests = "^2.32"
+tqdm = "4.67.1"
+bs4 = "0.0.2"
+mne = "1.9.0"
+pandas = "2.2.3"
+scikit-learn = "1.6.1"
+scipy = "1.15.2"
+h5py = "3.13.0"
+pymatreader = "1.1.0"
+nibabel = "5.3.2"
+
+[tool.poetry.dev-dependencies]
+pytest = "^7.0"
+ipykernel = "^6.30.1"
+spyeeg = "0.2.2"
+reservoirpy = "0.3.14"
+tpcp = "2.1.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

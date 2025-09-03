@@ -1,0 +1,1 @@
+I think we no longer have textgrids, but transcripts are definitely available online. I didn't track these down yet but would be nice to add to the zenodo repo.

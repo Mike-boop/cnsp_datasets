@@ -1,0 +1,80 @@
+{
+  "datasets": {
+    "weissbart2019": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.7775260"],
+      "description": "Weissbart et al. (2019) dataset",
+      "url": "https://zenodo.org/records/7775260"
+    },
+    "etard2019": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.7778289"],
+      "description": "Etard et al. (2019) dataset",
+      "url": "https://zenodo.org/records/7778289"
+    },
+    "accou2023": {
+      "source": "dataverse",
+      "identifiers": ["10.48804/K3VSND"],
+      "description": "Accou et al. (2023) dataset",
+      "url": "https://doi.org/10.48804/K3VSND"
+    },
+    "gwilliams2023": {
+      "source": "osf",
+      "identifiers": ["ag3kj", "hqvm3", "u5327", "dr4wy"],
+      "description": "Gwilliams et al. (2023) dataset",
+      "url": "https://osf.io/ag3kj/"
+    },
+    "brodbeck2022": {
+      "source": "dryad",
+      "identifiers": ["10.5061/dryad.nvx0k6dv0"],
+      "description": "Brodbeck et al. (2022) dataset",
+      "url": "https://datadryad.org/dataset/doi:10.5061/dryad.nvx0k6dv0"
+    },
+    "brennan2018": {
+      "source": "deepblue",
+      "identifiers": ["bn999738r"],
+      "description": "Brennan et al. (2018) dataset",
+      "url": "https://deepblue.lib.umich.edu/data/concern/data_sets/bn999738r"
+    },
+    "jehn2024": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.10980117"],
+      "description": "Jehn et al. (2024) dataset",
+      "url": "https://zenodo.org/records/10980117"
+    },
+    "schueller2024": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.12793944", "10.5281/zenodo.12794769", "10.5281/zenodo.12794808"],
+      "description": "Schueller et al. (2024) dataset",
+      "url": "https://zenodo.org/records/12793944"
+    },
+    "varano2022": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.8298239", "10.5281/zenodo.8298272"],
+      "description": "Varano et al. (2022) dataset",
+      "url": "https://zenodo.org/records/8298239"
+    },
+    "guilleminot2021": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.5512578"],
+      "description": "Guilleminot et al. (2021) dataset",
+      "url": "https://zenodo.org/records/5512578"
+    },
+    "das2019": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.4004271"],
+      "description": "Das et al. (2019) dataset",
+      "url": "https://zenodo.org/records/4004271"
+    },
+    "narayanan2021": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.4518754"],
+      "description": "Narayanan et al. (2021) dataset"
+    },
+    "mai2023": {
+      "source": "openneuro",
+      "identifiers": ["10.18112/openneuro.ds004703.v1.1.0"],
+      "description": "Mai et al. (2023) dataset"
+    }
+  }
+}

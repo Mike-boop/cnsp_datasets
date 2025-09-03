@@ -1,0 +1,1 @@
+textgrids are actually available on figshare, I just didn't incorporate them yet. I would first have to upload them to the zenodo repo.

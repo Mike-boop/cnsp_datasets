@@ -1,0 +1,1 @@
+the publicly-available data does not include empty-room recordings.
