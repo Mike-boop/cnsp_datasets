@@ -24,7 +24,7 @@ def get_adaptor_class(dataset_name):
     return adaptor
 
 
-def standardise_dataset(
+def format_dataset(
     dataset_name,
     download_dir,
     standardised_dir,

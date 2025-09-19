@@ -1,4 +1,4 @@
-from typing import Callable, Any, List
+from typing import Callable, Any, List, Dict, Tuple
 from mne.io import BaseRaw
 
 
@@ -20,6 +20,28 @@ class StimulusRecord:
         # some datasets only provide the envelope etc rather than full audio
         self.feature_name = feature_name if feature_name is not None else modality
 
+    @property
+    def stim_data(self) -> BaseRaw:
+        return self.data_fn()
+
+
+class AnatRecord:
+    """
+    data_fn should yield a nibabel.nifti1.Nifti1Image
+    ras_labels is an optional dict containing RAS coordinates of (e.g.) iEEG electrodes
+    """
+    def __init__(
+            self,
+            modality: str,
+            subject: int,
+            data_fn: Callable[[], Any],
+            ras_labels: Dict[str, Tuple[float]] | None = None
+    ):
+        self.subject = subject
+        self.modality = modality
+        self.data_fn = data_fn
+        self.ras_labels = ras_labels
+
 
 class TrialRecord:
 
@@ -32,6 +54,7 @@ class TrialRecord:
             ns_type: str,
             stimulus: StimulusRecord | List[StimulusRecord],
             neural_data_fn: Callable[[], BaseRaw],
+            anat: AnatRecord | List[AnatRecord] | None = None,
             structural_data_fn: Callable[[], Any] | None = None,
             behavioural_data_fn: Callable[[], Any] | None = None,
     ):
@@ -41,6 +64,7 @@ class TrialRecord:
         self.trial = trial
         self.condition = condition
         self.ns_type = ns_type
+        self.anat = anat
 
         self.stimulus = stimulus if isinstance(stimulus, list) else [stimulus]
 

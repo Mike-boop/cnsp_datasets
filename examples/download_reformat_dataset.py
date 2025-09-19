@@ -1,5 +1,5 @@
 from cnsp_datasets.download import download_dataset
-from cnsp_datasets.standardise.standardise_dataset import standardise_dataset
+from cnsp_datasets.standardise.format_dataset import format_dataset
 from cnsp_datasets.standardise.flat_sink import FlatSinkV1
 
 
@@ -19,7 +19,7 @@ if __name__ == "__main__":
         )
     
     # and standardise it
-    standardise_dataset(
+    format_dataset(
         dataset_name=dataset_name,
         download_dir=downloaded_dataset_dir,
         standardised_dir=standardised_data_dir,
