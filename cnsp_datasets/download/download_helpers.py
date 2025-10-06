@@ -424,7 +424,6 @@ def doi_to_downloadables_openneuro(doi, endpoint="https://openneuro.org/crn/grap
         raise ValueError("DOI format is incorrect. Expected format: '10.18112/openneuro.dsXXXX.vX.X.X'")
     openneuro_id, tag = match.groups()
 
-
     query, variables = get_snapshot_files(openneuro_id, tag)
     response = requests.post(
         endpoint,
