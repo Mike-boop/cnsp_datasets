@@ -1,0 +1,1 @@
+It was difficult to distinguish between depth and strip electrodes of sub 12. I think "LS" means left strip?

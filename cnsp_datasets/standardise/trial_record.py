@@ -23,6 +23,18 @@ class StimulusRecord:
     @property
     def stim_data(self) -> BaseRaw:
         return self.data_fn()
+    
+    def __hash__(self):
+        return hash((self.modality, self.data_fn))
+    
+    def __eq__(self, value):
+        if self.modality == value.modality and self.data_fn == value.data_fn:
+            return True
+        else:
+            return False
+        
+    def __repr__(self):
+        return f"StimulusRecord(modality={self.modality!r}, name={self.name!r})"
 
 
 class AnatRecord:

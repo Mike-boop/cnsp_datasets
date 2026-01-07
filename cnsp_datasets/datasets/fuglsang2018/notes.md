@@ -1,0 +1,2 @@
+the .mat files in this data packag together an eeg data struct and an expinfo table. Scipy's loadmat doesn't handle matlab tables.
+To get around this, I provided a script in ./expinfos/get_expinfos.m which extracts these tables and saves them as structs. The structs are already saved in ./expinfos/SX_expinfo.mat
