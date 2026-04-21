@@ -66,6 +66,12 @@
       "description": "Jehn et al. (2024) dataset",
       "url": "https://zenodo.org/records/10980117"
     },
+    "jehn2025": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.17952231", "10.5281/zenodo.17952844", "10.5281/zenodo.17927767"],
+      "description": "Jehn et al. (2025) datasets (normal hearing, hearing aids, cochlear implants)",
+      "url": "https://zenodo.org/records/17952231"
+    },
     "mai2023": {
       "source": "openneuro",
       "identifiers": ["10.18112/openneuro.ds004703.v1.1.0"],
