@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import traceback
 
 from functools import partial
 from pathlib import Path
@@ -23,6 +24,7 @@ class FlatSinkV1:
             self._save_stimuli(record)
         except Exception as e:
             print(f"Error saving record {record}: {e}")
+            traceback.print_exc()
             return
 
     def _get_ns_relative_path(self, record: TrialRecord) -> Path:
