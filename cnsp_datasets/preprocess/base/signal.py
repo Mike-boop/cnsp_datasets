@@ -4,7 +4,7 @@ from math import gcd
 import numpy as np
 from scipy.signal import resample_poly as scipy_resample_poly
 
-from cnsp_datasets.preprocess2.base.classes import PreprocStep
+from cnsp_datasets.preprocess.base.classes import PreprocStep
 
 
 class Resample(PreprocStep):

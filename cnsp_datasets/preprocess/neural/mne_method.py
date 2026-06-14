@@ -1,6 +1,6 @@
 from mne.io import BaseRaw
 
-from cnsp_datasets.preprocess2.base import NeuralPreprocStep
+from cnsp_datasets.preprocess.base import NeuralPreprocStep
 
 
 class MNERawMethod(NeuralPreprocStep):

@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.signal import hilbert
 
-from cnsp_datasets.preprocess2.base import StimulusPreprocStep, StimulusData
+from cnsp_datasets.preprocess.base import StimulusPreprocStep, StimulusData
 
 
 class HilbertEnvelope(StimulusPreprocStep):

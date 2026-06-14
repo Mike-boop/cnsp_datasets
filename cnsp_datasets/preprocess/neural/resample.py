@@ -1,8 +1,8 @@
 from mne.io import BaseRaw
 
-from cnsp_datasets.preprocess2.base import NeuralPreprocStep
-from cnsp_datasets.preprocess2.base.signal import Resample
-from cnsp_datasets.preprocess2.base.mne_helpers import set_raw_sfreq
+from cnsp_datasets.preprocess.base import NeuralPreprocStep
+from cnsp_datasets.preprocess.base.signal import Resample
+from cnsp_datasets.preprocess.base.mne_helpers import set_raw_sfreq
 
 
 class ResampleNeural(Resample, NeuralPreprocStep):

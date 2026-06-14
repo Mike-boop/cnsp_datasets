@@ -1,5 +1,5 @@
-from cnsp_datasets.preprocess2.base import StimulusPreprocStep, StimulusData
-from cnsp_datasets.preprocess2.base.signal import Resample
+from cnsp_datasets.preprocess.base import StimulusPreprocStep, StimulusData
+from cnsp_datasets.preprocess.base.signal import Resample
 
 
 class ResampleStimulus(Resample, StimulusPreprocStep):

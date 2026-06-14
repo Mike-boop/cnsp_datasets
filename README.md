@@ -1,10 +1,13 @@
 # CNSP-Datasets: tools for downloading and standardising publicly-available data
 
-- Quick start: check out the examples
+Quick start: check out the examples.
+
+This resource is possible thanks to the efforts of my co-developers [Constantin Jehn](https://www.neurotech.tf.fau.eu/faudir/constantin-jehn/) (FAU Erlangen-Nürnberg), [Kaja Benz](https://ccns.plus.ac.at/labs/auditory/members/kaja_benz/) (PLU Salzburg) and [Nate Zuk](https://www.natezuk.me/) (University of Nottingham). The tools are currently under active development and the interface is subject to change.
 
 ## Downloading datasets:
 
-CNSP-datasets provides a convenient way to obtain publicly-available data. No more manual downloads of large numbers of files or huge archives, and no need to configure separate download clients for the various repositories where relevant datasets are often found.
+CNSP-datasets provides a convenient way to obtain publicly-available data. No more manual downloads of large numbers of files or huge archives, and no need to configure separate download clients for the various repositories where relevant datasets are often found. Parallel preprocessing pipelines are currently experimental.
+
 
 Current repositories supported include:
 
