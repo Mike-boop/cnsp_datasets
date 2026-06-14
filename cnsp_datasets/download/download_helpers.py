@@ -1,3 +1,4 @@
+import asyncio
 import os
 import re
 import gzip
@@ -5,10 +6,7 @@ import shutil
 import zipfile
 import tarfile
 import requests
-
-from queue import Queue
-from threading import Lock
-from concurrent.futures import ThreadPoolExecutor
+import httpx
 
 from bs4 import BeautifulSoup
 from urllib.parse import quote, urlparse
@@ -27,23 +25,31 @@ def extract_archives(download_dir, recursive=False):
     """
     for dirpath, dirnames, filenames in os.walk(download_dir):
         for filename in filenames:
-            print(filename)
             file_path = os.path.join(dirpath, filename)
+            extracted_dir = None
 
             if filename.endswith('.zip'):
                 with zipfile.ZipFile(file_path, 'r') as zip_ref:
                     zip_ref.extractall(dirpath)
                 print(f"Extracted {filename} to {dirpath}")
                 os.remove(file_path)
+                extracted_dir = os.path.join(dirpath, os.path.splitext(filename)[0])
 
-            elif filename.endswith(('.tar', '.tar.gz')):
-
+            elif filename.endswith('.tar.gz'):
                 with tarfile.open(file_path, 'r:*') as tar_ref:
                     tar_ref.extractall(dirpath)
                 print(f"Extracted {filename} to {dirpath}")
                 os.remove(file_path)
+                extracted_dir = os.path.join(dirpath, filename.replace('.tar.gz', ''))
 
-            elif filename.endswith('.gz') and not (filename.endswith('.tar.gz') or filename.endswith('.nii.gz')):
+            elif filename.endswith('.tar'):
+                with tarfile.open(file_path, 'r:*') as tar_ref:
+                    tar_ref.extractall(dirpath)
+                print(f"Extracted {filename} to {dirpath}")
+                os.remove(file_path)
+                extracted_dir = os.path.join(dirpath, os.path.splitext(filename)[0])
+
+            elif filename.endswith('.gz') and not filename.endswith('.nii.gz'):
                 output_file = os.path.splitext(file_path)[0]
                 with gzip.open(file_path, 'rb') as f_in:
                     with open(output_file, 'wb') as f_out:
@@ -51,13 +57,8 @@ def extract_archives(download_dir, recursive=False):
                 print(f"Decompressed {filename} to {output_file}")
                 os.remove(file_path)
 
-            if recursive:
-                # Optionally dive into newly extracted folders
-                if filename.endswith(('.tar.gz')):
-                    filename_no_ext = filename.replace('.tar.gz', '')
-                else:
-                    filename_no_ext = os.path.splitext(filename)[0]
-                extract_archives(os.path.join(dirpath, filename_no_ext), recursive=True)
+            if recursive and extracted_dir and os.path.isdir(extracted_dir):
+                extract_archives(extracted_dir, recursive=True)
 
 ## helpers for obtaining downloadable files (urls) and checksums (where available) from a particular dataset identifier.
 ## all of these functions return a list of dicts, each dict containing:
@@ -110,7 +111,7 @@ def doi_to_downloadables_dryad(doi):
     files_metadata_response = requests.get(files_metadata_url)
 
     if files_metadata_response.status_code != 200:
-        raise Exception(f"Failed to retrieve metadata for files request {files_metadata_url}: {response.status_code}")
+        raise Exception(f"Failed to retrieve metadata for files request {files_metadata_url}: {files_metadata_response.status_code}")
     
     files_metadata = files_metadata_response.json()
 
@@ -246,121 +247,101 @@ def id_to_downloadables_deepblue(id):
         })
     return file_data
 
-### Open Science Framework datasets must be queried hierarchically to find the downlaodable files within each sub-directory.
-### Therefore, the following functions implement logic to walk the "OSF Tree" structure and collect downloadable files alongside
-### their relative paths. OSF can be pretty slow to respond, so queries are made in parallel.
-
+### Open Science Framework datasets must be queried hierarchically to find the downloadable files within each sub-directory.
+### The tree is walked level by level: all known directories at each depth are fetched concurrently, and any
+### subdirectories they contain are collected and fetched at the next level.
 
 def doi_to_downloadables_osf(osf_id):
     """
-    Get a list of downloadable files from an OSF DOI.
+    Get a list of downloadable files from an OSF project ID.
 
-    Example doi string format: "10.17605/OSF.IO/XXXX"
-    (where XXXX is the OSF project ID)
+    Example id string format: "ag3kj"
 
-    Returns a list of dictionaries with the following keys
-    - name: File name
-    - url: Download URL
-    - checksum: MD5 checksum of the file (if available), otherwise None
+    Returns a list of dictionaries with keys: name, url, checksum.
     """
+    start_url = f"https://api.osf.io/v2/nodes/{osf_id}/files/osfstorage/"
+    return asyncio.run(_walk_osf_async(start_url))
 
-    base_api = "https://api.osf.io/v2"
-
-    osf_root_url = f"{base_api}/nodes/{osf_id}/files/osfstorage/"
-    file_metadata = walk_osf_directory_fetch_files(osf_root_url)
-
-    file_data = [{"name": file["name"], "url": file["url"], "checksum": file["checksum"]} for file in file_metadata]
-
-    return file_data
 
 def fetch_osf_leaves_branches(osf_dir_url):
     """
-    Fetch all leaves and branches from an OSF directory.
+    Synchronously fetch files and subdirectory URLs from one OSF directory page.
+    Kept for testing and one-off use; prefer doi_to_downloadables_osf for full trees.
     """
     response = requests.get(osf_dir_url)
     if response.status_code != 200:
         raise Exception(f"Failed to retrieve metadata for URL {osf_dir_url}: {response.status_code}")
 
-    metadata = response.json()
-    
-    leaves = []
-    branches = []
-
-    for item in metadata["data"]:
+    leaves, branches = [], []
+    for item in response.json()["data"]:
         if item["attributes"]["kind"] == "file":
-
-            metadata = {
+            leaves.append({
                 "name": item["attributes"]["materialized_path"].strip("/"),
                 "url": item["links"]["download"],
-                "checksum": ":".join(["md5", item["attributes"]["extra"]["hashes"]["md5"]])
-            }
-            leaves.append(metadata)
-            
+                "checksum": "md5:" + item["attributes"]["extra"]["hashes"]["md5"],
+            })
         elif item["attributes"]["kind"] == "folder":
-            branch_url = item["relationships"]["files"]["links"]["related"]["href"]
-            branches.append(branch_url)
+            branches.append(item["relationships"]["files"]["links"]["related"]["href"])
 
     return leaves, branches
 
-def walk_osf_directory_fetch_files(osf_dir_url, file_metadata = []):
-    """
-    Recursively walk through an OSF directory and fetch file metadata.
-    Kinda slow - this is a blocking function. The walk_osf_directory_fetch_files_concurrent
-    function should be preferred for large directories.
-    """
-    leaves, branches = fetch_osf_leaves_branches(osf_dir_url)
 
-    for leaf in leaves:
-        file_metadata.append(leaf)
-    
+def walk_osf_directory_fetch_files(osf_dir_url, file_metadata=None):
+    """
+    Synchronous serial walk — kept for testing.
+    Use doi_to_downloadables_osf for production (async, much faster).
+    """
+    if file_metadata is None:
+        file_metadata = []
+    leaves, branches = fetch_osf_leaves_branches(osf_dir_url)
+    file_metadata.extend(leaves)
     for branch in branches:
         walk_osf_directory_fetch_files(branch, file_metadata)
-
     return file_metadata
 
-def walk_osf_directory_fetch_files_concurrent(start_url, max_workers=10):
+
+async def _fetch_osf_dir_async(client, url):
+    """Async version of fetch_osf_leaves_branches."""
+    response = await client.get(url)
+    response.raise_for_status()
+    leaves, branches = [], []
+    for item in response.json()["data"]:
+        if item["attributes"]["kind"] == "file":
+            leaves.append({
+                "name": item["attributes"]["materialized_path"].strip("/"),
+                "url": item["links"]["download"],
+                "checksum": "md5:" + item["attributes"]["extra"]["hashes"]["md5"],
+            })
+        elif item["attributes"]["kind"] == "folder":
+            branches.append(item["relationships"]["files"]["links"]["related"]["href"])
+    return leaves, branches
+
+
+async def _walk_osf_async(start_url):
     """
-    Recursively walk through an OSF directory tree in parallel to fetch all file metadata.
+    Walk an OSF directory tree concurrently, level by level.
+
+    Each level: all known directory URLs are fetched in parallel with asyncio.gather.
+    Any subdirectories found become the next level. Continues until no directories remain.
     """
-    file_metadata = []
-    visited = set()
-    url_queue = Queue()
-    metadata_lock = Lock()
-    visited_lock = Lock()
+    all_files = []
+    pending = [start_url]
+    visited = {start_url}
 
-    url_queue.put(start_url)
+    async with httpx.AsyncClient(timeout=30) as client:
+        while pending:
+            results = await asyncio.gather(
+                *[_fetch_osf_dir_async(client, url) for url in pending]
+            )
+            pending = []
+            for leaves, branches in results:
+                all_files.extend(leaves)
+                for branch in branches:
+                    if branch not in visited:
+                        visited.add(branch)
+                        pending.append(branch)
 
-    def worker():
-        while not url_queue.empty():
-            try:
-                url = url_queue.get_nowait()
-            except:
-                return
-            try:
-                leaves, branches = fetch_osf_leaves_branches(url)
-
-                with metadata_lock:
-                    file_metadata.extend(leaves)
-
-                for branch_url in branches:
-                    with visited_lock:
-                        if branch_url not in visited:
-                            visited.add(branch_url)
-                            url_queue.put(branch_url)
-            finally:
-                url_queue.task_done()
-
-    # Mark the start URL as visited
-    visited.add(start_url)
-
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        for _ in range(max_workers):
-            executor.submit(worker)
-
-        # Block until all tasks are done
-        url_queue.join()
-
-    return file_metadata
+    return all_files
 
 ### Similar to OSF datasets (see above), OpenNeuro datasets must be queried hierarchically to find all downloadable files within
 ### sub-directories. The following functions implement logic to walk the OpenNeuro snapshot structure and collect downloadable 
@@ -409,82 +390,87 @@ def get_snapshot_files(dataset_id, tag="1.0.0", tree_id=None):
     return query, variables
 
 def doi_to_downloadables_openneuro(doi, endpoint="https://openneuro.org/crn/graphql"):
-    
     """
-    Recursively collect links to downloadable files from an OpenNeuro DOI.
+    Collect links to downloadable files from an OpenNeuro DOI.
     Returns a list of dicts with keys: name, url, checksum.
 
     Example doi string format: "10.18112/openneuro.ds004703.v1.1.0"
     """
-
-    # Extract dataset ID and version tag from the DOI
     pattern = r"^.+/openneuro\.(ds\d+)\.v(\d+\.\d+\.\d+)$"
     match = re.match(pattern, doi)
     if not match:
         raise ValueError("DOI format is incorrect. Expected format: '10.18112/openneuro.dsXXXX.vX.X.X'")
     openneuro_id, tag = match.groups()
 
-    query, variables = get_snapshot_files(openneuro_id, tag)
-    response = requests.post(
+    return asyncio.run(_walk_openneuro_async(openneuro_id, tag, endpoint))
+
+
+async def _fetch_openneuro_dir_async(client, endpoint, dataset_id, tag, branch):
+    """
+    Fetch one OpenNeuro directory node and return (leaves, sub_branches).
+    branch is a dict with keys: id, name, dirname.
+    Pass branch=None for the root level (no tree_id in the query).
+    """
+    query, variables = get_snapshot_files(dataset_id, tag, tree_id=branch["id"] if branch else None)
+    response = await client.post(
         endpoint,
         json={"query": query, "variables": variables},
         headers={"Content-Type": "application/json"},
     )
     response.raise_for_status()
 
-
-    leaves, branches = [], []
+    leaves, sub_branches = [], []
     for file in response.json()["data"]["snapshot"]["files"]:
-        if file["directory"]:
-            branches.append({
-                "name": file["filename"],
-                "id": file["id"],
-                "dirname": ""  # root level
-            })
+        if branch:
+            full_path = os.path.join(branch["dirname"], branch["name"], file["filename"])
+            parent_dirname = os.path.join(branch["dirname"], branch["name"])
         else:
-            leaves.append({
-                "name": file["filename"],
-                "url": file["urls"][0] if file["urls"] else None,
-                "checksum": "sha1:" + file["key"] if file["key"] else None
-            })
+            full_path = file["filename"]
+            parent_dirname = ""
 
-    for branch in branches:
-        leaves.extend(walk_openneuro_branch(branch, openneuro_id, tag, endpoint))
-
-    return leaves
-
-def walk_openneuro_branch(branch, dataset_id, tag, endpoint):
-    """
-    Recursively walk a branch (subdirectory) and return all file metadata inside.
-    """
-    query, variables = get_snapshot_files(dataset_id, tag, tree_id=branch["id"])
-    response = requests.post(
-        endpoint,
-        json={"query": query, "variables": variables},
-        headers={"Content-Type": "application/json"},
-    )
-    response.raise_for_status()
-
-    leaves, branches_next = [], []
-    for file in response.json()["data"]["snapshot"]["files"]:
-        full_path = os.path.join(branch["dirname"], branch["name"], file["filename"])
         if file["directory"]:
-            branches_next.append({
+            sub_branches.append({
                 "name": file["filename"],
                 "id": file["id"],
-                "dirname": os.path.join(branch["dirname"], branch["name"])
+                "dirname": parent_dirname,
             })
         else:
             leaves.append({
                 "name": full_path,
                 "url": file["urls"][0] if file["urls"] else None,
-                "checksum": "sha1:" + file["key"] if file["key"] else None
+                "checksum": "sha1:" + file["key"] if file["key"] else None,
             })
 
-    for sub_branch in branches_next:
-        leaves.extend(walk_openneuro_branch(sub_branch, dataset_id, tag, endpoint))
+    return leaves, sub_branches
 
-    return leaves
+
+async def _walk_openneuro_async(dataset_id, tag, endpoint):
+    """
+    Walk an OpenNeuro snapshot tree concurrently, level by level.
+
+    Starts with the root listing, then fans out across all subdirectories
+    in parallel at each level until no directories remain.
+    """
+    all_leaves = []
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        # Root fetch (no branch dict, no tree_id)
+        root_leaves, pending = await _fetch_openneuro_dir_async(
+            client, endpoint, dataset_id, tag, branch=None
+        )
+        all_leaves.extend(root_leaves)
+
+        while pending:
+            results = await asyncio.gather(
+                *[_fetch_openneuro_dir_async(client, endpoint, dataset_id, tag, b)
+                  for b in pending]
+            )
+            pending = []
+            for leaves, sub_branches in results:
+                all_leaves.extend(leaves)
+                pending.extend(sub_branches)
+
+    return all_leaves
 
 ### DSpace helpers
 ### UMD Drum is a DSpace repository, and we could use the corresponding API to get download links to the dataset files.

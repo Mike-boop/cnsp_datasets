@@ -11,7 +11,7 @@ from mne import create_info
 from mne.io import RawArray, BaseRaw
 
 from cnsp_datasets.standardise.trial_record import TrialRecord, StimulusRecord
-from cnsp_datasets.datasets.utils import multi_tier_dict_to_textgrid
+from cnsp_datasets.datasets.broderick2019_natural.utils import multi_tier_dict_to_textgrid
 
 
 _COND_MAP = {

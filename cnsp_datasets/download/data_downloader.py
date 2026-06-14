@@ -71,7 +71,7 @@ class DataDownloader:
         - str: Status message indicating success, skip, or failure.
         """
         if self.skip_existing and os.path.exists(destination):
-            if expected_checksum is None or self._md5_matches(destination, expected_checksum):
+            if expected_checksum is None or self._checksum_matches(destination, expected_checksum):
                 return f"Skipped (exists): {os.path.basename(destination)}"
             else:
                 print(f"Checksum mismatch. Re-downloading: {os.path.basename(destination)}")
@@ -79,7 +79,7 @@ class DataDownloader:
         attempt = 0
         while attempt <= self.retries:
             try:
-                response = requests.get(url, stream=True, timeout=30)
+                response = requests.get(url, stream=True, timeout=(30, None))
                 if response.status_code == 200:
                     total_size = int(response.headers.get('content-length', 0))
                     with open(destination, 'wb') as f, tqdm(
@@ -93,7 +93,7 @@ class DataDownloader:
                         for chunk in response.iter_content(chunk_size=8192):
                             f.write(chunk)
                             bar.update(len(chunk))
-                    if self.verify_checksum and expected_checksum and not self._md5_matches(destination, expected_checksum):
+                    if self.verify_checksum and expected_checksum and not self._checksum_matches(destination, expected_checksum):
                         raise Exception("Checksum mismatch after download.")
                     return f"Downloaded: {os.path.basename(destination)}"
                 else:
@@ -130,7 +130,7 @@ class DataDownloader:
 
             # Skip check here before queueing
             if self.skip_existing and destination.exists():
-                if expected_checksum is None or self._md5_matches(destination, expected_checksum):
+                if expected_checksum is None or self._checksum_matches(destination, expected_checksum):
                     print(f"Skipped (exists): {filename}")
                     continue
                 else:

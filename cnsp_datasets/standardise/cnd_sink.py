@@ -1,329 +1,265 @@
+"""
+CND (Continuous-event Neural Data) sink — di Liberto et al. format.
+
+Data are accumulated in memory as `save_record` is called, then written to
+disk when `finalize()` is called (or on __exit__ when used as a context manager).
+
+Output — one file per subject:
+    dataSub{n:03d}.mat
+        eeg.data            {1 x T}  each cell (nTime x nChan)
+        eeg.fs              scalar
+        eeg.label           {1 x nChan} cellstr
+        eeg.nbchan          scalar
+        eeg.origTrialPosition  [1 x T] trial numbers in the original dataset
+        eeg.conditionLabel  {1 x T} cellstr
+        eeg.condNames       {1 x C} cellstr, unique conditions
+        eeg.condIdxs        [1 x T] 1-based indices into condNames
+        stim(k)             1 x K struct array, one element per feature
+            .data           {1 x S} cell of unique stimulus waveforms (nTime x nFeatureDims)
+            .fs             scalar
+            .name           feature name string
+            .stimIds        {1 x S} cellstr, unique stimulus IDs
+            .stimIdxs       [1 x T] 1-based index of each trial's stimulus into .data / .stimIds
+            .condNames      {1 x C} cellstr
+            .condIdxs       [1 x T] 1-based condition index for each trial
+        cndVersion          '1.0'
+
+Usage:
+    with CNDSinkV1(save_directory) as sink:
+        for record in adaptor.parse():
+            sink.save_record(record)
+    # or call sink.finalize() manually
+"""
+
+from __future__ import annotations
+
+import traceback
 import numpy as np
+
+from dataclasses import dataclass, field
 from pathlib import Path
-from scipy.io import savemat, loadmat
+from scipy.io import savemat
+from typing import Any, Dict, List, Optional
+
 from cnsp_datasets.standardise.trial_record import TrialRecord
 
+CND_VERSION = "1.0"
 
-def _cell_row_from_list(objs):
-    """Return a 1xN object array suitable for MATLAB cell arrays."""
-    cell = np.empty((1, len(objs)), dtype=object)
-    for i, o in enumerate(objs):
-        cell[0, i] = np.array(o)
+# ──────────────────────────────────────────────────────────────────────────────
+# Internal buffers
+# ──────────────────────────────────────────────────────────────────────────────
+
+@dataclass
+class _FeatureBuf:
+    fs: float
+    unique_data: List[np.ndarray] = field(default_factory=list)   # (nTime, nDim) each
+    unique_ids: List[str] = field(default_factory=list)
+    trial_stim_idxs: List[int] = field(default_factory=list)      # 1-based
+    trial_cond_idxs: List[int] = field(default_factory=list)      # 1-based
+    cond_names: List[str] = field(default_factory=list)
+
+    def add_trial(self, stim_id: str, data: np.ndarray, cond: str):
+        if stim_id not in self.unique_ids:
+            self.unique_ids.append(stim_id)
+            self.unique_data.append(data)
+        self.trial_stim_idxs.append(self.unique_ids.index(stim_id) + 1)
+
+        if cond not in self.cond_names:
+            self.cond_names.append(cond)
+        self.trial_cond_idxs.append(self.cond_names.index(cond) + 1)
+
+
+@dataclass
+class _SubjectBuf:
+    eeg_data: List[np.ndarray] = field(default_factory=list)      # (nTime, nChan) each
+    fs: Optional[float] = None
+    labels: Optional[List[str]] = None
+    orig_trial_positions: List[int] = field(default_factory=list)
+    cond_labels: List[str] = field(default_factory=list)
+    cond_names: List[str] = field(default_factory=list)
+    cond_idxs: List[int] = field(default_factory=list)
+    features: Dict[str, _FeatureBuf] = field(default_factory=dict)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Helpers
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _make_cell(arrays: List[np.ndarray]) -> np.ndarray:
+    """Pack a list of arrays into a (1, N) MATLAB-compatible object array."""
+    cell = np.empty((1, len(arrays)), dtype=object)
+    for i, a in enumerate(arrays):
+        cell[0, i] = np.asarray(a)
     return cell
 
-def _append_cell_row(existing_cell, new_obj):
-    """Append new_obj to a 1xN object array and return a new 1x(N+1) cell."""
-    # existing_cell may be (N,) or (1,N) depending on how it was created/loaded
-    arr = np.asarray(existing_cell, dtype=object)
-    if arr.ndim == 1:
-        arr = arr.reshape(1, -1)
-    out = np.empty((1, arr.shape[1] + 1), dtype=object)
-    out[0, :arr.shape[1]] = arr[0, :]
-    out[0, -1] = np.array(new_obj)
-    return out
 
-def _to_list_1d(x):
-    """
-    Convert MATLABy arrays (1xN cell or char cell) to a flat Python list.
-    Works if x is already a Python list, a numpy 1-D array, or (1,N)/(N,) object arrays.
-    """
-    if isinstance(x, list):
-        return x
-    a = np.atleast_1d(x)
-    # flatten 1xN to (N,)
-    if a.ndim > 1:
-        a = a.ravel(order="C")
-    return a.tolist()
+def _make_cellstr(strings: List[str]) -> np.ndarray:
+    """Pack a list of strings into a (1, N) MATLAB-compatible object array."""
+    cell = np.empty((1, len(strings)), dtype=object)
+    for i, s in enumerate(strings):
+        cell[0, i] = str(s)
+    return cell
 
+
+def _row_vec(ints: List[int]) -> np.ndarray:
+    """Return a (1, N) float64 row vector."""
+    return np.array(ints, dtype=np.float64).reshape(1, -1)
+
+
+def _extract_waveform(data: Any) -> Optional[tuple[np.ndarray, float]]:
+    """
+    Pull (waveform_2d, fs) from the dict a stimulus data_fn returns.
+
+    Adaptors consistently use {"waveform": (1, T) array, "fs": scalar}.
+    Falls back to the first ndarray value found, under any key name.
+    Returns None if no numeric array can be found.
+    """
+    if not isinstance(data, dict):
+        return None
+
+    fs = float(data.get("fs", 0.0))
+    for key in ("waveform", "data", "env", "envelope", "audio"):
+        if key in data and isinstance(data[key], np.ndarray):
+            arr = data[key]
+            # Normalise to (nTime, nFeatureDims)
+            arr = np.asarray(arr, dtype=np.float64)
+            if arr.ndim == 1:
+                arr = arr[:, None]
+            elif arr.ndim == 2 and arr.shape[0] < arr.shape[1]:
+                # (1, T) → (T, 1)
+                arr = arr.T
+            return arr, fs
+
+    # Last resort: first array value in dict
+    for v in data.values():
+        if isinstance(v, np.ndarray) and v.ndim >= 1:
+            arr = np.asarray(v, dtype=np.float64)
+            if arr.ndim == 1:
+                arr = arr[:, None]
+            elif arr.ndim == 2 and arr.shape[0] < arr.shape[1]:
+                arr = arr.T
+            return arr, fs
+
+    return None
+
+
+def _build_stim_struct_array(features: Dict[str, _FeatureBuf]) -> np.ndarray:
+    """
+    Build a (1, K) numpy structured array that scipy.io.savemat converts into a
+    MATLAB struct array  stim(k).data, stim(k).fs, …
+    """
+    fields = ("data", "fs", "name", "stimIds", "stimIdxs", "condNames", "condIdxs")
+    dt = np.dtype([(f, "O") for f in fields])
+    arr = np.empty((1, len(features)), dtype=dt)
+
+    for k, (feat_name, buf) in enumerate(features.items()):
+        arr[0, k]["data"] = _make_cell(buf.unique_data)
+        arr[0, k]["fs"] = np.atleast_2d(np.float64(buf.fs))
+        arr[0, k]["name"] = feat_name
+        arr[0, k]["stimIds"] = _make_cellstr(buf.unique_ids)
+        arr[0, k]["stimIdxs"] = _row_vec(buf.trial_stim_idxs)
+        arr[0, k]["condNames"] = _make_cellstr(buf.cond_names)
+        arr[0, k]["condIdxs"] = _row_vec(buf.trial_cond_idxs)
+
+    return arr
+
+
+def _build_eeg_struct(buf: _SubjectBuf) -> dict:
+    return {
+        "data": _make_cell(buf.eeg_data),
+        "fs": np.atleast_2d(np.float64(buf.fs)),
+        "label": _make_cellstr(buf.labels or []),
+        "nbchan": np.atleast_2d(np.float64(len(buf.labels or []))),
+        "origTrialPosition": _row_vec(buf.orig_trial_positions),
+        "conditionLabel": _make_cellstr(buf.cond_labels),
+        "condNames": _make_cellstr(buf.cond_names),
+        "condIdxs": _row_vec(buf.cond_idxs),
+    }
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Sink
+# ──────────────────────────────────────────────────────────────────────────────
 
 class CNDSinkV1:
-    def __init__(self, save_directory):
+
+    def __init__(self, save_directory: str | Path):
         self.save_directory = Path(save_directory)
-        if not self.save_directory.exists():
-            self.save_directory.mkdir(parents=True, exist_ok=True)
+        self.save_directory.mkdir(parents=True, exist_ok=True)
+        self._subjects: Dict[int, _SubjectBuf] = {}
+
+    # ── Public API ─────────────────────────────────────────────────────────────
 
     def save_record(self, record: TrialRecord):
-        # try:
-        self._save(record)
-        # except Exception as e:
-        #     print(f"Error saving record {record}: {e}")
-        #     return
+        try:
+            self._accumulate(record)
+        except Exception as e:
+            print(f"[CNDSinkV1] Error buffering record (sub={record.subject}, "
+                  f"trial={record.trial}): {e}")
+            traceback.print_exc()
 
-    def _save(self, record: TrialRecord):
+    def finalize(self):
+        """Write all buffered data to disk. Call once after all records have been added."""
+        for subject, buf in self._subjects.items():
+            try:
+                self._write_subject(subject, buf)
+            except Exception as e:
+                print(f"[CNDSinkV1] Error writing subject {subject}: {e}")
+                traceback.print_exc()
+        self._subjects.clear()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.finalize()
+
+    # ── Accumulation ───────────────────────────────────────────────────────────
+
+    def _accumulate(self, record: TrialRecord):
         sub = record.subject
+        if sub not in self._subjects:
+            self._subjects[sub] = _SubjectBuf()
+        buf = self._subjects[sub]
+
+        # EEG: (nChan, nTime) → (nTime, nChan)
         raw = record.neural_data
+        eeg = raw.get_data().T.astype(np.float64)
+        buf.eeg_data.append(eeg)
 
-        trial_data = dict(
-            data=raw.get_data(),
-            fs=raw.info['sfreq'],
-            ch_names=raw.info['ch_names'],
-            origTrialPosition=record.trial,
-            cndVersion="1.0",
-        )
+        if buf.fs is None:
+            buf.fs = float(raw.info["sfreq"])
+            buf.labels = list(raw.info["ch_names"])
 
-        subFile = self.save_directory / f"dataSub{sub}.mat"
-        self._save_neural_data_to_mat(subFile, trial_data)
+        buf.orig_trial_positions.append(record.trial)
+        buf.cond_labels.append(record.condition)
+        if record.condition not in buf.cond_names:
+            buf.cond_names.append(record.condition)
+        buf.cond_idxs.append(buf.cond_names.index(record.condition) + 1)
 
-        for stim_record in record.stimulus:
-            if stim_record.modality != "audio":
-                continue  # only save audio stimuli for now
-
-            stimulus_dict = stim_record.stim_data
-            if stimulus_dict["data"] is None:
+        # Stimuli
+        for stim in record.stimulus:
+            data = stim.data_fn()
+            if isinstance(data, str):
+                continue  # TextGrid / plain text — not representable in CND
+            result = _extract_waveform(data)
+            if result is None:
                 continue
+            waveform, fs = result
 
-            stim_data = dict(
-                name=stim_record.feature_name,
-                fs=stimulus_dict['fs'],
-                data=stimulus_dict['data'],
-                condName=record.condition,
-                cndVersion="1.0",
-                stimId=stim_record.name
-            )
-            stimFile = self.save_directory / f"dataStim{sub}_{stim_record.feature_name}.mat"
-            self._save_stimuli_to_mat(stimFile, stim_data)
+            feat = stim.feature_name
+            if feat not in buf.features:
+                buf.features[feat] = _FeatureBuf(fs=fs)
+            buf.features[feat].add_trial(stim.name, waveform, record.condition)
 
-    # ------------------------------
-    # Stimuli
-    # ------------------------------
-    def _save_stimuli_to_mat(self, stimFile, stim_data):
-        if not stimFile.exists():
-            data_to_save = {
-                'names': [stim_data['name']],              # -> cellstr in MATLAB
-                'data': _cell_row_from_list([stim_data['data']]),
-                'stimIdxs': [1],                           # numeric vector
-                'condIdxs': [1],
-                'condNames': [stim_data['condName']],      # -> cellstr
-                'cndVersion': stim_data['cndVersion'],
-                'stimIds': [stim_data['stimId']],          # -> cellstr
-                'conditions': [stim_data['condName']],     # (dup of condNames per your schema)
-                'fs': [stim_data['fs']],                   # keep fs alongside if needed
-            }
-            savemat(str(stimFile), data_to_save)
-            return
+    # ── Writing ────────────────────────────────────────────────────────────────
 
-        # Append to existing
-        loaded = loadmat(str(stimFile), squeeze_me=False, struct_as_record=False)
-
-        # Grow the cell array of data
-        old_cell = loaded['data']          # expected 1xN object array
-        new_cell = _append_cell_row(old_cell, stim_data['data'])
-
-        # Handle indices and label lists (MATLAB 1-based)
-        all_stimIds = _to_list_1d(loaded['stimIds'])
-        all_stimIds.append(stim_data['stimId'])
-        stimIdx = all_stimIds.index(stim_data['stimId']) + 1  # 1-based
-
-        condNames = _to_list_1d(loaded['condNames'])
-        if stim_data['condName'] not in condNames:
-            condNames.append(stim_data['condName'])
-        condIdx = condNames.index(stim_data['condName']) + 1
-
-        condIdxs = _to_list_1d(loaded['condIdxs'])
-        condIdxs.append(condIdx)
-
-        conditions = _to_list_1d(loaded['conditions'])
-        conditions.append(stim_data['condName'])
-
-        names = _to_list_1d(loaded['names'])
-        # If each entry corresponds to a trial instance name, you may want to append here too.
-        # If not, keep as-is. Uncomment if appropriate:
-        # names.append(stim_data['name'])
-
-        data_to_save = {
-            'names': names,
-            'data': new_cell,
-            'stimIdxs': _to_list_1d(loaded['stimIdxs']) + [stimIdx],
-            'condIdxs': condIdxs,
-            'condNames': condNames,
-            'cndVersion': "1.0",
-            'stimIds': all_stimIds,
-            'conditions': conditions,
-            'fs': _to_list_1d(loaded.get('fs', [])) + [stim_data['fs']],
-        }
-        savemat(str(stimFile), data_to_save)
-
-    # ------------------------------
-    # Neural data
-    # ------------------------------
-    def _save_neural_data_to_mat(self, subFile, trial_data):
-        if not subFile.exists():
-            # Create new file
-            out = dict(trial_data)
-            out['data'] = _cell_row_from_list([trial_data['data']])
-            # ch_names -> cellstr in MATLAB
-            out['ch_names'] = _to_list_1d(trial_data['ch_names'])
-            out['origTrialPosition'] = [trial_data['origTrialPosition']]
-            savemat(str(subFile), out)
-            return
-
-        # Append
-        loaded = loadmat(str(subFile), squeeze_me=False, struct_as_record=False)
-
-        # Grow the cell array (FIX: append the NEW trial, not the old cell)
-        old_cell = loaded['data']
-        new_cell = _append_cell_row(old_cell, trial_data['data'])
-
-        # Extend simple vectors/lists
-        orig_positions = _to_list_1d(loaded.get('origTrialPosition', []))
-        orig_positions.append(trial_data['origTrialPosition'])
-
-        out = dict(loaded)  # start from loaded keys, then overwrite the ones we maintain
-        out['data'] = new_cell
-        out['origTrialPosition'] = orig_positions
-        out['fs'] = loaded.get('fs', trial_data['fs'])
-        out['ch_names'] = _to_list_1d(loaded.get('ch_names', trial_data['ch_names']))
-        out['cndVersion'] = "1.0"
-
-        # Remove MATLAB housekeeping keys that loadmat adds
-        for k in list(out.keys()):
-            if k.startswith('__'):
-                del out[k]
-
-        savemat(str(subFile), out)
-
-
-
-# import numpy as np
-
-# from pathlib import Path
-# from scipy.io import savemat, loadmat
-# from cnsp_datasets.standardise.trial_record import TrialRecord
-
-
-# class CNDSinkV1:
-#     def __init__(self, save_directory):
-
-#         self.save_directory = Path(save_directory)
-#         if not self.save_directory.exists():
-#             self.save_directory.mkdir(parents=True, exist_ok=True)
-
-#     def save_record(self, record: TrialRecord):
-
-#         # try:
-#         self._save(record)
-#         # except Exception as e:
-#         #     print(f"Error saving record {record}: {e}")
-#         #     return
-        
-#     def _save(self, record: TrialRecord):
-
-#         sub = record.subject
-#         raw = record.neural_data
-
-#         trial_data = dict(
-#             data = raw.get_data(),
-#             fs = raw.info['sfreq'],
-#             ch_names = raw.info['ch_names'],
-#             origTrialPosition = record.trial,
-#             # chanlocs = [],
-#             # extchan = [],
-#             cndVersion = "1.0"
-#         )
-
-#         subFile = self.save_directory / f"dataSub{sub}.mat"
-#         self._save_neural_data_to_mat(subFile, trial_data)
-
-#         for stim_record in record.stimulus:
-
-#             if stim_record.modality != "audio":
-#                 continue # only save audio stimuli for now
-            
-#             stimulus_dict = stim_record.stim_data
-#             if stimulus_dict["data"] is None:
-#                 continue
-#             print(stimulus_dict)
-
-#             stim_data = dict(
-#                 name = stim_record.feature_name,
-#                 fs = stimulus_dict['fs'],
-#                 data = stimulus_dict['data'],
-#                 condName = record.condition,
-#                 cndVersion = "1.0",
-#                 stimId = stim_record.name
-#             )
-#             stimFile = self.save_directory / f"dataStim{sub}_{stim_record.feature_name}.mat"
-#             self._save_stimuli_to_mat(stimFile, stim_data)
-
-
-#     def _save_stimuli_to_mat(self, stimFile, stim_data):
-
-#         if not stimFile.exists():
-
-#             cell_data = np.empty((1,), dtype=object)
-#             cell_data[0] = np.array(stim_data['data'])
-
-#             data_to_save = {
-#                 'names': [stim_data['name']],
-#                 'data': cell_data,
-#                 'stimIdxs' : [1],
-#                 'condIdxs' : [1],
-#                 'condNames' : [stim_data['condName']],
-#                 'cndVersion': stim_data['cndVersion'],
-
-#                 'stimIds': [stim_data['stimId']],
-#                 'conditions': [stim_data['condName']],
-#             }
-#             savemat(str(stimFile), data_to_save)
-
-#         else:
-#             loaded_stim_data = loadmat(str(stimFile))
-            
-#             stimId = stim_data['stimId']
-#             all_stimIds  = loaded_stim_data['stimIds'].tolist()
-#             if type(all_stimIds) == str:
-#                 all_stimIds = [all_stimIds]
-#             all_stimIds.append(stimId)
-#             stimIdx = all_stimIds.index(stimId) + 1
-
-#             conditions = loaded_stim_data['conditions'].tolist()
-#             condNames = loaded_stim_data['condNames'].tolist()
-#             if stim_data['condName'] not in condNames:
-#                 condNames.append(stim_data['condName'])
-#             condIdx = condNames.index(stim_data['condName']) + 1
-
-#             conditions.append(stim_data['condName'])
-#             condIdxs = loaded_stim_data['condIdxs'].tolist() + [condIdx]
-
-#             import pdb;pdb.set_trace()
-#             data_cell = np.empty((loaded_stim_data["data"].shape[1] + 1,), dtype=object)
-#             for i, d in enumerate(loaded_stim_data["data"][0, :]):
-#                 data_cell[i] = np.array(d)
-#             data_cell[-1] = np.array(stim_data['data'])
-
-#             data_to_save = {
-#                 'names': loaded_stim_data['names'],
-#                 'data': data_cell,
-#                 'stimIdxs' : loaded_stim_data['stimIdxs'].tolist() + [stimIdx],
-#                 'condIdxs' : condIdxs,
-#                 'condNames' : condNames,
-#                 'cndVersion': "1.0",
-#                 'stimIds': all_stimIds,
-#                 'conditions': conditions
-#             }
-
-#             #import pdb;pdb.set_trace()
- 
-#             savemat(str(stimFile), data_to_save)
-
-#     def _save_neural_data_to_mat(self, subFile, trial_data):
-
-#         if not subFile.exists():
-#             # Create new file
-#             cell_data = np.empty((1,), dtype=object)
-#             cell_data[0] = np.array(trial_data['data'])
-#             trial_data['data'] = cell_data
-#             savemat(str(subFile), trial_data)
-#         else:
-#             # Append to existing file
-#             original_sub_data = loadmat(subFile)
-
-#             data_cell = np.empty((original_sub_data["data"].shape[1] + 1,), dtype=object)
-#             for i, d in enumerate(original_sub_data["data"][0, :]):
-#                 data_cell[i] = np.array(d)
-#             data_cell[-1] = np.array(original_sub_data['data'])
-
-#             trial_data["data"] = data_cell
-#             trial_data["origTrialPosition"] = [x for x in original_sub_data["origTrialPosition"]] + [trial_data["origTrialPosition"]]
-
-#             savemat(str(subFile), trial_data)
+    def _write_subject(self, subject: int, buf: _SubjectBuf):
+        out: dict = {"cndVersion": CND_VERSION}
+        out["eeg"] = _build_eeg_struct(buf)
+        if buf.features:
+            out["stim"] = _build_stim_struct_array(buf.features)
+        path = self.save_directory / f"dataSub{subject:03d}.mat"
+        savemat(str(path), out)
+        print(f"[CNDSinkV1] Wrote {path} "
+              f"({len(buf.eeg_data)} trials, {len(buf.features)} feature(s))")

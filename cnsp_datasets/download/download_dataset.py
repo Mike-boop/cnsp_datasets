@@ -66,7 +66,6 @@ def load_registry(path: str) -> Dict[str, Dataset]:
         description = entry.get("description", "").strip()
         if isinstance(identifiers, str):
             identifiers = [identifiers]
-        description = entry.get("description", "").strip()
 
         url = entry.get("url")
 
@@ -108,6 +107,10 @@ def download_dataset(
     if dataset_name not in registry:
         available = ", ".join(sorted(registry.keys()))
         raise ValueError(f"Dataset '{dataset_name}' is not available. Available datasets are: {available}")
+    
+    # if max_workers is not specified, set it to the number of CPUs
+    if max_workers is None:
+        max_workers = os.cpu_count() or 4
 
     ds = registry[dataset_name]
     downloadables = ds.resolve_downloadables()
