@@ -66,12 +66,6 @@
       "description": "Gwilliams et al. (2023) dataset",
       "url": "https://osf.io/ag3kj/"
     },
-    "jehn2024": {
-      "source": "zenodo",
-      "identifiers": ["10.5281/zenodo.10980117"],
-      "description": "Jehn et al. (2024) dataset",
-      "url": "https://zenodo.org/records/10980117"
-    },
     "jehn2025_th": {
       "source": "zenodo",
       "identifiers": ["10.5281/zenodo.17952231"],
