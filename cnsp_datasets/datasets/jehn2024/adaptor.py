@@ -148,7 +148,7 @@ class Jehn2024Adaptor:
         """
         role: 'attended' | 'distractor'
         feature: 'audio' (wav) | 'env' (envelope)
-        Returns dict {"fs": <float>, "waveform": np.ndarray[1, T]}.
+        Returns dict {"fs": <float>, "data": np.ndarray[1, T]}.
         """
         assert role in ("attended", "distractor")
         assert feature in ("audio", "env")
@@ -164,7 +164,7 @@ class Jehn2024Adaptor:
             x = np.asarray(x)
             if x.ndim == 1:
                 x = x[None, :]
-            return {"fs": fs, "waveform": x}
+            return {"fs": fs, "data": x}
         return _loader
 
     # ---------------------------- Helpers -----------------------------
