@@ -184,7 +184,7 @@ class Fuglsang2018Adapter:
             fs, x = wavfile.read(wav_path)
             if x.ndim == 2:
                 x = x[:, 0]
-            return {"fs": int(fs), "waveform": np.asarray(x, dtype=float)[None, :]}
+            return {"fs": int(fs), "data": np.asarray(x, dtype=float)[None, :]}
         return _loader
 
     # ------------------------ Helpers ------------------------

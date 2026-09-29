@@ -294,7 +294,7 @@ class Guilleminot2021Adaptor:
             #     x[:d] = 0 
             # else:
             #     x[d:] = 0
-            return {"fs": int(fs), "waveform": np.asarray(x, dtype=float)[None, :]}
+            return {"fs": int(fs), "data": np.asarray(x, dtype=float)[None, :]}
         return _loader
     
     def _make_tg_loader(self, tg_path: str) -> Callable[[], str]:

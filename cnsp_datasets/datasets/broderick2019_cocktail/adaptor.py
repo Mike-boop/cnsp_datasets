@@ -10,7 +10,7 @@ from mne import create_info
 from mne.io import RawArray, BaseRaw
 
 from cnsp_datasets.standardise.trial_record import TrialRecord, StimulusRecord
-from cnsp_datasets.datasets.utils import multi_tier_dict_to_textgrid
+from cnsp_datasets.datasets.broderick2019_natural.utils import multi_tier_dict_to_textgrid
 
 
 class Broderick2019CocktailAdapter:
@@ -125,7 +125,7 @@ class Broderick2019CocktailAdapter:
     def _make_env_loader(self, story_name: str) -> Callable[[], Dict[str, Any]]:
         """
         Load Hilbert envelope for 'Journey_X' or '20000_X' (key 'envelope').
-        Returns {'fs': 128, 'waveform': (1, T)}.
+        Returns {'fs': 128, 'data': (1, T)}.
         """
         if story_name.startswith("Journey_"):
             folder = "Journey"
@@ -148,7 +148,7 @@ class Broderick2019CocktailAdapter:
 
             if env.ndim == 2:
                 env = np.squeeze(env)
-            return {"fs": 128, "waveform": env[None, :].astype(np.float32)}
+            return {"fs": 128, "data": env[None, :].astype(np.float32)}
         return _loader
     
     def _make_textgrid_loader(self, audio_name: str) -> Callable[[], str]:

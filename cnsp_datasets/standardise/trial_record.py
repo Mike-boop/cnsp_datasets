@@ -85,9 +85,21 @@ class TrialRecord:
         self._behavioural_data_fn = behavioural_data_fn
 
     @property
+    def neural_data_fn(self) -> Callable[[], BaseRaw]:
+        return self._neural_data_fn
+
+    @neural_data_fn.setter
+    def neural_data_fn(self, value: Callable[[], BaseRaw]):
+        self._neural_data_fn = value
+
+    @property
     def neural_data(self) -> BaseRaw:
-        return self._neural_data_fn()
-    
+        return self._neural_data_fn() if not hasattr(self, '_neural_data') else getattr(self, '_neural_data')
+
+    @neural_data.setter
+    def neural_data(self, value):
+        setattr(self, '_neural_data', value)
+
     @property
     def structural_data(self) -> Any | None:
         if self._structural_data_fn is not None:

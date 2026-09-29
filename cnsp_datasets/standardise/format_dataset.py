@@ -38,3 +38,6 @@ def format_dataset(
 
     for record in adaptor.parse():
         sinker.save_record(record)
+
+    if hasattr(sinker, "finalize"):
+        sinker.finalize()
