@@ -125,7 +125,7 @@ class Karengal2025Adaptor:
 
     def _make_audio_loader(self, story_part_a: str) -> Callable[[], Dict[str, Any]]:
         """
-        Load AVbook A-stream FXX.wav and return dict {'fs': int, 'waveform': np.ndarray[1, T]}.
+        Load AVbook A-stream FXX.wav and return dict {'fs': int, 'data': np.ndarray[1, T]}.
         """
         wav_path = os.path.join(AVBOOK_DIR, "A", f"M{story_part_a:02d}.wav")
 
@@ -140,7 +140,7 @@ class Karengal2025Adaptor:
                 else:
                     audio = audio[:, 0]  # choose left channel by default
             waveform = np.asarray(audio)[None, :]
-            return {"fs": int(fs), "waveform": waveform}
+            return {"fs": int(fs), "data": waveform}
 
         return _loader
 
