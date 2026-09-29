@@ -154,7 +154,7 @@ class Etard2019Adaptor:
     def _make_audio_loader(self, raw_cond: str, trial: int, role: str) -> Callable[[], Any]:
         """
         Returns a 0-arg function that loads WAV if mapping is known; otherwise raises with guidance.
-        The return value is a dict: {"fs": int, "waveform": np.ndarray[1, T]}.
+        The return value is a dict: {"fs": int, "data": np.ndarray[1, T]}.
         """
         wav_path = os.path.join(self.download_dir, "audiobooks", raw_cond, f"part_{trial}_{role}.wav")
 
@@ -168,7 +168,7 @@ class Etard2019Adaptor:
                 else:
                     audio = audio[:, 0]
             waveform = np.asarray(audio)[None, :]  # shape (1, T)
-            return {"fs": int(fs), "waveform": waveform}
+            return {"fs": int(fs), "data": waveform}
 
         return _loader
 

@@ -38,6 +38,9 @@ class Dataset:
         if self.source == "openneuro":
             getter = download_helpers.doi_to_downloadables_openneuro
             return _gather(getter, self.identifiers)
+        if self.source == "radboud_rdr":
+            getter = download_helpers.id_to_downloadables_radboud_rdr
+            return _gather(getter, self.identifiers)
 
         raise ValueError(f"[{self.key}] Unknown source '{self.source}'")
 
@@ -66,7 +69,6 @@ def load_registry(path: str) -> Dict[str, Dataset]:
         description = entry.get("description", "").strip()
         if isinstance(identifiers, str):
             identifiers = [identifiers]
-        description = entry.get("description", "").strip()
 
         url = entry.get("url")
 
@@ -86,7 +88,7 @@ def download_dataset(
     dataset_name: str,
     download_dir: str,
     max_workers: Optional[int] = None,
-    retries: int = 3,
+    retries: int = 10,
     skip_existing: bool = False,
     extract_archives: bool = True,
     verify_checksum: bool = False,
@@ -108,6 +110,10 @@ def download_dataset(
     if dataset_name not in registry:
         available = ", ".join(sorted(registry.keys()))
         raise ValueError(f"Dataset '{dataset_name}' is not available. Available datasets are: {available}")
+    
+    # if max_workers is not specified, set it to the number of CPUs
+    if max_workers is None:
+        max_workers = os.cpu_count() or 4
 
     ds = registry[dataset_name]
     downloadables = ds.resolve_downloadables()

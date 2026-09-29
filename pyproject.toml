@@ -12,6 +12,7 @@ include = ["cnsp_datasets/download/dataset_registry.json"]
 python = ">=3.10"
 numpy = "2.2.5"
 requests = "^2.32"
+httpx = ">=0.27"
 tqdm = "4.67.1"
 bs4 = "0.0.2"
 mne = "1.9.0"
