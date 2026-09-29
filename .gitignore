@@ -5,3 +5,5 @@ config.json
 .venv/
 
 *.egg-info/
+
+playground/

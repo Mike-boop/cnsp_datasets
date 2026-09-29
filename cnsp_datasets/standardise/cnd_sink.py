@@ -110,7 +110,7 @@ def _extract_waveform(data: Any) -> Optional[tuple[np.ndarray, float]]:
     """
     Pull (waveform_2d, fs) from the dict a stimulus data_fn returns.
 
-    Adaptors consistently use {"waveform": (1, T) array, "fs": scalar}.
+    Adaptors use {"data": (1, T) array, "fs": scalar} (older files may use "waveform").
     Falls back to the first ndarray value found, under any key name.
     Returns None if no numeric array can be found.
     """
@@ -118,7 +118,7 @@ def _extract_waveform(data: Any) -> Optional[tuple[np.ndarray, float]]:
         return None
 
     fs = float(data.get("fs", 0.0))
-    for key in ("waveform", "data", "env", "envelope", "audio"):
+    for key in ("data", "waveform", "env", "envelope", "audio"):
         if key in data and isinstance(data[key], np.ndarray):
             arr = data[key]
             # Normalise to (nTime, nFeatureDims)

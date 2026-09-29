@@ -11,9 +11,9 @@ from typing import Iterable, Callable, Any, Dict, List, Optional, Tuple
 from cnsp_datasets.standardise.trial_record import TrialRecord, StimulusRecord
 
 
-class Jehn2024Adaptor:
+class Jehn2025Adaptor:
     """
-    Adaptor for the Jehn 2024 dataset that yields TrialRecord objects.
+    Adaptor for the Jehn 2025 datasets that yields TrialRecord objects.
 
     Raw archive layout (single HDF5 file):
       - /eeg/<sub_code>/<trial>      : float array (at least 31 EEG channels x time)
@@ -34,21 +34,21 @@ class Jehn2024Adaptor:
       - Participants started by focussing on the loudspeaker to their right (thus trial index parity defines attended direction; used below)
     """
 
-    H5_FNAME = "ci_attention_final_l_1,1_h_32,50_out_125_130_incl_ica.hdf5"
     SESSION = 1
-    FS_EEG = 125
-    FS_ENV = 125
+    FS_EEG = 1000
+    FS_ENV = 1000
     FS_AUDIO = 48000
-    INFO_FIF_PATH = os.path.join(os.path.dirname(__file__), "info_125.fif")
+    INFO_FIF_PATH = os.path.join(os.path.dirname(__file__), "info_1000.fif")
 
 
     def __init__(
         self,
-        download_dir: str
+        download_dir: str,
+        h5_fname: str
     ):
         self.download_dir = download_dir
 
-        self.h5_path = os.path.join(download_dir, self.H5_FNAME)
+        self.h5_path = os.path.join(download_dir, h5_fname)
         if not os.path.exists(self.h5_path):
             raise FileNotFoundError(f"HDF5 archive not found: {self.h5_path}")
 
@@ -83,7 +83,7 @@ class Jehn2024Adaptor:
                 #  - if competing: also distractor audio
                 stimuli: List[StimulusRecord] = []
 
-                att_name = f"{att_story}_{part}"
+                att_name = f"{att_story}_{part}_target"
                 stimuli.append(
                     StimulusRecord(
                         modality="audio",
@@ -95,7 +95,7 @@ class Jehn2024Adaptor:
                 )
 
                 if condition == "competing":
-                    dis_name = f"{ign_story}_{part}"
+                    dis_name = f"{ign_story}_{part}_distractor"
                     stimuli.append(
                         StimulusRecord(
                             modality="audio",
@@ -148,7 +148,7 @@ class Jehn2024Adaptor:
         """
         role: 'attended' | 'distractor'
         feature: 'audio' (wav) | 'env' (envelope)
-        Returns dict {"fs": <float>, "waveform": np.ndarray[1, T]}.
+        Returns dict {"fs": <float>, "data": np.ndarray[1, T]}.
         """
         assert role in ("attended", "distractor")
         assert feature in ("audio", "env")
@@ -164,7 +164,7 @@ class Jehn2024Adaptor:
             x = np.asarray(x)
             if x.ndim == 1:
                 x = x[None, :]
-            return {"fs": fs, "waveform": x}
+            return {"fs": fs, "data": x}
         return _loader
 
     # ---------------------------- Helpers -----------------------------
@@ -228,6 +228,3 @@ class Jehn2024Adaptor:
         new_info = create_info(ch_names=ch_names, sfreq=self.FS_EEG, ch_types="eeg")
         new_info.set_montage(info.get_montage())
         return new_info
-
-
-ADAPTOR = Jehn2024Adaptor

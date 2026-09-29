@@ -1,4 +1,4 @@
-from cnsp_datasets.preprocess.base import StimulusPreprocStep, StimulusData
+from cnsp_datasets.preprocess.base import StimulusPreprocStep, StimulusData, get_stim_array
 from cnsp_datasets.preprocess.base.signal import Resample
 
 
@@ -15,5 +15,5 @@ class ResampleStimulus(Resample, StimulusPreprocStep):
         self.output_feature_name = output_feature_name
 
     def run(self, data: StimulusData) -> StimulusData:
-        resampled = self._resample_array(data["data"], data["fs"])
+        resampled = self._resample_array(get_stim_array(data), data["fs"])
         return {"fs": self.target_fs, "data": resampled}

@@ -133,7 +133,7 @@ class Brennan2018Adaptor:
     def _make_audio_loader(self, audio_name: str) -> Callable[[], Dict[str, Any]]:
         """
         Load audiobook WAV (standardised if available; else raw).
-        Returns {'fs': int, 'waveform': np.ndarray[1, T]}.
+        Returns {'fs': int, 'data': np.ndarray[1, T]}.
         """
         wav_path = os.path.join(self.download_dir, "audio", f"{audio_name}.wav")
 
@@ -143,7 +143,7 @@ class Brennan2018Adaptor:
                 audio = audio[None, :]
             else:
                 audio = audio.mean(axis=1, keepdims=True).T  # mono
-            return {"fs": int(fs), "waveform": audio}
+            return {"fs": int(fs), "data": audio}
         return _loader
 
     def _make_eeg_loader(self, raw: BaseRaw, onset_s: float, duration_s: float) -> Callable[[], BaseRaw]:

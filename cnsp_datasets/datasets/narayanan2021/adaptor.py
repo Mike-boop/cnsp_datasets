@@ -127,7 +127,7 @@ class Narayanan2021Adapter:
 
     def _make_audio_loader(self, stem: str) -> Callable[[], Dict[str, Any]]:
         """
-        Load '<stem>.wav' from stimuli/ ; returns {'fs': int, 'waveform': (1, T)}.
+        Load '<stem>.wav' from stimuli/ ; returns {'fs': int, 'data': (1, T)}.
         """
         wav_path = os.path.join(self._audio_root, f"{stem}.wav")
         def _loader() -> Dict[str, Any]:
@@ -136,7 +136,7 @@ class Narayanan2021Adapter:
             fs, x = wavfile.read(wav_path)
             if x.ndim == 2:
                 x = x[:, 0]
-            return {"fs": int(fs), "waveform": np.asarray(x, dtype=float)[None, :]}
+            return {"fs": int(fs), "data": np.asarray(x, dtype=float)[None, :]}
         return _loader
 
     # ------------------------ helpers ------------------------

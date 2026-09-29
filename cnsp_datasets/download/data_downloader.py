@@ -1,5 +1,7 @@
 import os
 import time
+import random
+import threading
 import hashlib
 import requests
 
@@ -14,7 +16,7 @@ class DataDownloader:
     A class to download files from URLs with optional checksum verification and progress bar.
     """
 
-    def __init__(self, download_dir, max_workers=1, retries=3, skip_existing=True, verify_checksum=True):
+    def __init__(self, download_dir, max_workers=1, retries=10, skip_existing=True, verify_checksum=True, read_timeout=15):
         """
         Initialize the DataDownloader.
 
@@ -22,13 +24,19 @@ class DataDownloader:
         - download_dir (str): Directory to save downloaded files.
         - max_workers (int): Number of parallel download workers. If None, defaults to 5 times the number of processors.
         - retries (int): Number of retries for failed downloads.
-        - skip_existing (bool): Skip files that already exist and match the expected checksum.
+        - skip_existing (bool): Skip files that already exist with the expected size
+          (and checksum, if verify_checksum is set).
+        - verify_checksum (bool): Verify checksums after download and for existing files.
+        - read_timeout (float): Seconds to wait for the server to send more data before the
+          attempt is abandoned and retried. This bounds stalls, not total download time.
         """
         self.download_dir = download_dir
         self.max_workers = max_workers
         self.retries = retries
         self.skip_existing = skip_existing
         self.verify_checksum = verify_checksum
+        self.timeout = (30, read_timeout)  # (connect, read)
+        self._local = threading.local()
         os.makedirs(download_dir, exist_ok=True)
 
     def _checksum_matches(self, file_path, expected_checksum):
@@ -58,7 +66,36 @@ class DataDownloader:
 
         return hash_func.hexdigest() == expected.lower()
 
-    def _download_one(self, url, destination, expected_checksum=None):
+    def _session(self):
+        """Return this thread's requests.Session, so connections are reused across files."""
+        session = getattr(self._local, "session", None)
+        if session is None:
+            session = self._local.session = requests.Session()
+        return session
+
+    def _is_complete(self, file_path, expected_size=None, expected_checksum=None):
+        """
+        Check whether an existing file matches what we expect to download.
+
+        Compares the size first (cheap; catches truncated files), and only hashes the
+        file if verify_checksum is enabled. With neither a size nor checksum
+        verification available, an existing file is assumed complete.
+        """
+        if expected_size is not None and os.path.getsize(file_path) != expected_size:
+            return False
+        if self.verify_checksum and expected_checksum:
+            return self._checksum_matches(file_path, expected_checksum)
+        return True
+
+    @staticmethod
+    def _response_size(response):
+        """Size of the file being served, or None if the server doesn't say (or compresses it)."""
+        if "content-encoding" in response.headers:
+            return None  # content-length counts compressed bytes, not what we write
+        length = response.headers.get("content-length")
+        return int(length) if length else None
+
+    def _download_one(self, url, destination, expected_checksum=None, expected_size=None):
         """
         Download a single file with retries, optional checksum validation, and progress bar.
 
@@ -66,24 +103,37 @@ class DataDownloader:
         - url (str): URL of the file to download.
         - destination (str or Path): Local file path where the file will be saved.
         - expected_checksum (str, optional): Expected checksum to verify integrity, e.g. "md5:abcd1234".
+        - expected_size (int, optional): Expected size in bytes. If omitted, the response's
+          content-length is used to check existing files.
 
         Returns:
         - str: Status message indicating success, skip, or failure.
         """
-        if self.skip_existing and os.path.exists(destination):
-            if expected_checksum is None or self._checksum_matches(destination, expected_checksum):
-                return f"Skipped (exists): {os.path.basename(destination)}"
-            else:
-                print(f"Checksum mismatch. Re-downloading: {os.path.basename(destination)}")
+        name = os.path.basename(destination)
+
+        # with a known size, existing files can be checked without contacting the server
+        if self.skip_existing and expected_size is not None and os.path.exists(destination):
+            if self._is_complete(destination, expected_size, expected_checksum):
+                return f"Skipped (exists): {name}"
+            tqdm.write(f"Incomplete or mismatched. Re-downloading: {name}")
 
         attempt = 0
         while attempt <= self.retries:
             try:
-                response = requests.get(url, stream=True, timeout=(30, None))
-                if response.status_code == 200:
-                    total_size = int(response.headers.get('content-length', 0))
+                with self._session().get(url, stream=True, timeout=self.timeout) as response:
+                    if response.status_code != 200:
+                        raise Exception(f"HTTP {response.status_code}")
+                    total_size = self._response_size(response)
+
+                    # otherwise use the response headers; the body is never read if we skip
+                    if self.skip_existing and expected_size is None and os.path.exists(destination):
+                        if self._is_complete(destination, total_size, expected_checksum):
+                            return f"Skipped (exists): {name}"
+                        tqdm.write(f"Incomplete or mismatched. Re-downloading: {name}")
+
+                    written = 0
                     with open(destination, 'wb') as f, tqdm(
-                        desc=f"Downloading {os.path.basename(destination)}",
+                        desc=f"Downloading {name}",
                         total=total_size,
                         unit='B',
                         unit_scale=True,
@@ -92,17 +142,22 @@ class DataDownloader:
                     ) as bar:
                         for chunk in response.iter_content(chunk_size=8192):
                             f.write(chunk)
+                            written += len(chunk)
                             bar.update(len(chunk))
-                    if self.verify_checksum and expected_checksum and not self._checksum_matches(destination, expected_checksum):
-                        raise Exception("Checksum mismatch after download.")
-                    return f"Downloaded: {os.path.basename(destination)}"
-                else:
-                    raise Exception(f"HTTP {response.status_code}")
+
+                if total_size is not None and written != total_size:
+                    raise Exception(f"Incomplete download ({written} of {total_size} bytes).")
+                if self.verify_checksum and expected_checksum and not self._checksum_matches(destination, expected_checksum):
+                    raise Exception("Checksum mismatch after download.")
+                return f"Downloaded: {name}"
             except Exception as e:
                 attempt += 1
                 if attempt > self.retries:
-                    return f"Failed: {os.path.basename(destination)} ({e})"
-                time.sleep(2 ** attempt)
+                    tqdm.write(f"Failed: {name} ({type(e).__name__}: {e})")
+                    return f"Failed: {name} ({type(e).__name__}: {e})"
+                # capped exponential backoff with jitter; the Radboud WebDAV server returns
+                # spurious 404s under load, so failures are usually transient
+                time.sleep(min(2 ** attempt, 60) + random.uniform(0, 1))
 
     def download_batch(self, file_metadata, parallel=True):
         """
@@ -112,8 +167,12 @@ class DataDownloader:
         - file_metadata (list of dict): Each dict should have keys:
             - 'url': URL of the file.
             - 'name': Filename or relative path to save the file as.
-            - 'checksum' (optional): Expected MD5 checksum, e.g. "md5:abcd1234".
+            - 'checksum' (optional): Expected checksum, e.g. "md5:abcd1234" or "sha256:...".
+            - 'size' (optional): Expected size in bytes; lets existing files be checked offline.
         - parallel (bool): Whether to download files in parallel.
+
+        Existing files (with skip_existing) are checked inside the workers, so a large
+        batch starts downloading immediately instead of first hashing every file on disk.
         """
         tasks = []
 
@@ -122,35 +181,40 @@ class DataDownloader:
             destination = Path(self.download_dir) / Path(filename)
             url = each_file_metadata["url"]
             expected_checksum = each_file_metadata.get("checksum")
+            expected_size = each_file_metadata.get("size")
             if expected_checksum is None:
                 print(f"Warning: No checksum provided for {filename}.")
 
             if not os.path.exists(destination.parent):
                 os.makedirs(destination.parent, exist_ok=True)
 
-            # Skip check here before queueing
-            if self.skip_existing and destination.exists():
-                if expected_checksum is None or self._checksum_matches(destination, expected_checksum):
-                    print(f"Skipped (exists): {filename}")
-                    continue
-                else:
-                    print(f"Checksum mismatch. Re-downloading: {filename}")
-
-            tasks.append((url, destination, expected_checksum))
+            tasks.append((url, destination, expected_checksum, expected_size))
 
         results = []
+        counts = {"downloaded": 0, "skipped": 0, "failed": 0}
 
-        if parallel and self.max_workers > 1:
-            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-                futures = {
-                    executor.submit(self._download_one, url, dest, chksum): (url, dest)
-                    for url, dest, chksum in tasks
-                }
-                for future in as_completed(futures):
-                    results.append(future.result())
-        else:
-            for url, dest, chksum in tasks:
-                results.append(self._download_one(url, dest, chksum))
+        # overall bar pinned at the top; per-file bars take the free positions below it
+        with tqdm(total=len(tasks), desc="Total", unit="file", position=0) as overall:
+
+            def record(result):
+                results.append(result)
+                key = result.split(":", 1)[0].split(" ", 1)[0].lower()  # "Skipped (exists): x" -> "skipped"
+                if key in counts:
+                    counts[key] += 1
+                overall.set_postfix(counts, refresh=False)
+                overall.update(1)
+
+            if parallel and self.max_workers > 1:
+                with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                    futures = {
+                        executor.submit(self._download_one, *task): task
+                        for task in tasks
+                    }
+                    for future in as_completed(futures):
+                        record(future.result())
+            else:
+                for task in tasks:
+                    record(self._download_one(*task))
 
         self._print_summary(results)
 

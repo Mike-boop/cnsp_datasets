@@ -198,7 +198,7 @@ class Accou2023Adaptor:
 
     def _make_audio_loader(self, audio_name: str) -> Callable[[], Dict[str, Any]]:
         """
-        Load an audio npz: returns {'fs': int, 'waveform': np.ndarray[1, T]}.
+        Load an audio npz: returns {'fs': int, 'data': np.ndarray[1, T]}.
         Files live under <download_dir>/stimuli/eeg/<audio_name>.npz
         """
         npz_path = os.path.join(self.download_dir, "stimuli", "eeg", f"{audio_name}.npz")
@@ -211,7 +211,7 @@ class Accou2023Adaptor:
             fs = int(data["fs"])
             if audio.ndim == 1:
                 audio = audio[None, :]
-            return {"fs": fs, "waveform": audio}
+            return {"fs": fs, "data": audio}
         return _loader
 
     def _make_eeg_loader(

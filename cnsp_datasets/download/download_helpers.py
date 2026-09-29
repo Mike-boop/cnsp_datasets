@@ -533,3 +533,31 @@ def doi_to_downloadables_dspace_api(doi, dspace_server="https://api.drum.lib.umd
         file_data.append(file_info)
 
     return file_data
+
+
+def resolve_doi(doi):
+    url = f"https://doi.org/{doi}"
+    resp = requests.head(url, allow_redirects=True, timeout=10)
+    return resp.url
+
+
+def id_to_downloadables_radboud_rdr(id, rdr_server="https://webdav.data.ru.nl"):
+
+    """
+    id e.g. dutch_eeg_speech_register_corpus_dsc_807_v1
+    """
+
+    data_root     = f"{rdr_server}/cls/{id}"
+    manifest_url  = f"{data_root}/MANIFEST.txt"
+    response = requests.get(manifest_url, timeout=30)
+    response.raise_for_status()
+    manifest_text = response.text
+
+    # each line is "<md5> <path>"; split once so paths containing spaces survive
+    manifest_lines = manifest_text.strip().splitlines()
+    manifest_entries = [line.split(maxsplit=1) for line in manifest_lines if line.strip()]
+    checksums, names = zip(*manifest_entries)
+    urls = [f"{data_root}/{name}" for name in names]
+
+    urls = [{"name": name, "url": url, "checksum": f"sha256:{checksum}"} for name, url, checksum in zip(names, urls, checksums)]
+    return urls

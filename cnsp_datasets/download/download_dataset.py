@@ -38,6 +38,9 @@ class Dataset:
         if self.source == "openneuro":
             getter = download_helpers.doi_to_downloadables_openneuro
             return _gather(getter, self.identifiers)
+        if self.source == "radboud_rdr":
+            getter = download_helpers.id_to_downloadables_radboud_rdr
+            return _gather(getter, self.identifiers)
 
         raise ValueError(f"[{self.key}] Unknown source '{self.source}'")
 
@@ -85,7 +88,7 @@ def download_dataset(
     dataset_name: str,
     download_dir: str,
     max_workers: Optional[int] = None,
-    retries: int = 3,
+    retries: int = 10,
     skip_existing: bool = False,
     extract_archives: bool = True,
     verify_checksum: bool = False,

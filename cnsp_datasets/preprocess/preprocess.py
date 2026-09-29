@@ -36,8 +36,10 @@ def apply_preproc_pipeline(
             "audio": [resample_44khz],
         }
     """
+    # copy the stimulus records too, so wrapping their loaders below doesn't
+    # mutate the caller's record
     record = copy.copy(record)
-    record.stimulus = list(record.stimulus)
+    record.stimulus = [copy.copy(stim) for stim in record.stimulus]
 
     valid_keys = {record.ns_type} | {stim.feature_name for stim in record.stimulus}
 

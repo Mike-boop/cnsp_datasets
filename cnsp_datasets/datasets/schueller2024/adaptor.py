@@ -122,7 +122,7 @@ class Schueller2024MEGAdaptor:
         key = tuple(wav_paths)
         def _loader() -> Dict[str, Any]:
             fs, audio = self._concat_audio(key)
-            return {"fs": int(fs), "waveform": audio[None, :]}
+            return {"fs": int(fs), "data": audio[None, :]}
         return _loader
 
     # --------------------------- MEG helpers ---------------------------

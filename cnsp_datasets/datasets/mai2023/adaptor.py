@@ -133,7 +133,7 @@ class Mai2023Adaptor:
 
     def _make_audio_loader(self, wav_path: str) -> Callable[[], Dict[str, Any]]:
         """
-        Load an audio npz: returns {'fs': int, 'waveform': np.ndarray[1, T]}.
+        Load an audio npz: returns {'fs': int, 'data': np.ndarray[1, T]}.
         """
 
         def _loader() -> Dict[str, Any]:
@@ -142,7 +142,7 @@ class Mai2023Adaptor:
                 audio = audio[None, :]
             if audio.shape[0] > 1:
                 audio = audio[:, 0:1]
-            return {"fs": fs, "waveform": audio}
+            return {"fs": fs, "data": audio}
         return _loader
 
     def _make_eeg_loader(

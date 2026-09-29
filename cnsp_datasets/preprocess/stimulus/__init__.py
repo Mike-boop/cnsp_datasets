@@ -1,2 +1,2 @@
 from cnsp_datasets.preprocess.stimulus.resample import ResampleStimulus
-from cnsp_datasets.preprocess.stimulus.envelope import HilbertEnvelope
+from cnsp_datasets.preprocess.stimulus.envelope import HilbertEnvelope, GammatoneEnvelope

@@ -139,7 +139,7 @@ class Broderick2019NaturalAdapter:
             env = np.asarray(mat["env"], dtype=float).squeeze()
             if reverse:
                 env = env[::-1]
-            return {"fs": 128, "waveform": env[None, :].astype(np.float32)}
+            return {"fs": 128, "data": env[None, :].astype(np.float32)}
         return _loader
     
     def _make_textgrid_loader(self, run: str, reverse=False) -> Callable[[], str]:
@@ -158,7 +158,7 @@ class Broderick2019NaturalAdapter:
 
             if reverse:
                 env_dict = self._make_env_loader(trial=int(run), reverse=reverse)()
-                env = env_dict["waveform"].squeeze()
+                env = env_dict["data"].squeeze()
                 env_duration = len(env) / env_dict["fs"]
                 data = {
                     "words": {

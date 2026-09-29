@@ -141,7 +141,7 @@ class Das2019Adapter:
     def _make_audio_loader(self, story_name_no_ext: str) -> Callable[[], Dict[str, Any]]:
         """
         Returns a loader that finds '<story>.wav' (dry) under stimuli/ and returns
-        {'fs': int, 'waveform': (1, T)}.
+        {'fs': int, 'data': (1, T)}.
         """
         wav_basename = f"{story_name_no_ext}.wav"
         wav_path = self._audio_index.get(wav_basename)
@@ -158,7 +158,7 @@ class Das2019Adapter:
             fs, x = wavfile.read(wav_path)
             if x.ndim == 2:
                 x = x[:, 0]  # mono
-            return {"fs": int(fs), "waveform": np.asarray(x, dtype=float)[None, :]}
+            return {"fs": int(fs), "data": np.asarray(x, dtype=float)[None, :]}
         return _loader
 
     # ----------------------------- Helpers -----------------------------

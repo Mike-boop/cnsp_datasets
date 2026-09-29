@@ -6,6 +6,12 @@
       "description": "Accou et al. (2023) dataset",
       "url": "https://doi.org/10.48804/K3VSND"
     },
+      "bentum2023": {
+      "source": "radboud_rdr",
+      "identifiers": ["dutch_eeg_speech_register_corpus_dsc_807_v1"],
+      "description": "Bentum et al. (2023) dataset",
+      "url": "https://doi.org/10.34973/97pv-jw72"
+    },
     "brennan2018": {
       "source": "deepblue",
       "identifiers": ["bn999738r"],
@@ -59,12 +65,6 @@
       "identifiers": ["ag3kj", "hqvm3", "u5327", "dr4wy"],
       "description": "Gwilliams et al. (2023) dataset",
       "url": "https://osf.io/ag3kj/"
-    },
-    "jehn2024": {
-      "source": "zenodo",
-      "identifiers": ["10.5281/zenodo.10980117"],
-      "description": "Jehn et al. (2024) dataset",
-      "url": "https://zenodo.org/records/10980117"
     },
     "jehn2025_th": {
       "source": "zenodo",
