@@ -5,6 +5,7 @@ import threading
 import hashlib
 import requests
 
+from datetime import datetime
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -16,7 +17,8 @@ class DataDownloader:
     A class to download files from URLs with optional checksum verification and progress bar.
     """
 
-    def __init__(self, download_dir, max_workers=1, retries=10, skip_existing=True, verify_checksum=True, read_timeout=15):
+    def __init__(self, download_dir, max_workers=1, retries=10, skip_existing=True, verify_checksum=True, read_timeout=15,
+                 log_path=None):
         """
         Initialize the DataDownloader.
 
@@ -29,6 +31,8 @@ class DataDownloader:
         - verify_checksum (bool): Verify checksums after download and for existing files.
         - read_timeout (float): Seconds to wait for the server to send more data before the
           attempt is abandoned and retried. This bounds stalls, not total download time.
+        - log_path (str, optional): TSV file recording the outcome of every file in each batch.
+          Appended to across runs. Defaults to <download_dir>/download_log.tsv.
         """
         self.download_dir = download_dir
         self.max_workers = max_workers
@@ -36,6 +40,7 @@ class DataDownloader:
         self.skip_existing = skip_existing
         self.verify_checksum = verify_checksum
         self.timeout = (30, read_timeout)  # (connect, read)
+        self.log_path = Path(log_path) if log_path else Path(download_dir) / "download_log.tsv"
         self._local = threading.local()
         os.makedirs(download_dir, exist_ok=True)
 
@@ -194,13 +199,15 @@ class DataDownloader:
         counts = {"downloaded": 0, "skipped": 0, "failed": 0}
 
         # overall bar pinned at the top; per-file bars take the free positions below it
-        with tqdm(total=len(tasks), desc="Total", unit="file", position=0) as overall:
+        with self._open_log() as log, tqdm(total=len(tasks), desc="Total", unit="file", position=0) as overall:
 
-            def record(result):
+            # only ever called from this thread, so log writes need no locking
+            def record(task, result):
                 results.append(result)
                 key = result.split(":", 1)[0].split(" ", 1)[0].lower()  # "Skipped (exists): x" -> "skipped"
                 if key in counts:
                     counts[key] += 1
+                self._write_log_row(log, task, key, result)
                 overall.set_postfix(counts, refresh=False)
                 overall.update(1)
 
@@ -211,12 +218,30 @@ class DataDownloader:
                         for task in tasks
                     }
                     for future in as_completed(futures):
-                        record(future.result())
+                        record(futures[future], future.result())
             else:
                 for task in tasks:
-                    record(self._download_one(*task))
+                    record(task, self._download_one(*task))
 
         self._print_summary(results)
+        print(f"Download log: {self.log_path}")
+
+    def _open_log(self):
+        """Open the log for appending, writing the header if the file is new."""
+        is_new = not self.log_path.exists()
+        self.log_path.parent.mkdir(parents=True, exist_ok=True)
+        log = open(self.log_path, "a", encoding="utf-8")
+        if is_new:
+            log.write("timestamp\tstatus\tfile\turl\tmessage\n")
+        return log
+
+    def _write_log_row(self, log, task, status, message):
+        url, destination = task[0], task[1]
+        file = os.path.relpath(destination, self.download_dir)
+        fields = [datetime.now().isoformat(timespec="seconds"), status, file, url, message]
+        # keep one row per file even if an error message contains tabs or newlines
+        log.write("\t".join(" ".join(str(f).split()) for f in fields) + "\n")
+        log.flush()  # so the log survives a crash or Ctrl-C mid-batch
 
     def _print_summary(self, results):
         """

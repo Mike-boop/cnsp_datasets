@@ -238,3 +238,72 @@ class TestDownloadBatch:
 
         captured = capsys.readouterr()
         assert "Warning" in captured.out or "Warning" in captured.err
+
+
+# ── download log ──────────────────────────────────────────────────────────────
+
+def _read_log(path):
+    header, *rows = Path(path).read_text().splitlines()
+    return header.split("\t"), [dict(zip(header.split("\t"), r.split("\t"))) for r in rows]
+
+
+class TestDownloadLog:
+
+    def test_logs_success_skip_and_failure(self, mock_get, downloader, tmp_path):
+        content = b"cached"
+        (tmp_path / "sub").mkdir()
+        digest = _write_file(tmp_path / "sub" / "cached.bin", content)
+
+        def get(url, **kwargs):
+            if url.endswith("/bad"):
+                return _make_response(status=404)
+            return _make_response(b"x")
+        mock_get.side_effect = get
+
+        with patch("cnsp_datasets.download.data_downloader.time.sleep"):
+            downloader.download_batch([
+                {"url": "http://example.com/good", "name": "good.bin"},
+                {"url": "http://example.com/cached", "name": "sub/cached.bin",
+                 "checksum": f"md5:{digest}", "size": len(content)},
+                {"url": "http://example.com/bad", "name": "bad.bin"},
+            ], parallel=False)
+
+        header, rows = _read_log(tmp_path / "download_log.tsv")
+        assert header == ["timestamp", "status", "file", "url", "message"]
+        by_file = {r["file"]: r for r in rows}
+        assert by_file["good.bin"]["status"] == "downloaded"
+        assert by_file[os.path.join("sub", "cached.bin")]["status"] == "skipped"
+        assert by_file["bad.bin"]["status"] == "failed"
+        assert by_file["bad.bin"]["url"] == "http://example.com/bad"
+        assert "HTTP 404" in by_file["bad.bin"]["message"]
+
+    def test_log_appends_across_runs(self, mock_get, downloader, tmp_path):
+        mock_get.return_value = _make_response(b"x")
+        files = [{"url": "http://example.com/f", "name": "f.bin"}]
+
+        downloader.download_batch(files, parallel=False)
+        downloader.download_batch(files, parallel=False)
+
+        _, rows = _read_log(tmp_path / "download_log.tsv")
+        assert len(rows) == 2
+
+    def test_custom_log_path(self, mock_get, tmp_path):
+        log_path = tmp_path / "logs" / "my_log.tsv"
+        dl = DataDownloader(str(tmp_path / "data"), max_workers=1, retries=0, log_path=str(log_path))
+        mock_get.return_value = _make_response(b"x")
+
+        dl.download_batch([{"url": "http://example.com/f", "name": "f.bin"}], parallel=False)
+
+        _, rows = _read_log(log_path)
+        assert rows[0]["status"] == "downloaded"
+        assert not (tmp_path / "data" / "download_log.tsv").exists()
+
+    def test_parallel_logs_every_file(self, mock_get, tmp_path):
+        dl = DataDownloader(str(tmp_path), max_workers=4, retries=0)
+        mock_get.side_effect = lambda url, **kw: _make_response(b"x")
+
+        dl.download_batch([{"url": f"http://example.com/{i}", "name": f"{i}.bin"} for i in range(10)])
+
+        _, rows = _read_log(tmp_path / "download_log.tsv")
+        assert sorted(r["file"] for r in rows) == sorted(f"{i}.bin" for i in range(10))
+        assert all(r["url"] == f"http://example.com/{r['file'][:-4]}" for r in rows)
