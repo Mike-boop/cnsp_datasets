@@ -13,10 +13,10 @@
       "url": "https://doi.org/10.34973/97pv-jw72"
     },
     "brennan2018": {
-      "source": "deepblue",
-      "identifiers": ["bn999738r"],
-      "description": "Brennan et al. (2018) dataset",
-      "url": "https://deepblue.lib.umich.edu/data/concern/data_sets/bn999738r"
+      "source": "nemar",
+      "identifiers": ["nm000180@v1.1.3"],
+      "description": "Brennan et al. (2018) dataset (BIDS mirror on NEMAR; the Deep Blue original bn999738r blocks scripted downloads)",
+      "url": "https://nemar.org/dataset/nm000180"
     },
     "brodbeck2022": {
       "source": "dryad",

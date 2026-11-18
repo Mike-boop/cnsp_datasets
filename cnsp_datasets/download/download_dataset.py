@@ -38,6 +38,9 @@ class Dataset:
         if self.source == "openneuro":
             getter = download_helpers.doi_to_downloadables_openneuro
             return _gather(getter, self.identifiers)
+        if self.source == "nemar":
+            getter = download_helpers.id_to_downloadables_nemar
+            return _gather(getter, self.identifiers)
         if self.source == "radboud_rdr":
             getter = download_helpers.id_to_downloadables_radboud_rdr
             return _gather(getter, self.identifiers)

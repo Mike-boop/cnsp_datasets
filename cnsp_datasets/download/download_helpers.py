@@ -1,5 +1,6 @@
 import asyncio
 import os
+import json
 import re
 import gzip
 import shutil
@@ -9,6 +10,7 @@ import requests
 import httpx
 
 from bs4 import BeautifulSoup
+from pathlib import Path
 from urllib.parse import quote, urlparse
 
 
@@ -227,10 +229,17 @@ def id_to_downloadables_deepblue(id):
 
     response = requests.get(dataset_url)
 
-    if response.status_code != 200:
-        raise Exception(f"Failed to retrieve metadata for dataset ID {id}: {response.status_code}")
-    
-    metadata = response.json()
+    if response.status_code == 200:
+        metadata = response.json()
+    else:
+        # Deep Blue may refuse scripted metadata requests: fall back to a copy saved next to the adaptor
+        saved = [p for p in Path(__file__).parents[1].glob(f"datasets/*/{id}.json") if p.stat().st_size]
+        if not saved:
+            raise Exception(
+                f"Failed to retrieve metadata for dataset ID {id}: {response.status_code}, and no saved copy "
+                f"datasets/<name>/{id}.json (save it from {dataset_url} in a browser)."
+            )
+        metadata = json.loads(saved[0].read_text())
     file_data = []
 
     for file_set in metadata["file_sets"]:
@@ -246,6 +255,28 @@ def id_to_downloadables_deepblue(id):
             "checksum": checksum
         })
     return file_data
+
+def id_to_downloadables_nemar(identifier):
+    """
+    Files of a NEMAR dataset from its published manifest.
+
+    identifier: "<dataset>@<version>", e.g. "nm000180@v1.1.3" (pinned; "nm000180" alone means "latest").
+    Annexed files carry sha256 checksums; git-tracked files only git blob hashes, which are not file hashes, so
+    they get none.
+    """
+    dataset, _, version = identifier.partition("@")
+    response = requests.get(f"https://data.nemar.org/{dataset}/{version or 'latest'}/manifest.json", timeout=60)
+    if response.status_code != 200:
+        raise Exception(f"Failed to retrieve NEMAR manifest for {identifier}: {response.status_code}")
+    return [
+        {
+            "name": f["path"],
+            "url": f["url"],
+            "size": f["size"],
+            "checksum": f"sha256:{f['checksum']}" if f["checksum_algorithm"] == "sha256" else None,
+        }
+        for f in response.json()
+    ]
 
 ### Open Science Framework datasets must be queried hierarchically to find the downloadable files within each sub-directory.
 ### The tree is walked level by level: all known directories at each depth are fetched concurrently, and any
