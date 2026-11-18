@@ -199,7 +199,7 @@ class Fuglsang2018Adapter:
             index[os.path.basename(p)] = p
         return index
     
-    @lru_cache(maxsize=None)
+    @lru_cache(maxsize=2)  # each subject file is ~1 GB; trials are read subject by subject
     def _read_subject(self, mat_path: str):
         return read_mat(mat_path)
 
