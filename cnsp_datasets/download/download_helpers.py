@@ -92,7 +92,7 @@ def doi_to_downloadables_zenodo(doi):
 
 def _dryad_token():
     """
-    Bearer token for Dryad file downloads, which require one (metadata does not).
+    Bearer token for Dryad file downloads, which require one (metadata does not), or None if not configured.
 
     Set DRYAD_TOKEN, or DRYAD_CLIENT_ID and DRYAD_CLIENT_SECRET from a Dryad API account (https://datadryad.org/api),
     which are exchanged for a short-lived token here.
@@ -101,10 +101,7 @@ def _dryad_token():
         return os.environ["DRYAD_TOKEN"]
     client_id, secret = os.environ.get("DRYAD_CLIENT_ID"), os.environ.get("DRYAD_CLIENT_SECRET")
     if not (client_id and secret):
-        raise Exception(
-            "Dryad requires an API token to download files: set DRYAD_TOKEN, or DRYAD_CLIENT_ID and "
-            "DRYAD_CLIENT_SECRET from a Dryad API account (https://datadryad.org/api)."
-        )
+        return None
     response = requests.post("https://datadryad.org/oauth/token", timeout=60, data={
         "grant_type": "client_credentials", "client_id": client_id, "client_secret": secret,
     })
@@ -117,6 +114,10 @@ def doi_to_downloadables_dryad(doi):
     """
     Get a list of downloadable files from a Dryad DOI, with sizes, md5 checksums and the Authorization header the
     downloads need (see _dryad_token).
+
+    Without credentials the files are still listed, with a warning: downloads will fail (HTTP 401) unless the files
+    were placed in the download directory by hand and the download runs with skip_existing=True (they are then
+    checked against Dryad's size and md5 and skipped).
 
     Example doi string format: "10.5061/dryad.1234567"
     """
@@ -131,8 +132,9 @@ def doi_to_downloadables_dryad(doi):
     if files_metadata_response.status_code != 200:
         raise Exception(f"Failed to retrieve metadata for files request {files_metadata_url}: {files_metadata_response.status_code}")
 
-    headers = {"Authorization": f"Bearer {_dryad_token()}"}
-    return [
+    token = _dryad_token()
+    headers = {"Authorization": f"Bearer {token}"} if token else None
+    files = [
         {
             "name": entry["path"],
             "url": f"{dryad_server}{entry['_links']['self']['href']}/download",
@@ -142,6 +144,14 @@ def doi_to_downloadables_dryad(doi):
         }
         for entry in files_metadata_response.json()["_embedded"]["stash:files"]
     ]
+    if token is None:
+        print(
+            f"Warning: Dryad needs an API token to download files. Either set DRYAD_TOKEN (or DRYAD_CLIENT_ID and "
+            f"DRYAD_CLIENT_SECRET; https://datadryad.org/api), or download these files from "
+            f"https://datadryad.org/dataset/doi:{doi} into the download directory and run with skip_existing=True: "
+            + ", ".join(f["name"] for f in files)
+        )
+    return files
 
 def doi_to_downloadables_dataverse(doi, dataverse_server="https://rdr.kuleuven.be"):
     """

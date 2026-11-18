@@ -297,12 +297,14 @@ class TestDryadAuth:
                      "checksum": "md5:abc", "headers": {"Authorization": "Bearer tok"}}
 
     @patch("cnsp_datasets.download.download_helpers.requests.get")
-    def test_requires_credentials(self, mock_get, monkeypatch):
+    def test_without_credentials_lists_files_and_explains(self, mock_get, monkeypatch, capsys):
         for var in ("DRYAD_TOKEN", "DRYAD_CLIENT_ID", "DRYAD_CLIENT_SECRET"):
             monkeypatch.delenv(var, raising=False)
         mock_get.side_effect = self._responses()
-        with pytest.raises(Exception, match="DRYAD_TOKEN"):
-            download_helpers.doi_to_downloadables_dryad("10.5061/dryad.x")
+        [f] = download_helpers.doi_to_downloadables_dryad("10.5061/dryad.x")
+        assert f["headers"] is None and f["checksum"] == "md5:abc"
+        out = capsys.readouterr().out
+        assert "DRYAD_TOKEN" in out and "skip_existing=True" in out and "a.zip" in out
 
     @patch("cnsp_datasets.download.download_helpers.requests.post")
     def test_client_credentials_exchanged_for_token(self, mock_post, monkeypatch):
