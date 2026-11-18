@@ -90,36 +90,58 @@ def doi_to_downloadables_zenodo(doi):
 
     return file_data
 
+def _dryad_token():
+    """
+    Bearer token for Dryad file downloads, which require one (metadata does not).
+
+    Set DRYAD_TOKEN, or DRYAD_CLIENT_ID and DRYAD_CLIENT_SECRET from a Dryad API account (https://datadryad.org/api),
+    which are exchanged for a short-lived token here.
+    """
+    if os.environ.get("DRYAD_TOKEN"):
+        return os.environ["DRYAD_TOKEN"]
+    client_id, secret = os.environ.get("DRYAD_CLIENT_ID"), os.environ.get("DRYAD_CLIENT_SECRET")
+    if not (client_id and secret):
+        raise Exception(
+            "Dryad requires an API token to download files: set DRYAD_TOKEN, or DRYAD_CLIENT_ID and "
+            "DRYAD_CLIENT_SECRET from a Dryad API account (https://datadryad.org/api)."
+        )
+    response = requests.post("https://datadryad.org/oauth/token", timeout=60, data={
+        "grant_type": "client_credentials", "client_id": client_id, "client_secret": secret,
+    })
+    if response.status_code != 200:
+        raise Exception(f"Dryad token request failed: {response.status_code} {response.text[:200]}")
+    return response.json()["access_token"]
+
+
 def doi_to_downloadables_dryad(doi):
     """
-    Get a list of downloadable files from a Dryad DOI.
+    Get a list of downloadable files from a Dryad DOI, with sizes, md5 checksums and the Authorization header the
+    downloads need (see _dryad_token).
 
     Example doi string format: "10.5061/dryad.1234567"
     """
-
-    encoded_doi = quote(f"doi:{doi}", safe='')
     dryad_server = "https://datadryad.org"
-
-    dryad_api_url = f"{dryad_server}/api/v2/datasets/{encoded_doi}"
-    response = requests.get(dryad_api_url)
-    
+    response = requests.get(f"{dryad_server}/api/v2/datasets/{quote(f'doi:{doi}', safe='')}", timeout=60)
     if response.status_code != 200:
         raise Exception(f"Failed to retrieve metadata for DOI {doi}: {response.status_code}")
-    
-    metadata = response.json()
-    version = metadata["_links"]["stash:version"]["href"]
+    version = response.json()["_links"]["stash:version"]["href"]
 
-    files_metadata_url = "/".join([dryad_server, version, "files"])
-    files_metadata_response = requests.get(files_metadata_url)
-
+    files_metadata_url = f"{dryad_server}{version}/files"
+    files_metadata_response = requests.get(files_metadata_url, timeout=60)
     if files_metadata_response.status_code != 200:
         raise Exception(f"Failed to retrieve metadata for files request {files_metadata_url}: {files_metadata_response.status_code}")
-    
-    files_metadata = files_metadata_response.json()
 
-    file_data = [{"name": entry["path"], "url": '/'.join([dryad_server, entry["_links"]["self"]["href"], "download"]), "checksum":None} for entry in files_metadata["_embedded"]["stash:files"]]
-
-    return file_data
+    headers = {"Authorization": f"Bearer {_dryad_token()}"}
+    return [
+        {
+            "name": entry["path"],
+            "url": f"{dryad_server}{entry['_links']['self']['href']}/download",
+            "size": entry.get("size"),
+            "checksum": f"{entry['digestType']}:{entry['digest']}" if entry.get("digest") else None,
+            "headers": headers,
+        }
+        for entry in files_metadata_response.json()["_embedded"]["stash:files"]
+    ]
 
 def doi_to_downloadables_dataverse(doi, dataverse_server="https://rdr.kuleuven.be"):
     """

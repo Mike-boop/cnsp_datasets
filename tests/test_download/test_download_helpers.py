@@ -275,3 +275,40 @@ class TestDryad:
             download_helpers.doi_to_downloadables_dryad("10.5061/dryad.abc")
 
         assert "503" in str(exc_info.value)
+
+
+class TestDryadAuth:
+    def _responses(self):
+        dataset = MagicMock(status_code=200)
+        dataset.json.return_value = {"_links": {"stash:version": {"href": "/api/v2/versions/1"}}}
+        files = MagicMock(status_code=200)
+        files.json.return_value = {"_embedded": {"stash:files": [{
+            "path": "a.zip", "size": 10, "digest": "abc", "digestType": "md5",
+            "_links": {"self": {"href": "/api/v2/files/7"}},
+        }]}}
+        return [dataset, files]
+
+    @patch("cnsp_datasets.download.download_helpers.requests.get")
+    def test_files_carry_size_checksum_and_token(self, mock_get, monkeypatch):
+        monkeypatch.setenv("DRYAD_TOKEN", "tok")
+        mock_get.side_effect = self._responses()
+        [f] = download_helpers.doi_to_downloadables_dryad("10.5061/dryad.x")
+        assert f == {"name": "a.zip", "url": "https://datadryad.org/api/v2/files/7/download", "size": 10,
+                     "checksum": "md5:abc", "headers": {"Authorization": "Bearer tok"}}
+
+    @patch("cnsp_datasets.download.download_helpers.requests.get")
+    def test_requires_credentials(self, mock_get, monkeypatch):
+        for var in ("DRYAD_TOKEN", "DRYAD_CLIENT_ID", "DRYAD_CLIENT_SECRET"):
+            monkeypatch.delenv(var, raising=False)
+        mock_get.side_effect = self._responses()
+        with pytest.raises(Exception, match="DRYAD_TOKEN"):
+            download_helpers.doi_to_downloadables_dryad("10.5061/dryad.x")
+
+    @patch("cnsp_datasets.download.download_helpers.requests.post")
+    def test_client_credentials_exchanged_for_token(self, mock_post, monkeypatch):
+        monkeypatch.delenv("DRYAD_TOKEN", raising=False)
+        monkeypatch.setenv("DRYAD_CLIENT_ID", "id")
+        monkeypatch.setenv("DRYAD_CLIENT_SECRET", "secret")
+        mock_post.return_value = MagicMock(status_code=200, json=MagicMock(return_value={"access_token": "t2"}))
+        assert download_helpers._dryad_token() == "t2"
+        assert mock_post.call_args.kwargs["data"]["grant_type"] == "client_credentials"

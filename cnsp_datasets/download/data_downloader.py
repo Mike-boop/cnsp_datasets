@@ -100,7 +100,7 @@ class DataDownloader:
         length = response.headers.get("content-length")
         return int(length) if length else None
 
-    def _download_one(self, url, destination, expected_checksum=None, expected_size=None):
+    def _download_one(self, url, destination, expected_checksum=None, expected_size=None, headers=None):
         """
         Download a single file with retries, optional checksum validation, and progress bar.
 
@@ -110,6 +110,8 @@ class DataDownloader:
         - expected_checksum (str, optional): Expected checksum to verify integrity, e.g. "md5:abcd1234".
         - expected_size (int, optional): Expected size in bytes. If omitted, the response's
           content-length is used to check existing files.
+        - headers (dict, optional): Extra request headers, e.g. a source's Authorization (requests drops it on
+          redirects to another host).
 
         Returns:
         - str: Status message indicating success, skip, or failure.
@@ -125,7 +127,7 @@ class DataDownloader:
         attempt = 0
         while attempt <= self.retries:
             try:
-                with self._session().get(url, stream=True, timeout=self.timeout) as response:
+                with self._session().get(url, stream=True, timeout=self.timeout, headers=headers) as response:
                     if response.status_code != 200:
                         raise Exception(f"HTTP {response.status_code}")
                     total_size = self._response_size(response)
@@ -174,6 +176,7 @@ class DataDownloader:
             - 'name': Filename or relative path to save the file as.
             - 'checksum' (optional): Expected checksum, e.g. "md5:abcd1234" or "sha256:...".
             - 'size' (optional): Expected size in bytes; lets existing files be checked offline.
+            - 'headers' (optional): Extra request headers for this file (e.g. Authorization).
         - parallel (bool): Whether to download files in parallel.
 
         Existing files (with skip_existing) are checked inside the workers, so a large
@@ -193,7 +196,7 @@ class DataDownloader:
             if not os.path.exists(destination.parent):
                 os.makedirs(destination.parent, exist_ok=True)
 
-            tasks.append((url, destination, expected_checksum, expected_size))
+            tasks.append((url, destination, expected_checksum, expected_size, each_file_metadata.get("headers")))
 
         results = []
         counts = {"downloaded": 0, "skipped": 0, "failed": 0}
