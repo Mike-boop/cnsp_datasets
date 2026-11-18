@@ -18,8 +18,8 @@ from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 FS = 500
 STIMTRACK = ("Aux5", "AUD")
-SEARCH_S = 3.0   # stimtrack search window around the software onset
 MIN_QUALITY = 10  # stimtrack peak height in robust SDs of the cross-correlation; below it, use the software onset
+MAX_DISAGREEMENT_S = 0.1  # software onsets are dropped for a subject if any differs this much from the stimtrack
 
 
 def _band(x: np.ndarray) -> np.ndarray:
@@ -27,13 +27,11 @@ def _band(x: np.ndarray) -> np.ndarray:
     return sosfiltfilt(butter(4, [1.0, 200.0], "bandpass", fs=FS, output="sos"), x)
 
 
-def _xcorr_peak(track: np.ndarray, feat: np.ndarray, centre: int | None) -> tuple[float, float]:
-    """Sub-sample position of feat in track (searched around centre, or everywhere) and the peak quality."""
-    lo = 0 if centre is None else max(0, centre - int(SEARCH_S * FS))
-    seg = track if centre is None else track[lo:lo + len(feat) + int(2 * SEARCH_S * FS)]
-    n = next_fast_len(len(seg) + len(feat))
-    g = irfft(rfft(seg, n) * np.conj(rfft(feat, n)), n)[:len(seg) - len(feat) + 1]
-    energy = np.concatenate([[0.0], np.cumsum(seg ** 2)])  # sliding energy of seg under feat, in linear time
+def _xcorr_peak(track: np.ndarray, feat: np.ndarray) -> tuple[float, float]:
+    """Sub-sample position of feat in the whole track (normalised cross-correlation) and the peak quality."""
+    n = next_fast_len(len(track) + len(feat))
+    g = irfft(rfft(track, n) * np.conj(rfft(feat, n)), n)[:len(track) - len(feat) + 1]
+    energy = np.concatenate([[0.0], np.cumsum(track ** 2)])  # sliding energy under feat, in linear time
     g /= np.sqrt(np.maximum(energy[len(feat):] - energy[:-len(feat)], 0)) + 1e-12
     i = int(np.argmax(g))
     frac = 0.0
@@ -42,7 +40,7 @@ def _xcorr_peak(track: np.ndarray, feat: np.ndarray, centre: int | None) -> tupl
         frac = 0.5 * (a - c) / (a - 2 * b + c) if a - 2 * b + c < 0 else 0.0
     rest = np.delete(g, slice(max(0, i - 50), i + 50))
     quality = (g[i] - np.median(rest)) / (1.4826 * np.median(np.abs(rest - np.median(rest))) + 1e-12)
-    return lo + i + frac, float(quality)
+    return i + frac, float(quality)
 
 
 class Brennan2018Adaptor:
@@ -56,11 +54,16 @@ class Brennan2018Adaptor:
 
     One trial per subject x audio segment (1..12). The re-hosted recordings carry no segment triggers, so onsets come
     from, in order of preference:
-      1) "stimtrack": cross-correlating the stimtrack channel (Aux5/AUD, a copy of the audio as presented, closest to
-         its full-wave rectified waveform) with the segment audio, when the peak is clear (quality > MIN_QUALITY);
+      1) "stimtrack": cross-correlating the stimtrack channel (Aux5/AUD, an envelope of the audio as presented,
+         matching its full-wave rectified waveform at r = 0.93) with the segment audio over the whole recording,
+         when the peak is clear (quality > MIN_QUALITY);
       2) "software": the first word onset in events.tsv minus that word's onset in the segment. These derive from the
-         E-Prime (software) triggers plus the authors' delay correction; against the stimtrack they scatter by a few
-         ms per segment.
+         E-Prime (software) triggers plus the authors' delay correction; against the stimtrack they are ~5 ms late
+         with ~3 ms jitter (MAD-SD) per segment.
+    The search is never restricted to the software onset: in sub-002/026/027/030/032/034/035/036 the recording starts
+    after segment 1 and events.tsv labels segment k+1 as segment k, so their software onsets are a segment off. The
+    subjects relying on software onsets (sub-005/009/022/023/038) have correctly labelled segments (their onset
+    spacing matches the stimtrack-derived spacing to 20 ms).
     Segments with neither are skipped. The method is stored in raw.info["description"].
 
     Channels: 60 scalp EEG ('eeg', easycap-M10 positions), VEOG ('eog'), the stimtrack ('misc').
@@ -107,21 +110,24 @@ class Brennan2018Adaptor:
         track = raw.get_data(picks=[c for c in raw.ch_names if c in STIMTRACK])[0]
         usable = track.std() > 0  # flat in sub-005 and sub-038
         if usable:
-            pad = max(len(t) for t in self.templates.values()) + int(2 * SEARCH_S * FS)
+            pad = max(len(t) for t in self.templates.values())
             track = np.pad(_band(track), (0, pad))  # recordings may end during the last segment
         software = self._software_onsets(vhdr.replace("_eeg.vhdr", "_events.tsv"))
 
         onsets = {}
         for seg in range(1, 13):
-            sw = software.get(seg)
             if usable:
-                pos, quality = _xcorr_peak(track, self.templates[seg], None if sw is None else round(sw * FS))
+                pos, quality = _xcorr_peak(track, self.templates[seg])
                 if quality > MIN_QUALITY:
                     onsets[seg] = (pos / FS, f"stimtrack (xcorr quality {quality:.0f})")
-                    continue
-            if sw is not None:
-                onsets[seg] = (sw, "software (events.tsv)")
-        return onsets
+
+        # software onsets are only trusted if they agree with the stimtrack wherever both exist (they are a
+        # whole segment off in subjects whose recording starts after segment 1)
+        if any(abs(software[s] - onsets[s][0]) > MAX_DISAGREEMENT_S for s in software if s in onsets):
+            software = {}
+        for seg, sw in software.items():
+            onsets.setdefault(seg, (sw, "software (events.tsv)"))
+        return dict(sorted(onsets.items()))
 
     def _software_onsets(self, events_tsv: str) -> Dict[int, float]:
         """Segment onsets implied by the first word of each segment in events.tsv."""
