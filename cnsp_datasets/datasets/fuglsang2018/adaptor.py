@@ -7,6 +7,7 @@ from functools import lru_cache
 
 import numpy as np
 from mne import create_info
+from mne.channels import make_standard_montage
 from mne.io import RawArray, BaseRaw
 from scipy.io import wavfile
 from pymatreader import read_mat
@@ -16,37 +17,38 @@ from cnsp_datasets.standardise.trial_record import TrialRecord, StimulusRecord
 
 REVERB_MAP = {1: "noRev", 2: "lowRev", 3: "highRev"}
 
+# BioSemi EXG channels: EOG pairs as used in the authors' preproc_data.m; the others are undocumented
+# (EXG1/EXG2 are probably the mastoids), so they are kept as misc
+EOG = ("EXG3", "EXG4", "EXG5", "EXG7")
+MISC = ("EXG1", "EXG2", "EXG6", "EXG8")
+
 
 class Fuglsang2018Adapter:
     """
     Adapter for the Fuglsang 2018 dataset (EEG + two-talker audio with reverb).
 
-    Expected layout (as in your script):
+    Expected layout:
       <root>/
-        ├─ EEG/S*.mat                         (per-subject EEG + events)
-        ├─ AUDIO/*.wav                        (stimuli wavs)
-        └─ info/expinfo_S<sub>.mat            (per-subject experiment info)
+        ├─ S*.mat     (per-subject EEG + events, BioSemi 512 Hz, microvolts)
+        └─ *.wav      (stimuli; also accepted under AUDIO/)
+      expinfo_S<sub>.mat (per-subject experiment info) ship with this adaptor (expinfos/).
 
-    Behavior:
-      - EEG fs assumed 512 Hz.
-      - Use event/eeg/sample alternating (onset, offset, onset, offset, ...) to cut trials.
-      - Extend each trial by +5 s after offset.
-      - Keep only first 64 EEG channels (drop EOG/Status).
-      - Determine attended sex (M/F) and ear (L/R), select attended/unattended wavs.
-      - Condition:
-            competing-f{L|R}-{noRev|lowRev|highRev}
-        DSS control (male wav == 'dss.wav'):
-            natural-{L|R}, single attended stimulus ('dss')
+    Behaviour:
+      - Trials start at their onset trigger (code == expinfo.trigger) and last exactly as long as the stimulus
+        (all 50 s), so missing or stray end triggers do not matter. Onsets are matched to expinfo by code, in order.
+      - The end triggers (code 191) arrive 3-4 samples (5.9-7.8 ms) before the stimulus duration. Since every trial
+        is 50 s, a constant end-trigger latency and -120 ppm clock drift cannot be told apart; no correction.
+      - EEG in volts: 64 scalp channels, EOG (EXG3/4/5/7) as 'eog', EXG1/2/6/8 as 'misc'; Status is dropped.
+      - Condition: competing-f{L|R}-{noRev|lowRev|highRev}; single-talker DSS trials (male wav == 'dss.wav'):
+        natural-{L|R}, single attended stimulus ('dss').
     """
 
     def __init__(self, download_dir: str):
         self.root = download_dir
         self._eeg_files = sorted(glob.glob(os.path.join(download_dir, "S*.mat")))
-        self._eeg_files = [f for f in self._eeg_files if not "_data_preproc" in f]
+        self._eeg_files = [f for f in self._eeg_files if "_data_preproc" not in f]
         if not self._eeg_files:
-            raise FileNotFoundError(f"No EEG files found under {os.path.join(download_dir, 'EEG')}")
-
-        # Index AUDIO wavs for quick lookup
+            raise FileNotFoundError(f"No EEG files found under {download_dir}")
         self._audio_index: Dict[str, str] = self._build_audio_index()
 
     # --------------------------- Public API ---------------------------
@@ -54,133 +56,68 @@ class Fuglsang2018Adapter:
     def parse(self) -> Iterable[TrialRecord]:
         for subj_mat in self._eeg_files:
             sub_id = self._subject_id(subj_mat)
-            expinfo_path = os.path.join(os.path.dirname(__file__), "expinfos", f"expinfo_S{sub_id}.mat")
-            exp = read_mat(expinfo_path)  # contains keys like attend_mf, attend_lr, wavfile_male/female, acoustic_condition
+            exp = read_mat(os.path.join(os.path.dirname(__file__), "expinfos", f"expinfo_S{sub_id}.mat"))["data"]
+            onsets = self._onsets(subj_mat, np.asarray(exp["trigger"], dtype=int))
 
-            dm = self._read_subject(subj_mat)
-            data = dm["data"]
+            for i, onset in enumerate(onsets):
+                if onset is None:
+                    continue
+                attended_sex = "M" if int(exp["attend_mf"][i]) == 1 else "F"
+                attended_ear = "L" if int(exp["attend_lr"][i]) == 1 else "R"
+                male_wav, female_wav = str(exp["wavfile_male"][i]), str(exp["wavfile_female"][i])
+                is_dss = male_wav == "dss.wav"
+                att_file, un_file = (male_wav, female_wav) if attended_sex == "M" else (female_wav, male_wav)
 
-            # EEG is time x channels; keep first 64 (drop EOG/status)
-            # We'll slice per trial lazily.
-            # Events: alternating onset/offset sample indices
-            onsets = np.asarray(data["event"]["eeg"]["sample"][::2], dtype=int)
-            offsets = np.asarray(data["event"]["eeg"]["sample"][1::2], dtype=int)
-
-            fs = 512
-            tail = 5 * fs  # +5s tail
-
-            n_trials = min(len(onsets), len(offsets))
-
-            for i in range(n_trials):
-                # who is attended this trial?
-                attended_sex = "M" if int(exp["data"]["attend_mf"][i]) == 1 else "F"
-                attended_ear = "L" if int(exp["data"]["attend_lr"][i]) == 1 else "R"
-
-                # file names from expinfo
-                male_wav = str(exp["data"]["wavfile_male"][i])
-                female_wav = str(exp["data"]["wavfile_female"][i])
-
-                # DSS control?
-                is_dss = (male_wav == "dss.wav")
-
-                if attended_sex == "M":
-                    att_file = male_wav
-                    un_file  = female_wav
-                else:
-                    att_file = female_wav
-                    un_file  = male_wav
-
-                # condition label
                 if is_dss:
                     condition = f"natural-{attended_ear}"
                 else:
-                    rev_code = int(exp["data"]["acoustic_condition"][i])
-                    reverb = REVERB_MAP.get(rev_code, str(rev_code))
-                    condition = f"competing-f{attended_ear}-{reverb}"
+                    rev_code = int(exp["acoustic_condition"][i])
+                    condition = f"competing-f{attended_ear}-{REVERB_MAP.get(rev_code, str(rev_code))}"
 
-                # Stimulus names (strip .wav)
-                att_name = os.path.splitext(att_file)[0]
-                stimuli: List[StimulusRecord] = [
-                    StimulusRecord(
-                        modality="audio",
-                        name=att_name,
-                        data_fn=self._make_audio_loader(att_file),
-                        is_attended=True,
-                        feature_name="audio",
-                    )
-                ]
+                stimuli: List[StimulusRecord] = [StimulusRecord(
+                    modality="audio", name=os.path.splitext(att_file)[0], data_fn=self._make_audio_loader(att_file),
+                    is_attended=True, feature_name="audio",
+                )]
                 if not is_dss:
-                    un_name = os.path.splitext(un_file)[0]
-                    stimuli.append(
-                        StimulusRecord(
-                            modality="audio",
-                            name=un_name,
-                            data_fn=self._make_audio_loader(un_file),
-                            is_attended=False,
-                            feature_name="audio",
-                        )
-                    )
-
-                # lazy EEG loader for this trial
-                t0 = int(onsets[i])
-                t1 = int(offsets[i]) + tail
-                neural_fn = self._make_eeg_loader(subj_mat, t0, t1, fs)
+                    stimuli.append(StimulusRecord(
+                        modality="audio", name=os.path.splitext(un_file)[0], data_fn=self._make_audio_loader(un_file),
+                        is_attended=False, feature_name="audio",
+                    ))
 
                 yield TrialRecord(
                     subject=sub_id,
                     session=1,
-                    trial=i,  # keep 0-based to mirror your original; change to i+1 if preferred
+                    trial=i + 1,
                     condition=condition,
                     ns_type="eeg",
                     stimulus=stimuli,
-                    neural_data_fn=neural_fn,
+                    neural_data_fn=self._make_eeg_loader(subj_mat, onset, self._audio_duration(att_file)),
                     structural_data_fn=None,
                     behavioural_data_fn=None,
                 )
 
     # ------------------------ Lazy loaders ------------------------
 
-    def _make_eeg_loader(self, subj_mat: str, s0: int, s1: int, fs: int) -> Callable[[], BaseRaw]:
-        """
-        Load this subject's EEG mat, slice [s0:s1] (time x ch), keep first 64 ch,
-        transpose to (ch, time), return RawArray with channel names if available.
-        """
+    def _make_eeg_loader(self, subj_mat: str, onset: int, duration_s: float) -> Callable[[], BaseRaw]:
+        """EEG from the onset sample for the stimulus duration, in volts, with EOG/misc channel types."""
         def _loader() -> BaseRaw:
-            dm = self._read_subject(subj_mat)
-            d = dm["data"]
-
-            # time x ch, keep 64 EEG channels
-            full = np.asarray(d["eeg"], dtype=float)  # (T, C)
-            eeg = full[s0 : min(s1, full.shape[0]), :64]  # (T_slice, 64)
-
-            # channel names (first 64); fallback to generic if mismatch
-            ch = d["dim"]["chan"]["eeg"]
-            ch_names = [str(x) for x in (list(ch) if isinstance(ch, (list, tuple, np.ndarray)) else [ch])]
-            if len(ch_names) < 64:
-                ch_names = [f"EEG{i+1:02d}" for i in range(64)]
-            else:
-                ch_names = ch_names[:64]
-
-            info = create_info(ch_names=ch_names, sfreq=float(fs), ch_types="eeg")
-            raw = RawArray(eeg.T, info, verbose="ERROR")  # transpose to (ch, time)
-            return raw
+            d = self._read_subject(subj_mat)["data"]
+            fs = float(d["fsample"]["eeg"])
+            ch_names = [str(c) for c in d["dim"]["chan"]["eeg"]]
+            keep = [i for i, c in enumerate(ch_names) if c != "Status"]
+            stop = onset + int(round(duration_s * fs))
+            eeg = 1e-6 * np.asarray(d["eeg"][onset:stop, keep], dtype=float).T  # microvolts -> volts
+            names = [ch_names[i] for i in keep]
+            types = ["eog" if c in EOG else "misc" if c in MISC else "eeg" for c in names]
+            info = create_info(ch_names=names, sfreq=fs, ch_types=types)
+            info.set_montage(make_standard_montage("biosemi64"), on_missing="ignore")
+            return RawArray(eeg, info, verbose="ERROR")
         return _loader
 
     def _make_audio_loader(self, wav_filename: str) -> Callable[[], Dict[str, Any]]:
-        """
-        Return loader for AUDIO/<wav_filename>.
-        """
-        wav_path = self._audio_index.get(wav_filename)
-        if wav_path is None:
-            # try direct path under AUDIO in case index missed it
-            candidate = os.path.join(self.root, wav_filename)
-            if os.path.exists(candidate):
-                wav_path = candidate
-                self._audio_index[wav_filename] = candidate
+        wav_path = self._wav_path(wav_filename)
 
         def _loader() -> Dict[str, Any]:
-            if wav_path is None or not os.path.exists(wav_path):
-                raise FileNotFoundError(f"Audio not found: {wav_filename}")
             fs, x = wavfile.read(wav_path)
             if x.ndim == 2:
                 x = x[:, 0]
@@ -189,18 +126,43 @@ class Fuglsang2018Adapter:
 
     # ------------------------ Helpers ------------------------
 
+    def _onsets(self, subj_mat: str, triggers: np.ndarray) -> List[int | None]:
+        """
+        Onset sample of each expinfo trial, matching trigger codes in order (None if a trial's onset is missing).
+
+        Matching in order skips stray events: in S8, trial 46's end trigger is missing and an event coded 192
+        arrives 19.6 s after its onset, which broke the former alternating onset/offset pairing.
+        """
+        ev = self._read_subject(subj_mat)["data"]["event"]["eeg"]
+        codes = [int(v) for v in ev["value"]]
+        samples = np.asarray(ev["sample"], dtype=int)
+        onsets, k = [], 0
+        for code in triggers:
+            while k < len(codes) and codes[k] != code:
+                k += 1
+            onsets.append(int(samples[k]) if k < len(codes) else None)
+            k += 1
+        if None in onsets:
+            raise ValueError(f"{subj_mat}: could not match onset codes {codes} to expinfo {triggers.tolist()}")
+        return onsets
+
+    def _wav_path(self, wav_filename: str) -> str | None:
+        return self._audio_index.get(wav_filename)
+
+    def _audio_duration(self, wav_filename: str) -> float:
+        fs, x = wavfile.read(self._wav_path(wav_filename), mmap=True)
+        return len(x) / fs
+
     def _subject_id(self, subj_mat: str) -> int:
-        base = os.path.splitext(os.path.basename(subj_mat))[0]  # 'S12'
-        return int(base.replace("S", ""))
+        return int(os.path.splitext(os.path.basename(subj_mat))[0].replace("S", ""))
 
     def _build_audio_index(self) -> Dict[str, str]:
-        index: Dict[str, str] = {}
-        for p in glob.glob(os.path.join(self.root, "AUDIO", "*.wav")):
-            index[os.path.basename(p)] = p
-        return index
-    
+        paths = glob.glob(os.path.join(self.root, "*.wav")) + glob.glob(os.path.join(self.root, "AUDIO", "*.wav"))
+        return {os.path.basename(p): p for p in paths}
+
     @lru_cache(maxsize=2)  # each subject file is ~1 GB; trials are read subject by subject
     def _read_subject(self, mat_path: str):
         return read_mat(mat_path)
+
 
 ADAPTOR = Fuglsang2018Adapter
