@@ -2,7 +2,7 @@
 Validate a dataset straight from its adaptor or from a standardised (flat) directory.
 
     python -m cnsp_datasets.validate weissbart2019 --download-dir DIR --picks eeg --reference average \
-        --json cnsp_datasets/datasets/weissbart2019/validation.json --fig-dir /data_storage/.../tmp/weissbart2019/validation
+        --json cnsp_datasets/datasets/weissbart2019/validation.json --fig-dir <tmp>/weissbart2019/validation
 """
 import argparse
 import json

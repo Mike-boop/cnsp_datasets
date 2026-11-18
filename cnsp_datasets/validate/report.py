@@ -20,10 +20,28 @@ def _style(ax, title, xlabel, ylabel):
     ax.spines[["top", "right"]].set_visible(False)
 
 
+def _trf_panel(ax, res, title, window=None, noise=None):
+    """Mean over subjects of the TRF GFP relative to that subject's median null GFP at each lag (noise level = 1)."""
+    if res:
+        lags = np.array(res[0]["lags_s"]) * 1e3
+        if window is not None:
+            ax.axvspan(window[0] * 1e3, window[1] * 1e3, color=TRUE, alpha=0.1, linewidth=0, label="latency window")
+        if noise is not None:
+            ax.axvspan(noise[0] * 1e3, noise[1] * 1e3, color=NULL, alpha=0.15, linewidth=0, label="noise window")
+        rel = lambda key: np.mean([np.array(s[key]) / np.array(s["null_gfp_50"]) for s in res], 0)  # noqa: E731
+        ax.fill_between(lags, 1, rel("null_gfp_95"), color=NULL, alpha=0.3, linewidth=0,
+                        label="null median to 95th percentile")
+        ax.axhline(1, color=NULL, linewidth=1)
+        ax.plot(lags, rel("gfp"), color=TRUE, linewidth=2, label="TRF")
+        ax.legend(frameon=False, fontsize=8)
+    _style(ax, title, "lag (ms)", "GFP / median null GFP")
+
+
 def plot(result, path):
-    """Four panels: per-subject scores vs nulls, lag sweep, MLR and brainstem TRF GFP."""
+    """Four panels: 0.5-8 Hz encoding scores vs nulls, and the 0.5-8 Hz, MLR and brainstem TRF GFPs."""
     subjects = result["subjects"]
     fig, axs = plt.subplots(2, 2, figsize=(11, 7), layout="constrained")
+    band = f"{LOW['band'][0]}-{LOW['band'][1]} Hz"
 
     low = [s for s in subjects if "low" in s]
     ax = axs[0, 0]
@@ -35,37 +53,17 @@ def plot(result, path):
     ax.plot([], [], color=NULL, linewidth=4, label="circular-shift null (5-95%)")
     ax.plot([], [], "o", color=TRUE, label="cross-validated r")
     ax.legend(frameon=False, fontsize=8)
-    _style(ax, f"Backward model {LOW['band'][0]}-{LOW['band'][1]} Hz", "subject", "r")
+    _style(ax, f"Forward model {band}: encoding score", "subject", "r (mean over channels)")
 
-    ax = axs[0, 1]
-    for s in low:
-        ax.plot(s["low"]["sweep_s"], s["low"]["sweep_r"], color=NULL, linewidth=0.75)
-    if low:
-        ax.plot(low[0]["low"]["sweep_s"], np.mean([s["low"]["sweep_r"] for s in low], 0), color=TRUE, linewidth=2,
-                label="mean over subjects")
-        ax.axvline(0, color=INK, linewidth=0.75, linestyle="--")
-        ax.legend(frameon=False, fontsize=8)
-    _style(ax, "Lag sweep (+d: stimulus delayed by d)", "stimulus shift (s)", "r")
-
+    _trf_panel(axs[0, 1], [s["low"] for s in low], f"Forward TRF {band} (envelope)")
     for ax, (tier, cfg) in zip(axs[1], TIERS.items()):
         res = [s for s in subjects if tier in s]
-        if res:
-            lags = np.array(res[0][tier]["lags_s"]) * 1e3
-            win = cfg["window"][res[0]["modality"]]
-            ax.axvspan(win[0] * 1e3, win[1] * 1e3, color=TRUE, alpha=0.1, linewidth=0, label="latency window")
-            ax.axvspan(HF["noise"][0] * 1e3, HF["noise"][1] * 1e3, color=NULL, alpha=0.15, linewidth=0,
-                       label="noise window")
-            norm = [np.median(s[tier]["null_gfp_95"]) for s in res]
-            ax.plot(lags, np.mean([np.array(s[tier]["null_gfp_95"]) / n for s, n in zip(res, norm)], 0),
-                    color=NULL, linewidth=1.5, label="null 95th percentile")
-            ax.plot(lags, np.mean([np.array(s[tier]["gfp"]) / n for s, n in zip(res, norm)], 0),
-                    color=TRUE, linewidth=2, label="TRF")
-            ax.legend(frameon=False, fontsize=8)
-        _style(ax, f"Forward TRF {cfg['band'][0]}-{cfg['band'][1]} Hz ({tier})", "lag (ms)",
-               "GFP (relative to median null)")
+        window = cfg["window"][res[0]["modality"]] if res else None
+        _trf_panel(ax, [s[tier] for s in res], f"Forward TRF {cfg['band'][0]}-{cfg['band'][1]} Hz ({tier})",
+                   window, HF["noise"])
 
-    tier = result["summary"]["validation_tier"]
-    fig.suptitle(f"Validation tier: {tier}", x=0.01, ha="left", fontsize=12)
+    title = result["config"].get("dataset", "")
+    fig.suptitle(f"{title}  validation tier: {result['summary']['validation_tier']}", x=0.01, ha="left", fontsize=12)
     fig.savefig(path, dpi=120)
     plt.close(fig)
 

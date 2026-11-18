@@ -2,15 +2,14 @@
 Objective alignment validation (PLAN.md section 5).
 
 - sanity: neural vs stimulus duration, amplitude per channel type (unit errors), flat/NaN channels.
-- low: 0.5-8 Hz envelope backward model, cross-validated per subject, against circular-shift and mismatched-stimulus
-  nulls; lag sweep (score vs global stimulus shift) and per-trial offsets.
+- low: 0.5-8 Hz forward model (envelope -> every channel), cross-validated per subject: held-out encoding r (mean
+  over channels) against circular-shift and mismatched-stimulus nulls; per-trial offsets (jitter) and drift.
 - mlr / brainstem: forward TRFs of the half-wave-rectified waveform; SNR of the latency window against negative
   lags, against circular-shift nulls.
 
-Shift convention: a peak or offset of +d s means the neural data fits best when the stimulus is delayed by d s.
-The sweep detects a global offset but localises it only to within the decoder window (0-tmax), since any shift
-that brings the response back into the window scores similarly. Per-trial offsets (relative to the subject's
-decoder) are more precise and estimate trial-to-trial jitter.
+Shift convention: an offset of +d s means the neural data fits best when the stimulus (prediction) is delayed by d s.
+Per-trial offsets are relative to the subject's model trained on the other trials, so their spread estimates
+trial-to-trial jitter; offsets of the two halves of a trial give its clock drift.
 """
 import traceback
 from concurrent.futures import ThreadPoolExecutor
@@ -19,11 +18,11 @@ import numpy as np
 from scipy.stats import zscore
 
 from cnsp_datasets.validate.load import bandpass, load_neural, pick_stimulus, resampled, stimulus_feature
-from cnsp_datasets.validate.models import autocorr, backward_cv, corr, forward_trf, xcorr
+from cnsp_datasets.validate.models import autocorr, convolve, corr, forward_trf, peak_shift, xcorr
 
-LOW = dict(fs=64, band=(0.5, 8.0), tmax=0.25, alpha=1.0, n_circ=50, n_mismatch=20, min_shift=5.0,
-           sweep=1.0, sweep_step=2, sweep_tol=0.1, offset_range=0.5)
-# TRFs are fitted over `lags` but only `valid` is used: the edges of the fitted window are unreliable
+# TRFs are fitted over `lags` but only `valid` is plotted and scored: the edges of the fitted window are unreliable
+LOW = dict(fs=64, band=(0.5, 8.0), lags=(-0.2, 0.6), valid=(-0.15, 0.5), alpha=1.0, n_folds=5, n_circ=50,
+           n_mismatch=20, min_shift=5.0, offset_range=0.5)
 HF = dict(fs=1000, lags=(-0.1, 0.1), valid=(-0.075, 0.075), noise=(-0.075, -0.02), n_null=100, min_shift=1.0,
           alpha=1.0)
 TIERS = {
@@ -68,42 +67,60 @@ def sanity_flags(trial):
     return flags
 
 
-def low_targets(stims, names, fs, rng):
-    """Per-trial target matrices: true, circular shifts, mismatched stimuli, sweep shifts; and column slices."""
-    m = round(LOW["min_shift"] * fs)
-    sweep = np.arange(-round(LOW["sweep"] * fs), round(LOW["sweep"] * fs) + 1, LOW["sweep_step"])
-    others = [[j for j, n in enumerate(names) if n != name] for name in names]
-    n_mm = LOW["n_mismatch"] if all(others) else 0
-    targets = []
-    for s, oth in zip(stims, others):
-        circ = [np.roll(s, k) for k in rng.integers(m, len(s) - m, LOW["n_circ"])]
-        mism = [np.resize(stims[j], len(s)) for j in rng.choice(oth, n_mm)] if n_mm else []
-        targets.append(np.column_stack([s] + circ + mism + [np.roll(s, d) for d in sweep]))
-    n_c = LOW["n_circ"]
-    cols = dict(circ=slice(1, 1 + n_c), mismatch=slice(1 + n_c, 1 + n_c + n_mm), sweep=slice(1 + n_c + n_mm, None))
-    return targets, cols, sweep / fs
+def _lag_samples(lags, fs):
+    return np.arange(round(lags[0] * fs), round(lags[1] * fs) + 1)
 
 
-def trial_offset(recon, s, fs):
-    """Shift (s) of the stimulus that best matches a reconstruction."""
-    shifts = np.arange(-round(LOW["offset_range"] * fs), round(LOW["offset_range"] * fs) + 1)
-    r = corr(np.column_stack([np.roll(s, d) for d in shifts]), recon[:, None].repeat(len(shifts), 1))
-    return float(shifts[np.argmax(r)] / fs)
+def _valid(lags_s, valid):
+    return (lags_s >= valid[0] - 1e-9) & (lags_s <= valid[1] + 1e-9)
 
 
 def low_tier(neural, stims, names, fs, rng):
-    """Backward-model results for one subject."""
-    targets, cols, sweep_s = low_targets(stims, names, fs, rng)
-    scores, recon = backward_cv(neural, targets, round(LOW["tmax"] * fs) + 1, alpha=LOW["alpha"])
+    """Cross-validated 0.5-8 Hz forward model for one subject: scores, nulls, TRF, per-trial offsets and drift."""
+    lags = _lag_samples(LOW["lags"], fs)
+    m = round(LOW["min_shift"] * fs)
+    others = [[j for j, n in enumerate(names) if n != name] for name in names]
+    n_mm = LOW["n_mismatch"] if all(others) else 0
+    shifts = [np.concatenate([[0], rng.integers(m, len(s) - m, LOW["n_circ"])]) for s in stims]
+    mism = [[np.resize(stims[j], len(s)) for j in rng.choice(o, n_mm)] if n_mm else [] for s, o in zip(stims, others)]
+    ac = [autocorr(s, len(lags)) for s in stims]
+    xc = [xcorr(x, s, lags, k) for x, s, k in zip(neural, stims, shifts)]  # (1 + n_circ, C, L) per trial
+    ac_mm = [[autocorr(s, len(lags)) for s in ms] for ms in mism]
+    xc_mm = [[xcorr(x, s, lags, [0])[0] for s in ms] for x, ms in zip(neural, mism)]
+
+    n_var = 1 + LOW["n_circ"] + n_mm
+    scores = np.zeros((len(neural), n_var))
+    offsets = np.zeros((len(neural), 3))  # whole trial, first half, second half (samples)
+    for idx in np.array_split(np.arange(len(neural)), min(LOW["n_folds"], len(neural))):
+        train = np.setdiff1d(np.arange(len(neural)), idx)
+        W = forward_trf(sum(ac[i] for i in train), sum(xc[i] for i in train), LOW["alpha"])
+        W_mm = [forward_trf(sum(ac_mm[i][v] for i in train), sum(xc_mm[i][v] for i in train), LOW["alpha"])
+                for v in range(n_mm)]
+        for i in idx:
+            x, n = neural[i], neural[i].shape[1]
+            variants = [(np.roll(stims[i], k), w) for k, w in zip(shifts[i], W)] + list(zip(mism[i], W_mm))
+            for v, (sv, w) in enumerate(variants):
+                pred = convolve(sv, w, lags, n)
+                scores[i, v] = corr(pred.T, x.T).mean()
+                if v == 0:
+                    h, r = n // 2, round(LOW["offset_range"] * fs)
+                    offsets[i] = [peak_shift(x, pred, r), peak_shift(x[:, :h], pred[:, :h], r),
+                                  peak_shift(x[:, h:], pred[:, h:], r)]
+
     mean = scores.mean(0)
-    curve = mean[cols["sweep"]]
+    null_c, null_m = mean[1:1 + LOW["n_circ"]], mean[1 + LOW["n_circ"]:]
+    half_s = np.array([x.shape[1] / 2 / fs for x in neural])
+    keep = _valid(lags / fs, LOW["valid"])
+    trf = forward_trf(sum(ac), sum(xc), LOW["alpha"])[..., keep]  # all trials: true + circular nulls
+    gfp = np.sqrt((trf ** 2).mean(1))
     return dict(
-        r=float(mean[0]), r_trials=scores[:, 0].tolist(),
-        null_circ=mean[cols["circ"]].tolist(), null_mismatch=mean[cols["mismatch"]].tolist(),
-        p_circ=p_value(mean[0], mean[cols["circ"]]),
-        p_mismatch=p_value(mean[0], mean[cols["mismatch"]]) if cols["mismatch"].stop > cols["mismatch"].start else None,
-        sweep_s=sweep_s.tolist(), sweep_r=curve.tolist(), sweep_peak_s=float(sweep_s[np.argmax(curve)]),
-        trial_offsets_s=[trial_offset(r, t[:, 0], fs) for r, t in zip(recon, targets)],
+        r=float(mean[0]), r_trials=scores[:, 0].tolist(), null_circ=null_c.tolist(), null_mismatch=null_m.tolist(),
+        p_circ=p_value(mean[0], null_c), p_mismatch=p_value(mean[0], null_m) if n_mm else None,
+        lags_s=(lags[keep] / fs).tolist(), gfp=gfp[0].tolist(),
+        null_gfp_50=np.median(gfp[1:], 0).tolist(), null_gfp_95=np.percentile(gfp[1:], 95, 0).tolist(),
+        peak_s=float(lags[keep][np.argmax(gfp[0])] / fs),
+        trial_offsets_s=(offsets[:, 0] / fs).tolist(),
+        drift_ppm=((offsets[:, 2] - offsets[:, 1]) / fs / half_s * 1e6).tolist(),
     )
 
 
@@ -148,7 +165,7 @@ def validate_subject(records, picks, reference, cache, seed, tiers=ALL_TIERS):
             if s is None:
                 continue
             n = min(x.shape[1], len(s))
-            lags = np.arange(round(HF["lags"][0] * fs_hf), round(HF["lags"][1] * fs_hf) + 1)
+            lags = _lag_samples(HF["lags"], fs_hf)
             m = round(HF["min_shift"] * fs_hf)
             shifts = np.concatenate([[0], rng.integers(m, n - m, HF["n_null"])])
             for tier, cfg in TIERS.items():
@@ -156,7 +173,8 @@ def validate_subject(records, picks, reference, cache, seed, tiers=ALL_TIERS):
                     continue
                 sb = zscore(bandpass(s[:n], cfg["band"], fs_hf))
                 hf[tier]["acorr"] = hf[tier]["acorr"] + autocorr(sb, len(lags))
-                hf[tier]["xcorr"] = hf[tier]["xcorr"] + xcorr(bandpass(x[:, :n], cfg["band"], fs_hf), sb, lags, shifts)
+                xb = bandpass(x[:, :n], cfg["band"], fs_hf)
+                hf[tier]["xcorr"] = hf[tier]["xcorr"] + xcorr(xb, sb, lags, shifts)
         except Exception as e:
             info["error"] = f"{type(e).__name__}: {e}"
             info["traceback"] = traceback.format_exc(limit=3)
@@ -169,8 +187,8 @@ def validate_subject(records, picks, reference, cache, seed, tiers=ALL_TIERS):
                 t["r"] = out["low"]["r_trials"][t["low_index"]]
                 t["offset_s"] = out["low"]["trial_offsets_s"][t["low_index"]]
     if fs_hf is not None:
-        lags_s = np.arange(round(HF["lags"][0] * fs_hf), round(HF["lags"][1] * fs_hf) + 1) / fs_hf
-        keep = (lags_s >= HF["valid"][0] - 1e-9) & (lags_s <= HF["valid"][1] + 1e-9)
+        lags_s = _lag_samples(HF["lags"], fs_hf) / fs_hf
+        keep = _valid(lags_s, HF["valid"])
         lags_s = lags_s[keep]
         out["fs_hf"] = fs_hf
         for tier, cfg in TIERS.items():
@@ -182,10 +200,12 @@ def validate_subject(records, picks, reference, cache, seed, tiers=ALL_TIERS):
             gfp = np.sqrt((trf ** 2).mean(1))
             out[tier] = dict(
                 snr=float(ratio[0]), null_snr=ratio[1:].tolist(), p=p_value(ratio[0], ratio[1:]),
-                lags_s=lags_s.tolist(), gfp=gfp[0].tolist(), null_gfp_95=np.percentile(gfp[1:], 95, 0).tolist(),
+                lags_s=lags_s.tolist(), gfp=gfp[0].tolist(), null_gfp_50=np.median(gfp[1:], 0).tolist(),
+                null_gfp_95=np.percentile(gfp[1:], 95, 0).tolist(),
             )
     n_err = sum("error" in t for t in trials)
-    print(f"subject {out['subject']}: {len(trials)} trials ({n_err} failed), r={out.get('low', {}).get('r', np.nan):.3f}",
+    r = out.get("low", {}).get("r", np.nan)
+    print(f"subject {out['subject']}: {len(trials)} trials ({n_err} failed), r={r:.3f}",
           flush=True)
     return out
 
@@ -199,18 +219,21 @@ def group_summary(subjects, tiers=ALL_TIERS):
         null_c = np.array([s["null_circ"] for s in low]).mean(0)
         mm = [s["null_mismatch"] for s in low]
         null_m = np.array(mm).mean(0) if all(mm) else None
-        curve = np.mean([s["sweep_r"] for s in low], 0)
-        peak = float(low[0]["sweep_s"][np.argmax(curve)])
-        offsets = np.concatenate([s["trial_offsets_s"] for s in low])
+        gfp = np.mean([np.array(s["gfp"]) / np.array(s["null_gfp_50"]) for s in low], 0)
+        # jitter: spread of trial offsets around each subject's median; drift: per-trial half-to-half change
+        rel = np.concatenate([np.array(s["trial_offsets_s"]) - np.median(s["trial_offsets_s"]) for s in low])
+        drift = np.concatenate([s["drift_ppm"] for s in low])
         summary["low"] = dict(
             n_subjects=len(low), mean_r=float(r.mean()), median_r=float(np.median(r)),
             p_circ=p_value(r.mean(), null_c), p_mismatch=p_value(r.mean(), null_m) if null_m is not None else None,
             frac_subjects_sig=float(np.mean([s["p_circ"] < ALPHA for s in low])),
-            sweep_peak_s=peak, trial_offset_sd_s=float(offsets.std()),
+            trf_peak_s=float(low[0]["lags_s"][np.argmax(gfp)]),
+            jitter_sd_ms=float(1e3 * rel.std()), jitter_mad_ms=float(1e3 * 1.4826 * np.median(np.abs(rel))),
+            drift_ppm_median=float(np.median(drift)),
+            drift_ppm_se=float(1.2533 * drift.std() / np.sqrt(len(drift))),
         )
         summary["low"]["pass"] = bool(
-            summary["low"]["p_circ"] < ALPHA and (null_m is None or summary["low"]["p_mismatch"] < ALPHA)
-            and abs(peak) <= LOW["sweep_tol"])
+            summary["low"]["p_circ"] < ALPHA and (null_m is None or summary["low"]["p_mismatch"] < ALPHA))
     for tier in TIERS:
         res = [s[tier] for s in subjects if tier in s]
         if not res:
