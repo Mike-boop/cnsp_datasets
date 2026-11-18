@@ -46,7 +46,7 @@ class Broderick2019AVAdapter:
             stim_path = os.path.join(self.root, "Stimuli", f"Run{stim_run}.mat")
             stim = StimulusRecord(
                 modality="audio" if cond_code in ("a", "av") else "visual",
-                name=f"Run{run}",
+                name=f"Run{stim_run}",  # runs are numbered per condition (a 1-15, v 16-30, av 31-45)
                 data_fn=self._make_textgrid_loader(stim_path),
                 is_attended=True,
                 feature_name="textgrid"
