@@ -14,7 +14,7 @@ from cnsp_datasets.datasets.broderick2019_natural.utils import multi_tier_dict_t
 
 
 # Attended story per subject, from the dataset's "Cocktail_Party_Read_Me_-_Correction.rtf". The EEG Readme's rule
-# (subjects 1-17 attended 20000, 18-33 Journey) is wrong for 13 of 33 subjects.
+# (subjects 1-17 attended 20000, 18-33 Journey) is wrong for 16 of 33 subjects.
 ATTENDED_20000 = {3, 6, 7, 8, 9, 10, 13, 15, 17, 18, 19, 21, 24, 25, 27, 31, 32}
 ATTENDED_JOURNEY = {1, 2, 4, 5, 11, 12, 14, 16, 20, 22, 23, 26, 28, 29, 30, 33}
 
