@@ -6,4 +6,4 @@ config.json
 
 *.egg-info/
 
-playground/
+playground/.claude/settings.local.json
