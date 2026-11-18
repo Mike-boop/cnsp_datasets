@@ -61,7 +61,7 @@ class DataDownloader:
             algo, expected = 'md5', expected_checksum
 
         try:
-            hash_func = getattr(hashlib, algo.lower())()
+            hash_func = getattr(hashlib, algo.lower().replace("-", ""))()  # Dryad writes "sha-256"
         except AttributeError:
             raise ValueError(f"Unsupported checksum algorithm: {algo}")
 

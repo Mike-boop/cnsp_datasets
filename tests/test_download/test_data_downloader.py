@@ -65,6 +65,7 @@ class TestChecksumMatches:
         path.write_bytes(content)
         digest = hashlib.sha256(content).hexdigest()
         assert downloader._checksum_matches(str(path), f"sha256:{digest}")
+        assert downloader._checksum_matches(str(path), f"sha-256:{digest}")  # Dryad's spelling
 
     def test_mismatch_returns_false(self, downloader, tmp_path):
         path = tmp_path / "f.bin"
