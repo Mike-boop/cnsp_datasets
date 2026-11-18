@@ -13,11 +13,19 @@ from cnsp_datasets.standardise.trial_record import TrialRecord, StimulusRecord
 from cnsp_datasets.datasets.broderick2019_natural.utils import multi_tier_dict_to_textgrid
 
 
+# Attended story per subject, from the dataset's "Cocktail_Party_Read_Me_-_Correction.rtf". The EEG Readme's rule
+# (subjects 1-17 attended 20000, 18-33 Journey) is wrong for 13 of 33 subjects.
+ATTENDED_20000 = {3, 6, 7, 8, 9, 10, 13, 15, 17, 18, 19, 21, 24, 25, 27, 31, 32}
+ATTENDED_JOURNEY = {1, 2, 4, 5, 11, 12, 14, 16, 20, 22, 23, 26, 28, 29, 30, 33}
+
+
 class Broderick2019CocktailAdapter:
     """
     Broderick 2019 'Cocktail Party' adapter with BioSemi-128 channel map.
     If 130 channels are present, last two are treated as mastoids (M1/M2) and
-    are typed as 'misc' (no re-referencing here).
+    are typed as 'misc' (no re-referencing here). EEG is converted from microvolts to volts.
+    Twenty Thousand Leagues (20000) played in the left ear, Journey in the right; attended story per subject
+    from the dataset's correction note (ATTENDED_20000 / ATTENDED_JOURNEY).
     """
 
     def __init__(self, download_dir: str):
@@ -30,19 +38,19 @@ class Broderick2019CocktailAdapter:
 
     def parse(self) -> Iterable[TrialRecord]:
         for sub in self.subjects:
-            condition = "competing-fL" if sub < 18 else "competing-fR"
+            attends_20000 = sub in ATTENDED_20000
+            condition = "competing-fL" if attends_20000 else "competing-fR"
             for trial in self.trials:
                 eeg_path = os.path.join(
                     self.root, "EEG", f"Subject{sub}", f"Subject{sub}_Run{trial}.mat"
                 )
-                print(eeg_path)
                 if not os.path.exists(eeg_path):
                     continue  # silently skip missing runs
 
                 # attended/unattended by subject rule
                 journey_name = f"Journey_{trial}"
                 twenty_name  = f"20000_{trial}"
-                if sub < 18:
+                if attends_20000:
                     att_name, un_name = twenty_name, journey_name
                 else:
                     att_name, un_name = journey_name, twenty_name
@@ -53,7 +61,7 @@ class Broderick2019CocktailAdapter:
                         name=att_name,
                         data_fn=self._make_env_loader(att_name),
                         is_attended=True,
-                        feature_name="env",
+                        feature_name="envelope",
                     ),
                     StimulusRecord(
                     modality="audio",
@@ -67,7 +75,7 @@ class Broderick2019CocktailAdapter:
                         name=un_name,
                         data_fn=self._make_env_loader(un_name),
                         is_attended=False,
-                        feature_name="env",
+                        feature_name="envelope",
                     ),
                     StimulusRecord(
                     modality="audio",
@@ -101,7 +109,7 @@ class Broderick2019CocktailAdapter:
             m = read_mat(mat_path)
             if "eegData" not in m:
                 raise KeyError(f"'eegData' not found in {mat_path}")
-            eeg = np.asarray(m["eegData"], dtype=float)
+            eeg = 1e-6 * np.asarray(m["eegData"], dtype=float)  # shipped in microvolts
             if eeg.ndim != 2:
                 raise ValueError(f"eegData in {mat_path} must be 2D, got {eeg.shape}")
 
@@ -112,7 +120,7 @@ class Broderick2019CocktailAdapter:
                 eeg = eeg.T
 
             if "mastoids" in m:
-                mastoids = np.asarray(m["mastoids"], dtype=float)
+                mastoids = 1e-6 * np.asarray(m["mastoids"], dtype=float)
                 if mastoids.shape[0] != 2:
                     mastoids = mastoids.T
                 eeg = np.concatenate([eeg, mastoids], axis=0)

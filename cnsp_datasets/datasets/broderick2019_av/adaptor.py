@@ -23,11 +23,14 @@ _COND_MAP = {
 
 class Broderick2019AVAdapter:
     """
-    Pure adapter for the Broderick 2019 AV dataset.
+    Broderick 2019 audiovisual speech-in-noise data (the Dryad package's "Speech in Noise" folder): audio-only (a),
+    audiovisual (av) and visual-only (v) conditions, 15 runs each. The package provides word timings only (no audio
+    or envelopes). EEG is converted from microvolts to volts; the mat files' fs field reads 512, but the data are
+    128 Hz (7680 samples per 60 s run, as the Readme states).
     """
 
     def __init__(self, download_dir: str):
-        self.root = download_dir
+        self.root = os.path.join(download_dir, "Speech in Noise")
         self._files: List[str] = self._discover()
         self.fs_eeg = 128.0
 
@@ -94,12 +97,12 @@ class Broderick2019AVAdapter:
             m = read_mat(mat_path)
             if "EEG" not in m:
                 raise KeyError(f"'EEG' not found in {mat_path}")
-            eeg = np.asarray(m["EEG"], dtype=float)
+            eeg = 1e-6 * np.asarray(m["EEG"], dtype=float)  # shipped in microvolts
             if eeg.ndim != 2:
                 raise ValueError(f"EEG must be 2D in {mat_path}, got {eeg.shape}")
             
             if "mastoids" in m:
-                mastoids = np.asarray(m["mastoids"], dtype=float)
+                mastoids = 1e-6 * np.asarray(m["mastoids"], dtype=float)
                 eeg = np.concatenate([eeg, mastoids], axis=1)
 
             # Heuristics → (n_channels, n_times)

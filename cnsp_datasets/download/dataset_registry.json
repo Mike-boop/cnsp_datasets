@@ -30,6 +30,18 @@
       "description": "Broderick et al. (2019) Natural Speech dataset",
       "url": "https://osf.io/m5ezp/"
     },
+    "broderick2019_cocktail": {
+      "source": "dryad",
+      "identifiers": ["10.5061/dryad.070jc"],
+      "description": "Broderick et al. (2019) Cocktail Party dataset (same Dryad package as broderick2019_natural)",
+      "url": "https://datadryad.org/dataset/doi:10.5061/dryad.070jc"
+    },
+    "broderick2019_av": {
+      "source": "dryad",
+      "identifiers": ["10.5061/dryad.070jc"],
+      "description": "Broderick et al. (2019) audiovisual speech-in-noise dataset (same Dryad package)",
+      "url": "https://datadryad.org/dataset/doi:10.5061/dryad.070jc"
+    },
     "das2019": {
       "source": "zenodo",
       "identifiers": ["10.5281/zenodo.4004271"],

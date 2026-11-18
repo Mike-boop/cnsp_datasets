@@ -82,7 +82,7 @@ class Broderick2019NaturalAdapter:
                             name=stim_name,
                             data_fn=self._make_env_loader(trial=trial, reverse=reverse_env),
                             is_attended=True,
-                            feature_name="env",
+                            feature_name="envelope",
                         ),
                        StimulusRecord(
                             modality="audio",
@@ -112,12 +112,12 @@ class Broderick2019NaturalAdapter:
             m = read_mat(mat_path)
             if "eegData" not in m:
                 raise KeyError(f"'eegData' not found in {mat_path}")
-            eeg = np.asarray(m["eegData"], dtype=float)
+            eeg = 1e-6 * np.asarray(m["eegData"], dtype=float)  # shipped in microvolts
             if eeg.ndim != 2:
                 raise ValueError(f"eegData must be 2D in {mat_path}, got {eeg.shape}")
             
             if "mastoids" in m:
-                mastoids = np.asarray(m["mastoids"], dtype=float)
+                mastoids = 1e-6 * np.asarray(m["mastoids"], dtype=float)
                 eeg = np.concatenate([eeg, mastoids], axis=1)
 
             # Heuristics → (n_channels, n_times)
