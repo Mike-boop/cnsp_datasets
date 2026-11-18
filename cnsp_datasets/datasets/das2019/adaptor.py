@@ -32,8 +32,10 @@ class Das2019Adapter:
       - Provide a lazy EEG loader that returns an mne.RawArray using header Fs & ch labels.
 
     Notes:
-      - Trial indices are kept 0-based (to match your original filenames). Switch to 1-based
-        by changing `trial=j` → `trial=j+1`.
+      - Trials are 1-based, in recorded order (TrialID).
+      - The EEG and the stimuli are aligned at onset; the EEG ends before the longer story, so the audio should be
+        truncated to the EEG length (README). Repetition trials use the full part (rep_*.wav equals its first 125 s).
+      - The dry (unfiltered) audio is provided for both 'dry' and 'HRTF' trials, as in the authors' analyses.
     """
 
     def __init__(self, download_dir: str):
@@ -96,7 +98,7 @@ class Das2019Adapter:
                 yield TrialRecord(
                     subject=subj_num,
                     session=1,
-                    trial=j,                 # change to j+1 if you prefer 1-based trials
+                    trial=j + 1,
                     condition=cond,
                     ns_type="eeg",
                     stimulus=stimuli,
@@ -124,7 +126,8 @@ class Das2019Adapter:
             else:
                 ch_names = [str(ch_labels)]
 
-            eeg = np.asarray(tr["RawData"]["EegData"], dtype=float).T  # shape (n_ch, n_time)
+            # shipped in microvolts, 0.5 Hz high-passed and downsampled to 128 Hz by the authors
+            eeg = 1e-6 * np.asarray(tr["RawData"]["EegData"], dtype=float).T  # (n_ch, n_time), volts
             if eeg.ndim != 2:
                 raise ValueError(f"Unexpected EEG shape for trial {trial_index}: {eeg.shape}")
 
@@ -154,7 +157,7 @@ class Das2019Adapter:
 
         def _loader() -> Dict[str, Any]:
             if wav_path is None or not os.path.exists(wav_path):
-                raise FileNotFoundError(f"Audio file not found for story '{story_name_no_ext}': expected '{wav_basename}'")
+                raise FileNotFoundError(f"Audio not found for story '{story_name_no_ext}': expected '{wav_basename}'")
             fs, x = wavfile.read(wav_path)
             if x.ndim == 2:
                 x = x[:, 0]  # mono
@@ -163,7 +166,7 @@ class Das2019Adapter:
 
     # ----------------------------- Helpers -----------------------------
 
-    @lru_cache(maxsize=None)
+    @lru_cache(maxsize=2)  # each subject file is ~0.3 GB; trials are read subject by subject
     def _read_subject(self, mat_path: str):
         return read_mat(mat_path)
 
