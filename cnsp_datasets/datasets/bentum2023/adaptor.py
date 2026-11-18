@@ -79,13 +79,14 @@ class Bentum2023Adapter:
         BAD_artefact annotations.
       - Stimuli: "audio" (mono, the dialogue's two speaker channels mixed) and
         "textgrid" (word/phone tiers per speaker, in block time).
-      - The stimulus name is the block's wav_filename without the "_60db" suffix, and the
-        audio is loaded from <name>.wav in the corpus directory. For IFADV these are the
-        corpus files (DVA7B.wav). News and multi-file story blocks (N02003_4.wav,
-        fn001124_fn001125.wav) were built by the authors by concatenating CGN fn*.wav
-        files and must be re-synthesised into sdc_dir. Their layout is identical for every
-        participant; the offsets are in the XML fid_st / fid_et fields. Participants heard
-        level-normalised _60db versions, whereas this loads the unnormalised files.
+      - The stimulus name is the block's wav_filename without the "_60db" suffix. IFADV blocks
+        are the corpus files (DVA7B.wav). CGN blocks are built here from the corpus fn*.wav
+        files listed in the block's fids, as the authors did: news blocks (N02003_4) join
+        12-15 files with 900 ms of silence, two-file stories (fn001124_fn001125) join them
+        directly. The gaps come from the XML (fid_st / fid_et; exactly 900 or 0 ms in every
+        block), and the nominal file durations there match the corpus wav files to within
+        1 ms for 99.3% of files (rounding). Participants heard level-normalised _60db
+        versions, whereas this loads the unnormalised files.
 
     Clock drift: the EEG clock runs about 30-35 ppm slow relative to the audio (about 30 ms
     over a 900 s dialogue), varying by about 6 ppm between recordings. With
@@ -152,7 +153,7 @@ class Bentum2023Adapter:
                     StimulusRecord(
                         modality="audio",
                         name=name,
-                        data_fn=self._make_audio_loader(block["corpus"], name),
+                        data_fn=self._make_audio_loader(block),
                         is_attended=True,
                         feature_name="audio",
                     ),
@@ -235,18 +236,31 @@ class Bentum2023Adapter:
             return out
         return _loader
 
-    def _make_audio_loader(self, corpus: str, name: str) -> Callable[[], Dict[str, Any]]:
+    def _make_audio_loader(self, block: Dict[str, str]) -> Callable[[], Dict[str, Any]]:
+        """The block's audio: one corpus file, or CGN files joined with the gaps given by the XML."""
+        corpus = block["corpus"]
+        fids = self._split(block["fids"])
+        starts = [int(v) for v in self._split(block["fid_st"])]
+        ends = [int(v) for v in self._split(block["fid_et"])]
+        gaps_s = [(s - e) / 1000 for e, s in zip(ends[:-1], starts[1:])]  # EEG samples at 1 kHz: 0 or 0.9 s
+
         def _loader() -> Dict[str, Any]:
             index = self._get_audio_index(corpus)
-            if name not in index:
-                raise FileNotFoundError(
-                    f"Audio '{name}.wav' ({corpus}) not found under {self.corpus_dirs[corpus]!r}"
-                )
-            fs, x = wavfile.read(index[name])
-            x = x.astype(np.float32) / np.iinfo(x.dtype).max if x.dtype.kind == "i" else x.astype(np.float32)
-            if x.ndim == 2:
-                x = x.mean(axis=1)  # dialogues: one speaker per channel
-            return {"fs": int(fs), "data": x[None, :]}
+            parts, fs = [], None
+            for i, fid in enumerate(fids):
+                if fid not in index:
+                    raise FileNotFoundError(f"'{fid}.wav' ({corpus}) not found under {self.corpus_dirs[corpus]!r}")
+                fs_i, x = wavfile.read(index[fid])
+                if fs is not None and fs_i != fs:
+                    raise ValueError(f"{block['name']}: sample rates differ between {fids}")
+                fs = fs_i
+                x = x.astype(np.float32) / np.iinfo(x.dtype).max if x.dtype.kind == "i" else x.astype(np.float32)
+                if x.ndim == 2:
+                    x = x.mean(axis=1)  # dialogues: one speaker per channel
+                if i:
+                    parts.append(np.zeros(round(gaps_s[i - 1] * fs), dtype=np.float32))
+                parts.append(x)
+            return {"fs": int(fs), "data": np.concatenate(parts)[None, :]}
         return _loader
 
     def _make_textgrid_loader(self, words_path: str, st_sample: int) -> Callable[[], str]:
