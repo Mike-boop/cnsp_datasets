@@ -21,6 +21,17 @@ class HilbertEnvelope(StimulusPreprocStep):
         return {"fs": data["fs"], "data": envelope}
 
 
+
+class HalfWaveRectify(StimulusPreprocStep):
+    """Half-wave rectified stimulus waveform (negative half set to zero)."""
+
+    def run(self, data: StimulusData) -> StimulusData:
+        return {"fs": data["fs"], "data": np.maximum(get_stim_array(data), 0.0)}
+
+    def __repr__(self) -> str:
+        return "HalfWaveRectify()"
+
+
 # --- ERB helpers (Slaney) ---
 def _hz_to_erb_rate(f):
     return 21.4 * np.log10(4.37e-3 * f + 1.0)
