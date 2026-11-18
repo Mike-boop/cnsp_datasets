@@ -47,11 +47,9 @@ class Weissbart2019Adaptor:
             os.path.splitext(os.path.basename(p))[0]: p for p in self._audiobooks
         }
 
-        # Precompute MNE info (channel names, sfreq, montage) to use when building Raw
-        self._info = self._make_mne_info()
+        # channel names and sample rate as stored in the HDF5 files (identical for all participants)
+        self._info = self._make_mne_info(self._subject_files[0])
 
-        # Keep the ordered list of story names we expect in the H5
-        self._story_names: List[str] = list(self._story_to_wav.keys())
 
     # --------------------------- Public API ---------------------------
 
@@ -62,10 +60,11 @@ class Weissbart2019Adaptor:
         for subj_path in self._subject_files:
             subject_id = self._parse_subject_id(subj_path)  # e.g., P03 -> 3
 
-            for story in self._story_names:
-                # trial index from CSV (0-based), make it 1-based to match your original code
-                trial_idx_0 = self._stim_order.loc[f"P{subject_id:02d}"][story].item()
-                trial_idx = int(trial_idx_0) + 1
+            # stimulus_order.csv holds np.argsort(onsets) under story-name headers: row k lists the index of the
+            # story presented k-th, so a story's (1-based) trial number is its position in that row
+            presented = list(self._stim_order.loc[f"P{subject_id:02d}"].to_numpy())
+            for i, story in enumerate(self._stim_order.columns):
+                trial_idx = presented.index(i) + 1
 
                 # Build StimulusRecord (lazy read of WAV)
                 stim = StimulusRecord(
@@ -104,8 +103,7 @@ class Weissbart2019Adaptor:
                 if not np.array_equal(audio[:, 0], audio[:, 1]):
                     raise ValueError(f"Stereo channels differ in {wav_path}")
                 audio = audio[:, 0]
-            # shape as (channels, time) to be explicit in downstream logic
-            return {"fs": int(fs), "data": np.asarray(audio, dtype=np.int16)[None, :]}
+            return {"fs": int(fs), "data": (audio / 32768.0).astype(np.float32)[None, :]}  # int16 -> [-1, 1)
 
         return _loader
 
@@ -134,17 +132,14 @@ class Weissbart2019Adaptor:
         stem = os.path.splitext(os.path.basename(subj_path))[0]
         return int(stem.replace("P", ""))
 
-    def _make_mne_info(self):
-        ch_names = [
-            'AF3','AF4','AF7','AF8','C1','C2','C3','C4','C5','C6','CP1','CP2','CP3',
-            'CP4','CP5','CP6','CPz','Cz','F1','F2','F3','F4','F5','F6','F7','F8',
-            'FC1','FC2','FC3','FC4','FC5','FC6','Fp1','Fp2','FT10','FT7','FT8','FT9',
-            'Fz','O1','O2','Oz','P1','P2','P3','P4','P5','P6','P7','P8','PO3','PO7',
-            'PO8','POz','Pz','FCz','T7','T8','TP10','TP7','TP8','TP9','AFz'
-        ]
-        sfreq = 1000
+    def _make_mne_info(self, h5_path: str):
+        # EEG in volts, recorded with a BrainVision system; layout easycap-M1
+        with h5py.File(h5_path, "r") as f:
+            ch_names = [c.decode() for c in f["ch_names"][:]]
+            sfreq = float(f["srate"][0])
         info = create_info(ch_names, sfreq, ch_types="eeg")
         info.set_montage(make_standard_montage("easycap-M1"))
         return info
-    
+
+
 ADAPTOR = Weissbart2019Adaptor
