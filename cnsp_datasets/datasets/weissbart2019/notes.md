@@ -16,8 +16,9 @@ Onsets from the stimtrack agree with the authors' `onsets.mat` to 1 ms; drift 1.
 participant P04 (sub-03) did not hear BROP01 (left out; the HDF5 release's segment is EEG recorded during BROP02).
 
 ## Validation (BIDS version, 13 subjects, 194 trials)
-Brainstem tier: 0.5-8 Hz mean r 0.034 (TRF peak 188 ms); 30-60 Hz SNR 1.52; 30-250 Hz SNR 2.46 (the HDF5 release:
-0.037, 1.36, 1.53).
+Brainstem tier. Average reference: 0.5-8 Hz mean r 0.037 (TRF peak 188 ms); 30-60 Hz SNR 1.35; 30-250 Hz SNR
+1.54, the same as the HDF5 release (0.037, 1.36, 1.53; same samples). With the recorded ear reference (no
+re-referencing): 0.034, 1.52, 2.46 (the ear reference favours the high-frequency responses).
 
 ## Trials and stimuli
 One trial per story (condition `natural`); stimuli: the audio and its word/phone TextGrid (`textgrid`).
