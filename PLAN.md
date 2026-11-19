@@ -150,7 +150,8 @@ Each item below caught a real error in at least one dataset. Run through them fo
 **Stimuli**
 - Include everything that was played, as separate stimuli: noise/babble tracks, distractors, tactile signals
   (guilleminot2021 mismatched trials used the tactile buffer rolled by a quarter), embedded sentences.
-- Cut stimuli to what the EEG covers (varano2022 mismatched AV trials end with the shorter of audio and video).
+- Do not cut stimuli to the EEG: by convention the longer signal is cut where the data are used. Check instead
+  that both start at the same time.
 
 **Validation and interpretation**
 - Validate per condition (section 3) and look at the TRF plots, not only p-values: a stimulus-locked ripple at all
@@ -163,8 +164,9 @@ Each item below caught a real error in at least one dataset. Run through them fo
   stimuli: each trial counts its longest stimulus (simultaneous streams once), summed per participant
   (`tmp/review/scripts/data_size.py`, headers only; adds rows to `tmp/review/data_size.csv`). Put the numbers in
   the dataset's `notes.md` and in `tmp/review/data_size.md`. Measure before deleting standardised data.
-- Check a few trials' neural duration against their stimulus: the estimate is only right when stimuli are cut to
-  what was played (das2019: 2-min repeat trials carry the full 6.5-min track, 2.3 h estimated vs ~1.3 h recorded).
+- Check a few trials' neural duration against their stimulus: stimuli are not cut to the EEG (the longer signal is
+  cut at the point of use), so the estimate is too high where only part of a stimulus was played (das2019: 2-min
+  repeat trials carry the full 6.5-min track, 2.3 h estimated vs ~1.3 h recorded). Report the recorded figure then.
 
 **Running the work**
 - Long jobs detached and resumable (cache per trial/session); a server reboot killed every job once.
