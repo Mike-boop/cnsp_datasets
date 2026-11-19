@@ -57,12 +57,13 @@ class BaseSink(ABC):
 
     def _build_fname(self, record: TrialRecord) -> str:
         stimulus_modalities = set(stim.modality for stim in record.stimulus)
+        # one token per stimulus: a stimulus with several features (audio, envelope, textgrid) has several records
         stimuli_names = {
-            m: [
+            m: list(dict.fromkeys(
                 stim.name
                 for stim in sorted(record.stimulus, key=lambda s: (not s.is_attended, s.name))
                 if stim.modality == m
-            ]
+            ))
             for m in stimulus_modalities
         }
         return self.fname_separator.join([
@@ -190,7 +191,9 @@ class BaseSource(ABC):
 
         for modality, items in by_modality.items():
             items.sort(key=lambda x: (x[0], x[1]))
-            for j, (idx, name) in enumerate(items):
+            # files written before the sink fix repeat a stimulus once per feature: keep its first token only
+            names = list(dict.fromkeys(name for _, name in items))
+            for j, name in enumerate(names):
                 feature_files = self._find_feature_files(modality, name)
                 if not feature_files:
                     stimuli.append(StimulusRecord(
