@@ -31,8 +31,16 @@ class Jehn2025Adaptor:
           [2]: story part '1'..'9' with '0' meaning '10'
 
     Notes:
-      - Participants started by focussing on the loudspeaker to their right (thus trial index parity defines attended direction; used below)
+      - Participants started by focussing on the loudspeaker to their right, so odd trials are attended on the right
+        and even trials on the left, except for SWAPPED_SIDES (odd trials on the left). Checked with the two aux
+        channels (rows 32-33: left and right loudspeaker recordings): every other subject follows the parity rule;
+        for ci 121 and nh 308 both streams appear on one aux channel, so their side is unverified.
+      - Onsets: the aux channels match the shipped stimuli to ~2 ms at trial start (the offset depends on the
+        stimulus file). The EEG is not drift-corrected: the aux channels drift by ~26.7 ppm (~18 ppm for ci 118-122
+        and hi 201) relative to the stimuli. The aux channels of ci 127 do not contain the stimulus.
     """
+
+    SWAPPED_SIDES = {"103", "305", "306"}
 
     SESSION = 1
     FS_EEG = 1000
@@ -75,7 +83,8 @@ class Jehn2025Adaptor:
                 condition, att_story, ign_story, part = self._parse_stim_code(stim_code)
 
                 # trial parity defines attended direction
-                attended_direction = "fL" if (trial % 2 == 0) else "fR"
+                odd_side, even_side = ("fL", "fR") if sub_code in self.SWAPPED_SIDES else ("fR", "fL")
+                attended_direction = odd_side if trial % 2 else even_side
                 condition_full = f"{condition}_{attended_direction}_{group}"
 
                 # Build stimuli list:
