@@ -29,10 +29,11 @@ audio-tactile), Delay (tactile relative to speech, ms) and Correlated.
 
 ## Standardised format
 - Conditions: `A`, `T`, `AT_<delay>` (`m` = negative), `AT_mismatched`. Subjects 1-18 in `PARTICIPANTS` order.
-- Stimuli: speech (`audio`: wav + TextGrid) and the vibrotactile signal as played (`tactile`, feature `audio`, on the
-  wav's time axis and rate), named `Odin_X_delay_<d>` or `Odin_X_rolled_quarter`.
+- Stimuli: speech (`audio`: wav + TextGrid) and the vibrotactile signal as played (`tactile`, features `audio` and
+  `textgrid`, on the wav's time axis and rate), named `Odin_X_delay_<d>` or `Odin_X_rolled_quarter`. The tactile
+  TextGrid is the speech TextGrid moved to where its words fall in the tactile signal: shifted by the delay, or rolled
+  by a quarter of the tactile buffer for mismatched trials (wrapping words split). Check: 97-98% of the mismatched
+  tactile signal's energy falls inside the moved word intervals (~82% with the unmoved ones, i.e. chance).
 
 ## Open
-- Shifted TextGrids for the tactile stimulus (speech TextGrid shifted by `Delay`, or wrapped by a quarter for
-  mismatched trials) would let users compute tactile features directly. Not added yet.
 - There is behavioural data associated with this dataset that is not included yet.

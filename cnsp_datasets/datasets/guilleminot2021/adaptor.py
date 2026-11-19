@@ -6,6 +6,7 @@ from typing import Iterable, Dict, Callable, Any
 
 import numpy as np
 import pandas as pd
+import textgrid
 from scipy.io import wavfile
 from scipy.signal import resample_poly
 
@@ -13,6 +14,19 @@ from mne.io import read_raw_brainvision, BaseRaw
 
 from cnsp_datasets.standardise.trial_record import TrialRecord, StimulusRecord
 from cnsp_datasets.datasets.guilleminot2021.timing import BUFFER_FS, OUT as TIMING_CSV, PAD_S, tactile_buffer
+
+
+def _textgrid_text(tiers: list, xmax: float) -> str:
+    """Praat long-format TextGrid from [(tier name, [(xmin, xmax, text), ...]), ...] (contiguous intervals)."""
+    out = ['File type = "ooTextFile"', 'Object class = "TextGrid"', "", "xmin = 0", f"xmax = {xmax}",
+           "tiers? <exists>", f"size = {len(tiers)}", "item []:"]
+    for i, (name, intervals) in enumerate(tiers, 1):
+        out += [f"    item [{i}]:", '        class = "IntervalTier"', f'        name = "{name}"', "        xmin = 0",
+                f"        xmax = {xmax}", f"        intervals: size = {len(intervals)}"]
+        for j, (a, b, text) in enumerate(intervals, 1):
+            out += [f"        intervals [{j}]:", f"            xmin = {a:.6f}", f"            xmax = {b:.6f}",
+                    f'            text = "{text}"']
+    return "\n".join(out) + "\n"
 
 
 EEG_FNAME_DICT = {
@@ -208,10 +222,14 @@ class Guilleminot2021Adaptor:
                         ]
                     if stim_type in ("audio-tactile", "tactile"):
                         suffix = f"delay_{str(delay).replace('-', 'm')}" if correlated else "rolled_quarter"
-                        stimuli.append(StimulusRecord(
-                            modality="tactile", name=f"Odin_{file_token}_{suffix}",
-                            data_fn=self._make_tactile_loader(file_token, wav_path, delay, correlated),
-                            is_attended=True, feature_name="audio"))
+                        stimuli += [
+                            StimulusRecord(modality="tactile", name=f"Odin_{file_token}_{suffix}",
+                                           data_fn=self._make_tactile_loader(file_token, wav_path, delay, correlated),
+                                           is_attended=True, feature_name="audio"),
+                            StimulusRecord(modality="tactile", name=f"Odin_{file_token}_{suffix}",
+                                           data_fn=self._make_tactile_tg_loader(file_token, wav_path, delay, correlated),
+                                           is_attended=True, feature_name="textgrid"),
+                        ]
 
                     yield TrialRecord(
                         subject=_SUB_INDEX[p],
@@ -254,6 +272,43 @@ class Guilleminot2021Adaptor:
             seg = buf[max(start, 0):max(start, 0) + n - max(-start, 0)]
             out[max(-start, 0):max(-start, 0) + len(seg)] = seg
             return {"fs": int(fs), "data": out[None, :]}
+        return _loader
+
+    def _make_tactile_tg_loader(self, file_token: str, wav_path: str, delay_ms: int,
+                                correlated: bool) -> Callable[[], str]:
+        """The speech TextGrid moved to where its events fall in the tactile signal (as _make_tactile_loader plays it):
+        shifted by delay_ms, or, for mismatched trials, rolled by a quarter of the tactile buffer (intervals that wrap
+        are split); clipped to the wav's duration, gaps filled with empty intervals."""
+        stimuli_dir = os.path.join(self.root, "Stimuli")
+
+        def _loader() -> str:
+            fs, x = wavfile.read(wav_path, mmap=True)
+            duration = x.shape[0] / fs
+            tg = textgrid.TextGrid.fromFile(wav_path.replace(".wav", ".TextGrid"))
+            if correlated:
+                def moved(t0, t1):
+                    return [(t0 + delay_ms / 1000, t1 + delay_ms / 1000)]
+            else:
+                n = np.load(os.path.join(stimuli_dir, f"Odin_{file_token}_phone_.npy"), mmap_mode="r").shape[0]
+                length, quarter = n / BUFFER_FS, (n // 4) / BUFFER_FS
+
+                def moved(t0, t1):  # buffer time b = t + PAD_S moves to (b + quarter) mod length
+                    a, b = ((t + PAD_S + quarter) % length - PAD_S for t in (t0, t1))
+                    return [(a, b)] if a < b else [(a, length - PAD_S), (-PAD_S, b)]
+            tiers = []
+            for tier in tg.tiers:
+                spans = sorted((max(a, 0.0), min(b, duration), iv.mark) for iv in tier if iv.mark.strip()
+                               for a, b in moved(iv.minTime, iv.maxTime) if min(b, duration) > max(a, 0.0))
+                intervals, t = [], 0.0
+                for a, b, mark in spans:
+                    if a > t:
+                        intervals.append((t, a, ""))
+                    intervals.append((a, b, mark))
+                    t = b
+                if t < duration:
+                    intervals.append((t, duration, ""))
+                tiers.append((tier.name, intervals))
+            return _textgrid_text(tiers, duration)
         return _loader
 
     @staticmethod
