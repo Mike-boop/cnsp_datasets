@@ -19,5 +19,5 @@ participant P04 (sub-03) did not hear BROP01 (left out; the HDF5 release's segme
 Brainstem tier: 0.5-8 Hz mean r 0.034 (TRF peak 188 ms); 30-60 Hz SNR 1.52; 30-250 Hz SNR 2.46 (the HDF5 release:
 0.037, 1.36, 1.53).
 
-## Open
-- TextGrids are in the BIDS stimuli but not yet passed on by the adaptor.
+## Trials and stimuli
+One trial per story (condition `natural`); stimuli: the audio and its word/phone TextGrid (`textgrid`).

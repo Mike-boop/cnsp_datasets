@@ -21,7 +21,7 @@ class Weissbart2019Adaptor:
 
     One trial per story: the EEG from the onset sample for the story's duration + 1 sample (as the HDF5 release cut
     it), EEG channels only (volts), bad channels from `*_channels.tsv` in info["bads"]. Subjects are numbered as in the
-    HDF5 release (sub-00 = P00). Drift (~1.2 ppm, listed per story) is not corrected. Original participant P04
+    HDF5 release (sub-00 = P00). Stimuli: the story audio and its word/phone TextGrid. Drift (~1.2 ppm, listed per story) is not corrected. Original participant P04
     (sub-03) did not hear BROP01; its events leave it out (194 trials).
     """
 
@@ -46,7 +46,9 @@ class Weissbart2019Adaptor:
                     condition="natural",
                     ns_type="eeg",
                     stimulus=[StimulusRecord(modality="audio", name=story, is_attended=True,
-                                             data_fn=self._audio_loader(ev.stim_file))],
+                                             data_fn=self._audio_loader(ev.stim_file)),
+                              StimulusRecord(modality="audio", name=story, is_attended=True, feature_name="textgrid",
+                                             data_fn=self._text_loader(f"{story}/{story}.TextGrid"))],
                     neural_data_fn=self._eeg_loader(f"{stem}_eeg.vhdr", int(ev["sample"]), float(ev.duration), bads),
                 )
 
@@ -59,6 +61,15 @@ class Weissbart2019Adaptor:
                 audio = audio[:, 0]
             scale = float(np.iinfo(audio.dtype).max + 1) if np.issubdtype(audio.dtype, np.integer) else 1.0
             return {"fs": int(fs), "data": (audio / scale).astype(np.float32)[None, :]}
+
+        return _loader
+
+    def _text_loader(self, rel: str):
+        path = os.path.join(self.download_dir, "stimuli", rel)
+
+        def _loader() -> str:
+            with open(path, encoding="utf-8") as f:
+                return f.read()
 
         return _loader
 
