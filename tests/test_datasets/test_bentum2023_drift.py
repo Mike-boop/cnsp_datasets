@@ -66,3 +66,32 @@ def test_to_audio_clock_aligns_a_sinusoid():
 def test_to_audio_clock_without_drift_is_identity():
     data = np.random.default_rng(0).normal(size=(3, 1000))
     assert to_audio_clock(data, 0.0) is data
+
+
+def test_file_starts_use_exact_durations_and_nominal_gaps():
+    from cnsp_datasets.datasets.bentum2023.drift import file_starts_ms
+    # XML: files of 1000.4 and 2000.4 ms rounded to 1000 and 2000, 900 ms gap; the exact onsets drift away
+    starts = file_starts_ms([1000.4, 2000.4, 500.0], fid_st=[1, 1901, 4801], fid_et=[1001, 3901, 5301])
+    np.testing.assert_allclose(starts, [0, 1900.4, 4800.8, 5300.8])
+    np.testing.assert_allclose(file_starts_ms([700.25], fid_st=[5], fid_et=[705]), [0, 700.25])
+
+
+def test_block_timings_use_wav_durations(tmp_path):
+    from scipy.io import wavfile
+    from cnsp_datasets.datasets.bentum2023.drift import read_block_timings
+    wav_dir = tmp_path / "wav"
+    wav_dir.mkdir()
+    for name, n in (("fa", 16_007), ("fb", 32_007)):   # 1000.4375 and 2000.4375 ms at 16 kHz
+        wavfile.write(wav_dir / f"{name}.wav", 16_000, np.zeros(n, np.int16))
+    pp = tmp_path / "XML_INFO" / "PP1"
+    pp.mkdir(parents=True)
+    fields = dict(vhdr_fn="EEG/pp001_k.vhdr", corpus="CGN", fids="fa,fb", fid_st="1,1901", fid_et="1001,3901",
+                  st_sample="1", et_sample="3910")
+    (pp / "blocks.xml").write_text("<blocks><block>" + "".join(f"<{k}>{v}</{k}>" for k, v in fields.items())
+                                   + "</block></blocks>")
+    exact = read_block_timings(str(tmp_path / "XML_INFO"), (("CGN", str(wav_dir)),))[0]
+    nominal = read_block_timings(str(tmp_path / "XML_INFO"))[0]
+    assert exact.duration == pytest.approx(1000.4375 + 900 + 2000.4375)
+    assert nominal.duration == 3900
+    assert exact.inacc == pytest.approx(3909 - exact.duration)
+    assert nominal.inacc == 9

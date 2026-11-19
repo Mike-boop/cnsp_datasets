@@ -17,7 +17,8 @@ from mne.io import BaseRaw, RawArray, read_raw_brainvision
 
 from cnsp_datasets.standardise.trial_record import TrialRecord, StimulusRecord
 from cnsp_datasets.datasets.broderick2019_natural.utils import multi_tier_dict_to_textgrid
-from cnsp_datasets.datasets.bentum2023.drift import estimate_drift_from_xml, to_audio_clock
+from cnsp_datasets.datasets.bentum2023.drift import (estimate_drift_from_xml, file_starts_ms, to_audio_clock,
+                                                     wav_duration_ms, wav_index)
 
 
 CONFIG_PATH = Path(__file__).with_name("config.json")
@@ -84,8 +85,9 @@ class Bentum2023Adapter:
         files listed in the block's fids, as the authors did: news blocks (N02003_4) join
         12-15 files with 900 ms of silence, two-file stories (fn001124_fn001125) join them
         directly. The gaps come from the XML (fid_st / fid_et; exactly 900 or 0 ms in every
-        block), and the nominal file durations there match the corpus wav files to within
-        1 ms for 99.3% of files (rounding). Participants heard level-normalised _60db
+        block). The XML's file onsets are the wav durations rounded to whole ms, which adds up to
+        ~2 ms over a news block, so file onsets (for the word timings) and block durations (for
+        the drift) are taken from the wav files instead. Participants heard level-normalised _60db
         versions, whereas this loads the unnormalised files.
 
     Clock drift: the EEG clock runs about 30-35 ppm slow relative to the audio (about 30 ms
@@ -125,10 +127,8 @@ class Bentum2023Adapter:
         if drift_correction not in DRIFT_MODES:
             raise ValueError(f"drift_correction must be one of {DRIFT_MODES}, got {drift_correction!r}")
         self.drift_correction = drift_correction
-        self.drift = estimate_drift_from_xml(self.xml_root, marker_offset) if drift_correction else None
-
-        # corpus -> {wav stem: full path}, built lazily per corpus
-        self._audio_index: Dict[str, Dict[str, str]] = {}
+        corpus_dirs = tuple(sorted((k, v) for k, v in self.corpus_dirs.items() if v))
+        self.drift = estimate_drift_from_xml(self.xml_root, marker_offset, corpus_dirs) if drift_correction else None
 
     # ----------------------------- Public API -----------------------------
 
@@ -163,7 +163,7 @@ class Bentum2023Adapter:
                     stimuli.append(StimulusRecord(
                         modality="audio",
                         name=name,
-                        data_fn=self._make_textgrid_loader(words_path, int(block["st_sample"])),
+                        data_fn=self._make_textgrid_loader(words_path, block),
                         is_attended=True,
                         feature_name="textgrid",
                     ))
@@ -263,14 +263,16 @@ class Bentum2023Adapter:
             return {"fs": int(fs), "data": np.concatenate(parts)[None, :]}
         return _loader
 
-    def _make_textgrid_loader(self, words_path: str, st_sample: int) -> Callable[[], str]:
+    def _make_textgrid_loader(self, words_path: str, block: Dict[str, str]) -> Callable[[], str]:
         def _loader() -> str:
             tiers: Dict[str, Dict[str, List]] = defaultdict(lambda: {"item": [], "onset_s": [], "offset_s": []})
+            # word st/et are relative to the word's file; the file's onset in the block comes from the exact
+            # durations of the files before it (the XML's fid_st are rounded to whole ms per file)
+            starts = dict(zip((int(v) for v in self._split(block["fid_st"])), self._file_starts_ms(block) / 1000))
 
             for word in ET.parse(words_path).getroot():
                 sid = word.findtext("sid")
-                # st/et are relative to the word's audio file; shift to block time
-                file_offset = (int(word.findtext("fid_st_sample")) - st_sample) / 1000
+                file_offset = starts[int(word.findtext("fid_st_sample"))]
                 w_on = file_offset + float(word.findtext("st"))
                 w_off = file_offset + float(word.findtext("et"))
                 w_st_sample = int(word.findtext("st_sample"))
@@ -321,10 +323,14 @@ class Bentum2023Adapter:
         return [v for v in field.split(",") if v and v != "NA"]
 
     def _get_audio_index(self, corpus: str) -> Dict[str, str]:
-        if corpus not in self._audio_index:
-            paths = glob.glob(os.path.join(self.corpus_dirs[corpus], "**", "*.wav"), recursive=True)
-            self._audio_index[corpus] = {Path(p).stem: p for p in paths}
-        return self._audio_index[corpus]
+        return wav_index(self.corpus_dirs[corpus])
+
+    def _file_starts_ms(self, block: Dict[str, str]):
+        """Onsets of the block's files in its concatenated audio (ms), and the audio's end (see drift.file_starts_ms)."""
+        index = self._get_audio_index(block["corpus"])
+        durations = [wav_duration_ms(index[f]) for f in self._split(block["fids"])]
+        return file_starts_ms(durations, [int(v) for v in self._split(block["fid_st"])],
+                              [int(v) for v in self._split(block["fid_et"])])
 
     @staticmethod
     def _read_config() -> Dict[str, Any]:
