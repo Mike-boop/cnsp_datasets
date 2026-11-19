@@ -127,6 +127,8 @@ class Accou2023Adaptor:
     - Stimuli: the speech only. APEX played the noise as a loop starting at a random point (dataloop, randomjump),
       so the shipped noise files do not give the noise waveform as played. The stimulus trigger tracks of
       audiobook_6_1, audiobook_6_2 and audiobook_1_artefact end 0.3-0.6 s before the audio, so their EEG does too.
+      The trigger track is the one events.tsv names: audiobook_2_2's experiment (.xml) played t_audiobook_2_1 with
+      it (both after 1 s of silence, so the onset holds), so those trials have 29 s of EEG after the speech.
     """
 
     def __init__(self, download_dir: str):
@@ -142,7 +144,7 @@ class Accou2023Adaptor:
                 continue
             ev = pd.read_csv(events_path, sep="\t").iloc[0]
             sub = int(re.search(r"sub-(\d+)", stem).group(1))
-            speech = os.path.basename(ev.stim_file).replace(".gz", "")[: -len(".npz")]
+            speech = _stem(ev.stim_file)
             snr = apr_snr(f"{stem}_eeg.apr")
             snr = float(ev.snr) if snr is None else snr
             condition = self._condition(sub, speech, snr)
@@ -156,7 +158,7 @@ class Accou2023Adaptor:
                 condition=condition,
                 ns_type="eeg",
                 stimulus=stimuli,
-                neural_data_fn=self._eeg_loader(bdf, self._stim_path("t_" + speech)),
+                neural_data_fn=self._eeg_loader(bdf, self._stim_path(_stem(ev.trigger_file))),
             )
 
     @staticmethod
@@ -207,6 +209,11 @@ class Accou2023Adaptor:
             return out
 
         return _loader
+
+
+def _stem(bids_path: str) -> str:
+    """'eeg/audiobook_1.npz.gz' -> 'audiobook_1'."""
+    return os.path.basename(bids_path).replace(".gz", "")[: -len(".npz")]
 
 
 def _load_npz(path: str) -> dict:
