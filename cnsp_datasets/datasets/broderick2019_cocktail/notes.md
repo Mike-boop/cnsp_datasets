@@ -26,3 +26,11 @@ The EEG confirms the correction (0.5-8 Hz forward TRFs, all 33 subjects):
 Other changes in the same commit:
 - EEG and mastoids are converted from microvolts to volts.
 - Envelopes are named `envelope`.
+
+## Timing offset (not corrected by the adaptor)
+A match-mismatch DNN trained on accou2023 finds the attended-story response **~45 ms later** than accou2023's
+(-45.2 ms, 95% CI -57.2 .. -39.9; most subjects -70 .. -23 ms). broderick2019 natural speech (same lab, same
+pipeline) is within +5 ms of accou2023, so this may be a real latency effect of attending in a competing-speaker
+scene rather than an alignment error; the other competing-speaker datasets are smaller (etard2019 -8 / +1 ms,
+jehn2025 normal-hearing -6 / -9 ms). Unresolved; not corrected. A future adaptor option may estimate and apply such
+offsets (PLAN.md section 8). Evidence: `tmp/review/timing.md`, `tmp/review/dnn_offsets/`.

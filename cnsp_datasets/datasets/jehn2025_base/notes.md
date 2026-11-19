@@ -25,5 +25,14 @@ Cross-correlating them with the shipped stimuli (2-200 Hz, first and last 30 s o
   `_distractor`; distractor parts are different recordings from the same story's targets).
 - CI: channels removed at the magnet position (`taken_out_indices`) are dropped.
 
-## Open
-- Drift correction from the aux channels (per subject or per trial) is proposed, not applied.
+## Drift correction (optional, off by default)
+`drift.py` writes the per-trial aux-channel estimates to `drift.csv`; `drift_correction="subject"` resamples each
+trial's EEG to the audio clock with the subject's median drift (trials with >= 10 valid windows; `to_audio_clock`,
+anchored at the trial onset). Default `None` leaves the EEG as shipped.
+
+Effect, all subjects, with vs without correction (2026-11-19; `tmp/review/jehn2025/drift_compare/`):
+- 0.5-8 Hz: unchanged (encoding scores, envelope TRF, coherence within +-0.05 of the null ratio in every condition).
+- 30-60 Hz TRF: slightly sharper; fraction of subjects significant nh 0.04 -> 0.14, hi 0.10 -> 0.21, ci 0.79 -> 0.79.
+- 30-250 Hz: no brainstem response in nh/hi either way. In ci the implant artefact (stimulus-locked, no latency)
+  lines up better (SNR 5.3 -> 6.7) and 30-60 Hz coherence rises; that is artefact, not neural response.
+- Nothing gets worse. Use the correction for high-frequency or precise-latency analyses.

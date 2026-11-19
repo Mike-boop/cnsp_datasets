@@ -226,3 +226,11 @@ HPC server). Data is never kept long term here.
   lb/mb/hbDutch, which the current release copies from cleanDutch; noise/babble tracks), onsets/events from the
   stimtrack, drift estimates, and other material missing from the convenience releases (weissbart `onsets.mat`,
   transcripts and word-level features). Sources: original Zenodo records 7086168 (weissbart) and 7086209 (etard).
+- **Drift and offset parameters applied by adaptors.** Estimate clock drift from stimtrack/aux channels where they
+  exist (Theil-Sen through windowed lags, as `jehn2025_base/drift.py` and `tmp/review/scripts/guilleminot_drift.py`),
+  store the values at dataset, session and trial level with each dataset, and let every adaptor apply them optionally
+  (one `drift_correction` option with a shared resampling helper, like bentum2023 and jehn2025 now). Same for constant
+  offsets estimated without a stimtrack (match-mismatch DNN vs accou2023): das2019 ~-80 ms, bentum2023 ~-68 ms,
+  broderick2019 cocktail ~-45 ms are documented in their notes but not applied.
+- **Annotations in the standardised data.** Always carry word/phoneme alignments when they exist or can be made
+  (e.g. guilleminot2021 tactile-condition TextGrids).
