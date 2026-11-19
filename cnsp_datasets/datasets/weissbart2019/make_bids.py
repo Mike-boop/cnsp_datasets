@@ -1,12 +1,12 @@
 """
 Build an EEG-BIDS version of Weissbart et al. 2019 from the original record (Zenodo 7086168, WeissbartSurprisal.zip):
 raw BrainVision recordings with the Sound stimtrack kept, story onsets measured from the stimtrack, the stimuli with
-their alignments and word-level features, and the authors' preprocessing files and CND data as derivatives.
+their alignments and word-level features, and the authors' preprocessing files as derivatives.
 
     python -m cnsp_datasets.datasets.weissbart2019.make_bids <WeissbartSurprisal dir> <stimtrack.csv> <bids out dir>
 
 <stimtrack.csv>: per participant x story onset and drift from the Sound channel (tmp/review/scripts/
-weissbart_stimtrack.py). Large files (.eeg, CND .mat) are hard-linked, not copied, so the source and the output must be
+weissbart_stimtrack.py). Large files (.eeg) are hard-linked, not copied, so the source and the output must be
 on the same file system; delete the source only after the upload. Subjects keep the numbering of the convenience
 release (Zenodo 7775260, P00-P12), which follows the sorted original folders (P01 .. P14 without P11).
 """
@@ -90,12 +90,11 @@ def main(src: str, stimtrack_csv: str, out: str) -> None:
             else:
                 link(f, f"{out}/derivatives/authors_preprocessing/sub-{sub}/{b}")
         participants.append(dict(participant_id=f"sub-{sub}", original_id=orig, release_id=f"P{i:02d}",
-                                 cnd_id=f"S{i + 1:02d}", n_stories=len(ev)))
+                                 n_stories=len(ev)))
     write_tsv(f"{out}/participants.tsv", pd.DataFrame(participants))
     write_json(f"{out}/participants.json", {
         "original_id": {"Description": "Folder name in the original record (Zenodo 7086168, eeg/)"},
         "release_id": {"Description": "Participant ID in the HDF5 release (Zenodo 7775260)"},
-        "cnd_id": {"Description": "Subject file in the CND derivative (derivatives/CND/S<k>.mat; toCND.m numbers the sorted eeg/ folders)"},
         "n_stories": {"Description": "Stories with valid EEG (see README for the one missing story)"},
     })
     write_json(f"{out}/task-{TASK}_events.json", {
@@ -125,19 +124,13 @@ def main(src: str, stimtrack_csv: str, out: str) -> None:
                 link(f, f"{out}/stimuli/{story}/{kind}/{os.path.basename(f)}")
     link(f"{src}/stim/onsets.mat", f"{out}/sourcedata/onsets.mat")
 
-    # derivatives: CND files, stimtrack table
-    for f in glob.glob(f"{src}/dataCND/*.mat"):
-        link(f, f"{out}/derivatives/CND/{os.path.basename(f)}")
-    deriv = {"Name": "Weissbart 2019 derivatives", "BIDSVersion": "1.9.0", "DatasetType": "derivative"}
-    write_json(f"{out}/derivatives/CND/dataset_description.json",
-               dict(deriv, Name="Preprocessed data in the Continuous-event Neural Data (CND) format",
-                    GeneratedBy=[{"Name": "toCND.m (code/)", "Description": "authors' CNSP conversion"}]))
+    # derivatives: the authors' preprocessing files (CND data and toCND.m left out; in the earlier Zenodo versions)
     write_json(f"{out}/derivatives/authors_preprocessing/dataset_description.json",
-               dict(deriv, Name="Authors' preprocessing files (bad channels, ICA, event files)",
-                    GeneratedBy=[{"Name": "MNE-Python (authors)"}]))
+               {"Name": "Authors' preprocessing files (bad channels, ICA, event files)", "BIDSVersion": "1.9.0",
+                "DatasetType": "derivative", "GeneratedBy": [{"Name": "MNE-Python (authors)"}]})
 
-    # code
-    for f in [f"{src}/toCND.m"] + glob.glob(f"{src}/preproc_functions/*"):
+    # code: the authors' feature functions and this script
+    for f in glob.glob(f"{src}/preproc_functions/*"):
         link(f, f"{out}/code/{os.path.relpath(f, src)}")
     shutil.copy2(__file__, f"{out}/code/make_bids.py")
     shutil.copy2(write_module.__file__, f"{out}/code/bids_write.py")

@@ -16,16 +16,15 @@ comprehension. J Cogn Neurosci 32(1):155-166.
 - `stimuli/<story>/`: the audio as played (`<story>.wav`, 16 kHz), word and phone alignments (`.TextGrid`), the
   text (`.txt`, `.lab`, `clean_*_35K.txt`), and word-level features (`word_frequencies/`, `surprisal/`,
   `transcripts/`).
-- `derivatives/CND/`: the authors' preprocessed data in the CNSP Continuous-event Neural Data format (`S<k>.mat`,
-  `Stim.mat`; made by `code/toCND.m`).
 - `derivatives/authors_preprocessing/sub-<nn>/`: the authors' bad channels, ICA solution (`-ica.fif`), rejected
   components and event files.
 - `sourcedata/`: per-participant behavioural files (`beh/*.mat`, `psychoData`: comprehension questions) and the
   authors' list of story onsets (`onsets.mat`).
-- `code/`: the authors' conversion code and the script that built this dataset (`make_bids.py`).
+- `code/`: the authors' feature functions (`preproc_functions/`) and the script that built this dataset
+  (`make_bids.py`).
 
 Participant labels follow the HDF5 release (sub-00 = P00, ...); `participants.tsv` maps them to the original folder
-names (P01 .. P14 without P11) and the CND files.
+names (P01 .. P14 without P11).
 
 ## Timing (checked against the stimtrack)
 - Story onsets in `*_events.tsv` come from cross-correlating the `Sound` channel with each story (1 ms), refined by a
@@ -41,4 +40,6 @@ names (P01 .. P14 without P11) and the CND files.
 ## Changes from the HDF5 release (7775260)
 - Raw continuous recordings with the stimtrack instead of per-story EEG segments without it.
 - Measured onsets and drift per story; the invalid P03 BROP01 trial is removed.
-- Alignments (TextGrids), transcripts and word-level features, CND data and the authors' preprocessing files added.
+- Alignments (TextGrids), transcripts and word-level features, and the authors' preprocessing files added.
+- Not included: the authors' CND-format data (`dataCND/`, `toCND.m`); it remains in the earlier versions of this
+  record.
