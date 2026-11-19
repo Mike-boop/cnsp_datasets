@@ -11,6 +11,7 @@ from mne.channels import make_dig_montage
 from mne.io import BaseRaw, read_raw_curry
 from scipy.io import wavfile
 
+from cnsp_datasets.datasets.bentum2023.drift import to_audio_clock
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 # Recording P -> (left-ear track, right-ear track), from the Zenodo record's table as corrected on 2026-08-11.
@@ -32,15 +33,18 @@ class Narayanan2021Adaptor:
 
     One trial per recording, numbered in recording order (meas_date). The `Trigger` channel pulses once per second
     while the story plays (390 pulses for part 1, 392 for part 2); the EEG is cut from the first pulse of that 1-s
-    train for the duration of the wav (the pulses stop 5.00 / 4.33 s before the story ends). Pulse period -10 ppm
-    against the EEG clock (S24-S29: -16.8 ppm); not corrected. Whether the first pulse coincides with the
-    sound onset is not documented (checked with lag sweeps, see notes.md). XtraL/XtraR (no audio on them) and Trigger
+    train for the duration of the wav (the pulses stop 5.00 / 4.33 s before the story ends). Whether the first pulse
+    coincides with the sound onset is not documented (no stimtrack).
+    drift_correction=True (default): the pulse period is -10 ppm against the EEG clock (S24-S29: -16.8 ppm); each
+    trial is resampled onto the pulse clock (period fitted per recording, onset as the anchor), assuming the pulses
+    follow the audio clock. XtraL/XtraR (no audio on them) and Trigger
     are dropped. Channel positions from the authors' misc/eeg255ch_locs.csv (spherical, BESA convention); recording
     labels FP/AFP/PPO8h are renamed to the csv's Fp/AFp/PPO8.
     """
 
-    def __init__(self, download_dir: str):
+    def __init__(self, download_dir: str, drift_correction: bool = True):
         self.download_dir = download_dir
+        self.drift_correction = drift_correction
         self._montage = _montage(os.path.join(download_dir, "misc", "eeg255ch_locs.csv"))
 
     def parse(self) -> Iterable[TrialRecord]:
@@ -86,14 +90,21 @@ class Narayanan2021Adaptor:
         return _loader
 
     def _eeg_loader(self, dat: str, duration: float):
-        montage = self._montage
+        montage, correct = self._montage, self.drift_correction
 
         def _loader() -> BaseRaw:
             raw = read_raw_curry(dat, preload=False, verbose="ERROR")
-            onset = train_onset(raw.get_data(picks=["Trigger"])[0], raw.info["sfreq"])
-            stop = min(onset + int(round(duration * raw.info["sfreq"])) + 1, raw.n_times)
+            sfreq = raw.info["sfreq"]
+            trig = raw.get_data(picks=["Trigger"])[0]
+            onset = train_onset(trig, sfreq)
+            n = int(round(duration * sfreq)) + 1
+            margin = int(sfreq) if correct else 0  # resampling onto a faster clock needs a few more EEG samples
+            stop = min(onset + n + margin, raw.n_times)
             raw = raw.crop(tmin=raw.times[onset], tmax=raw.times[stop - 1]).load_data()
             raw.drop_channels(NON_EEG)
+            if correct:
+                data = to_audio_clock(raw.get_data(), pulse_drift(trig, sfreq))[:, :n]
+                raw = mne.io.RawArray(data, raw.info, verbose="ERROR")
             raw.set_annotations(None)
             raw.rename_channels(lambda c: "PPO8" if c == "PPO8h" else c.replace("FP", "Fp"))
             raw.set_montage(montage)
@@ -108,6 +119,16 @@ def train_onset(trig: np.ndarray, sfreq: float) -> int:
     pulses = np.flatnonzero(np.diff(trig) > 0) + 1
     regular = np.abs(np.diff(pulses) - sfreq) <= 2
     return int(pulses[np.argmax(regular)])
+
+
+def pulse_drift(trig: np.ndarray, sfreq: float) -> float:
+    """Relative drift of the 1-s pulse train against the EEG clock: fitted period / sfreq - 1."""
+    pulses = np.flatnonzero(np.diff(trig) > 0) + 1
+    regular = np.abs(np.diff(pulses) - sfreq) <= 2
+    start = int(np.argmax(regular))
+    gaps = np.flatnonzero(~regular[start:])
+    train = pulses[start: start + (gaps[0] + 1 if gaps.size else len(pulses))]
+    return float(np.polyfit(np.arange(len(train)), train, 1)[0] / sfreq - 1)
 
 
 def _montage(csv: str) -> mne.channels.DigMontage:
