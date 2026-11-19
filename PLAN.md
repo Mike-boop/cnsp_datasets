@@ -174,6 +174,8 @@ Each item below caught a real error in at least one dataset. Run through them fo
 
 **Running the work**
 - Long jobs detached and resumable (cache per trial/session); a server reboot killed every job once.
+- After relabelling conditions or changing an adaptor, move the dataset's caches aside before re-running: caches
+  keyed by subject/trial/condition silently return the old results (etard2019 DNN offsets after the SNR relabel).
 - Downloads can stop silently: use resumable retries (`curl -C -`) and check the final size.
 - Keep scripts and results out of the session scratchpad (`tmp/review/scripts`).
 
