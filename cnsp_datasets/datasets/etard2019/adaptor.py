@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import glob
-from typing import Dict, Iterable, Tuple, Optional, List, Any, Callable
+from typing import Any, Callable, Iterable, List
 import numpy as np
 import h5py
 from scipy.io import wavfile
@@ -15,6 +15,21 @@ from cnsp_datasets.standardise.trial_record import TrialRecord, StimulusRecord
 
 
 class Etard2019Adaptor:
+    """
+    Etard et al. 2019 (Reichenbach lab): 63-channel EEG at 1 kHz, English audiobooks in quiet, in babble noise at
+    three SNRs and with a competing speaker, and Dutch (foreign) audiobooks in quiet and in babble; 4 parts each.
+
+    The authors cut the EEG per part (`align_data.py`) at the onset found by cross-correlating the Sound stimtrack
+    with the attended stream (sample-accurate; drift not corrected), and wrote the streams as played next to it:
+    `audiobooks/<cond>/part_<n>_story.wav` (attended) and `part_<n>_distractor.wav` (babble noise or the competing
+    speaker), both starting at the EEG's first sample. English babble conditions: noise 1 s before and after the
+    story (the story wav is zero-padded). Dutch babble conditions: noise starts 1 s after the story.
+
+    Dutch parts contain short English sentences (participants detected them) in silent gaps of the Dutch stream.
+    For cleanDutch they are added to the attended stream (`part_<n>_english.wav`, same length). For lb/mb/hbDutch
+    the shipped English wavs and onsets are copies of the cleanDutch ones (align_data.py reads them from cleanDutch
+    for all four conditions) and do not fit those stories, so the English is missing there (2.5-4 s gaps).
+    """
 
     # known raw condition labels in the H5 -> standardized names
     _COND_MAP = {
@@ -34,34 +49,10 @@ class Etard2019Adaptor:
         self,
         download_dir: str
     ):
-        """
-        Parameters
-        ----------
-        download_dir : str
-            Root directory of the downloaded dataset.
-        session : int
-            Session number to put into TrialRecord (dataset has a single session; default 1).
-        """
+        """English conditions are session 1, Dutch session 2 (P11 and P12 took part in the Dutch session only)."""
         self.download_dir = download_dir
-
-        # Discover EEG subject files
         self._subject_files = sorted(glob.glob(os.path.join(self.download_dir, "P*.h5")))
-
-        # Precompute MNE Info (channels, sfreq, montage)
-        self._info = self._make_mne_info()
-
-        # Discover available audio (optional; useful for validating a provided map)
-        # Exclude embedded English clips inside Dutch speech (as in your original)
-        all_wavs = glob.glob(os.path.join(self.download_dir, "audiobooks", "*", "*.wav"))
-        self._audio_files = [p for p in all_wavs if "english" not in p.lower()]
-
-        # Build a helper dict: condition_dir -> [wav paths]
-        self._audio_by_condition: Dict[str, List[str]] = {}
-        for p in self._audio_files:
-            cond_dir = os.path.basename(os.path.dirname(p))
-            self._audio_by_condition.setdefault(self._standardize_condition(cond_dir), []).append(p)
-
-        # Conditions we may see in H5 files
+        self._info = self._make_mne_info(self._subject_files[0])
         self._raw_conditions = set(self._COND_MAP.keys())
 
     # --------------------------- Public API ---------------------------
@@ -107,8 +98,9 @@ class Etard2019Adaptor:
                             )
                         )
 
-                        if raw_cond in ("fM", "fW"):
-                            distractor_name = f"{std_cond}_part_{trial}_distractor"
+                        if not raw_cond.startswith("clean"):
+                            role = "distractor" if raw_cond in ("fM", "fW") else "babble"
+                            distractor_name = f"{std_cond}_part_{trial}_{role}"
                             distractor_fn = self._make_audio_loader(raw_cond, trial, role="distractor")
                             stimuli.append(
                                 StimulusRecord(
@@ -158,17 +150,13 @@ class Etard2019Adaptor:
         """
         wav_path = os.path.join(self.download_dir, "audiobooks", raw_cond, f"part_{trial}_{role}.wav")
 
+        english_path = os.path.join(self.download_dir, "audiobooks", raw_cond, f"part_{trial}_english.wav")
+
         def _loader() -> Any:
             fs, audio = wavfile.read(wav_path)
-            if audio.ndim == 2:
-                # ensure mono; many files are dual-mono
-                if not np.array_equal(audio[:, 0], audio[:, 1]):
-                    # If truly stereo, pick left channel; adjust to your needs
-                    audio = audio[:, 0]
-                else:
-                    audio = audio[:, 0]
-            waveform = np.asarray(audio)[None, :]  # shape (1, T)
-            return {"fs": int(fs), "data": waveform}
+            if raw_cond == "cleanDutch" and role == "story":  # the English sentences fill gaps in the Dutch stream
+                audio = audio + wavfile.read(english_path)[1]
+            return {"fs": int(fs), "data": np.asarray(audio, dtype=float)[None, :]}
 
         return _loader
 
@@ -181,15 +169,11 @@ class Etard2019Adaptor:
     def _standardize_condition(self, raw_condition: str) -> str:
         return self._COND_MAP.get(raw_condition, raw_condition)
 
-    def _make_mne_info(self):
-        ch_names = [
-            'AF3','AF4','AF7','AF8','C1','C2','C3','C4','C5','C6','CP1','CP2','CP3',
-            'CP4','CP5','CP6','CPz','Cz','F1','F2','F3','F4','F5','F6','F7','F8',
-            'FC1','FC2','FC3','FC4','FC5','FC6','Fp1','Fp2','FT10','FT7','FT8','FT9',
-            'Fz','O1','O2','Oz','P1','P2','P3','P4','P5','P6','P7','P8','PO3','PO7',
-            'PO8','POz','Pz','FCz','T7','T8','TP10','TP7','TP8','TP9','AFz'
-        ]
-        sfreq = 1000
+    @staticmethod
+    def _make_mne_info(h5_path: str):
+        with h5py.File(h5_path, "r") as f:
+            ch_names = [c.decode() for c in f["ch_names"][:]]
+            sfreq = float(f["srate"][0])
         info = create_info(ch_names, sfreq, ch_types="eeg")
         info.set_montage(make_standard_montage("easycap-M1"))
         return info
