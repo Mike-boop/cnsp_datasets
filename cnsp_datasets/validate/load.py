@@ -23,8 +23,8 @@ def group_by_subject(records, n_subjects=None, seed=0):
 
 
 def pick_stimulus(record):
-    """The attended stimulus if one is marked, else the first; audio preferred over envelope."""
-    stims = [s for s in record.stimulus if s.feature_name in STIM_FEATURES]
+    """The attended speech stimulus if one is marked, else the first; audio preferred over envelope."""
+    stims = [s for s in record.stimulus if s.modality == "audio" and s.feature_name in STIM_FEATURES]
     if not stims:
         return None
     stims.sort(key=lambda s: (not s.is_attended, STIM_FEATURES.index(s.feature_name)))

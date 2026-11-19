@@ -143,7 +143,7 @@ def validate_subject(records, picks, reference, cache, seed, tiers=ALL_TIERS):
         try:
             stim = pick_stimulus(record)
             if stim is None:
-                info["error"] = "no audio or envelope stimulus"
+                info["error"] = "no speech audio or envelope stimulus"
                 continue
             raw = load_neural(record, picks, reference)
             modality = "meg" if {"mag", "grad"} & set(raw.get_channel_types()) else "eeg"
