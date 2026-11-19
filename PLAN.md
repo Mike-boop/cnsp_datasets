@@ -158,6 +158,11 @@ Each item below caught a real error in at least one dataset. Run through them fo
 - DNN offsets relative to accou2023: clean speech within +-5 ms; speech in noise ~-15 ms even with measured onsets
   (response latency, not timing error).
 
+**Data size (record for every dataset)**
+- Number of participants and recorded hours per participant (mean, min-max), overall and per condition, from the
+  standardised files' headers: `tmp/review/scripts/data_size.py` (adds rows to `tmp/review/data_size.csv`). Put the
+  numbers in the dataset's `notes.md` and in `tmp/review/data_size.md`. Measure before deleting standardised data.
+
 **Running the work**
 - Long jobs detached and resumable (cache per trial/session); a server reboot killed every job once.
 - Downloads can stop silently: use resumable retries (`curl -C -`) and check the final size.

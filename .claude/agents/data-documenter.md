@@ -9,7 +9,9 @@ dataset's `notes.md`, `adaptor.py`, the provenance sidecars and the validation s
 (`cnsp_datasets/datasets/<name>/validation.json`).
 
 Cover, briefly:
-- What it is: paradigm, language, subjects, trials, total duration; citation(s), DOI, licence. Flag licences that
+- What it is: paradigm, language, subjects, trials; data size as number of participants and recorded hours per
+  participant (mean, range), overall and per condition (from `tmp/review/scripts/data_size.py`, see PLAN.md 4b);
+  citation(s), DOI, licence. Flag licences that
   restrict redistribution of derived data.
 - What is provided: neural modality, sample rate (original and stored), channels incl. external/EOG/ECG/reference
   sensors; speech features (audio/envelope/transcript/TextGrids) or their absence.

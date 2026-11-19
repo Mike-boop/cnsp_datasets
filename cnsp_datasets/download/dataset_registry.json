@@ -78,23 +78,23 @@
       "description": "Gwilliams et al. (2023) dataset",
       "url": "https://osf.io/ag3kj/"
     },
-    "jehn2025_th": {
+    "jehn2025_nh": {
       "source": "zenodo",
       "identifiers": ["10.5281/zenodo.17952231"],
-      "description": "Jehn et al. (2025) datasets (normal hearing, hearing aids, cochlear implants)",
+      "description": "Jehn et al. (2025) dataset, normal-hearing listeners (nh)",
       "url": "https://zenodo.org/records/17952231"
     },
-    "jehn2025_ha": {
+    "jehn2025_hi": {
       "source": "zenodo",
       "identifiers": ["10.5281/zenodo.17927767"],
-      "description": "Jehn et al. (2025) datasets (normal hearing, hearing aids, cochlear implants)",
-      "url": "https://zenodo.org/records/17952231"
+      "description": "Jehn et al. (2025) dataset, hearing-impaired listeners with hearing aids (hi)",
+      "url": "https://zenodo.org/records/17927767"
     },
     "jehn2025_ci": {
       "source": "zenodo",
       "identifiers": ["10.5281/zenodo.17952844"],
-      "description": "Jehn et al. (2025) datasets (normal hearing, hearing aids, cochlear implants)",
-      "url": "https://zenodo.org/records/17952231"
+      "description": "Jehn et al. (2025) dataset, cochlear-implant users (ci)",
+      "url": "https://zenodo.org/records/17952844"
     },
     "narayanan2021": {
       "source": "zenodo",

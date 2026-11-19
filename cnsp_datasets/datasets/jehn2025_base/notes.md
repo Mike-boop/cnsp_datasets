@@ -1,4 +1,4 @@
-# jehn2025 notes (jehn2025_th / _ha / _ci share this adaptor)
+# jehn2025 notes (jehn2025_nh / _hi / _ci share this adaptor)
 
 Selective attention to one of two German audiobooks (Elbenwald, Polarnacht) played from left and right
 loudspeakers, in normal-hearing (nh, 28), hearing-aid (hi, 29) and cochlear-implant (ci, 24) listeners. 20 trials
