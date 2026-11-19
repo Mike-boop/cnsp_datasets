@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 import os
-import glob
-from typing import Iterable, Dict, List, Callable, Any
+from fractions import Fraction
+from typing import Iterable, Dict, Callable, Any
 
 import numpy as np
 import pandas as pd
 from scipy.io import wavfile
-from scipy.signal import resample_poly, correlate, correlation_lags
+from scipy.signal import resample_poly
 
 from mne.io import read_raw_brainvision, BaseRaw
 
 from cnsp_datasets.standardise.trial_record import TrialRecord, StimulusRecord
+from cnsp_datasets.datasets.guilleminot2021.timing import BUFFER_FS, OUT as TIMING_CSV, PAD_S, tactile_buffer
 
 
 EEG_FNAME_DICT = {
@@ -133,8 +134,6 @@ PARTICIPANTS = [
 ]
 SESSIONS = [1, 2]
 
-# some trials are missing due to recording problems
-MISSING_TRIALS = {'yr' : {1: [12]}, 'naga' : {1: [0,13,14,15], 2: [8]}, 'elios' : {1: [14]}}
 
 # stable int id per participant (TrialRecord.subject requires int)
 _SUB_INDEX = {p: i + 1 for i, p in enumerate(PARTICIPANTS)}
@@ -142,130 +141,77 @@ _SUB_INDEX = {p: i + 1 for i, p in enumerate(PARTICIPANTS)}
 
 class Guilleminot2021Adaptor:
     """
-    Adaptor for the Guilleminot 2021 dataset (EEG + audio alignment via Sound channel).
+    Adaptor for the Guilleminot 2021 audio-tactile speech-in-noise dataset (1 kHz EEG).
 
     Folder layout expected:
       <root>/
-        ├─ Stimuli/Odin_<File>.wav
+        ├─ Stimuli/Odin_<File>.wav, .TextGrid, _audio.npy, _phone_.npy
         └─ <participant>/<participant>_EEG_<session>/
-             ├─ *.vhdr (unfortunately no standardised naming scheme)
-             └─ <participant>_EEG_<session>.csv  (with columns: File, Type, Delay)
+             ├─ *.vhdr (no standardised naming scheme, see EEG_FNAME_DICT)
+             └─ <participant>_EEG_<session>.csv  (columns: File, Type, Delay, Correlated)
 
-    Notes
-    -----
-    - We align each EEG trial window to the audio using X-corr of the "Sound" channel vs
-      the audio resampled to 1 kHz
-    - There was no sound in the tactile-only conditions. However, the vmrk files contain 
-        precise triggering information (TDT trigger system) for the tactile stimulus onset.
-        For some reason (TDT latency?), the TDT triggers lag the audio onset by 1.002 seconds
-        (audio-tactile trials, x-corr method vs TDT trigger)
-    - Condition:
-        'audio-tactile' → 'audio-tactile-<Delay>' where '-' in Delay is replaced with 'm'
-        otherwise the raw 'Type' (e.g., 'audio', 'tactile').
-    - Missing trials can be skipped via a dict mapping 'participant' -> [trial_idx,...].
-    - Subject IDs in TrialRecord are 1-based indices by participant order (stable mapping).
+    Timing (see timing.py, which writes trial_timing.csv from the EEG 'Sound' channel):
+      - Each trial plays a 39062.5 Hz buffer: 1 s silence, the story part (Odin_<File>.wav), 1 s silence. The buffer
+        starts 1-3 ms after the R3 marker; trial_timing.csv gives each trial's measured buffer onset (and drops the
+        few trials without a usable marker, cut by a recording pause or running past its end), and the EEG is cropped from buffer onset + 1 s for the
+        duration of the wav. Condition 'T' (tactile only) has no speech; its EEG is cropped the same way.
+      - Tactile stimulus: Odin_<File>_phone_.npy (the vibrotactile signal, ~100 Hz carrier), started `Delay` ms
+        after the speech (negative: tactile first). Mismatched trials (Correlated = 0) used the same buffer
+        circularly shifted by a quarter of its length. It is resampled to the wav's rate and cut to the trial.
+    Conditions: 'A', 'T', 'AT_<Delay>' ('-' -> 'm'), 'AT_mismatched'. Subject IDs are 1-based in PARTICIPANTS order.
     """
 
-    def __init__(
-        self,
-        download_dir: str,
-    ):
+    def __init__(self, download_dir: str):
         self.root = download_dir
+        self.timing = pd.read_csv(TIMING_CSV)
 
     # --------------------------- Public API ---------------------------
 
     def parse(self) -> Iterable[TrialRecord]:
-        """
-        Emit a TrialRecord per (participant, session, trial).
-        """
+        usable = self.timing[self.timing.method.isin(["stimtrack", "marker"]) & self.timing.issue.isna()]
         for p in PARTICIPANTS:
             for ses in SESSIONS:
                 eeg_dir = os.path.join(self.root, p, f"{p}_EEG_{ses}")
-                if not os.path.isdir(eeg_dir):
-                    continue
-
-                eeg_files = (EEG_FNAME_DICT[p][str(ses)], EEG_FNAME_DICT[p][str(ses) + "_2"])
-                vhdr_paths = [os.path.join(eeg_dir, vhdr) for vhdr in (eeg_files) if vhdr is not None]
-
                 csv_path = os.path.join(eeg_dir, f"{p}_EEG_{ses}.csv")
                 if not os.path.exists(csv_path):
                     continue
-
                 info_df = pd.read_csv(csv_path)
+                timing = usable[(usable.participant == p) & (usable.session == ses)].set_index("row")
                 for trial_idx in info_df.index:
-
-                    print(p, trial_idx)
-                    if p in MISSING_TRIALS and ses in MISSING_TRIALS[p] and trial_idx in MISSING_TRIALS[p][ses]:
-                        print("Skipping", trial_idx)
+                    if trial_idx not in timing.index:
                         continue
-
+                    t = timing.loc[trial_idx]
                     file_token = str(info_df.loc[trial_idx, "File"])
+                    stim_type = str(info_df.loc[trial_idx, "Type"])
+                    delay = int(info_df.loc[trial_idx, "Delay"])
+                    correlated = bool(info_df.loc[trial_idx, "Correlated"])
                     wav_path = os.path.join(self.root, "Stimuli", f"Odin_{file_token}.wav")
 
-                    stim_type = str(info_df.loc[trial_idx, "Type"])
-                    if stim_type == "audio-tactile":
-                        delay_str = str(info_df.loc[trial_idx, "Delay"])
-                        delay_str = delay_str.replace('-', 'm')
-                        condition = f"AT_{delay_str}"
-                    elif stim_type == "audio":
+                    if stim_type == "audio":
                         condition = "A"
                     elif stim_type == "tactile":
                         condition = "T"
-
-                    if info_df.loc[trial_idx, "Correlated"] == 0:
+                    elif correlated:
+                        condition = f"AT_{str(delay).replace('-', 'm')}"
+                    else:
                         condition = "AT_mismatched"
 
-                    # Build stimuli
-                    all_stim = []
-
+                    stimuli = []
                     if "audio" in stim_type:
-                        # raw audio stimulus
-                        stim_name = f"Odin_{file_token}"
-                        stim_audio = StimulusRecord(
-                            modality="audio",
-                            name=stim_name,
-                            data_fn=self._make_audio_loader(wav_path),
-                            is_attended=True,
-                            feature_name="audio",
-                        )
-                        all_stim.append(stim_audio)
-
-                        # and textgrid
-                        tg_path = wav_path.replace(".wav", ".TextGrid")
-                        stim_tg = StimulusRecord(
-                            modality="audio",
-                            name=stim_name,
-                            data_fn=self._make_tg_loader(tg_path),
-                            is_attended=True,
-                            feature_name="textgrid",
-                        )
-                        all_stim.append(stim_tg)
-
-                    if stim_type in ["audio-tactile", "tactile"] and condition != "AT_mismatched":
-                        stim_name = f"Odin_{file_token}_delay_{delay_str}"
-                        delay_int = info_df.loc[trial_idx, "Delay"]
-                        stim = StimulusRecord(
-                            modality="tactile",
-                            name=stim_name,
-                            data_fn=self._make_audio_loader(wav_path, delay=delay_int), # delay applied to tactile stim [ms]
-                            is_attended=True,
-                            feature_name="audio",
-                        )
-                        all_stim.append(stim)
-
-                    if condition == "AT_mismatched":
-                        pass # still need to figure out how to get the incongruent tactile stimuli
-
-                    # Lazy EEG loader (align/crop via cross-correlation or annotation)
-
-                    if p == "naga" and ses == 1: # hacky fix: first trial is missing from this eeg recording, so adjust the annotation that we are looking for.
-                        eeg_annot_idx = trial_idx - 1
-                    elif p == "naga" and ses == 2 and trial_idx > 8: # this session is missing an annotation altogether
-                        eeg_annot_idx = trial_idx - 1
-                    else:
-                        eeg_annot_idx = trial_idx
-
-                    neural_fn = self._make_eeg_loader(vhdr_paths, wav_path, stim_type, eeg_annot_idx)
+                        name = f"Odin_{file_token}"
+                        stimuli += [
+                            StimulusRecord(modality="audio", name=name, data_fn=self._make_audio_loader(wav_path),
+                                           is_attended=True, feature_name="audio"),
+                            StimulusRecord(modality="audio", name=name,
+                                           data_fn=self._make_tg_loader(wav_path.replace(".wav", ".TextGrid")),
+                                           is_attended=True, feature_name="textgrid"),
+                        ]
+                    if stim_type in ("audio-tactile", "tactile"):
+                        suffix = f"delay_{str(delay).replace('-', 'm')}" if correlated else "rolled_quarter"
+                        stimuli.append(StimulusRecord(
+                            modality="tactile", name=f"Odin_{file_token}_{suffix}",
+                            data_fn=self._make_tactile_loader(file_token, wav_path, delay, correlated),
+                            is_attended=True, feature_name="audio"))
 
                     yield TrialRecord(
                         subject=_SUB_INDEX[p],
@@ -273,87 +219,61 @@ class Guilleminot2021Adaptor:
                         trial=int(trial_idx),
                         condition=condition,
                         ns_type="eeg",
-                        stimulus=all_stim,
-                        neural_data_fn=neural_fn,
+                        stimulus=stimuli,
+                        neural_data_fn=self._make_eeg_loader(os.path.join(eeg_dir, t.recording), wav_path,
+                                                             float(t.buffer_onset_s) + PAD_S),
                         structural_data_fn=None,
                         behavioural_data_fn=None,
                     )
 
     # ------------------------ Lazy loaders ------------------------
 
-    def _make_audio_loader(self, wav_path: str, delay: int = 0) -> Callable[[], Dict[str, Any]]:
+    @staticmethod
+    def _make_audio_loader(wav_path: str) -> Callable[[], Dict[str, Any]]:
         def _loader() -> Dict[str, Any]:
             fs, x = wavfile.read(wav_path)
             if x.ndim == 2:
-                x = x[:, 0]  # mono
-
-            d = -int(delay * fs / 1000) # delay is audio onset wrt tactile, so invert here
-            x = np.roll(x, d)
-            print(d, delay)
-            # if delay >= 0:
-            #     x[:d] = 0 
-            # else:
-            #     x[d:] = 0
+                x = x[:, 0]
             return {"fs": int(fs), "data": np.asarray(x, dtype=float)[None, :]}
         return _loader
-    
-    def _make_tg_loader(self, tg_path: str) -> Callable[[], str]:
+
+    def _make_tactile_loader(self, file_token: str, wav_path: str, delay_ms: int,
+                             correlated: bool) -> Callable[[], Dict[str, Any]]:
+        """The vibrotactile signal as played, on the wav's time axis and sample rate (t = 0 at speech onset)."""
+        stimuli_dir = os.path.join(self.root, "Stimuli")
+
+        def _loader() -> Dict[str, Any]:
+            fs, x = wavfile.read(wav_path, mmap=True)
+            n = x.shape[0]
+            buf = tactile_buffer(stimuli_dir, file_token, correlated)
+            ratio = Fraction(int(fs) * 2, int(BUFFER_FS * 2))           # e.g. 44100 / 39062.5 = 3528 / 3125
+            buf = resample_poly(buf, ratio.numerator, ratio.denominator)
+            # speech onset is PAD_S into its buffer; the tactile buffer starts delay_ms later (mismatched: 0)
+            start = int(round((PAD_S - (delay_ms if correlated else 0) / 1000) * fs))
+            out = np.zeros(n)
+            seg = buf[max(start, 0):max(start, 0) + n - max(-start, 0)]
+            out[max(-start, 0):max(-start, 0) + len(seg)] = seg
+            return {"fs": int(fs), "data": out[None, :]}
+        return _loader
+
+    @staticmethod
+    def _make_tg_loader(tg_path: str) -> Callable[[], str]:
         def _loader() -> str:
             with open(tg_path, "r") as f:
-                text = f.read()
-            return text
+                return f.read()
         return _loader
 
-    def _make_eeg_loader(self, vhdr_paths: List[str], wav_path: str, stim_type: str, eeg_annot_idx: int) -> Callable[[], BaseRaw]:
-        """
-        Loads EEG run, computes onset by x-corr Sound vs audio@1kHz, crops Raw to [onset, offset].
-        """
+    @staticmethod
+    def _make_eeg_loader(vhdr_path: str, wav_path: str, onset_s: float) -> Callable[[], BaseRaw]:
+        """Crop the recording to [speech onset, + wav duration]."""
         def _loader() -> BaseRaw:
-            # audio @ 1 kHz
-            fs_aud, x = wavfile.read(wav_path)
-            if x.ndim == 2:
-                x = x[:, 0]
-            audio_1k = resample_poly(x.astype(float), 1000, fs_aud)
-
-            # EEG: read 'Sound' channel and filter as in your script
-            raw = read_raw_brainvision(vhdr_paths[0], preload=False, verbose="ERROR")
-            if len(vhdr_paths) > 1:
-                raw2 = read_raw_brainvision(vhdr_paths[1], preload=False, verbose="ERROR")
-                raw.append(raw2)
-
-            annotations = [x for x in raw.annotations if x["description"] == 'Response/R  3']
-            onset = annotations[eeg_annot_idx]["onset"] + 1.002
-
-            # # I'm pretty sure we can just use the TDT triggers
-            # # but in case we get dodgy results, here's the x-corr method
-            # # in this case one should be aware that in T-only stimulation 
-            # # there is no stimtrack, so the x-corr method doesn't work at all
-            # raw_st = raw.copy().pick(["Sound"]).load_data()
-            # raw_st.filter(1.0, None, picks="Sound", verbose="ERROR")
-            # stim = raw_st.get_data().ravel()
-
-            # # x-corr (assume Sound is at 1 kHz; if not, consider resampling stim)
-            # crosscorr = correlate(stim, audio_1k, mode="same")
-            # lags = correlation_lags(len(stim), len(audio_1k), mode="same")
-            # lag = int(lags[np.argmax(crosscorr)])
-            # onset = lag / 1000.0
-            
-            duration = len(audio_1k) / 1000.0
-            tmin, tmax = onset, onset + duration
-
-            return raw.copy().crop(tmin=tmin, tmax=tmax)
+            fs, x = wavfile.read(wav_path, mmap=True)
+            raw = read_raw_brainvision(vhdr_path, preload=False, verbose="ERROR")
+            tmax = onset_s + x.shape[0] / fs
+            if tmax > raw.times[-1]:
+                raise ValueError(f"{vhdr_path}: trial ends at {tmax:.1f} s, after the recording ({raw.times[-1]:.1f} s)")
+            return raw.crop(tmin=onset_s, tmax=tmax)
         return _loader
-
-    # ------------------------ Discovery helpers ------------------------
-
-    def _discover_participants(self) -> List[str]:
-        # participant directories at root level
-        candidates = [
-            os.path.basename(p)
-            for p in glob.glob(os.path.join(self.root, "*"))
-            if os.path.isdir(p) and os.path.exists(os.path.join(p, f"{os.path.basename(p)}_EEG_1"))
-        ]
-        return sorted(candidates)
 
 
 ADAPTOR = Guilleminot2021Adaptor
