@@ -34,3 +34,6 @@ pipeline) is within +5 ms of accou2023, so this may be a real latency effect of 
 scene rather than an alignment error; the other competing-speaker datasets are smaller (etard2019 -8 / +1 ms,
 jehn2025 normal-hearing -6 / -9 ms). Unresolved; not corrected. A future adaptor option may estimate and apply such
 offsets (PLAN.md section 8). Evidence: `tmp/review/timing.md`, `tmp/review/dnn_offsets/`.
+
+## Data size
+33 participants, 0.33 h each (competing-fL 17, competing-fR 16 participants), 11 h in total. Estimated from the stimuli (tmp/review/data_size.md).

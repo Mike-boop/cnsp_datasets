@@ -21,3 +21,6 @@ Brainstem tier: 0.5-8 Hz mean r 0.034 (TRF peak 188 ms); 30-60 Hz SNR 1.52; 30-2
 
 ## Trials and stimuli
 One trial per story (condition `natural`); stimuli: the audio and its word/phone TextGrid (`textgrid`).
+
+## Data size
+13 participants, 0.66 h each (15 stories; sub-03 14), 8.6 h in total. Estimated from the stimuli (tmp/review/data_size.md).

@@ -36,3 +36,6 @@ Effect, all subjects, with vs without correction (2026-11-19; `tmp/review/jehn20
 - 30-250 Hz: no brainstem response in nh/hi either way. In ci the implant artefact (stimulus-locked, no latency)
   lines up better (SNR 5.3 -> 6.7) and 30-60 Hz coherence rises; that is artefact, not neural response.
 - Nothing gets worse. Use the correction for high-frequency or precise-latency analyses.
+
+## Data size
+nh 28, hi 29, ci 24 participants, 0.74 h each (20 trials), 60 h in total. Per condition per participant: natural fL 0.14, natural fR 0.17, competing fL 0.21, competing fR 0.22 h. Estimated from the stimuli (tmp/review/data_size.md).

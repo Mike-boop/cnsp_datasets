@@ -1,5 +1,12 @@
 # das2019 notes
 
+## Data size
+16 participants, ~1.3 h of EEG each (8 trials of ~6.5 min and 12 repeat trials of ~2 min per participant).
+
+## Stimuli not cut to what was played (open)
+The 12 `_rep` trials have ~124 s of EEG but carry the full ~6.5 min story track; trial 4 (fL dry) carries a 472 s
+track against 399 s of EEG. Proposed fix: cut each stimulus to the EEG duration. Not applied yet.
+
 ## Timing offset (not corrected by the adaptor)
 A match-mismatch DNN trained on accou2023 (`fs128_1020-64_broadband`, 5 s windows over stimulus lags of +-500 ms)
 finds the das2019 neural response **~81 ms later** than accou2023's (-81.5 ms, 95% CI -84.9 .. -78.3; every one of

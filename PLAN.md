@@ -159,9 +159,12 @@ Each item below caught a real error in at least one dataset. Run through them fo
   (response latency, not timing error).
 
 **Data size (record for every dataset)**
-- Number of participants and recorded hours per participant (mean, min-max), overall and per condition, from the
-  standardised files' headers: `tmp/review/scripts/data_size.py` (adds rows to `tmp/review/data_size.csv`). Put the
-  numbers in the dataset's `notes.md` and in `tmp/review/data_size.md`. Measure before deleting standardised data.
+- Number of participants and hours per participant (mean, min-max), overall and per condition, estimated from the
+  stimuli: each trial counts its longest stimulus (simultaneous streams once), summed per participant
+  (`tmp/review/scripts/data_size.py`, headers only; adds rows to `tmp/review/data_size.csv`). Put the numbers in
+  the dataset's `notes.md` and in `tmp/review/data_size.md`. Measure before deleting standardised data.
+- Check a few trials' neural duration against their stimulus: the estimate is only right when stimuli are cut to
+  what was played (das2019: 2-min repeat trials carry the full 6.5-min track, 2.3 h estimated vs ~1.3 h recorded).
 
 **Running the work**
 - Long jobs detached and resumable (cache per trial/session); a server reboot killed every job once.
