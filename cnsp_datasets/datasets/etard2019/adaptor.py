@@ -23,26 +23,32 @@ class Etard2019Adaptor:
     with the attended stream (sample-accurate; drift not corrected), and wrote the streams as played next to it:
     `audiobooks/<cond>/part_<n>_story.wav` (attended) and `part_<n>_distractor.wav` (babble noise or the competing
     speaker), both starting at the EEG's first sample. English babble conditions: noise 1 s before and after the
-    story (the story wav is zero-padded). Dutch babble conditions: noise starts 1 s after the story.
+    story (the story wav is zero-padded). Dutch babble conditions: the babble starts 2 s after the story (`nRamp` in
+    the original stimuli and the Sound channel); the shipped distractor wavs are padded by only 1 s, so the loader
+    delays them by another second (the 1 s fade-in played before that is not in the files).
 
-    Dutch parts contain short English sentences (participants detected them) in silent gaps of the Dutch stream.
-    For cleanDutch they are added to the attended stream (`part_<n>_english.wav`, same length). For lb/mb/hbDutch
-    the shipped English wavs and onsets are copies of the cleanDutch ones (align_data.py reads them from cleanDutch
-    for all four conditions) and do not fit those stories, so the English is missing there (2.5-4 s gaps).
+    lb/mb/hb = low/medium/high babble, i.e. high/medium/low SNR: presented SNR measured from the Sound channel of two
+    subjects is about +0.7 / -1.1 / -1.9 dB (English) and +3.5 / +1.2 / -0.9 dB (Dutch).
+
+    Dutch parts contain short English sentences (participants detected them) in silent gaps of the Dutch stream;
+    they are added to the attended stream (`part_<n>_english.wav`, same length). The release's lb/mb/hbDutch English
+    wavs are copies of the cleanDutch ones (align_data.py read them from cleanDutch for all four conditions) and are
+    skipped unless they fall in the Dutch stream's silent gaps, so the English is missing there until the release is
+    corrected.
     """
 
     # known raw condition labels in the H5 -> standardized names
     _COND_MAP = {
         "clean": "natural",
-        "lb": "sin_lowSNR",
+        "lb": "sin_highSNR",
         "mb": "sin_mediumSNR",
-        "hb": "sin_highSNR",
+        "hb": "sin_lowSNR",
         "fM": "competing_fM",
         "fW": "competing_fF",
         "cleanDutch": "foreign_quiet",
-        "lbDutch": "foreign_lowSNR",
+        "lbDutch": "foreign_highSNR",
         "mbDutch": "foreign_mediumSNR",
-        "hbDutch": "foreign_highSNR",
+        "hbDutch": "foreign_lowSNR",
     }
 
     def __init__(
@@ -144,23 +150,32 @@ class Etard2019Adaptor:
         return _loader
 
     def _make_audio_loader(self, raw_cond: str, trial: int, role: str) -> Callable[[], Any]:
-        """
-        Returns a 0-arg function that loads WAV if mapping is known; otherwise raises with guidance.
-        The return value is a dict: {"fs": int, "data": np.ndarray[1, T]}.
-        """
+        """{"fs", "data" [1, T]} of part_<trial>_<role>.wav, with the corrections described in the class docstring."""
         wav_path = os.path.join(self.download_dir, "audiobooks", raw_cond, f"part_{trial}_{role}.wav")
-
         english_path = os.path.join(self.download_dir, "audiobooks", raw_cond, f"part_{trial}_english.wav")
 
         def _loader() -> Any:
             fs, audio = wavfile.read(wav_path)
-            if raw_cond == "cleanDutch" and role == "story":  # the English sentences fill gaps in the Dutch stream
-                audio = audio + wavfile.read(english_path)[1]
-            return {"fs": int(fs), "data": np.asarray(audio, dtype=float)[None, :]}
+            audio = np.asarray(audio, dtype=float)
+            if "Dutch" in raw_cond and role == "story":
+                english = wavfile.read(english_path)[1]
+                # only English that belongs to this story: same length, filling its silent gaps
+                if len(english) == len(audio) and not np.any(audio[np.abs(english) > 0]):
+                    audio = audio + english
+            if raw_cond in ("lbDutch", "mbDutch", "hbDutch") and role == "distractor":
+                # the babble ends with the Dutch story (it starts nRamp = 88201 samples, 2 s, after it); the release
+                # pads it by only 44100 samples, so pad the difference
+                audio = np.concatenate([np.zeros(max(self._dutch_len(raw_cond, trial) - len(audio), 0)), audio])
+            return {"fs": int(fs), "data": audio[None, :]}
 
         return _loader
 
     # --------------------------- Utilities ----------------------------
+
+    def _dutch_len(self, raw_cond: str, trial: int) -> int:
+        """Samples in the Dutch story of a part (the babble as played ends with it)."""
+        path = os.path.join(self.download_dir, "audiobooks", raw_cond, f"part_{trial}_story.wav")
+        return wavfile.read(path, mmap=True)[1].shape[0]
 
     def _parse_subject_id(self, subj_path: str) -> int:
         stem = os.path.splitext(os.path.basename(subj_path))[0]  # "P03"
