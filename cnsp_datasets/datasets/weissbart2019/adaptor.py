@@ -25,7 +25,14 @@ class Weissbart2019Adaptor:
       - subject (int), session (int), trial (int), condition (str), ns_type (str)
       - stimulus: List[StimulusRecord] with modality="audio", name=<story>
       - neural_data_fn: lazy loader returning an mne.BaseRaw
+
+    Timing (checked against the Sound stimtrack in the original record, Zenodo 7086168): the authors' onsets are
+    accurate to 1 ms and drift is ~1.2 ppm (0.2 ms per story), so no correction is needed. One trial is invalid:
+    P03 BROP01 (original participant P04) was never played (no match anywhere in the stimtrack); its listed onset is
+    10.5 s before BROP02, so the release's segment is EEG recorded during BROP02. It is skipped (EXCLUDED).
     """
+
+    EXCLUDED = {("P03", "BROP01")}
 
     def __init__(self, download_dir: str):
         self.download_dir = download_dir
@@ -65,6 +72,8 @@ class Weissbart2019Adaptor:
             presented = list(self._stim_order.loc[f"P{subject_id:02d}"].to_numpy())
             for i, story in enumerate(self._stim_order.columns):
                 trial_idx = presented.index(i) + 1
+                if (f"P{subject_id:02d}", story) in self.EXCLUDED:
+                    continue
 
                 # Build StimulusRecord (lazy read of WAV)
                 stim = StimulusRecord(
