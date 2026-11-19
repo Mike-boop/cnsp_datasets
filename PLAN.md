@@ -118,6 +118,51 @@ Agents say "unknown" rather than guess. Uncertain alignment decisions go to the 
    possible, per condition.
 8. **Open questions** for the human checkpoint.
 
+## 4b. Review checklist (lessons from the 2026-11 adaptor review)
+
+Each item below caught a real error in at least one dataset. Run through them for every dataset.
+
+**Timing and drift**
+- Look for a stimtrack, aux or Sound channel in every download. If the convenience release dropped it, look for
+  the original record with the raw recordings (weissbart2019 and etard2019 dropped `Sound`; their original Zenodo
+  records 7086168 and 7086209 have it).
+- Estimate drift wherever the stimulus is recorded with the EEG: Theil-Sen line through lags in ~10 s windows
+  (`datasets/jehn2025_base/drift.py`). Two endpoint windows are fragile: periodic side peaks in band-passed speech
+  or a ~100 Hz tactile carrier give ms-sized jumps. Authors rarely correct drift (jehn2025 26.7 ppm, bentum2023
+  33.6 ppm). Plot per-subject drift before proposing a correction; clusters can differ (jehn2025: ~18 ppm for a
+  run of subjects).
+- Measure onsets from the stimtrack and compare with the markers: markers can be late or missing (guilleminot2021:
+  one marker 2.39 s late; trials started during a recording pause had none).
+- Check BrainVision `New Segment` annotations (recording pauses: MNE joins segments without a gap) and trials that
+  run past the end of the recording.
+- Nominal file durations rounded to ms add up over concatenated stimuli (bentum2023); use exact durations.
+
+**Mapping and labels**
+- Verify the trial -> stimulus mapping with an independent signal: trial duration vs wav duration (exact to the ms
+  in varano2022), recording order (`first_samp`, `meas_date`), stimtrack correlation, experiment logs.
+- Verify condition labels against the authors' code and the actual stimuli, not just the readme: varano2022 had
+  cartoon/edge swapped; etard2019 SNR labels are unverified (the wavs do not carry the presented level).
+- Verify the attended side/ear per subject from stimtrack channels (jehn2025: three subjects with swapped sides).
+- Readmes and helper files can be wrong: varano2022 condorder README (`trial_index`), jehn2025 code table,
+  etard2019 English sentences/onsets copied from another condition by `align_data.py`.
+- Check every file, not one (channel lists, lengths, annotations).
+
+**Stimuli**
+- Include everything that was played, as separate stimuli: noise/babble tracks, distractors, tactile signals
+  (guilleminot2021 mismatched trials used the tactile buffer rolled by a quarter), embedded sentences.
+- Cut stimuli to what the EEG covers (varano2022 mismatched AV trials end with the shorter of audio and video).
+
+**Validation and interpretation**
+- Validate per condition (section 3) and look at the TRF plots, not only p-values: a stimulus-locked ripple at all
+  lags (guilleminot2021 30-60 Hz) can pass the MLR test.
+- DNN offsets relative to accou2023: clean speech within +-5 ms; speech in noise ~-15 ms even with measured onsets
+  (response latency, not timing error).
+
+**Running the work**
+- Long jobs detached and resumable (cache per trial/session); a server reboot killed every job once.
+- Downloads can stop silently: use resumable retries (`curl -C -`) and check the final size.
+- Keep scripts and results out of the session scratchpad (`tmp/review/scripts`).
+
 ## 5. Validation (objective)
 
 Run on a pilot of ~20 subjects (or all subjects, if fewer) before committing to the full job.
