@@ -15,3 +15,7 @@ likely cause. There is no stimtrack to confirm it.
 
 Users who need absolute timing can shift the EEG ~68 ms earlier relative to the stimulus. A future adaptor option
 may estimate and apply such offsets (PLAN.md section 8). Evidence: `tmp/review/timing.md`, `tmp/review/dnn_offsets/`.
+
+## Blocks rated "bad" or "doubtfull"
+Included by default (from 2026-11-19). The authors excluded them from their analyses; pass
+`exclude_usability=("doubtfull", "bad")` to skip them (103 bad, 198 doubtful blocks).

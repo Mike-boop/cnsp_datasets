@@ -99,8 +99,8 @@ class Bentum2023Adapter:
     marker_offset fixes the constant end-marker offset used in the estimate (in samples;
     estimated from the corpus if None).
 
-    Blocks rated "doubtfull" or "bad" were excluded from the authors' analyses and are
-    skipped by default (see exclude_usability).
+    All blocks are included. The authors rated some "doubtfull" or "bad" and excluded them from
+    their analyses; pass exclude_usability=("doubtfull", "bad") to skip them.
     """
 
     def __init__(
@@ -108,7 +108,7 @@ class Bentum2023Adapter:
         download_dir: str,
         ifadv_dir: str | None = None,
         sdc_dir: str | None = None,
-        exclude_usability: Iterable[str] = ("doubtfull", "bad"),
+        exclude_usability: Iterable[str] = (),
         drift_correction: str | None = "recording",
         marker_offset: float | None = None,
     ):
