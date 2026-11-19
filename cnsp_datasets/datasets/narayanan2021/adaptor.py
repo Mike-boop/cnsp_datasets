@@ -1,209 +1,126 @@
-# nsptools/adapters/narayanan2021.py
 from __future__ import annotations
 
-import os, glob
+import glob
+import os
+from typing import Iterable
+
+import mne
 import numpy as np
 import pandas as pd
-from typing import Iterable, Callable, Any, Dict, List, Tuple, Optional
-
-from mne.io import read_raw_curry, BaseRaw
 from mne.channels import make_dig_montage
+from mne.io import BaseRaw, read_raw_curry
 from scipy.io import wavfile
 
-from cnsp_datasets.standardise.trial_record import TrialRecord, StimulusRecord
+from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
-
-# condition code → attended/unattended file stems + attended direction (ear)
-COND_MAP: Dict[str, Dict[str, str]] = {
-    "1L": {"attend": "part1_track2_dry", "unattend": "part1_track1_dry", "dir": "R"},
-    "1R": {"attend": "part1_track1_dry", "unattend": "part1_track2_dry", "dir": "L"},
-    "2L": {"attend": "part2_track1_dry", "unattend": "part2_track2_dry", "dir": "R"},
-    "2R": {"attend": "part2_track2_dry", "unattend": "part2_track1_dry", "dir": "L"},
+# Recording P -> (left-ear track, right-ear track), from the Zenodo record's table as corrected on 2026-08-11.
+# The letter in P is the attended side.
+EARS = {
+    "1L": ("part1_track2_dry", "part1_track1_dry"),
+    "1R": ("part1_track2_dry", "part1_track1_dry"),
+    "2L": ("part2_track1_dry", "part2_track2_dry"),
+    "2R": ("part2_track1_dry", "part2_track2_dry"),
 }
-COND_TO_TRIAL = {"1L": 1, "1R": 2, "2L": 3, "2R": 4}
+NON_EEG = ["XtraL", "XtraR", "Trigger"]
 
 
-class Narayanan2021Adapter:
+class Narayanan2021Adaptor:
     """
-    Adapter for Narayanan 2021 (EEG). Pure: no writes, all I/O is lazy.
+    Narayanan et al. 2021 (Zenodo 4518754): 255-channel EEG (SynAmps RT, 1 kHz, Curry .dat/.dap/.rs3/.ceo), 30
+    subjects, auditory attention to one of two Dutch stories (HRTF-filtered to left/right; the dry wavs are shipped).
+    Four ~6.5-min recordings per subject, S<n>/S<n>_AAD_<P>, P = story part (1, 2) + attended side (L, R).
 
-    Expected layout (per your script):
-      <root>/
-        ├─ S*/ *.dat              (Curry EEG files; name like 'S07_something_1L.dat')
-        └─ stimuli/ *dry.wav      (audio files used in the experiment)
-
-    For each .dat:
-      - Parse subject ID 'S##' and condition code in {'1L','1R','2L','2R'}.
-      - Build TrialRecord:
-          subject=<int>, session=1, trial=COND_TO_TRIAL[cond],
-          condition=f"competing-f{dir}", ns_type="eeg"
-      - Stimuli: two StimulusRecord entries (attended/unattended), feature_name="audio".
-      - Neural loader: read_raw_curry(preload=False), crop to [onset, offset] computed
-        from Trigger edges with +10 s extension, and drop 'Trigger','XtraL','XtraR' if present.
+    One trial per recording, numbered in recording order (meas_date). The `Trigger` channel pulses once per second
+    while the story plays (390 pulses for part 1, 392 for part 2); the EEG is cut from the first pulse of that 1-s
+    train for the duration of the wav (the pulses stop 5.00 / 4.33 s before the story ends). Pulse period -10 ppm
+    against the EEG clock (S24-S29: -16.8 ppm); not corrected. Whether the first pulse coincides with the
+    sound onset is not documented (checked with lag sweeps, see notes.md). XtraL/XtraR (no audio on them) and Trigger
+    are dropped. Channel positions from the authors' misc/eeg255ch_locs.csv (spherical, BESA convention); recording
+    labels FP/AFP/PPO8h are renamed to the csv's Fp/AFp/PPO8.
     """
 
     def __init__(self, download_dir: str):
-        self.root = download_dir
-        self._dat_files = self._discover_dat_files()
-        self._audio_root = os.path.join(download_dir, "stimuli")
-
-    # --------------------------- public API ---------------------------
+        self.download_dir = download_dir
+        self._montage = _montage(os.path.join(download_dir, "misc", "eeg255ch_locs.csv"))
 
     def parse(self) -> Iterable[TrialRecord]:
-        for dat_path in self._dat_files:
-            print("parsing..." + dat_path)
-            sub_id, cond = self._parse_subject_and_cond(dat_path)
-            meta = COND_MAP[cond]
-            trial_idx = COND_TO_TRIAL[cond]
-            condition = f"competing-f{meta['dir']}"
+        subjects = sorted(glob.glob(os.path.join(self.download_dir, "S*", "")), key=lambda p: int(p.split("S")[-1][:-1]))
+        for sub_dir in subjects:
+            dats = glob.glob(os.path.join(sub_dir, "*.dat"))
+            order = sorted(dats, key=lambda f: read_raw_curry(f, preload=False, verbose="ERROR").info["meas_date"])
+            for trial, dat in enumerate(order, start=1):
+                base = os.path.basename(dat)[:-4]
+                p = base.split("_")[-1]
+                side = p[1]
+                attended = EARS[p][0 if side == "L" else 1]
+                ignored = EARS[p][1 if side == "L" else 0]
+                yield TrialRecord(
+                    subject=int(base.split("_")[0][1:]),
+                    session=1,
+                    trial=trial,
+                    condition=f"competing-f{side}-hrtf",
+                    ns_type="eeg",
+                    stimulus=[StimulusRecord(modality="audio", name=attended, is_attended=True,
+                                             data_fn=self._audio_loader(attended)),
+                              StimulusRecord(modality="audio", name=ignored, is_attended=False,
+                                             data_fn=self._audio_loader(ignored))],
+                    neural_data_fn=self._eeg_loader(dat, self._wav_duration(attended)),
+                )
 
-            # stimuli (audio only; envelopes or resampling belong in canonicalizer)
-            att_name = meta["attend"]
-            un_name  = meta["unattend"]
+    def _wav_path(self, stem: str) -> str:
+        return os.path.join(self.download_dir, "stimuli", f"{stem}.wav")
 
-            stimuli = [
-                StimulusRecord(
-                    modality="audio",
-                    name=att_name,
-                    data_fn=self._make_audio_loader(att_name),
-                    is_attended=True,
-                    feature_name="audio",
-                ),
-                StimulusRecord(
-                    modality="audio",
-                    name=un_name,
-                    data_fn=self._make_audio_loader(un_name),
-                    is_attended=False,
-                    feature_name="audio",
-                ),
-            ]
+    def _wav_duration(self, stem: str) -> float:
+        fs, audio = wavfile.read(self._wav_path(stem), mmap=True)
+        return audio.shape[0] / fs
 
-            neural_fn = self._make_eeg_loader(dat_path)
+    def _audio_loader(self, stem: str):
+        path = self._wav_path(stem)
 
-            yield TrialRecord(
-                subject=sub_id,
-                session=1,
-                trial=trial_idx,
-                condition=condition,
-                ns_type="eeg",
-                stimulus=stimuli,
-                neural_data_fn=neural_fn,
-                structural_data_fn=None,
-                behavioural_data_fn=None,
-            )
+        def _loader() -> dict:
+            fs, audio = wavfile.read(path)
+            if audio.ndim == 2:
+                audio = audio[:, 0]
+            return {"fs": int(fs), "data": (audio / 32768.0).astype(np.float32)[None, :]}
 
-    # ------------------------ lazy loaders ------------------------
+        return _loader
 
-    def _make_eeg_loader(self, dat_path: str) -> Callable[[], BaseRaw]:
-        """
-        Loader that:
-          - reads Curry .dat (preload=False)
-          - finds trigger onset/offset from first/last edge of 'Trigger'
-          - extends offset by +10 s (heartbeat spacing)
-          - crops and drops aux channels.
-        """
+    def _eeg_loader(self, dat: str, duration: float):
+        montage = self._montage
+
         def _loader() -> BaseRaw:
-            raw = read_raw_curry(dat_path, preload=False, verbose="ERROR")
-            raw.rename_channels(lambda x: "PPO8" if x=="PPO8h" else x.replace("AFP", "AFp").replace("FP", "Fp"))
-            raw.set_montage(self._make_mne_digmontage())
+            raw = read_raw_curry(dat, preload=False, verbose="ERROR")
+            onset = train_onset(raw.get_data(picks=["Trigger"])[0], raw.info["sfreq"])
+            stop = min(onset + int(round(duration * raw.info["sfreq"])) + 1, raw.n_times)
+            raw = raw.crop(tmin=raw.times[onset], tmax=raw.times[stop - 1]).load_data()
+            raw.drop_channels(NON_EEG)
+            raw.set_annotations(None)
+            raw.rename_channels(lambda c: "PPO8" if c == "PPO8h" else c.replace("FP", "Fp"))
+            raw.set_montage(montage)
+            raw.set_meas_date(None)
+            return raw
 
-            # Trigger handling
-            if "Trigger" not in raw.ch_names:
-                raise RuntimeError(f"'Trigger' channel missing in {dat_path}")
-            trig = raw.get_data(picks=["Trigger"]).ravel()
-            fs = float(raw.info["sfreq"])
-            edges = np.where(np.diff(trig) != 0)[0]
-            if edges.size == 0:
-                # fallback: no edges found
-                return raw
-            onset_idx = int(edges[0] + 1)
-            offset_idx = int(edges[-1] + 1 + round(10.0 * fs))  # +10 s
-            tmin = onset_idx / fs
-            tmax = min(offset_idx / fs, (raw.n_times - 1) / fs)
-
-            raw.drop_channels(["Trigger"])
-            return raw.copy().crop(tmin=tmin, tmax=tmax)
         return _loader
 
-    def _make_audio_loader(self, stem: str) -> Callable[[], Dict[str, Any]]:
-        """
-        Load '<stem>.wav' from stimuli/ ; returns {'fs': int, 'data': (1, T)}.
-        """
-        wav_path = os.path.join(self._audio_root, f"{stem}.wav")
-        def _loader() -> Dict[str, Any]:
-            if not os.path.exists(wav_path):
-                raise FileNotFoundError(f"Audio not found: {wav_path}")
-            fs, x = wavfile.read(wav_path)
-            if x.ndim == 2:
-                x = x[:, 0]
-            return {"fs": int(fs), "data": np.asarray(x, dtype=float)[None, :]}
-        return _loader
 
-    # ------------------------ helpers ------------------------
-
-    def _discover_dat_files(self) -> List[str]:
-        files: List[str] = []
-        for i in range(30):
-            files += glob.glob(os.path.join(self.root, f"S{i}", "*.dat"))
-        # Also catch any files directly under root or different numbering
-        files += glob.glob(os.path.join(self.root, "S*", "*.dat"))
-        return sorted(set(files))
-
-    def _parse_subject_and_cond(self, dat_path: str) -> Tuple[int, str]:
-        """
-        Filename convention: 'S<id>_<...>_<cond>.dat' where cond in {'1L','1R','2L','2R'}.
-        """
-        base = os.path.splitext(os.path.basename(dat_path))[0]
-        parts = base.split("_")
-        if len(parts) < 3:
-            raise ValueError(f"Unexpected filename format for {base}")
-        sub = int(parts[0].replace("S", ""))
-        cond = parts[-1]
-        if cond not in COND_MAP:
-            raise ValueError(f"Unknown condition code '{cond}' in {base}")
-        return sub, cond
-    
-    def _make_mne_digmontage(self,head_radius=0.095):
-        path_to_ch_locs = os.path.join(self.root, "misc", "eeg255ch_locs.csv")
-        ch_locs_df = pd.read_csv(path_to_ch_locs)
-        fudicials_df = pd.DataFrame({
-            "Name": ["Nasion", "Inion", "T9", "T10"],
-            "Theta": [115, 115, -115, 115],
-            "Phi": [90, -90, 0, 0],
-            },
-            index=["Nasion", "Inion", "T9", "T10"]
-        )
-
-        ch_locs_df["Cartesian"] = ch_locs_df.apply(lambda x: spherical_to_cartesian(head_radius, x['Theta'], x['Phi']), axis=1)
-        fudicials_df["Cartesian"] = fudicials_df.apply(lambda x: spherical_to_cartesian(head_radius, x['Theta'], x['Phi']), axis=1)
-        
-        eeg_chs_df = df = ch_locs_df[~ch_locs_df["Channel Name"].isin(["XtraL", "XtraR"])]
-        ch_cartesian = np.asarray(eeg_chs_df["Cartesian"].to_list())
-
-        montage = make_dig_montage(
-            ch_pos={eeg_chs_df.iloc[i]["Channel Name"]: ch_cartesian[i] for i in range(len(eeg_chs_df))},
-            nasion=fudicials_df.loc['Nasion']['Cartesian'],
-            lpa=fudicials_df.loc['T9']['Cartesian'],
-            rpa=fudicials_df.loc['T10']['Cartesian']
-        )
-        return montage
-                    
-
-#### HANDLING MONTAGE ###
-
-def spherical_to_cartesian(r, theta, phi):
-
-    x = r * np.sin( 2*np.pi/360 * theta) * np.cos( 2*np.pi/360 * phi)
-    y = r * np.sin( 2*np.pi/360 * theta) * np.sin( 2*np.pi/360 * phi)
-    z = r * np.cos( 2*np.pi/360 * theta)
-
-    return (x,y,z)
+def train_onset(trig: np.ndarray, sfreq: float) -> int:
+    """Sample of the first pulse followed by a 1-s spacing (S8_AAD_1R has a stray pulse 16 s before the train)."""
+    pulses = np.flatnonzero(np.diff(trig) > 0) + 1
+    regular = np.abs(np.diff(pulses) - sfreq) <= 2
+    return int(pulses[np.argmax(regular)])
 
 
-fudicials_df = pd.DataFrame({
-    "Name": ["nasion", "inion", "left_preauricular", "right_preauricular"],
-    "Theta": [115, 115, -115, 115],
-    "Phi": [90, -90, 0, 0],
-})
+def _montage(csv: str) -> mne.channels.DigMontage:
+    """Montage from the authors' spherical coordinates (theta signed by hemisphere, phi azimuth; degrees)."""
+    locs = pd.read_csv(csv)
+    locs = locs[~locs["Channel Name"].isin(NON_EEG)]
 
-ADAPTOR = Narayanan2021Adapter
+    def xyz(theta, phi, r=0.095):
+        theta, phi = np.deg2rad(theta), np.deg2rad(phi)
+        return r * np.array([np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta)])
+
+    return make_dig_montage(ch_pos={n: xyz(t, p) for n, t, p in zip(locs["Channel Name"], locs.Theta, locs.Phi)},
+                            nasion=xyz(115, 90), lpa=xyz(-115, 0), rpa=xyz(115, 0), coord_frame="head")
+
+
+ADAPTOR = Narayanan2021Adaptor

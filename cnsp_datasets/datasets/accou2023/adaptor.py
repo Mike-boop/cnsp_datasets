@@ -1,26 +1,45 @@
 '''
-Note: adapted from the original code by Bollens and Accou.
+Note: trigger handling and drift correction adapted from the original code by Bollens and Accou
+(https://github.com/exporl/auditory-eeg-dataset).
 '''
 from __future__ import annotations
 
+import glob
+import gzip
 import os
 import re
-import glob
-import mne
+import shutil
+import tempfile
+import xml.etree.ElementTree as ET
+from typing import Iterable
 
+import mne
 import numpy as np
 import pandas as pd
-import xml.etree.ElementTree as ET
 import scipy.interpolate
-
 from mne import create_info
-from mne.io import read_raw_bdf, RawArray, BaseRaw
 from mne.channels import make_standard_montage
-from typing import Iterable, Optional, Callable, Any, Dict, List
+from mne.io import BaseRaw, RawArray, read_raw_bdf
 
-from cnsp_datasets.standardise.trial_record import TrialRecord, StimulusRecord
+from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 mne.set_log_level("CRITICAL")
+
+# The release README: too few triggers to align these runs with the stimulus.
+UNALIGNABLE = {
+    "sub-006_ses-shortstories01_task-listeningActive_run-06",
+    "sub-017_ses-shortstories01_task-listeningActive_run-03",
+    "sub-048_ses-varyingStories05_task-listeningActive_run-04",
+}
+# podcast_10 was shown with video of the speaker to these subjects (paper, figure 4); sub-030 heard it without.
+AV_SUBJECTS = set(range(27, 37)) - {30}
+CH_NAMES = [
+    "Fp1", "AF7", "AF3", "F1", "F3", "F5", "F7", "FT7", "FC5", "FC3", "FC1", "C1", "C3", "C5", "T7",
+    "TP7", "CP5", "CP3", "CP1", "P1", "P3", "P5", "P7", "P9", "PO7", "PO3", "O1", "Iz", "Oz", "POz",
+    "Pz", "CPz", "Fpz", "Fp2", "AF8", "AF4", "AFz", "Fz", "F2", "F4", "F6", "F8", "FT8", "FC6", "FC4",
+    "FC2", "FCz", "Cz", "C2", "C4", "C6", "T8", "TP8", "CP6", "CP4", "CP2", "P2", "P4", "P6", "P8", "P10",
+    "PO8", "PO4", "O2",
+]
 
 
 # -------------------------- Trigger helpers (pure) --------------------------
@@ -30,34 +49,23 @@ def get_trigger_indices(trigger_array: np.ndarray) -> np.ndarray:
     indices = np.where(trigger_array > 0.5)[0]
     return indices[np.insert(np.diff(indices) > 1, 0, True)]
 
+
 def biosemi_trigger_processing_fn(trigger: np.ndarray) -> np.ndarray:
-    """
-    Convert BioSemi 'Status' channel to a 0/1 trigger vector by:
-    - masking to 16 bits
-    - finding the most common (idle) value
-    - returning 1 where value != idle
-    """
+    """BioSemi 'Status' -> 0/1: 1 where the lower 16 bits differ from their most common (idle) value."""
     triggers = trigger.flatten().astype(np.int32) & (2**16 - 1)
     values, counts = np.unique(triggers, return_counts=True)
     valid_mask = (0 < values) & (values < 256)
-    val_indices = np.argsort(counts[valid_mask])
-    most_common = values[valid_mask][val_indices[-1]]
-    if triggers[0] != most_common:
-        print("First value of the EEG triggers is on, shouldn't be the case")
+    most_common = values[valid_mask][np.argmax(counts[valid_mask])]
     return np.int32(triggers != most_common)
 
-def default_drift_correction(
-    brain_data: np.ndarray,
-    brain_trigger_indices: np.ndarray,
-    brain_fs: int,
-    stimulus_trigger_indices: np.ndarray,
-    stimulus_fs: int,
-) -> np.ndarray:
+
+def default_drift_correction(brain_data: np.ndarray, brain_trigger_indices: np.ndarray, brain_fs: int,
+                             stimulus_trigger_indices: np.ndarray, stimulus_fs: int) -> np.ndarray:
     """
-    Correct clock drift between EEG and stimulus by resampling the EEG segment
-    between the first and last trigger to match stimulus duration.
+    Linearly resample the EEG between its first and last trigger to the stimulus' first-to-last trigger duration
+    (the stimulus triggers start on its first sample). One missing EEG
+    trigger is repaired as in the authors' code.
     """
-    # allow mismatch of one trigger -> try to repair
     if len(brain_trigger_indices) + 1 < len(stimulus_trigger_indices):
         raise ValueError(
             f"Too many missing EEG triggers: EEG {len(brain_trigger_indices)} vs Stim {len(stimulus_trigger_indices)}"
@@ -80,268 +88,152 @@ def default_drift_correction(
         )
 
     stim_duration = (stimulus_trigger_indices[-1] - stimulus_trigger_indices[0]) / stimulus_fs
-    brain_start, brain_end = brain_trigger_indices[0], brain_trigger_indices[-1]
-    eeg_segment = brain_data[:, brain_start:brain_end]
-
-    original_times = np.linspace(0, 1, eeg_segment.shape[1])
-    target_length = int(round(stim_duration * brain_fs))
-    target_times = np.linspace(0, 1, target_length)
-
-    interpolator = scipy.interpolate.interp1d(
-        original_times, eeg_segment, kind="linear", axis=1, fill_value="extrapolate"
-    )
+    eeg_segment = brain_data[:, brain_trigger_indices[0]:brain_trigger_indices[-1]]
+    target_times = np.linspace(0, 1, int(round(stim_duration * brain_fs)))
+    interpolator = scipy.interpolate.interp1d(np.linspace(0, 1, eeg_segment.shape[1]), eeg_segment, kind="linear",
+                                              axis=1, fill_value="extrapolate")
     return interpolator(target_times)
 
 
-# ------------------------------- Adapter ------------------------------------
+def apr_snr(apr_path: str) -> float | None:
+    """SNR (dB) the experimenter set in an APEX results file, None if the file or entry is missing."""
+    if not os.path.exists(apr_path):
+        return None
+    for entry in ET.parse(apr_path).getroot().findall("general/interactive/entry"):
+        if (entry.findtext("description") or "").strip().lower() == "snr":
+            return float(entry.findtext("new_value"))
+    return None
+
+
+# ------------------------------- Adaptor ------------------------------------
 
 class Accou2023Adaptor:
     """
-    Emits TrialRecord objects for the Bollens2023 EEG dataset.
+    SparrKULee (Accou et al. 2024, KU Leuven RDR doi:10.48804/K3VSND): 64-channel BioSemi EEG at 1024 Hz, 85
+    participants (sub-019..022 and sub-026 are restricted), one session each, one BIDS run per stimulus.
 
-    - EEG: <download_dir>/sub-*/**/*task-listeningActive*_eeg.bdf
-    - Events TSV next to EEG: *_events.tsv (with 'stim_file' and 'trigger_file')
-    - Stimulus triggers: <download_dir>/stimuli/<trigger_file> (.npz with 'audio' and 'fs')
-    - Audiobooks: <download_dir>/stimuli/eeg/*.npz (audio npz with 'audio' and 'fs')
-
-    Notes:
-      * Infers condition (natural/sin/av) using .apr XML for SNR when needed.
-      * Subjects 52, 61, 64 treated as 'no mastoids' (64 channels); others 66 including A1/A2.
-      * All heavy I/O is lazy: data are loaded when their callables are invoked.
-      * TODO: repeatedly loading the same EEG file for each trial is inefficient. We could do some caching here.
+    - EEG: sub-*/ses-*/eeg/*task-listeningActive*_eeg.bdf (or .bdf.gz), channels named by position (some files
+      spell PO7/PO3 as P07/P03). EXG1/EXG2 are the mastoids (A1/A2, misc); flat (unconnected) ones go into bads.
+      Runs without EEG in the release (7) and the three runs the README calls unalignable are skipped.
+    - Alignment: the stimulus' trigger track (stimuli/eeg/t_<stim>.npz, a pulse every second from the first sample,
+      mostly also on the last) was recorded in the BioSemi Status channel; the EEG between the first and last
+      trigger is linearly resampled to the stimulus' first-to-last trigger duration (drift correction, as in the
+      authors' code).
+    - Conditions: 'sin' with the SNR (e.g. 'sin5dB'): SNR from the run's .apr file (the experimenter's setting; the
+      paper: 2 of 10 shortstories01 trials at 5 dB) and else from events.tsv (which says 100 for the 5 dB runs);
+      'av' podcast_10 with video (AV_SUBJECTS); 'control' audiobook_1_artefact (played without insert phones in
+      the ears); 'pitchshifted' audiobook_1_*_shifted; else 'natural'.
+      The -4 / 2.5 dB runs (audiobook_7_5 / 7_6, sub-027..031) take their SNR from events.tsv and the .apx noisegain.
+    - Stimuli: the speech only. APEX played the noise as a loop starting at a random point (dataloop, randomjump),
+      so the shipped noise files do not give the noise waveform as played. The stimulus trigger tracks of
+      audiobook_6_1, audiobook_6_2 and audiobook_1_artefact end 0.3-0.6 s before the audio, so their EEG does too.
     """
 
-    def __init__(self, download_dir: str, session: int = 1):
+    def __init__(self, download_dir: str):
         self.download_dir = download_dir
-        self.session = session
-
-        # discover EEG files
-        self._eeg_files = sorted(
-            glob.glob(
-                os.path.join(
-                    self.download_dir,
-                    "sub-*",
-                    "**",
-                    "*task-listeningActive*_eeg.bdf",
-                ),
-                recursive=True,
-            )
-        )
-
-        # prebuild Info with mastoids
-        self._info_with_mastoids = self._create_mne_info(mastoids=True)
-        self._info_no_mastoids = self._create_mne_info(mastoids=False)
-
-    # --------------------------- Public API ---------------------------
+        self._events = sorted(glob.glob(os.path.join(download_dir, "sub-*", "ses-*", "eeg",
+                                                     "*task-listeningActive*_events.tsv")))
 
     def parse(self) -> Iterable[TrialRecord]:
-        """
-        Yield TrialRecord for every EEG BDF run that has matching event metadata.
-        """
-        for eeg_path in self._eeg_files:
-            print(eeg_path)
-            sub_id = self._subject_id(eeg_path)
-            run_number = self._run_number(eeg_path)
-            events_path = eeg_path.replace("_eeg.bdf", "_events.tsv")
-            if not os.path.exists(events_path):
-                # no events file → cannot map to stimulus
+        for events_path in self._events:
+            stem = events_path[: -len("_events.tsv")]
+            bdf = next((p for p in (f"{stem}_eeg.bdf", f"{stem}_eeg.bdf.gz") if os.path.exists(p)), None)
+            if bdf is None or os.path.basename(stem) in UNALIGNABLE:
                 continue
+            ev = pd.read_csv(events_path, sep="\t").iloc[0]
+            sub = int(re.search(r"sub-(\d+)", stem).group(1))
+            speech = os.path.basename(ev.stim_file).replace(".gz", "")[: -len(".npz")]
+            snr = apr_snr(f"{stem}_eeg.apr")
+            snr = float(ev.snr) if snr is None else snr
+            condition = self._condition(sub, speech, snr)
 
-            events = pd.read_csv(events_path, sep="\t")
-            stim_file = events["stim_file"].item()
-            trigger_file = events["trigger_file"].item().replace(".gz", "")
-            trig_path = os.path.join(self.download_dir, "stimuli", trigger_file)
-
-            audio_name = (
-                os.path.basename(stim_file)
-                .replace(".npz", "")
-                .replace(".gz", "")
-                .replace("_video", "")
-            )
-
-            condition = self._infer_condition(sub_id, eeg_path, audio_name)
-
-            # Build stimuli list (single attended audio)
-            stimuli: List[StimulusRecord] = [
-                StimulusRecord(
-                    modality="audio",
-                    name=audio_name,
-                    data_fn=self._make_audio_loader(audio_name),
-                    is_attended=True,
-                    feature_name="audio",
-                )
-            ]
-
-            # Lazy EEG loader (drift-correct to stimulus using triggers)
-            try:
-                neural_fn = self._make_eeg_loader(
-                    eeg_path=eeg_path,
-                    trig_npz_path=trig_path,
-                    use_mastoids=(sub_id not in {52, 61, 64}),
-                )
-            except Exception as e:
-                print("Runtime Error: ", e)
-
+            stimuli = [StimulusRecord(modality="audio", name=speech, is_attended=True,
+                                      data_fn=self._audio_loader(speech))]
             yield TrialRecord(
-                subject=sub_id,
-                session=self.session,
-                trial=run_number,
+                subject=sub,
+                session=1,
+                trial=int(re.search(r"run-(\d+)", stem).group(1)),
                 condition=condition,
                 ns_type="eeg",
                 stimulus=stimuli,
-                neural_data_fn=neural_fn,
-                structural_data_fn=None,
-                behavioural_data_fn=None,
+                neural_data_fn=self._eeg_loader(bdf, self._stim_path("t_" + speech)),
             )
 
-    # ------------------------ Lazy loader makers ----------------------
-
-    def _make_audio_loader(self, audio_name: str) -> Callable[[], Dict[str, Any]]:
-        """
-        Load an audio npz: returns {'fs': int, 'data': np.ndarray[1, T]}.
-        Files live under <download_dir>/stimuli/eeg/<audio_name>.npz
-        """
-        npz_path = os.path.join(self.download_dir, "stimuli", "eeg", f"{audio_name}.npz")
-
-        def _loader() -> Dict[str, Any]:
-            if not os.path.exists(npz_path):
-                raise FileNotFoundError(f"Audio npz not found: {npz_path}")
-            data = np.load(npz_path)
-            audio = data["audio"]
-            fs = int(data["fs"])
-            if audio.ndim == 1:
-                audio = audio[None, :]
-            return {"fs": fs, "data": audio}
-        return _loader
-
-    def _make_eeg_loader(
-        self,
-        eeg_path: str,
-        trig_npz_path: str,
-        use_mastoids: bool,
-    ) -> Callable[[], BaseRaw]:
-        """
-        Returns a loader that:
-          - reads BDF
-          - extracts & binarizes BioSemi Status (EEG triggers)
-          - loads stimulus triggers from npz
-          - drift-corrects EEG to stimulus trigger train
-          - creates RawArray with appropriate montage (64 or 66 channels)
-        """
-        info = self._info_with_mastoids if use_mastoids else self._info_no_mastoids
-
-        def _loader() -> BaseRaw:
-            raw = read_raw_bdf(eeg_path, preload=True, verbose="ERROR")
-
-            eeg_trigger = raw.copy().pick("Status").get_data().squeeze()
-            eeg_trigger = biosemi_trigger_processing_fn(eeg_trigger)
-
-            if not os.path.exists(trig_npz_path):
-                raise FileNotFoundError(f"Stimulus trigger file not found: {trig_npz_path}")
-            ref = np.load(trig_npz_path)
-            stim_trigger = ref["audio"]
-            stim_fs = int(ref["fs"])
-
-            eeg_idx = get_trigger_indices(eeg_trigger)
-            stim_idx = get_trigger_indices(stim_trigger)
-
-            corrected = default_drift_correction(
-                brain_data=raw.get_data(),
-                brain_trigger_indices=eeg_idx,
-                brain_fs=int(round(raw.info["sfreq"])),
-                stimulus_trigger_indices=stim_idx,
-                stimulus_fs=stim_fs,
-            )
-
-            # 64 EEG channels first; if mastoids present, add them
-            if info["nchan"] == 64:
-                data = corrected[:64]
-            else:
-                data = corrected[:66]
-
-            raw_corrected = RawArray(data, info, verbose="ERROR")
-            return raw_corrected
-
-        return _loader
-
-    # ------------------------------ Utils -----------------------------
-
-    def _subject_id(self, eeg_path: str) -> int:
-        # .../sub-030/... -> 30
-        m = re.search(r"sub-(\d+)", eeg_path)
-        return int(m.group(1)) if m else -1
-
-    def _run_number(self, eeg_path: str) -> Optional[int]:
-        m = re.search(r"run-(\d+)", os.path.basename(eeg_path))
-        return int(m.group(1)) if m else None
-
-    def _infer_condition(self, sub_id: int, eeg_file: str, audio_name: str) -> str:
-        """
-        Legacy logic:
-          - subjects 1..26: if .apr SNR == '5' -> 'sin'
-          - subjects 27..36: if audio == 'podcast_10' -> 'av'
-          - special-case sub 30 'av' remarks -> downgrade to 'natural'
-          - else 'natural'
-        """
-        if 1 <= sub_id <= 26:
-            apr_path = eeg_file.replace(".bdf", ".apr")
-            snr = self._parse_snr_from_apr_file(apr_path)
-            if snr == "5":
-                return "sin"
-
-        if 27 <= sub_id <= 36 and audio_name == "podcast_10":
-            return "av"
-
-        if sub_id == 30 and audio_name == "podcast_10":
-            return "natural"
-        
-        if audio_name == "audiobook_1_artefact":
+    @staticmethod
+    def _condition(sub: int, speech: str, snr: float) -> str:
+        if speech.endswith("artefact"):
             return "control"
-
+        if speech.endswith("shifted"):
+            return "pitchshifted"
+        if snr < 100:
+            return f"sin{snr:g}dB"
+        if speech == "podcast_10" and sub in AV_SUBJECTS:
+            return "av"
         return "natural"
 
-    def _parse_snr_from_apr_file(self, path: str) -> Optional[str]:
-        """
-        Extract SNR from a .apr XML (same approach as legacy).
-        """
-        if not os.path.exists(path):
-            return None
-        tree = ET.parse(path)
-        root = tree.getroot()
-        # 'general' is not namespaced
-        general = root.find("general")
-        if general is None:
-            return None
-        interactive = general.find("interactive")
-        if interactive is None:
-            return None
+    def _stim_path(self, name: str) -> str:
+        path = os.path.join(self.download_dir, "stimuli", "eeg", f"{name}.npz")
+        return path if os.path.exists(path) else path + ".gz"
 
-        for entry in interactive.findall("entry"):
-            description = entry.find("description")
-            if description is not None and (description.text or "").strip().lower() == "snr":
-                new_value = entry.find("new_value")
-                return (new_value.text or "").strip() if new_value is not None else None
-        return None
+    def _audio_loader(self, name: str):
+        path = self._stim_path(name)
 
-    def _create_mne_info(self, mastoids: bool) -> mne.Info:
-        """
-        Build Info with BioSemi 64 channels; optionally add A1/A2 mastoids with approximate positions.
-        """
-        ch_names = [
-            "Fp1","AF7","AF3","F1","F3","F5","F7","FT7","FC5","FC3","FC1","C1","C3","C5","T7",
-            "TP7","CP5","CP3","CP1","P1","P3","P5","P7","P9","PO7","PO3","O1","Iz","Oz","POz",
-            "Pz","CPz","Fpz","Fp2","AF8","AF4","AFz","Fz","F2","F4","F6","F8","FT8","FC6","FC4",
-            "FC2","FCz","Cz","C2","C4","C6","T8","TP8","CP6","CP4","CP2","P2","P4","P6","P8","P10",
-            "PO8","PO4","O2"
-        ]
+        def _loader() -> dict:
+            data = _load_npz(path)
+            return {"fs": int(data["fs"]), "data": data["audio"].astype(np.float32).reshape(1, -1)}
 
-        if not mastoids:
-            info = create_info(ch_names=ch_names, sfreq=1024, ch_types=["eeg"] * len(ch_names))
-        else:
-            ch_names_with = ch_names + ["A1", "A2"]
-            info = create_info(ch_names=ch_names_with, sfreq=1024, ch_types=["eeg"] * len(ch_names) + ["misc"] * 2)
+        return _loader
 
-        info.set_montage(make_standard_montage("biosemi64"))
-        return info
+    @staticmethod
+    def _eeg_loader(bdf: str, trig_path: str):
+        def _loader() -> BaseRaw:
+            with _plain_file(bdf) as path:
+                raw = read_raw_bdf(path, preload=True, verbose="ERROR")
+            ref = _load_npz(trig_path)
+            corrected = default_drift_correction(
+                brain_data=raw.get_data(),
+                brain_trigger_indices=get_trigger_indices(
+                    biosemi_trigger_processing_fn(raw.get_data(picks="Status")[0])),
+                brain_fs=int(round(raw.info["sfreq"])),
+                stimulus_trigger_indices=get_trigger_indices(ref["audio"].ravel()),
+                stimulus_fs=int(ref["fs"]),
+            )
+            mastoids = [raw.ch_names.index(c) for c in ("EXG1", "EXG2") if c in raw.ch_names]
+            names = CH_NAMES + ["A1", "A2"][: len(mastoids)]
+            info = create_info(names, raw.info["sfreq"], ["eeg"] * 64 + ["misc"] * len(mastoids))
+            out = RawArray(corrected[list(range(64)) + mastoids], info, verbose="ERROR")
+            out.set_montage(make_standard_montage("biosemi64"), on_missing="ignore")
+            out.info["bads"] = [n for n, i in zip(["A1", "A2"], mastoids) if np.std(np.diff(corrected[i])) < 1e-6]
+            return out
+
+        return _loader
+
+
+def _load_npz(path: str) -> dict:
+    if path.endswith(".gz"):
+        with gzip.open(path) as f:
+            return dict(np.load(f))
+    return dict(np.load(path))
+
+
+class _plain_file:
+    """Context manager: the path itself, or a temporary decompressed copy of a .gz file."""
+
+    def __init__(self, path: str):
+        self.path, self._tmp = path, None
+
+    def __enter__(self) -> str:
+        if not self.path.endswith(".gz"):
+            return self.path
+        self._tmp = tempfile.NamedTemporaryFile(suffix=".bdf", delete=False)
+        with gzip.open(self.path) as src:
+            shutil.copyfileobj(src, self._tmp)
+        self._tmp.close()
+        return self._tmp.name
+
+    def __exit__(self, *exc):
+        if self._tmp is not None:
+            os.unlink(self._tmp.name)
+
 
 ADAPTOR = Accou2023Adaptor
