@@ -75,6 +75,10 @@ external sensors, stimulus availability.
 - **Stimtrack channels:** cross-correlate with the audio or the matching feature to get the onset, and use the
   start/end to check drift. Some stimtracks are not audio (brennan2018 looks like an envelope or half-wave-rectified
   audio); the explorer establishes what each one contains.
+- **Per condition:** extract and align each condition separately (e.g. A, AV, tactile, mismatched, dialogue vs
+  story), and report onset offsets, drift and the validation lag sweep per condition. Conditions can use different
+  playback code, buffers or delays (guilleminot2021: tactile buffers shifted by the delay or rolled for mismatched
+  trials), so a pooled estimate can hide a condition-specific error.
 - Reuse `align/scan.py` (`lag_scores`, `joint_fit`, `pooled_drift`, `refine_onset`, `correct_drift`) where it fits.
 
 ## 4. Agents and workflow
@@ -111,7 +115,7 @@ Agents say "unknown" rather than guess. Uncertain alignment decisions go to the 
 6. **Alignment:** trigger codes and meaning; hardware or software (documented / inferred / unknown); stimtrack
    content; proposed alignment and drift-correction method.
 7. **Cross-subject duration check:** trigger-derived durations vs stimulus durations; drift/jitter estimate if
-   possible.
+   possible, per condition.
 8. **Open questions** for the human checkpoint.
 
 ## 5. Validation (objective)
@@ -128,6 +132,7 @@ Run on a pilot of ~20 subjects (or all subjects, if fewer) before committing to 
    - **lag sweep:** reconstruction score as a function of a global stimulus shift (e.g. ±1 s): the peak must sit
      at 0 lag within tolerance. A non-zero peak measures a constant offset error directly.
    - comparable with hand-aligned reference datasets (section 6).
+   - all of the above reported per condition as well as pooled (see section 3, "Per condition").
 3. **Middle-latency tier (`mlr`): forward TRF, 30–60 Hz, window 18–45 ms** (TODO: confirm window).
    Rather than judging the shape by eye: SNR of the TRF in the latency window against the RMS at negative lags
    (noise floor), with a bootstrap or permutation test across subjects. Pass = significant.
