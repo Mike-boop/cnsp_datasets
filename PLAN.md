@@ -154,6 +154,10 @@ Each item below caught a real error in at least one dataset. Run through them fo
   that both start at the same time.
 
 **Validation and interpretation**
+- Validate with an average reference (`--reference average`, the default of `tmp/review/standardise_validate.sh`)
+  so tiers and SNRs compare across datasets. The validator's own default is no re-referencing, which changes the
+  numbers a lot (weissbart2019 30-250 Hz SNR 1.54 average vs 2.46 with the recorded ear reference). Record the
+  reference with every result.
 - Validate per condition (section 3) and look at the TRF plots, not only p-values: a stimulus-locked ripple at all
   lags (guilleminot2021 30-60 Hz) can pass the MLR test.
 - DNN offsets relative to accou2023: clean speech within +-5 ms; speech in noise ~-15 ms even with measured onsets
