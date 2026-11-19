@@ -8,6 +8,8 @@ from mne import create_info
 from mne.io import RawArray, read_info, BaseRaw
 
 from typing import Iterable, Callable, Any, Dict, List, Optional, Tuple
+from cnsp_datasets.datasets.bentum2023.drift import to_audio_clock
+from cnsp_datasets.datasets.jehn2025_base.drift import subject_drift
 from cnsp_datasets.standardise.trial_record import TrialRecord, StimulusRecord
 
 
@@ -52,9 +54,15 @@ class Jehn2025Adaptor:
     def __init__(
         self,
         download_dir: str,
-        h5_fname: str
+        h5_fname: str,
+        drift_correction: Optional[str] = None,
     ):
+        """drift_correction: None or "subject" (resample each trial onto the stimulus clock with the subject's median
+        drift from drift.csv; the trial onset is the anchor)."""
+        if drift_correction not in (None, "subject"):
+            raise ValueError(f"drift_correction must be None or 'subject', got {drift_correction!r}")
         self.download_dir = download_dir
+        self._drift = subject_drift() if drift_correction else {}
 
         self.h5_path = os.path.join(download_dir, h5_fname)
         if not os.path.exists(self.h5_path):
@@ -139,7 +147,7 @@ class Jehn2025Adaptor:
         def _loader() -> BaseRaw:
             with h5py.File(self.h5_path, "r") as f:
                 node = f[f"eeg/{sub_code}/{trial}"]
-                data = np.array(node[:31], dtype=float)  # ensure shape (31, T)
+                data = to_audio_clock(np.array(node[:31], dtype=float), self._drift.get(sub_code, 0.0))
                 # Copy base Info so we can mutate 'bads' per subject
                 info = self._base_info.copy()
 
