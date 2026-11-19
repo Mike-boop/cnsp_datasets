@@ -244,3 +244,11 @@ HPC server). Data is never kept long term here.
   broderick2019 cocktail ~-45 ms are documented in their notes but not applied.
 - **Annotations in the standardised data.** Always carry word/phoneme alignments when they exist or can be made
   (e.g. guilleminot2021 tactile-condition TextGrids).
+- **Authors' quality ratings in the standardised data.** Adaptors include all data, but the authors' own exclusions
+  are lost on the way, so users cannot reproduce them. Cases so far:
+  - bentum2023 rates blocks "bad" (103) or "doubtfull" (198). They are included by default; `exclude_usability`
+    skips them.
+  - brennan2018 excluded subjects in the original study (028, 029, 031, 033, 046, 047; 047 for noise). They are
+    included, and their events.tsv has no word onsets.
+
+  Option: carry such flags per trial or subject (e.g. in the provenance sidecar) so users can filter.
