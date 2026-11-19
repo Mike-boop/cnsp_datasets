@@ -19,3 +19,6 @@ may estimate and apply such offsets (PLAN.md section 8). Evidence: `tmp/review/t
 ## Blocks rated "bad" or "doubtfull"
 Included by default (from 2026-11-19). The authors excluded them from their analyses; pass
 `exclude_usability=("doubtfull", "bad")` to skip them (103 bad, 198 doubtful blocks).
+
+## Data size
+48 participants, 4.33 h each (3.63-4.38), 207.8 h in total, 1617 blocks (all blocks incl. bad/doubtful; EEG from onset to end marker = the played audio). Per task per participant: news 1.49 h, story 1.37 h, dialogue 1.47 h. Three blocks end after their recording (pp002 and pp006 block 7, pp035 dialogue block 2) and are not counted.
