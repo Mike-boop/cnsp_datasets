@@ -1,154 +1,81 @@
 from __future__ import annotations
 
-import os
 import glob
-import h5py
+import os
+from typing import Iterable
 
 import numpy as np
 import pandas as pd
-
-from scipy.io import wavfile
-from typing import Dict, Iterable, List
-
-from mne import create_info
 from mne.channels import make_standard_montage
-from mne.io import RawArray, BaseRaw
+from mne.io import BaseRaw, read_raw_brainvision
+from scipy.io import wavfile
 
-from cnsp_datasets.standardise.trial_record import TrialRecord, StimulusRecord
+from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 
 class Weissbart2019Adaptor:
     """
-    Emits TrialRecord objects for the Weissbart 2019 dataset.
+    Weissbart et al. 2019 in its BIDS version (built by make_bids.py from the original record, Zenodo 7086168): one
+    continuous BrainVision recording per participant (63 EEG channels + the `Sound` stimtrack, 1 kHz), 15 English
+    audiobook chapters, onsets in `*_events.tsv` measured from the stimtrack.
 
-    Neutral fields used:
-      - subject (int), session (int), trial (int), condition (str), ns_type (str)
-      - stimulus: List[StimulusRecord] with modality="audio", name=<story>
-      - neural_data_fn: lazy loader returning an mne.BaseRaw
-
-    Timing (checked against the Sound stimtrack in the original record, Zenodo 7086168): the authors' onsets are
-    accurate to 1 ms and drift is ~1.2 ppm (0.2 ms per story), so no correction is needed. One trial is invalid:
-    P03 BROP01 (original participant P04) was never played (no match anywhere in the stimtrack); its listed onset is
-    10.5 s before BROP02, so the release's segment is EEG recorded during BROP02. It is skipped (EXCLUDED).
+    One trial per story: the EEG from the onset sample for the story's duration + 1 sample (as the HDF5 release cut
+    it), EEG channels only (volts), bad channels from `*_channels.tsv` in info["bads"]. Subjects are numbered as in the
+    HDF5 release (sub-00 = P00). Drift (~1.2 ppm, listed per story) is not corrected. Original participant P04
+    (sub-03) did not hear BROP01; its events leave it out (194 trials).
     """
 
-    EXCLUDED = {("P03", "BROP01")}
+    TASK = "audiobook"
 
     def __init__(self, download_dir: str):
         self.download_dir = download_dir
-        self.session = 1
-
-        # Discover files
-        self._stim_order = pd.read_csv(
-            os.path.join(self.download_dir, "stimulus_order.csv"), index_col=0
-        )
-        self._audiobooks = sorted(
-            glob.glob(os.path.join(self.download_dir, "audiobooks", "*.wav"))
-        )
-        self._subject_files = sorted(
-            glob.glob(os.path.join(self.download_dir, "P*.h5"))
-        )
-
-        # Map story_name -> wav path, e.g., "Alice" -> ".../audiobooks/Alice.wav"
-        self._story_to_wav: Dict[str, str] = {
-            os.path.splitext(os.path.basename(p))[0]: p for p in self._audiobooks
-        }
-
-        # channel names and sample rate as stored in the HDF5 files (identical for all participants)
-        self._info = self._make_mne_info(self._subject_files[0])
-
-
-    # --------------------------- Public API ---------------------------
+        self._participants = pd.read_csv(os.path.join(download_dir, "participants.tsv"), sep="\t")
 
     def parse(self) -> Iterable[TrialRecord]:
-        """
-        Yield TrialRecord for each (subject, story) pair.
-        """
-        for subj_path in self._subject_files:
-            subject_id = self._parse_subject_id(subj_path)  # e.g., P03 -> 3
-
-            # stimulus_order.csv holds np.argsort(onsets) under story-name headers: row k lists the index of the
-            # story presented k-th, so a story's (1-based) trial number is its position in that row
-            presented = list(self._stim_order.loc[f"P{subject_id:02d}"].to_numpy())
-            for i, story in enumerate(self._stim_order.columns):
-                trial_idx = presented.index(i) + 1
-                if (f"P{subject_id:02d}", story) in self.EXCLUDED:
-                    continue
-
-                # Build StimulusRecord (lazy read of WAV)
-                stim = StimulusRecord(
-                    modality="audio",
-                    name=story,
-                    data_fn=self._make_audio_loader(story),
-                    is_attended=False,  # toggle if you have that info
-                )
-
-                # Build TrialRecord with lazy EEG loader
+        for label in self._participants.participant_id:
+            stem = os.path.join(self.download_dir, label, "eeg", f"{label}_task-{self.TASK}")
+            events = pd.read_csv(f"{stem}_events.tsv", sep="\t")
+            channels = pd.read_csv(f"{stem}_channels.tsv", sep="\t")
+            bads = channels.name[channels.status == "bad"].tolist()
+            for _, ev in events[events.trial_type == "story"].iterrows():
+                story = os.path.dirname(ev.stim_file)
                 yield TrialRecord(
-                    subject=subject_id,
-                    session=self.session,
-                    trial=trial_idx,
+                    subject=int(label.split("-")[1]),
+                    session=1,
+                    trial=int(ev.trial),
                     condition="natural",
                     ns_type="eeg",
-                    stimulus=[stim],
-                    neural_data_fn=self._make_eeg_loader(subj_path, story),
-                    structural_data_fn=None,
-                    behavioural_data_fn=None,  # plug in if you have events table
+                    stimulus=[StimulusRecord(modality="audio", name=story, is_attended=True,
+                                             data_fn=self._audio_loader(ev.stim_file))],
+                    neural_data_fn=self._eeg_loader(f"{stem}_eeg.vhdr", int(ev["sample"]), float(ev.duration), bads),
                 )
 
-    # ------------------------ Lazy loader makers ----------------------
-
-    def _make_audio_loader(self, story_name: str):
-        """
-        Returns a zero-arg function that reads the WAV on demand.
-        Suggested return: dict with fs + mono waveform (1 x T).
-        """
-        wav_path = self._story_to_wav[story_name]
+    def _audio_loader(self, stim_file: str):
+        path = os.path.join(self.download_dir, "stimuli", stim_file)
 
         def _loader() -> dict:
-            fs, audio = wavfile.read(wav_path)
-            # Ensure mono: dataset claims identical stereo; verify & pick one channel
+            fs, audio = wavfile.read(path)
             if audio.ndim == 2:
-                if not np.array_equal(audio[:, 0], audio[:, 1]):
-                    raise ValueError(f"Stereo channels differ in {wav_path}")
                 audio = audio[:, 0]
-            return {"fs": int(fs), "data": (audio / 32768.0).astype(np.float32)[None, :]}  # int16 -> [-1, 1)
+            scale = float(np.iinfo(audio.dtype).max + 1) if np.issubdtype(audio.dtype, np.integer) else 1.0
+            return {"fs": int(fs), "data": (audio / scale).astype(np.float32)[None, :]}
 
         return _loader
 
-    def _make_eeg_loader(self, subject_h5_path: str, story_name: str):
-        """
-        Returns a zero-arg function that opens the HDF5, extracts EEG for this story,
-        and builds an mne.RawArray with the prebuilt Info (no lingering open file handle).
-        """
-        h5_path = subject_h5_path
-        h5_key = f"data/{story_name}"
-
+    @staticmethod
+    def _eeg_loader(vhdr: str, sample: int, duration: float, bads: list[str]):
         def _loader() -> BaseRaw:
-            with h5py.File(h5_path, "r") as f:
-                if h5_key not in f:
-                    raise KeyError(f"Missing EEG dataset: {h5_key} in {h5_path}")
-                eeg = f[h5_key][:]  # expected shape (n_channels, n_times)
-            raw = RawArray(eeg, self._info, verbose="ERROR")
+            raw = read_raw_brainvision(vhdr, preload=False, verbose="ERROR")
+            sfreq = raw.info["sfreq"]
+            stop = sample + int(round(duration * sfreq)) + 1
+            raw = raw.crop(tmin=raw.times[sample], tmax=raw.times[min(stop, raw.n_times) - 1]).load_data()
+            raw.pick([c for c in raw.ch_names if c != "Sound"])
+            raw.set_montage(make_standard_montage("easycap-M1"), on_missing="warn")
+            raw.info["bads"] = [b for b in bads if b in raw.ch_names]
+            raw.set_meas_date(None)
             return raw
 
         return _loader
-
-    # --------------------------- Utilities ----------------------------
-
-    def _parse_subject_id(self, subj_path: str) -> int:
-        # e.g., ".../P03.h5" -> 3
-        stem = os.path.splitext(os.path.basename(subj_path))[0]
-        return int(stem.replace("P", ""))
-
-    def _make_mne_info(self, h5_path: str):
-        # EEG in volts, recorded with a BrainVision system; layout easycap-M1
-        with h5py.File(h5_path, "r") as f:
-            ch_names = [c.decode() for c in f["ch_names"][:]]
-            sfreq = float(f["srate"][0])
-        info = create_info(ch_names, sfreq, ch_types="eeg")
-        info.set_montage(make_standard_montage("easycap-M1"))
-        return info
 
 
 ADAPTOR = Weissbart2019Adaptor
