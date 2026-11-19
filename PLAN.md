@@ -218,3 +218,11 @@ HPC server). Data is never kept long term here.
   re-downloading.
 - Enforced by `.claude/hooks/storage_guard.py` (PreToolUse): blocks writes outside `tmp/` under the datasets
   root, and blocks download/standardise commands while `tmp/` exceeds 500 GB.
+
+## 8. Future work
+
+- **BIDS re-uploads of weissbart2019 and etard2019** (the user moderates their Zenodo records): EEG-BIDS with the
+  StimTrack `Sound` channel kept, the stimuli as played (etard: per-condition English sentences for
+  lb/mb/hbDutch, which the current release copies from cleanDutch; noise/babble tracks), onsets/events from the
+  stimtrack, drift estimates, and other material missing from the convenience releases (weissbart `onsets.mat`,
+  transcripts and word-level features). Sources: original Zenodo records 7086168 (weissbart) and 7086209 (etard).
