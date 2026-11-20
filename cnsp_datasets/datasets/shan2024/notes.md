@@ -53,3 +53,22 @@ Onset = S 1 + tube delay; drift correction (default on); 1000 Hz by default. Sti
 
 ## 9. Upstream issues (to report)
 1. The 7-bit trials after the experiment are undocumented (section 3).
+
+## 10. Validation (2026-11-20; EP1, EP2, 1000 Hz, no re-reference) — brainstem tier not reached
+`tmp/review/shan2024/validation.{json,png}`, `by_condition/`.
+- All 22 subjects pooled: low r 0.038 (22/22 significant, TRF peak 31 ms), MLR SNR 1.44 (6/22), **brainstem SNR
+  0.92 (1/22)**: tier `mlr`. Per condition: low tier in 10 of 12 (classical and news: none), MLR in interview only.
+- Coherence (`tmp/review/coherence_peaky/shan2024_*`, EP1/EP2): above the null at 1-8 Hz, but the f0 range
+  (80-150 Hz) is ~1.1x the null median (polonenko2024/2025: 2.3-2.5x).
+- Checks (sub-01, 05, 09; `tmp/review` session log 2026-11-20):
+  - **Click ABR** (10 x 60 s, rectified click train, raw markers): wave V at 7.7-8.0 ms, 6-42x the noise SD on
+    EP1/EP2. Channels, triggers and onsets are right.
+  - Music/speech, the authors' way (EP mean, positive and negative half-wave rectified audio averaged, 10 kHz):
+    no wave V (largest peak 1.5-5.9x noise at 6-15 ms).
+  - Not a rate error (stimulus stretch -90000..+88435 ppm: no peak above 6x), not a constant offset (no sharp
+    peak within ±1 s), not a clip-numbering offset (clip n-2..n+2: n is best, but only 2.6-3.9x noise).
+- Interpretation (open): mapping and timing are right (clicks, low tier, clip-offset test); the half-wave
+  rectified regressor gives little brainstem response to these natural, non-peaky clips. The paper derived its
+  ABRs with IHC/ANM model regressors (`regressor_gen/IHC_ANM_regressor_gen.py`). To do: derive ANM regressors and
+  re-check before calling the tier; alternatively the shared wavs differ in fine structure from those played
+  (stimuli were added to the dataset later, 2024-01-18: "fix stim and event file").
