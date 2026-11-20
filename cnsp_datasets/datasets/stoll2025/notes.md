@@ -95,8 +95,39 @@
 - Marker drift (S 2 at 171.1146 s): 11.5 ppm (sub-passive17, 18). The 25 kHz EEG is resampled to 1 kHz.
 - The authors analyse 10-130 s of each trial (padding); the adaptor keeps the full trial.
 
-## 10. Per-trial polarity (in progress)
-`tmp/review/scripts/stoll2025_trial_polarity.py` (template = exp1 sub-diotic23 artefact with stored audio).
+## 10. Per-trial polarity (all subjects)
+`tmp/review/scripts/stoll2025_trial_polarity.py` -> `tmp/review/stoll2025/trial_polarity/`: per trial (and story),
+deconvolution on the stored audio, projected onto the ER-2 artefact template (exp1 sub-diotic23, stored audio;
+the artefact is biphasic, so the sign of the largest peak alone is unreliable).
+- exp1 controls (02, 05, 18, 23): strong trials (|z| > 3) 76-100 % positive: stored = played.
+- exp3: polarity alternates by repetition. 12 subjects play the stored waveform in repetitions 1 and 3 (every
+  strong trial consistent); **sub-passive17 is reversed** (16/16 strong trials); **sub-passive20 has no measurable
+  artefact** (0 strong trials): the majority pattern is assumed (unverified).
+- exp2: no alternation: strong subjects are uniformly negative for both stories (single FCz-earlobe channel and TDT
+  hardware, so the absolute sign is not comparable with exp1; the notebook averages both ANM polarities). The
+  stored wavs are taken as played. In sub-dichotic03 the artefact sign follows the ear the story was played to
+  (median z -5.8 vs +3.0 by ear), other strong subjects differ in size by ear: independent confirmation that the
+  ear routing follows `att_side`/`att_story`.
+
+## 11. Adaptor (stoll2025 = subcortex; stoll2025_cortex = 32-channel cortical files of exp1 and exp2)
+- Subjects: label number + 100 x experiment (exp1 101-129, exp2 202-225, exp3 317-331). Conditions
+  `diotic-attend-{female,male}`, `dichotic-attend-{female,male}-side{0,1}` (side of the attended talker),
+  `passive-{fM,fW}`. Trials numbered by start marker within the recording.
+- Onset = S 1 (markers include the tube delay). Cortex trials use the subcortical marker time (same recording,
+  split by the authors; cortex markers are the subcortical ones floored to 1 kHz / 500 Hz).
+- Drift: exp1 per recording from S 2 (sub-diotic06: 24.8 ppm), exp2 -5 ppm, exp3 per recording from S 2.
+- 1000 Hz by default; cortex keeps 1 kHz (exp1) and 500 Hz (exp2) (never upsampled); exp3 25 kHz -> 1 kHz.
+- Stimuli: exp1 `wrinkle_chNN`, `alchemyst_chNN` (audio 48 kHz, pulses; `anm` with save_anm=True), attended one
+  marked; exp2 `<talker>_dichotic_chNN` (24414.0625 Hz as shipped; the wav header says 24414); exp3
+  `exp3_<fM|fW>_<story|distractor>K[_inv]` (none attended; `_inv` = negated, from section 10).
+- Not included: exp1 silences (`*_silent`: in the stimulus file, the authors zero the EEG there), exp2 ANM
+  regressors (36 x 640,000 at 10 kHz: 36 entries for 30 chapters, unclear), exp3 EMD features (truncated file).
+
+## 12. Data size (from the adaptor's trials; stimulus durations)
+66 participants, 5234 trials (subcortex). exp1 28 x 2.13 h (120 x 64 s; 59.7 h); exp2 24 x 1.06 h (sub-dichotic02
+0.82; 25.4 h); exp3 14 x 1.52 h (32 x 171.1 s padded; README: ~117 s of audio each, i.e. ~1.04 h; 21.3 h padded).
+Total ~106 h (padded exp3) or ~99 h. Per condition: diotic attend female / male 28 x 1.07; dichotic each of 4
+(attended talker x side) 24 x 0.26; passive fM / fW 14 x 0.76 (padded).
 
 ## 7. Upstream issues (to report; collected in `tmp/review/upstream_issues.md`)
 1. `stimuli/exp1Diotic/flip_signs` and `stimuli/exp3Passive/EMDdict_padded_48k` truncated on OpenNeuro.
