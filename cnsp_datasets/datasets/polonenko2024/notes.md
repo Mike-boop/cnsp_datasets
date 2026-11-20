@@ -83,3 +83,25 @@ every trial plays its whole 10 s file). Per condition (6: male/female x f0 low/m
 ## 10. Validation note
 The two channels are both FCz minus an earlobe: validate **without re-referencing** (`--reference ""`). An average
 reference would leave (A1 - A2) / 2 and remove the common FCz response.
+
+## 11. Validation (2026-11-20; all 15 subjects, 1000 Hz, drift-corrected, no re-reference)
+`tmp/review/polonenko2024/validation.{json,png}`; per condition in `tmp/review/polonenko2024/by_condition/`.
+
+| condition | low r (sig) | low peak | mlr SNR (sig) | brainstem SNR (sig) | tier |
+|---|---|---|---|---|---|
+| all | 0.064 (15/15) | +16 ms | 3.83 (12/15) | 5.57 (15/15) | brainstem |
+| male-f0low | 0.063 (14/15) | 0 ms | 1.53 (4/15) | 3.20 (14/15) | brainstem |
+| male-f0mid | 0.061 (14/15) | -16 ms | 1.55 (5/15) | 2.54 (11/15) | brainstem |
+| male-f0high | 0.067 (14/15) | 0 ms | 1.51 (5/15) | 2.72 (10/15) | brainstem |
+| female-f0low | 0.057 (12/15) | +16 ms | 2.27 (9/15) | 2.74 (11/15) | brainstem |
+| female-f0mid | 0.060 (13/15) | +16 ms | 2.25 (11/15) | 2.33 (12/15) | brainstem |
+| female-f0high | 0.057 (14/15) | +16 ms | 1.82 (8/15) | 2.14 (10/15) | brainstem |
+
+- Brainstem SNR falls with f0 for both narrators, as in the paper (lower f0, larger ABR): labels consistent.
+- Low-tier peaks within one 64 Hz sample of 0 in every condition (the 0.5-8 Hz TRF of two FCz-earlobe channels
+  is dominated by early, partly artefactual components; not a timing error).
+- The 30-250 Hz TRF has a large spike at about -3..+1 ms: the ER-2 electrical artefact (sound leaves the
+  transducer 0.81 ms before our onset; confirmed precisely in polonenko2025, notes section 9). No polarity
+  alternation here, so it cannot be averaged out.
+- The low tier's per-trial jitter/drift estimates (SD ~0.5 s) are noise: 10 s trials with two channels are too
+  short for them. Drift is measured from the markers instead (25 ppm).

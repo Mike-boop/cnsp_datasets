@@ -61,9 +61,22 @@
 25 participants, 17,998 speech trials x 10 s = **50.0 h in total, 2.00 h per participant** (1.99 for sub-19).
 Per condition: 4500 (clean, 0 dB) / 4499 (-3, -6 dB) trials = 12.5 h, 0.50 h per participant.
 
-## 9. To check in validation
+## 9. Polarity check (done, sub-07, 09, 10)
+`tmp/review/scripts/polonenko2025_polarity.py` -> `tmp/review/polonenko2025/polarity/`: frequency-domain
+deconvolution (30-2000 Hz, 10 kHz, drift-corrected EEG, mean of A1/A2) per subject and polarity group.
+- Signed audio with the decoded flips **ignored**: the TRFs of normal and inverted trials are anti-correlated
+  (r = -0.97, -0.71, -0.69); with the flips **applied** (the adaptor's `_inv` stimuli): r = +0.97, +0.71, +0.69.
+  The polarity bit and its sign (bit 0 = inverted) are right.
+- The polarity-following component is a sharp spike exactly at **-0.81 ms**, when the sound leaves the ER-2
+  transducer: the earphone's electrical artefact (plus fine-structure FFR). Its position also confirms the onset
+  (marker + tube delay) to within a 10 kHz sample.
+- Adding the two groups' TRFs (file audio) cancels the artefact; subtracting keeps only it. Users who want
+  artefact-free audio TRFs can average over polarities (sub-07 on). polonenko2024 alternates no polarity, so the
+  artefact cannot be cancelled there; it shows in its brainstem-tier TRF at about -3..+1 ms.
+- Half-wave-rectified audio as played: wave V at ~7.5 ms identical in both groups (r = 0.94-0.99); with flips
+  ignored the inverted group is misaligned (r = -0.25..-0.94).
+
+## 10. To check in validation
 - Validate without re-referencing (`--reference ""`; both channels are FCz minus an earlobe).
-- Polarity: the 30-250 Hz TRF on half-wave-rectified audio should be stronger with the inverted audio on the
-  inverted trials than without (sub-07 to 25). Compare per polarity.
 - The validator scores the first stimulus by name (one of the talkers in mixtures): per-condition scores will drop
   with the number of talkers.
