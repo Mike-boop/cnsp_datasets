@@ -50,3 +50,7 @@ participant `S<n>/S<n>_AAD_<P>`, P = story part (1, 2) + attended side (L, R); ~
 - Latency against accou2023 (DNN offsets): fL -5.1 ms (CI -8.9..-1.8), fR -8.8 ms (-13.2..-3.8) with drift
   correction; -2.9 / -6.6 ms without. Plausible for a two-talker mixture; no sign of a misalignment.
 - Size: 30 participants x 0.44 h (0.22 h per attended side), 13.2 h.
+- No MLR / brainstem response is expected: only the dry wavs are shipped while the participants heard HRTF-filtered
+  versions, so the half-wave-rectified dry wav is a poor regressor above ~30 Hz (the envelope is barely affected).
+- The previous adaptor took the first Trigger edge as the onset (the same sample except S8_AAD_1R, 16.18 s early),
+  ran ~5 s past the audio and had no drift correction.
