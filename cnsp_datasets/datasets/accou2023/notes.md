@@ -7,7 +7,7 @@ podcasts), one BIDS run per stimulus. Authors' code: github.com/exporl/auditory-
 
 ## Contents of the public release
 - Files of sub-019, 020, 021, 022 and 026 (196) are restricted: RDR answers 403; access on request to the authors
-  (non-commercial). The public part gives 81 participants and 617 alignable runs.
+  (non-commercial). The public part gives 81 participants and 620 runs (617 complete, 3 truncated).
 - 7 runs (sub-050, 077, 081) have events.tsv and .apr but no EEG upstream either.
 - There are some SRTs in this dataset; code to extract them exists but is not incorporated.
 
@@ -44,12 +44,14 @@ podcasts), one BIDS run per stimulus. Authors' code: github.com/exporl/auditory-
 - Use the trigger file events.tsv names: audiobook_2_2's experiment played `t_audiobook_2_1` with it (both after
   1 s of silence, so the onset holds); those trials have 29 s of EEG after the speech. The trigger tracks of
   audiobook_6_1, audiobook_6_2 and audiobook_1_artefact end 0.3-0.6 s before the audio.
-- The README calls three runs unalignable (sub-006 run-06, sub-017 run-03, sub-048 run-04); they are skipped. They
-  are truncated, not unalignable: 847 / 332 / 622 regular pulses (the stimulus has 911 / 954 / 1155); sub-006 and
-  sub-048 recordings end there, sub-017's triggers stop at 340 s while the recording continues to 983 s. The EEG
-  pulses are the first N of the stimulus' (not the last N, nor shifted by a lost first pulse): a decoder trained on
+- The README calls three runs unalignable (sub-006 run-06, sub-017 run-03, sub-048 run-04). They are truncated, not
+  unalignable: 847 / 332 / 622 EEG pulses (the stimulus has 911 / 954 / 1155); sub-006 and sub-048 recordings end
+  there, sub-017's triggers stop at 340 s (plus a stray pulse 0.26 s after the last) while the recording continues
+  to 983 s. The EEG pulses are the first N of the stimulus' (not shifted by lost first pulses): a decoder trained on
   the participant's other runs gives r 0.138 / 0.089 / 0.102 with the first pulses matched against -0.03 to 0.03
-  when shifted by 1-3 pulses, best lag 0 ms.
+  when shifted by 1-3 pulses, best lag 0 ms. The adaptor includes them (`TRUNCATED`, `first_pulses`): EEG pulses
+  up to the first irregular spacing, matched to the stimulus' first pulses; their EEG ends at the last pulse
+  (846 / 330 / 621 s, 30 min in all).
 
 ## Channels
 - The first 64 channels are named by position (BioSemi 64 order); sub-015..018 files spell PO7/PO3 as P07/P03.
@@ -57,7 +59,7 @@ podcasts), one BIDS run per stimulus. Authors' code: github.com/exporl/auditory-
   missing in one sub-052 file; flat ones go into bads. EXG3-8 are unconnected and dropped.
 
 ## Validation (2026-11-20, average reference, `tmp/review/accou2023/avgref/`)
-- 81 participants, 617 trials, no load errors. Tier **brainstem**: envelope decoding mean r 0.030, 96% of
+- 81 participants, 617 trials (before the 3 truncated runs were added), no load errors. Tier **brainstem**: envelope decoding mean r 0.030, 96% of
   participants significant, broad TRF (about 50-150 ms); MLR SNR 1.52, p = 0.01 (peaks about 25 and 37 ms);
   30-250 Hz TRF SNR 1.22, p = 0.01 (35% of participants alone), a small bump at 4-9 ms besides the 25-ms MLR peak.
 - Coherence, natural (554 trials, 81 participants; ratio to null): 0.2-1 Hz 16.0, 1-4 Hz 6.4, 4-8 Hz 6.3, 8-15 Hz

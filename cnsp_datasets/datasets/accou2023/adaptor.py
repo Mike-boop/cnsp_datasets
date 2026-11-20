@@ -25,8 +25,9 @@ from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 mne.set_log_level("CRITICAL")
 
-# The release README: too few triggers to align these runs with the stimulus.
-UNALIGNABLE = {
+# The release README calls these unalignable (too few triggers). They are truncated: the EEG pulses are the first N
+# of the stimulus' (decoder trained on the participant's other runs: r 0.09-0.14 vs <= 0.03 shifted by 1-3 pulses).
+TRUNCATED = {
     "sub-006_ses-shortstories01_task-listeningActive_run-06",
     "sub-017_ses-shortstories01_task-listeningActive_run-03",
     "sub-048_ses-varyingStories05_task-listeningActive_run-04",
@@ -95,6 +96,17 @@ def default_drift_correction(brain_data: np.ndarray, brain_trigger_indices: np.n
     return interpolator(target_times)
 
 
+def first_pulses(brain_trigger_indices: np.ndarray, stimulus_trigger_indices: np.ndarray, brain_fs: float,
+                 tol: float = 0.01) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Truncated run: the EEG pulses up to the first spacing that is not 1 s (+-tol s; sub-017 run-03 has a stray last
+    pulse), and the stimulus' first pulses of the same count.
+    """
+    gaps = np.flatnonzero(np.abs(np.diff(brain_trigger_indices) / brain_fs - 1) > tol)
+    brain = brain_trigger_indices[: gaps[0] + 1] if gaps.size else brain_trigger_indices
+    return brain, stimulus_trigger_indices[: len(brain)]
+
+
 def apr_snr(apr_path: str) -> float | None:
     """SNR (dB) the experimenter set in an APEX results file, None if the file or entry is missing."""
     if not os.path.exists(apr_path):
@@ -114,7 +126,8 @@ class Accou2023Adaptor:
 
     - EEG: sub-*/ses-*/eeg/*task-listeningActive*_eeg.bdf (or .bdf.gz), channels named by position (some files
       spell PO7/PO3 as P07/P03). EXG1/EXG2 are the mastoids (A1/A2, misc); flat (unconnected) ones go into bads.
-      Runs without EEG in the release (7) and the three runs the README calls unalignable are skipped.
+      Runs without EEG in the release (7) are skipped. The three runs the README calls unalignable (TRUNCATED) are
+      aligned on their EEG pulses, matched to the stimulus' first pulses; their EEG ends at the last pulse.
     - Alignment: the stimulus' trigger track (stimuli/eeg/t_<stim>.npz, a pulse every second from the first sample,
       mostly also on the last) was recorded in the BioSemi Status channel; the EEG between the first and last
       trigger is linearly resampled to the stimulus' first-to-last trigger duration (drift correction, as in the
@@ -140,7 +153,7 @@ class Accou2023Adaptor:
         for events_path in self._events:
             stem = events_path[: -len("_events.tsv")]
             bdf = next((p for p in (f"{stem}_eeg.bdf", f"{stem}_eeg.bdf.gz") if os.path.exists(p)), None)
-            if bdf is None or os.path.basename(stem) in UNALIGNABLE:
+            if bdf is None:
                 continue
             ev = pd.read_csv(events_path, sep="\t").iloc[0]
             sub = int(re.search(r"sub-(\d+)", stem).group(1))
@@ -158,7 +171,8 @@ class Accou2023Adaptor:
                 condition=condition,
                 ns_type="eeg",
                 stimulus=stimuli,
-                neural_data_fn=self._eeg_loader(bdf, self._stim_path(_stem(ev.trigger_file))),
+                neural_data_fn=self._eeg_loader(bdf, self._stim_path(_stem(ev.trigger_file)),
+                                                os.path.basename(stem) in TRUNCATED),
             )
 
     @staticmethod
@@ -187,17 +201,20 @@ class Accou2023Adaptor:
         return _loader
 
     @staticmethod
-    def _eeg_loader(bdf: str, trig_path: str):
+    def _eeg_loader(bdf: str, trig_path: str, truncated: bool = False):
         def _loader() -> BaseRaw:
             with _plain_file(bdf) as path:
                 raw = read_raw_bdf(path, preload=True, verbose="ERROR")
             ref = _load_npz(trig_path)
+            brain = get_trigger_indices(biosemi_trigger_processing_fn(raw.get_data(picks="Status")[0]))
+            stim = get_trigger_indices(ref["audio"].ravel())
+            if truncated:
+                brain, stim = first_pulses(brain, stim, raw.info["sfreq"])
             corrected = default_drift_correction(
                 brain_data=raw.get_data(),
-                brain_trigger_indices=get_trigger_indices(
-                    biosemi_trigger_processing_fn(raw.get_data(picks="Status")[0])),
+                brain_trigger_indices=brain,
                 brain_fs=int(round(raw.info["sfreq"])),
-                stimulus_trigger_indices=get_trigger_indices(ref["audio"].ravel()),
+                stimulus_trigger_indices=stim,
                 stimulus_fs=int(ref["fs"]),
             )
             mastoids = [raw.ch_names.index(c) for c in ("EXG1", "EXG2") if c in raw.ch_names]
