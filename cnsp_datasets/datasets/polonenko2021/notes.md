@@ -27,5 +27,17 @@
 - **Drift:** no end markers; the authors derive the clock ratio from start-to-start intervals (nominal 64 s) per
   run (`clock_adjust = 64 / (64 + median diff)`; pilot: fixed 64 / 64.001967 from exp3 = 30.7 ppm).
 
+## 3b. Markers checked against the data (2026-11-20)
+- Exp1-3: the 7-bit ID after each S 1 = events.tsv `trial` (0-119) in every recording, and events.tsv `sample` =
+  S 1. Exception: Exp3 sub-06 starts with a stray S 1 carrying 1 bit (skip trials whose ID is not 7 bits).
+- Repeated trials after restarts (keep the later copy, as the authors do): Exp1 sub-07 (94-97), sub-21 (68),
+  sub-23 (48-50); Exp3 sub-01 (90-91). Runs split by a dead battery (Exp1 sub-02, 04; Exp2 sub-04, 10; Exp3
+  sub-08): the last trial of run-1 is cut (recording ends inside it), run-2 continues/repeats.
+- Trials are back to back (start-to-start 64 s except at pauses). **Drift from a line through the start times**
+  per back-to-back segment: **-7.5 ppm** (-7.0..-8.1) for Exp1 and Exp2 sub-01..11, **+30.5 ppm** (30.3..30.9)
+  for Exp2 sub-12 and Exp3: a hardware change between Exp2 sub-11 and sub-12 (the pilot's hard-coded
+  64 / 64.001967 = 30.7 ppm matches the second cluster). No end markers.
+- Pilot: 8-bit IDs ([story 1, type 1, trial 6]), trials not back to back; the male stimuli are not on Dryad.
+
 ## 4. Open
 - Download and inspect the stimuli; verify mapping (trial bits vs events.tsv), tube delay and drift; adaptor.
