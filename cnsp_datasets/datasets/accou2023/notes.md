@@ -56,5 +56,8 @@ podcasts), one BIDS run per stimulus. Authors' code: github.com/exporl/auditory-
 - 81 participants, 617 trials, no load errors. Tier **brainstem**: envelope decoding mean r 0.030, 96% of
   participants significant, broad TRF (about 50-150 ms); MLR SNR 1.52, p = 0.01 (peaks about 25 and 37 ms);
   30-250 Hz TRF SNR 1.22, p = 0.01 (35% of participants alone), a small bump at 4-9 ms besides the 25-ms MLR peak.
-- Coherence (envelope, ratio to null, 1-4 / 4-8 Hz): sin5dB 2.2 / 2.4 (41 trials), av 1.9 / 1.5 (9), sin2.5dB
+- Coherence, natural (554 trials, 81 participants; ratio to null): 0.2-1 Hz 16.0, 1-4 Hz 6.4, 4-8 Hz 6.3, 8-15 Hz
+  4.3, 15-30 Hz 1.7, 30-60 Hz 2.2; above the null's 95% at almost every bin to 63 Hz, with a 30-50 Hz hump (the
+  envelope-following response): the alignment holds to a few ms across the dataset.
+- Coherence, other conditions (envelope, ratio to null, 1-4 / 4-8 Hz): sin5dB 2.2 / 2.4 (41 trials), av 1.9 / 1.5 (9), sin2.5dB
   1.3 / 1.3 (5), sin-4dB 1.2 / 1.1 (5); the small conditions are close to the null for want of data.
