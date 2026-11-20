@@ -251,6 +251,13 @@ HPC server). Data is never kept long term here.
   (one `drift_correction` option with a shared resampling helper, like bentum2023 and jehn2025 now). Same for constant
   offsets estimated without a stimtrack (match-mismatch DNN vs accou2023): das2019 ~-80 ms, bentum2023 ~-68 ms,
   broderick2019 cocktail ~-45 ms are documented in their notes but not applied.
+- **Interpolation method for drift correction.** Let the shared resampling helper take `interpolation="spline" |
+  "linear"`. accou2023 uses the authors' linear interpolation, the others a quintic spline (`to_audio_clock`).
+  Compared on accou2023 (12 subjects, 111 runs, 2026-11-20, `tmp/review/accou2023/resample_compare/`): linear
+  interpolation scales the EEG by sqrt((2 + cos w) / 3) on average (0.97 at 100 Hz, 0.88 at 200 Hz, 0.77 at 300 Hz),
+  signal and noise alike, so 30-300 Hz TRF SNR (2.39 vs 2.34), per-subject SNR and 1024 Hz coherence did not
+  change; only absolute TRF amplitudes above ~100 Hz are smaller. No timing difference. Spline costs a few seconds
+  and ~0.5 GB more per run.
 - **Annotations in the standardised data.** Always carry word/phoneme alignments when they exist or can be made
   (e.g. guilleminot2021 tactile-condition TextGrids).
 - **Authors' quality ratings in the standardised data.** Adaptors include all data, but the authors' own exclusions

@@ -37,6 +37,10 @@ podcasts), one BIDS run per stimulus. Authors' code: github.com/exporl/auditory-
   within a participant (sd 0.04 ppm) but set-up dependent: sub-015/016 -55 ppm, sub-017/018 -40 ppm. Jitter 0.28 ms
   (sampling at 1024 Hz) except sub-006 run-05 (0.73 ms, max 1.7 ms) and sub-071 run-03 (1.3 ms, max 3.0 ms). The
   adaptor's first-to-last-trigger resampling removes the drift.
+- The resampling is linear interpolation (as the authors'). Against a quintic spline (12 subjects, 111 runs): EEG
+  amplitude x0.97 at 100 Hz, x0.88 at 200 Hz, x0.77 at 300 Hz (sqrt((2 + cos w) / 3), signal and noise alike);
+  30-300 Hz TRF SNR, per-subject SNR and 1024 Hz coherence unchanged, no timing difference. Kept linear; an option
+  for either is planned (PLAN.md section 8).
 - Use the trigger file events.tsv names: audiobook_2_2's experiment played `t_audiobook_2_1` with it (both after
   1 s of silence, so the onset holds); those trials have 29 s of EEG after the speech. The trigger tracks of
   audiobook_6_1, audiobook_6_2 and audiobook_1_artefact end 0.3-0.6 s before the audio.
