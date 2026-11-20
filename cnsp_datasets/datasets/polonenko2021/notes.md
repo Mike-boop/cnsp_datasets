@@ -1,4 +1,4 @@
-# polonenko2021: peaky speech, eLife 2021 (Dryad doi:10.5061/dryad.12jm63xwd) — in progress
+# polonenko2021: peaky speech, eLife 2021 (Dryad doi:10.5061/dryad.12jm63xwd)
 
 ## 1. Source
 - Dryad doi:10.5061/dryad.12jm63xwd (CC0). Polonenko MJ & Maddox RK (2021). Exposing distinct subcortical
@@ -13,8 +13,13 @@
   `Exp2_Peaky_Speech_Narrators_Dataset` (11: male/female x broadband/multiband, 30 x 64 s each),
   `Exp3_Peaky_Speech_Audiological_Dataset` (11: dichotic multiband, male/female, 60 x 64 s each),
   `Pilot_Dynamic_Random_f0_Shifts_Dataset` (1 subject).
-- 16 stimulus zips (158 GB): hdf5 per narrator and chunk (`<narrator>Narrator<NNN>_bands[_aud].hdf5`: audio and
-  pulse indices). **Not downloaded yet** (storage decision pending).
+- 15 stimulus zips (158 GB zipped, 249 GB unzipped): one expyfun hdf5 per 64 s chapter,
+  `<Exp>_Stimuli_<Narrator>_Narrator_<NN-NN>/<Narrator>Narrator<NNN>_bands[_aud].hdf5` (Exp3: `_aud`), each
+  ~1.7-2 GB of float64 synthesis intermediates (`phase`, `x_harm*`, `mixer`, `t0`, ...). Only `fs` (44100),
+  `x` (unaltered), `x_play_single` (broadband peaky), `x_play_band` (multiband peaky; Exp3 stereo, one ear per
+  channel), `pulse_inds/idx_k` and `fc_band` are needed. `tmp/review/scripts/polonenko2021_compact.py` keeps just
+  those keys in the same file names and layout (~30 GB); the adaptor reads either.
+- The two `Pilot_Stimuli_Female_*` zips return HTTP 401 (embargoed/private on Dryad); the pilot is left out.
 - README lists `Exp1_Stimuli_Female_*` and `Pilot_Stimuli_Male_*` zips that are not on Dryad; Exp1 used only the
   male narrator (dataset README), so the former were never needed. Pilot male stimuli: to check.
 
@@ -39,5 +44,50 @@
   64 / 64.001967 = 30.7 ppm matches the second cluster). No end markers.
 - Pilot: 8-bit IDs ([story 1, type 1, trial 6]), trials not back to back; the male stimuli are not on Dryad.
 
-## 4. Open
-- Download and inspect the stimuli; verify mapping (trial bits vs events.tsv), tube delay and drift; adaptor.
+## 4. Stimulus <-> trial mapping (authors' analysis code, checked against events.tsv)
+Trial n = the 7-bit ID (0-119); file chapter and key:
+- Exp1: chapter n; type n % 3 = unaltered (`x`), broadband (`x_play_single`), multiband (`x_play_band`).
+- Exp2: narrator Male if n % 4 < 2 else Female; type n % 2 = broadband / multiband; chapter 2 * (n // 4) + n % 2.
+- Exp3: narrator Male if n even else Female; multiband (`x_play_band`, 2 channels); chapter n // 2.
+events.tsv `trial_type`/`stimulus_type`/`narrator` agree for all 5,306 events. Its `file` column agrees too, except
+in **Exp2 run-2 files (sub-04, sub-10), where it restarts at 0** (BIDS-conversion counter): 21 events name the
+wrong chapter. The trial ID is used.
+- Pulse trains (`pulse_inds`, 44.1 kHz sample indices): unaltered and broadband use `idx_0` (authors:
+  `[:1]`; unaltered speech's own glottal pulses); multiband uses the band trains (Exp1/2: `idx_0..3`, 0-1, 1-2,
+  2-4, 4-8 kHz; Exp3: `idx_0..9`, row 2 * band + ear, 0.5-8 kHz) and 6 common-component trains after them
+  (`[:n_bands + 6]`).
+- Audio rms 0.01 in every file (README: 65 dB SPL); stored = played (no rescaling in the analysis code).
+
+## 5. Neural data
+- BrainVision, 10 kHz, channels `A1`, `A2` (earlobes; reference FCz, ground Fpz: `task-*_eeg.json`), µV.
+  Amplitudes 9-11 µV at 1-1000 Hz: no gain problem (unlike polonenko2026). Kept as recorded.
+
+## 6. Adaptor
+One TrialRecord per trial; subject 100 * experiment + label (Exp1 102..124, Exp2 201..212, Exp3 301..311);
+trial = ID + 1; conditions `exp1-<type>`, `exp2-<narrator>-<type>`, `exp3-<narrator>-multiband`. Stimulus
+`<exp>_<narrator><NNN>_<type>` (the experiments' files are separate downloads, so the experiment is in the name):
+`audio`, `pulses` (uint8), `pulses_fake` (multiband). All 44 subjects have all 120 trials after dropping
+cut/repeated copies: 5,280 trials. Drift per recording from the start-to-start intervals (`start_drift`).
+
+## 7. Data size
+44 participants x 120 x 64 s = **93.9 h** (2.13 h each). Exp1 22 x 2.13 h (46.9 h; 15.6 h per type), Exp2 11 x
+2.13 h (23.5 h; 5.9 h per narrator x type), Exp3 11 x 2.13 h (23.5 h; 11.7 h per narrator).
+
+## 8. Upstream issues (to report)
+1. Exp2 events.tsv `file` restarts at 0 in run-2 files (section 4).
+2. Pilot female stimulus zips not downloadable (HTTP 401); pilot male stimuli not listed at all.
+
+## 9. Tube delay (onset = S 1)
+- Exp1-3 READMEs: markers "already corrected for the tubing delay"; the Exp1-3 analysis code adds nothing, the
+  pilot's (uncorrected) adds 11 inch / 343 m/s. The adaptor uses S 1 as the onset.
+- **Not confirmable from the ER-2 artefact here**: per-trial deconvolution (30-3000 Hz, as stoll2025) finds no
+  artefact that replicates between the two halves of a trial (Exp1 sub-03, 10, 20; split-half z ~0), unlike
+  ds005408/ds006434/ds008065. Peak-lag medians of -0.5..-0.7 ms are the centre of the -2..1 ms search window
+  (noise). A cross-correlation (EEG and audio > 1.5 kHz) gives -0.5 ms in two subjects and +1.7 ms in a third,
+  and the same method gives +0.5 ms on ds008065 (markers at the transducer): not a usable calibration.
+  Per-trial audio polarity is therefore not checkable either (no sign of alternation in the code or READMEs).
+- Remaining check: wave V latency of the broadband pulse-train ABR vs polonenko2024 (same lab, onset at the
+  eardrum) after standardising.
+
+## 10. Open
+- Validate (overall and per condition); wave V latency check; coherence.
