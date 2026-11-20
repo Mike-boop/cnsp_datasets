@@ -139,3 +139,23 @@ Total ~106 h (padded exp3) or ~99 h. Per condition: diotic attend female / male 
 5. exp3: the per-trial polarity (alternating across repetitions, starting polarity differs between subjects) is
    not in events.tsv.
 6. exp2 has no end (S 2) markers; drift (-5 ppm, from the EEG) cannot be checked from triggers.
+
+## 13. Validation (2026-11-20; subcortex, 1000 Hz, no re-reference; first run failed on a resampler bug, re-run)
+`tmp/review/stoll2025/validation.{json,png}`; per condition `tmp/review/stoll2025/by_condition/`. The validator
+scores the attended talker (diotic/dichotic) or the first stimulus by name (passive: the distractor).
+
+| condition | low r (sig) | low peak | mlr SNR (sig) | brainstem SNR (sig) | tier |
+|---|---|---|---|---|---|
+| all (66 subjects) | 0.040 (0.91) | 78 ms | 1.99 (0.55) | 2.55 (0.77) | brainstem |
+| diotic-attend-female | 0.030 (0.82) | 94 ms | 2.05 (0.61) | 1.90 (0.71) | brainstem |
+| diotic-attend-male | 0.040 (0.93) | 94 ms | 1.28 (0.25) | 2.44 (0.71) | brainstem |
+| dichotic-attend-female-side0 | 0.046 (0.67) | 266 ms | 1.43 (0.21) | 1.85 (0.42) | brainstem |
+| dichotic-attend-female-side1 | 0.050 (0.62) | 250 ms | 1.57 (0.29) | 1.46 (0.21) | brainstem |
+| dichotic-attend-male-side0 | 0.048 (0.58) | 62 ms | 1.43 (0.21) | 2.04 (0.67) | brainstem |
+| dichotic-attend-male-side1 | 0.051 (0.62) | 234 ms | 1.21 (0.12) | 1.71 (0.38) | brainstem |
+| passive-fM | 0.030 (0.79) | 16 ms | 1.28 (0.29) | 1.51 (0.43) | brainstem |
+| passive-fW | 0.030 (0.71) | 0 ms | 1.11 (0.14) | 1.19 (0.21) | low |
+
+Low-tier peaks at 230-270 ms in three dichotic conditions (single FCz-earlobe channel; 0.5-8 Hz TRF of one
+channel peaks late), not an offset: the brainstem tier passes with the same onsets. To compare with the
+coherence results (`tmp/review/coherence_peaky/`).
