@@ -421,7 +421,6 @@ def get_snapshot_files(dataset_id, tag="1.0.0", tree_id=None):
           snapshot(datasetId: $datasetId, tag: $tag) {
             files(tree: $tree) {
               id
-              key
               filename
               urls
               size
@@ -438,7 +437,6 @@ def get_snapshot_files(dataset_id, tag="1.0.0", tree_id=None):
           snapshot(datasetId: $datasetId, tag: $tag) {
             files {
               id
-              key
               filename
               urls
               size
@@ -501,7 +499,8 @@ async def _fetch_openneuro_dir_async(client, endpoint, dataset_id, tag, branch):
             leaves.append({
                 "name": full_path,
                 "url": file["urls"][0] if file["urls"] else None,
-                "checksum": "sha1:" + file["key"] if file["key"] else None,
+                "size": file["size"],
+                "checksum": None,  # the API exposes no file hashes
             })
 
     return leaves, sub_branches
