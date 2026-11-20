@@ -81,7 +81,9 @@ def low_tier(neural, stims, names, fs, rng):
     m = round(LOW["min_shift"] * fs)
     others = [[j for j, n in enumerate(names) if n != name] for name in names]
     n_mm = LOW["n_mismatch"] if all(others) else 0
-    shifts = [np.concatenate([[0], rng.integers(m, len(s) - m, LOW["n_circ"])]) for s in stims]
+    # short trials (< 2 * min_shift, e.g. 10 s peaky speech) shift by at least a quarter of the trial instead
+    shifts = [np.concatenate([[0], rng.integers(min(m, len(s) // 4), len(s) - min(m, len(s) // 4), LOW["n_circ"])])
+              for s in stims]
     mism = [[np.resize(stims[j], len(s)) for j in rng.choice(o, n_mm)] if n_mm else [] for s, o in zip(stims, others)]
     ac = [autocorr(s, len(lags)) for s in stims]
     xc = [xcorr(x, s, lags, k) for x, s, k in zip(neural, stims, shifts)]  # (1 + n_circ, C, L) per trial
