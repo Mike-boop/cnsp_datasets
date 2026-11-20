@@ -22,7 +22,7 @@ class Resample(PreprocStep):
     def _resample_array(self, data: np.ndarray, current_fs: float) -> np.ndarray:
         if current_fs == self.target_fs:
             return data
-        ratio = Fraction(self.target_fs) / Fraction(current_fs).limit_denominator(10 ** 6)
+        ratio = Fraction(self.target_fs) / Fraction(float(current_fs)).limit_denominator(10 ** 6)  # numpy ints too
         return scipy_resample_poly(data, ratio.numerator, ratio.denominator, axis=-1)
 
     @abstractmethod
