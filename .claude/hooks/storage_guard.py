@@ -13,7 +13,7 @@ import sys
 
 ROOT = "/data_storage/gu08wuvu/datasets"
 TMP = f"{ROOT}/tmp"
-TMP_LIMIT_GB = 500
+TMP_LIMIT_GB = 1000
 
 WRITE_VERBS = {"rm", "mv", "touch", "chmod", "chown", "truncate", "mkdir", "rmdir", "unlink"}
 COPY_VERBS = {"cp", "rsync", "ln"}

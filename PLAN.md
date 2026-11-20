@@ -228,7 +228,7 @@ The repository is the product: standardisation must be reproducible from code al
 HPC server). Data is never kept long term here.
 
 - `/data_storage/gu08wuvu/datasets/tmp/` is a working directory only:
-  `tmp/<dataset>/{download,standardised,validation}`. Up to 500 GB while working on a dataset.
+  `tmp/<dataset>/{download,standardised,validation}`. Up to 1 TB while working (raised from 500 GB on 2026-11-20).
 - When a dataset is done, delete `tmp/<dataset>` entirely. Before that, commit the small artefacts to the repo:
   `notes.md`, `adaptor.py` and the validation summary (`datasets/<name>/validation.json`, plus key figures if
   small).
@@ -236,7 +236,7 @@ HPC server). Data is never kept long term here.
 - Existing downloads in `/data_storage/gu08wuvu/datasets/` are **read-only**: read from them instead of
   re-downloading.
 - Enforced by `.claude/hooks/storage_guard.py` (PreToolUse): blocks writes outside `tmp/` under the datasets
-  root, and blocks download/standardise commands while `tmp/` exceeds 500 GB.
+  root, and blocks download/standardise commands while `tmp/` exceeds 1 TB.
 
 ## 8. Future work
 
