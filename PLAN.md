@@ -171,6 +171,9 @@ Each item below caught a real error in at least one dataset. Run through them fo
 - Check a few trials' neural duration against their stimulus: stimuli are not cut to the EEG (the longer signal is
   cut at the point of use), so the estimate is too high where only part of a stimulus was played (das2019: 2-min
   repeat trials carry the full 6.5-min track, 2.3 h estimated vs ~1.3 h recorded). Report the recorded figure then.
+- A stimulus's `data_fn` must depend only on its (modality, name, feature): the sink writes one file per name, shared
+  by all trials, and the first trial written wins. Anything trial-specific (cut, shift, resampling) needs its own
+  name or belongs in the trial (varano2022 cuts the audio per trial; see section 8, second pass).
 
 **Running the work**
 - Long jobs detached and resumable (cache per trial/session); a server reboot killed every job once.
@@ -258,3 +261,16 @@ HPC server). Data is never kept long term here.
     included, and their events.tsv has no word onsets.
 
   Option: carry such flags per trial or subject (e.g. in the provenance sidecar) so users can filter.
+
+### Second pass (later)
+- **varano2022 audio cut.** `_make_audio_loader` cuts `AVbook/A/<part>.wav` to the trial's EEG length, which only
+  shortens the 95 mismatched AV trials (EEG stops at the shorter video). The stimulus is named by the part alone, so
+  the stored `audio/<part>` is whichever trial was written first: if a mismatched trial came first, the matched
+  trials that play the same part (other subjects, A/AV conditions) get the shortened audio too (onsets unaffected;
+  their tail is lost). The `visual` stimulus uses the same loader. The TextGrids are not cut. Fix: drop the cut
+  (convention: stimuli are not cut to the EEG) and re-standardise (needs `data_2020.zip` again; also lets varano be
+  validated with an average reference). Check the old standardisation's `audio/*.npz` lengths against the wavs if
+  it still exists anywhere.
+- Same check for other adaptors whose stimulus loaders take trial-specific arguments: bentum2023 builds each block's
+  audio from the block's file list and gaps (named by the wav file; confirm every block with that name has the same
+  list), guilleminot2021 tactile (delay/roll are in the name: fine).
