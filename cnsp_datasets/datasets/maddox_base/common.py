@@ -154,10 +154,10 @@ def expyfun_loader(path: str, key: str, fs_key: str | None = "fs", fs: int | Non
 
 
 def pulse_loader(path: str, n_times: int, fs: int, key: str = "pinds"):
-    """data_fn for a pulse train (1 at each pulse index, else 0) at the audio rate."""
+    """data_fn for a pulse train (uint8: 1 at each pulse index, else 0) at the audio rate."""
 
     def _loader() -> Dict:
-        train = np.zeros((1, n_times), np.float32)
+        train = np.zeros((1, n_times), np.uint8)  # 0/1: 4x smaller than float32
         train[0, np.ravel(read_expyfun(path, key)).astype(int)] = 1
         return {"fs": fs, "data": train}
 
