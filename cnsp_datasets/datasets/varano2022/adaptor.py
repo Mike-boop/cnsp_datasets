@@ -44,8 +44,8 @@ class Varano2022Adaptor:
       - Audio: AVbook/A/<part>.wav (clean speech; it was played in noise, which is not shipped); word alignments
         F/<part>.TextGrid.
     The speech starts 1.995 s into each file (as in the authors' aligned envelopes, data_2020/.../stim_dwnspl); the
-    shipped files have no stimtrack, so this onset is nominal. The audio is cut to the trial, which only shortens
-    mismatched AV trials whose video was shorter. V0 and mismatched AV trials get a 'visual' stimulus: the speech
+    shipped files have no stimtrack, so this onset is nominal. The audio is not cut to the trial: mismatched AV
+    trials end with the shorter video, so their EEG is shorter than the audio. V0 and mismatched AV trials get a 'visual' stimulus: the speech
     of the story part shown in the video (not played).
     """
 
@@ -69,7 +69,7 @@ class Varano2022Adaptor:
             if isinstance(row.audio_story_part, str):
                 part = row.audio_story_part
                 stimuli += [
-                    StimulusRecord(modality="audio", name=part, data_fn=self._make_audio_loader(part, eeg_path),
+                    StimulusRecord(modality="audio", name=part, data_fn=self._make_audio_loader(part),
                                    is_attended=True, feature_name="audio"),
                     StimulusRecord(modality="audio", name=part, data_fn=self._make_tg_loader(part),
                                    is_attended=True, feature_name="textgrid"),
@@ -77,7 +77,7 @@ class Varano2022Adaptor:
             if cond == "1m_AV" or cond.endswith("V0"):
                 part = row.visual_story_part
                 stimuli.append(StimulusRecord(modality="visual", name=part,
-                                              data_fn=self._make_audio_loader(part, eeg_path),
+                                              data_fn=self._make_audio_loader(part),
                                               is_attended=cond.endswith("V0"), feature_name="audio"))
 
             yield TrialRecord(
@@ -109,16 +109,14 @@ class Varano2022Adaptor:
             return raw.crop(tmin=raw.times[pad], tmax=raw.times[raw.n_times - pad - 1])
         return _loader
 
-    def _make_audio_loader(self, part: str, fif_path: str) -> Callable[[], Dict[str, Any]]:
-        """AVbook/A/<part>.wav, cut to the trial's duration."""
+    def _make_audio_loader(self, part: str) -> Callable[[], Dict[str, Any]]:
+        """AVbook/A/<part>.wav (whole; not cut to the trial)."""
         wav_path = os.path.join(self.download_dir, "AVbook", "A", f"{part}.wav")
 
         def _loader() -> Dict[str, Any]:
             fs, x = wavfile.read(wav_path)
-            raw = read_raw_fif(fif_path, preload=False, verbose="ERROR")
-            n = round((raw.n_times / raw.info["sfreq"] - 2 * PAD_S) * fs)
             x = x[:, 0] if x.ndim == 2 else x
-            return {"fs": int(fs), "data": np.asarray(x[:n], dtype=float)[None, :]}
+            return {"fs": int(fs), "data": np.asarray(x, dtype=float)[None, :]}
         return _loader
 
     def _make_tg_loader(self, part: str) -> Callable[[], str]:

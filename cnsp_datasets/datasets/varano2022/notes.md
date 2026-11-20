@@ -29,8 +29,10 @@ detection, per the readme and `EEG_stimuli/code`).
 - Units: volts, ~12 uV RMS after 1-40 Hz; large DC offsets in the unfiltered data.
 
 ## Standardised format
-- Speech: `AVbook/A/<part>.wav` (clean, 48 kHz) cut to the trial, and `F/<part>.TextGrid` (word and phone tiers,
-  lengths match the wavs; not cut for shortened mismatched trials).
+- Speech: `AVbook/A/<part>.wav` (clean, 48 kHz) and `F/<part>.TextGrid` (word and phone tiers, lengths match the
+  wavs), both whole: mismatched AV trials end with the shorter video, so their EEG is shorter than the audio (cut at
+  the point of use). Until 2026-11-20 the adaptor cut the audio to the trial, and as stimuli are shared by name, a
+  mismatched trial written first shortened the audio for every trial of that part; re-standardise older copies.
 - V0 and mismatched AV trials also get a `visual` stimulus: the speech of the story part shown in the video (not
   played). The videos themselves are not included yet (`EEG_stimuli/<video>/fNN.mp4`, `AVbook/V`).
 - Extracting AVbook from the archive dumps files into the download root (not ideal).

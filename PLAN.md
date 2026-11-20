@@ -267,8 +267,8 @@ HPC server). Data is never kept long term here.
   shortens the 95 mismatched AV trials (EEG stops at the shorter video). The stimulus is named by the part alone, so
   the stored `audio/<part>` is whichever trial was written first: if a mismatched trial came first, the matched
   trials that play the same part (other subjects, A/AV conditions) get the shortened audio too (onsets unaffected;
-  their tail is lost). The `visual` stimulus uses the same loader. The TextGrids are not cut. Fix: drop the cut
-  (convention: stimuli are not cut to the EEG) and re-standardise (needs `data_2020.zip` again; also lets varano be
+  their tail is lost). The `visual` stimulus used the same loader. The TextGrids were not cut. Cut removed from
+  the adaptor 2026-11-20; still to do: re-standardise (needs `data_2020.zip` again; also lets varano be
   validated with an average reference). Check the old standardisation's `audio/*.npz` lengths against the wavs if
   it still exists anywhere.
 - Same check for other adaptors whose stimulus loaders take trial-specific arguments: bentum2023 builds each block's
