@@ -17,7 +17,10 @@ class HilbertEnvelope(StimulusPreprocStep):
         self.output_feature_name = output_feature_name
 
     def run(self, data: StimulusData) -> StimulusData:
-        envelope = np.abs(hilbert(get_stim_array(data), axis=-1))
+        # zero-padded to a fast FFT length: scipy caches a plan per length (several GB for awkward long ones)
+        x = get_stim_array(data)
+        n = x.shape[-1]
+        envelope = np.abs(hilbert(x, N=next_fast_len(n), axis=-1))[..., :n]
         return {"fs": data["fs"], "data": envelope}
 
 
