@@ -88,3 +88,17 @@ One TrialRecord per trial; subject = label number (101..315); condition `<task>-
 2. EEG 100x too large: the EP-PreAmp gain is not in the .vhdr resolution (section 5).
 3. 24 trials with garbled trigger IDs still get (decoded) files in events.tsv, one of which does not exist
    (section 3).
+
+## 11. Validation (2026-11-20; FCzA1, 1000 Hz, no re-reference; first run failed on a resampler bug, re-run)
+`tmp/review/polonenko2026/validation.{json,png}`; per condition `by_condition/`. Confirms the gain (/100) and
+the exp2/exp3 file offset (section 3) end to end.
+
+| condition | low r (sig) | mlr SNR (sig) | brainstem SNR (sig) | tier |
+|---|---|---|---|---|
+| all (62 subjects) | 0.072 (1.00) | 4.53 (0.89) | 3.27 (0.84) | brainstem |
+| phases-zero / chirp | 0.065 / 0.066 | 1.72 / 2.32 | 1.96 / 2.21 | brainstem |
+| f0s-toto-original / shifted | 0.075 / 0.091 | 2.57 / 3.33 | 1.63 / 2.10 | brainstem |
+| f0s-wizardofoz-original / shifted | 0.069 / 0.071 | 1.78 / 2.64 | 1.34 / 1.69 | brainstem |
+| f0s2-wizard / wonderland / drdolittle | 0.072 / 0.069 / 0.066 | 2.95 / 2.86 / 3.26 | 2.11 / 2.40 / 2.86 | brainstem |
+
+Chirp > zero phase and shifted (lower f0) > original, as in the paper.
