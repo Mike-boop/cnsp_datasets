@@ -82,3 +82,9 @@
 One TrialRecord per trial; subject = label number (101..315); condition `<task>-<label>` (`phases-zero`,
 `f0s-toto-shifted`, `f0s2-wizard`, ...); trials numbered across runs. Onset = S 1 + tube delay; drift correction
 (default on); 1000 Hz default. Provenance: `hw_trigger` (sound-card), drift per run, jitter ~0.
+
+## 10. Upstream issues (to report; collected in `tmp/review/upstream_issues.md`)
+1. events.tsv `audio` names the file before the played one in exp2/exp3 (section 3; BIDS scripts drop `+ 1`).
+2. EEG 100x too large: the EP-PreAmp gain is not in the .vhdr resolution (section 5).
+3. 24 trials with garbled trigger IDs still get (decoded) files in events.tsv, one of which does not exist
+   (section 3).

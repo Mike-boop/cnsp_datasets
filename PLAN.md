@@ -182,6 +182,15 @@ Each item below caught a real error in at least one dataset. Run through them fo
 - Downloads can stop silently: use resumable retries (`curl -C -`) and check the final size.
 - Keep scripts and results out of the session scratchpad (`tmp/review/scripts`).
 
+**Notes as you go (the repo is the record)**
+- Write every finding that explains a choice in the code into the repo's `cnsp_datasets/datasets/<name>/notes.md`
+  as soon as it is established, not only at the end: mapping and its verification, file/label/polarity fixes,
+  units and gains, skipped trials and why, drift, upstream errors (with the evidence: numbers, script names). Point
+  to it from the adaptor's docstring. `tmp/` is deleted when a dataset is done; anything only there is lost.
+- `tmp/review/<name>/notes.md` holds review results and file pointers only. Issues to report to dataset authors
+  are collected in `tmp/review/upstream_issues.md` and also go in the dataset's repo notes (section "Upstream
+  issues").
+
 ## 5. Validation (objective)
 
 Run on a pilot of ~20 subjects (or all subjects, if fewer) before committing to the full job.

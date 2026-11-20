@@ -80,3 +80,7 @@ deconvolution (30-2000 Hz, 10 kHz, drift-corrected EEG, mean of A1/A2) per subje
 - Validate without re-referencing (`--reference ""`; both channels are FCz minus an earlobe).
 - The validator scores the first stimulus by name (one of the talkers in mixtures): per-condition scores will drop
   with the number of talkers.
+
+## 11. Upstream issues (to report; collected in `tmp/review/upstream_issues.md`)
+1. events.tsv does not record the inverted polarity of half the trials of sub-07 to 25 (only the trigger ID does;
+   confirmed from the EEG, section 9). Suggest a `polarity` column.
