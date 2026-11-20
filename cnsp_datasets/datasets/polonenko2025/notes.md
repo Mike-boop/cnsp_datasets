@@ -84,3 +84,19 @@ deconvolution (30-2000 Hz, 10 kHz, drift-corrected EEG, mean of A1/A2) per subje
 ## 11. Upstream issues (to report; collected in `tmp/review/upstream_issues.md`)
 1. events.tsv does not record the inverted polarity of half the trials of sub-07 to 25 (only the trigger ID does;
    confirmed from the EEG, section 9). Suggest a `polarity` column.
+
+## 12. Validation (2026-11-20; all 25 subjects, 1000 Hz, drift-corrected, no re-reference)
+`tmp/review/polonenko2025/validation.{json,png}`; per condition in `tmp/review/polonenko2025/by_condition/`.
+The validator scores the first stimulus by name, i.e. one of the talkers in mixtures.
+
+| condition | low r (sig) | low peak | mlr SNR (sig) | brainstem SNR (sig) | tier |
+|---|---|---|---|---|---|
+| all | 0.039 (24/25) | +31 ms | 2.05 (17/25) | 4.16 (23/25) | brainstem |
+| talkers1-clean | 0.068 (22/25) | +31 ms | 1.83 (12/25) | 3.56 (23/25) | brainstem |
+| talkers2-snr0dB | 0.043 (23/25) | +47 ms | 1.45 (7/25) | 2.37 (18/25) | brainstem |
+| talkers3-snr-3dB | 0.028 (15/25) | +31 ms | 1.24 (1/25) | 1.80 (13/25) | brainstem |
+| talkers5-snr-6dB | 0.015 (10/25) | +31 ms | 1.08 (2/25) | 1.70 (12/25) | low |
+
+Responses to one talker fall with the number of talkers, as in the paper; -6 dB (one talker of five) passes the
+low tier only. The ER-2 artefact near 0 ms is smaller than in polonenko2024: half the trials of sub-07 on are
+inverted, which cancels part of it in the pooled TRF.
