@@ -22,7 +22,7 @@ def main(argv=None):
     src.add_argument("--download-dir", help="run the dataset's adaptor on this download")
     src.add_argument("--standardised-dir", help="read a FlatSinkV1 directory")
     p.add_argument("--first-attended", action="store_true", help="standardised dir: first stimulus is attended")
-    p.add_argument("--picks", default="eeg", help="channels passed to raw.pick(), e.g. eeg, meg, mag")
+    p.add_argument("--picks", default="eeg", help="channels passed to raw.pick(), e.g. eeg, meg, mag, or EP1,EP2")
     p.add_argument("--reference", default=None, help="'average' or comma-separated channel names")
     p.add_argument("--n-subjects", type=int, default=20, help="pilot size (0: all subjects)")
     p.add_argument("--n-jobs", type=int, default=4)
@@ -39,7 +39,8 @@ def main(argv=None):
     reference = args.reference.split(",") if args.reference and args.reference != "average" else args.reference
 
     subjects = group_by_subject(records, args.n_subjects or None, args.seed)
-    result = validate(subjects, args.picks, reference, args.n_jobs, args.seed, args.tiers.split(","))
+    picks = args.picks.split(",") if "," in args.picks else args.picks  # channel lists, e.g. EP1,EP2
+    result = validate(subjects, picks, reference, args.n_jobs, args.seed, args.tiers.split(","))
     result["config"]["dataset"] = args.dataset
     report.save(result, args.json, args.fig_dir)
     print(json.dumps(result["summary"], indent=1))

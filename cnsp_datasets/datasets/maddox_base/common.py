@@ -60,9 +60,13 @@ class Recording:
         return float(np.mean(ratios) - 1)
 
 
-def read_recording(vhdr: str) -> Recording:
-    """Start/end markers, trial-ID bits and segment boundaries of a BrainVision recording (.vmrk text only)."""
-    trials, boundaries = [], []
+def read_recording(vhdr: str, ids_before_start: bool = False) -> Recording:
+    """
+    Start/end markers, trial-ID bits and segment boundaries of a BrainVision recording (.vmrk text only).
+
+    ids_before_start: the ID bits are stamped before each start marker (stoll2025 exp2) instead of after it.
+    """
+    trials, boundaries, pending = [], [], ()
     with open(vhdr[:-5] + ".vmrk", encoding="utf-8") as f:
         markers = [line.split("=", 1)[1].split(",")[:3] for line in f if line.startswith("Mk")]
     for kind, desc, sample in markers:
@@ -70,9 +74,14 @@ def read_recording(vhdr: str) -> Recording:
         if kind == "New Segment" and sample > 0:
             boundaries.append(sample)
         elif desc == "S  1":
-            trials.append(MarkedTrial(sample, ()))
-        elif desc in ("S  4", "S  8") and trials:
-            trials[-1].bits += (int(desc == "S  8"),)
+            trials.append(MarkedTrial(sample, pending))
+            pending = ()
+        elif desc in ("S  4", "S  8"):
+            bit = (int(desc == "S  8"),)
+            if ids_before_start:
+                pending += bit
+            elif trials:
+                trials[-1].bits += bit
         elif desc == "S  2" and trials and trials[-1].end is None:
             trials[-1].end = sample
     raw = _raw(vhdr)
@@ -97,6 +106,11 @@ def read_expyfun(path: str, key: str) -> np.ndarray:
 @lru_cache(maxsize=4)
 def _raw(vhdr: str) -> mne.io.BaseRaw:
     return mne.io.read_raw_brainvision(vhdr, preload=False, verbose="ERROR")
+
+
+def recording_sfreq(vhdr: str) -> float:
+    """Sample rate of a BrainVision recording (header only)."""
+    return _raw(vhdr).info["sfreq"]
 
 
 def _antialias(sfreq: float, sfreq_out: float) -> np.ndarray:
