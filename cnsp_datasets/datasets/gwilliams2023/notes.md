@@ -4,7 +4,8 @@ Findings that explain `adaptor.py`. Review scripts and results: `tmp/review/gwil
 `tmp/review/scripts/meg/gwilliams_*.py` (2026-11-21).
 
 ## 1. Source
-- OSF ag3kj (+ parts hqvm3, u5327, dr4wy), BIDS 1.6.0, 1304 files, 107 GB. Paper: Gwilliams et al. 2023, Sci Data
+- OSF ag3kj (+ parts hqvm3, u5327, dr4wy), doi:10.17605/OSF.IO/AG3KJ, BIDS 1.6.0, 1304 files, 107 GB, licence CC0
+  (paper, Data Records). Paper: Gwilliams et al. 2023, Sci Data
   10:862, doi:10.1038/s41597-023-02752-5. Code: github.com/kingjr/meg-masc (decoding checks; no alignment code).
 - **Download bug fixed (2026-11-21):** the repo's OSF walker read one page (10 items) per folder, so the registry
   entry resolved 535 of 1304 files (only `the_black_willow` audio, missing subject files, no `participants.tsv`).
@@ -49,7 +50,16 @@ word/phoneme TextGrids (gentle forced alignment, from the events).
   onset is therefore known to ~3 ms.
 - What MISC 009 records is not documented: presumably an electrical copy of the sound-card output (the user's view),
   in which case any acoustic delay to the ear (transducer, tubes) is not included in the onsets; if it were a
-  microphone, it would be. This is the main uncertainty of the absolute latency.
+  microphone, it would be. This is the main uncertainty of the absolute latency. The paper: "binaural tube earphones
+  (Aero Technologies), at a mean level of 70 dB SPL"; the tube delay (length not reported) is not corrected.
+- Cross-dataset check: with the measured onsets the 30-250 Hz TRF peaks at 35 ms (section 8), like armeni2022
+  (~30-40 ms) and schueller2024 (38 ms), whose onsets are verified independently; the shipped (trigger) onsets would
+  put it at ~79 ms. The paper's own timing check (decoding at 100 Hz after 0.5-30 Hz filtering, Fig. 3) cannot
+  resolve a 44 ms offset.
+- Paper details: online band-pass 0.01-200 Hz (BIDS sidecars: 0.03 Hz); sub-21 is a non-native speaker (Hindi,
+  English from age 10); stories 5:20, 11:00, 12:10 and 25:50 min, synthesised (Mac OS 10.14; voices Ava, Samantha,
+  Allison; 145-205 wpm; 0-1000 ms between sentences), split into ~3 min wavs with word lists of the preceding
+  content words inserted, <1% non-words.
 - The adaptor measures each sound's delay on MISC 009 (envelope cross-correlation within +-0.5 s of the trigger,
   sub-sample peak) and starts the trial there (`onset="audio"`, default); `onset="trigger"` keeps the events.
 

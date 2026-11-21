@@ -3,7 +3,8 @@
 MEG of 27 native English speakers listening to four fictional stories (synthesised speech, with inserted word
 lists), in one or two ~1 h sessions.
 
-- **Source:** OSF ag3kj (parts hqvm3, u5327, dr4wy), BIDS. Licence CC BY 4.0.
+- **Source:** OSF ag3kj (parts hqvm3, u5327, dr4wy), doi:10.17605/OSF.IO/AG3KJ, BIDS. Licence CC0 (paper, Data
+  Records).
 - **Paper:** Gwilliams L, Flick G, Marantz A, Pylkkänen L, Poeppel D, King JR (2023). Introducing MEG-MASC a
   high-quality magneto-encephalography dataset for evaluating natural speech processing. *Sci Data* 10:862.
   doi:10.1038/s41597-023-02752-5
@@ -15,7 +16,7 @@ lists), in one or two ~1 h sessions.
 
 ## What is provided
 - **MEG:** KIT/Yokogawa, 208 axial gradiometers (MNE type `mag`, T) and 16 reference magnetometers (`ref_meg`),
-  1000 Hz, 0.03-200 Hz online. Plus `MISC 009`, the recorded copy of the sound (`misc`).
+  1000 Hz, online band-pass 0.01-200 Hz (paper; the BIDS sidecars say 0.03 Hz). Plus `MISC 009`, the recorded copy of the sound (`misc`).
 - **Stimuli** (one per sound file, shared across participants, 22.05 kHz):
   - `audio`: the wav as shipped;
   - `textgrid`: word and phoneme tiers (the authors' forced alignment), relative to the start of the wav.
@@ -27,7 +28,10 @@ lists), in one or two ~1 h sessions.
   MEG's audio channel, starts 37-51 ms later (median 44 ms), varying from sound to sound (playback buffer jitter,
   SD 2.8 ms). The adaptor measures every sound's onset on `MISC 009` and starts the trial there (default;
   `onset="trigger"` uses the events as shipped). The absolute onset is known to ~3 ms, assuming `MISC 009` is an
-  electrical copy of the sound (undocumented); any acoustic delay to the ear is then not included.
+  electrical copy of the sound (undocumented). Sound reached the ears through tube earphones (Aero Technologies), so
+  the acoustic onset is then a few ms later still (tube length not reported); not corrected.
+- Supporting the correction: with these onsets the 30-250 Hz response peaks at 35 ms, as in armeni2022 and
+  schueller2024 (independently verified onsets); with the shipped events it would be at ~79 ms.
 - **Clock drift** of -46 ppm (every participant) is corrected by resampling onto the audio clock (default;
   `drift_correction=False` turns it off).
 - Word and phoneme times inside a sound are relative to the wav, so they need no correction.
@@ -39,10 +43,13 @@ SNR 2.09 (20/20), 30-250 Hz SNR 1.55 (19/20) with a sharp response at 35 ms.
 ## Caveats
 - For MEG the "brainstem" tier tests the 30-250 Hz cortical response at 28-45 ms; it shows high-frequency timing
   accuracy, not a brainstem response.
+- One participant (sub-21) is not a native English speaker (Hindi; English from age 10).
 - Word lists and a few pseudo-words are inserted in the stories (`stimuli/text_with_wordlists`); the TextGrids
   include them.
 - Event files spell sound names inconsistently (`lw1_0.0.wav`, `The_Black_Willow_0.wav`); the adaptor normalises
   them.
+- The authors' timing check (word/phoneme decoding at 100 Hz after a 0.5-30 Hz filter) cannot resolve the 44 ms
+  offset; their annotations are trigger-locked.
 - The repo's OSF downloader read only the first 10 files per folder before 2026-11-21; re-download if your copy
   has fewer than 1304 files.
 
