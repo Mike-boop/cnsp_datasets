@@ -74,5 +74,21 @@ Audio only (as shipped). No transcripts or word alignments in the release.
   for participants without raw data; `"dataset"`: +8.46 ppm for everyone; `None`: no correction. Applied by
   resampling each trial onto the audio clock (`standardise/clock.py`, quintic spline).
 
-## 8. Open questions
+## 8. Validation (Set1, 19 participants, magnetometers, no re-referencing)
+`python -m cnsp_datasets.validate schueller2024 --download-dir ... --picks mag --n-subjects 0`; results and figures
+`tmp/review/schueller2024/validation_set1{,_drift}/`.
+
+| drift | low r | mlr SNR (sig.) | 30-250 Hz SNR, 28-45 ms (sig.) |
+|---|---|---|---|
+| none | 0.0211 (19/19) | 1.04 (4/19) | 1.60 (16/19) |
+| per subject (default) | 0.0211 (19/19) | 1.05 (4/19) | **1.68 (18/19)** |
+
+All tiers pass (p <= 0.02); **validation tier: brainstem** (for MEG: the 30-250 Hz cortical response, sharp peak at
+~38 ms). The drift correction leaves the low tier unchanged and raises the high-frequency SNR, as expected for
+1-3 ms of drift per chapter.
+
+## 9. Data size
+58 participants x 0.61 h (10 chapters, 36.8 min) = 35.6 h; Set1: 19 participants, 11.6 h.
+
+## 10. Open questions
 - Set2/Set3: Zenodo returned HTTP 403 ("unusual traffic") to this server on 2026-11-21; only Set1 is checked.
