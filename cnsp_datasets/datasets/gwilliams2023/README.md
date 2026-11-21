@@ -26,7 +26,8 @@ lists), in one or two ~1 h sessions.
 - **The shipped events are ~44 ms early.** The `sound` events are the trigger; the sound itself, measured on the
   MEG's audio channel, starts 37-51 ms later (median 44 ms), varying from sound to sound (playback buffer jitter,
   SD 2.8 ms). The adaptor measures every sound's onset on `MISC 009` and starts the trial there (default;
-  `onset="trigger"` uses the events as shipped). The absolute onset is known to ~3 ms.
+  `onset="trigger"` uses the events as shipped). The absolute onset is known to ~3 ms, assuming `MISC 009` is an
+  electrical copy of the sound (undocumented); any acoustic delay to the ear is then not included.
 - **Clock drift** of -46 ppm (every participant) is corrected by resampling onto the audio clock (default;
   `drift_correction=False` turns it off).
 - Word and phoneme times inside a sound are relative to the wav, so they need no correction.

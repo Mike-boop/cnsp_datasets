@@ -16,7 +16,7 @@ from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 DRIFT_PPM = 5.7      # MEG clock vs audio clock, median over all story parts (notes.md section 7)
 REPEAT_CODES = (100, 150)  # noise-ceiling passage (stimuli/noise_ceiling.wav)
-KEEP = ("UADC003",)  # audio copy, kept next to MEG, reference sensors and EEG057-064
+KEEP = ("UADC003",)  # audio copy, kept next to MEG and reference sensors (EEG057-064 carry no signal: notes.md 5)
 
 
 class Armeni2022Adaptor:
@@ -64,7 +64,7 @@ class Armeni2022Adaptor:
             sf = raw.info["sfreq"]
             sf_out = sf if self.sfreq is None else min(self.sfreq, sf)
             fs, x = wavfile.read(wav, mmap=True)
-            picks = mne.pick_types(raw.info, meg=True, ref_meg=True, eeg=True).tolist() + \
+            picks = mne.pick_types(raw.info, meg=True, ref_meg=True, eeg=False).tolist() + \
                 [i for i, c in enumerate(raw.ch_names) if c.startswith(KEEP)]
             return crop_on_audio_clock(raw, onset * sf, math.ceil(len(x) / fs * sf_out), self.drift, picks, sf_out)
 

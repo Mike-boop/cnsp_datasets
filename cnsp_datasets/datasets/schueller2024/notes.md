@@ -42,7 +42,8 @@ Audio only (as shipped). No transcripts or word alignments in the release.
 ## 5. Neural data
 - 4D Neuroimaging Magnes 3600 WH, 248 magnetometers (`A1`-`A248`), in T (cal 1.0). No reference sensors, EEG,
   EOG or audio channel in the release; head-shape points (~3900) and dev_head_t are kept in the FIF.
-- Online analog band-pass 1.0-200 Hz (paper; the FIF header says 1-500 Hz). The authors notched 50 Hz harmonics
+- Online analog band-pass 1.0-200 Hz (paper; confirmed by the user). The FIF header's 1-500 Hz is a default written
+  when the authors resampled to 1000 Hz, not the recording filter. The authors notched 50 Hz harmonics
   (FIR, 0.5 Hz transition) and resampled 1017.25 -> 1000 Hz. Kept at 1000 Hz (no further resampling).
 
 ## 6. Alignment (verified against the raw recordings)
@@ -91,4 +92,6 @@ All tiers pass (p <= 0.02); **validation tier: brainstem** (for MEG: the 30-250 
 58 participants x 0.61 h (10 chapters, 36.8 min) = 35.6 h; Set1: 19 participants, 11.6 h.
 
 ## 10. Open questions
-- Set2/Set3: Zenodo returned HTTP 403 ("unusual traffic") to this server on 2026-11-21; only Set1 is checked.
+- Set2/Set3: Zenodo returned HTTP 403 ("unusual traffic") to this server on 2026-11-21; only Set1 is checked. The
+  user recalls no differences in Sets 2 and 3, so the adaptor assumes the same layout, run lengths and pairing; check
+  run lengths and the meas_date matching (drift.csv) when they are downloaded.

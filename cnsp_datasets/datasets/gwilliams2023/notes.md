@@ -47,6 +47,9 @@ word/phoneme TextGrids (gentle forced alignment, from the events).
   70-200 Hz waveform) correlate at r = 0.93 across sounds. The waveform estimate is 2.7 ms (SD 1.1) later than the
   envelope one, probably the group delay of the 200 Hz online low-pass, which the MEG channels share; the absolute
   onset is therefore known to ~3 ms.
+- What MISC 009 records is not documented: presumably an electrical copy of the sound-card output (the user's view),
+  in which case any acoustic delay to the ear (transducer, tubes) is not included in the onsets; if it were a
+  microphone, it would be. This is the main uncertainty of the absolute latency.
 - The adaptor measures each sound's delay on MISC 009 (envelope cross-correlation within +-0.5 s of the trigger,
   sub-sample peak) and starts the trial there (`onset="audio"`, default); `onset="trigger"` keeps the events.
 

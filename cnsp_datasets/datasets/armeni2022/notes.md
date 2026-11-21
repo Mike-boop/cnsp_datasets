@@ -32,8 +32,15 @@ Audio as shipped, TextGrids (words, phones) for story parts, transcripts in `sti
 
 ## 5. Neural data
 - CTF-275: 269 axial gradiometers (MNE `mag`; 6 dead/removed), 29 reference sensors (`ref_meg`), 1200 Hz, head
-  casts (continuous head localisation channels HLC* dropped). EEG057-064 (BIDS type `eeg`, use not documented; kept
-  as shipped), UADC003 = audio copy (kept, `misc`). MNE names carry the system suffix (`UADC003-4302`).
+  casts (continuous head localisation channels HLC* dropped). UADC003 = audio copy (kept, `misc`). MNE names carry
+  the system suffix (`UADC003-4302`).
+- EEG057-064 (BIDS type `eeg`, use not documented) carry no physiological signal and are dropped (user's decision
+  2026-11-21). Checked on sub-001 ses-001: EEG057 ~1.4 mV and EEG059 ~0.35 mV (0.5-40 Hz) of broadband noise with
+  slow wandering and steps (floating inputs); EEG058 and EEG061-064 ~0.4 uV, mains-dominated and correlated 0.75 with
+  each other (open inputs); EEG060 flat; no heartbeat periodicity in any. Against the session's EyeLink recording
+  (1488 blinks, 7235 saccades; `scripts/meg/armeni_eog.py`, figure `tmp/review/armeni2022/eog_sub-001_ses-001.png`):
+  |r| < 0.03 with the blink indicator at every lag, no blink- or saccade-locked deflection, so not EOG. The
+  participants wore head casts and were eye-tracked; the EEG inputs were presumably not connected.
 - Resampled 1200 -> 1000 Hz (anti-alias FIR + quintic spline, in the same interpolation as the drift
   correction; `sfreq=None` keeps 1200 Hz).
 
