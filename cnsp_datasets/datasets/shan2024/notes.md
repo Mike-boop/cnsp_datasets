@@ -72,3 +72,8 @@ Onset = S 1 + tube delay; drift correction (default on); 1000 Hz by default. Sti
   ABRs with IHC/ANM model regressors (`regressor_gen/IHC_ANM_regressor_gen.py`). To do: derive ANM regressors and
   re-check before calling the tier; alternatively the shared wavs differ in fine structure from those played
   (stimuli were added to the dataset later, 2024-01-18: "fix stim and event file").
+- **Dataset version ruled out** (2026-11-21): the authors' README points to OpenNeuro ds004356 v2.2.1; the NEMAR
+  v1.0.0 copy used here has the same CHANGES (up to 2.2.1), the same sizes for all 640 files, and SHA-256-identical
+  content for all 24 events.tsv, every other .tsv/.json sidecar, CHANGES, README and 37 sampled wavs (clip 000 of
+  every type + 25 random); only dataset_description.json differs (NEMAR's). The authors' derivation
+  (`derive_music_speech_ABR.py`) maps clips by events.tsv row order and reads these wavs, as the adaptor does.
