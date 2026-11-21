@@ -55,3 +55,15 @@ word/phoneme TextGrids (gentle forced alignment, from the events).
   IQR -47 to -45; every subject and session -45 to -48), i.e. the MEG clock runs slow relative to the audio: ~-8 ms
   over a 3 min wav. A few sounds with few usable windows give outliers (-138 to +228 ppm).
   `drift_correction=True` (default) resamples each trial onto the audio clock with the dataset value.
+
+## 8. Validation (2026-11-21, pilot 20 subjects, all trials, magnetometer-type axial gradiometers, no re-referencing)
+`python -m cnsp_datasets.validate gwilliams2023 --download-dir ... --picks mag --n-subjects 20` (defaults: audio
+onsets, -46 ppm drift). Results and figure: `tmp/review/gwilliams2023/validation/`.
+- low (0.5-8 Hz): mean r 0.050 (median 0.046), 20/20 subjects above the circular-shift and mismatch nulls.
+- mlr (30-60 Hz, 18-45 ms): SNR 2.09, p = 0.01, 20/20 subjects significant; peaks at ~35 and ~45 ms.
+- brainstem tier (30-250 Hz, MEG window 28-45 ms): SNR 1.55, p = 0.01, 19/20 subjects; sharp peak at 35 ms, flat
+  baseline at negative lags. **Validation tier: brainstem.**
+
+## 9. Data size
+27 participants (22 with two sessions), 1.90 h per participant, 51.4 h in total (sum of the wav durations of each
+recording's sounds; `tmp/review/scripts/meg/meg_data_size.py`).

@@ -29,12 +29,13 @@ BOOKS = [f"LibriBrain/Sherlock{i}" for i in range(1, 8)] + ["LibriBrain2/Sherloc
 
 
 def envelope(path: str) -> np.ndarray:
+    """100 Hz log energy. Frame edges are exact multiples of fs / FS (an integer hop of fs // FS would put 22.05 kHz
+    files on a 100.227 Hz grid, i.e. stretch them by 0.227%)."""
     fs, x = wavfile.read(path, mmap=True)
     x = np.asarray(x, dtype=np.float32)
     x = x[:, 0] if x.ndim == 2 else x
-    hop = fs // FS
-    n = len(x) // hop
-    e = np.log(np.mean(x[:n * hop].reshape(n, hop) ** 2, axis=1) + 1e-3)
+    edges = np.round(np.arange(int(len(x) * FS / fs) + 1) * fs / FS).astype(np.int64)
+    e = np.log(np.add.reduceat(x[:edges[-1]] ** 2, edges[:-1]) / np.diff(edges) + 1e-3)
     return (e - e.mean()) / e.std()
 
 
