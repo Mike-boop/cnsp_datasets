@@ -3,7 +3,8 @@ import json
 import importlib.resources as resources
 
 from typing import Dict,  List, Optional, Iterable, Callable, Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from fnmatch import fnmatch
 from cnsp_datasets.download import download_helpers
 from cnsp_datasets.download.data_downloader import DataDownloader
 
@@ -18,8 +19,14 @@ class Dataset:
     identifiers: List[str]
     description: str
     url: Optional[str] = None
+    exclude: List[str] = field(default_factory=list)
 
     def resolve_downloadables(self) -> List[dict]:
+        """Files to download, minus those whose name matches an `exclude` glob pattern."""
+        files = self._resolve()
+        return [f for f in files if not any(fnmatch(f["name"], pat) for pat in self.exclude)]
+
+    def _resolve(self) -> List[dict]:
         if self.source == "zenodo":
             getter = download_helpers.doi_to_downloadables_zenodo
             return _gather(getter, self.identifiers)
@@ -40,6 +47,9 @@ class Dataset:
             return _gather(getter, self.identifiers)
         if self.source == "nemar":
             getter = download_helpers.id_to_downloadables_nemar
+            return _gather(getter, self.identifiers)
+        if self.source == "huggingface":
+            getter = download_helpers.id_to_downloadables_huggingface
             return _gather(getter, self.identifiers)
         if self.source == "radboud_rdr":
             getter = download_helpers.id_to_downloadables_radboud_rdr
@@ -81,6 +91,7 @@ def load_registry(path: str) -> Dict[str, Dataset]:
             identifiers=identifiers,
             description=description,
             url=url,
+            exclude=entry.get("exclude", []),
         )
     return registry
 

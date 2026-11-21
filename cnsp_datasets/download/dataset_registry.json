@@ -8,6 +8,37 @@
       "description": "Jehn et al. (2024) dataset",
       "url": "https://zenodo.org/records/10980117"
     },
+    "armeni2022": {
+      "source": "radboud_rdr",
+      "identifiers": [
+        "dccn/DSC_3011085.05_995_v1"
+      ],
+      "description": "Armeni et al. (2022) 10-hour within-participant MEG narrative dataset (CTF 275, 3 participants x 10 sessions); needs RADBOUD_USERNAME/RADBOUD_PASSWORD (Donders data use agreement); anatomy excluded",
+      "url": "https://doi.org/10.34973/5rpw-rn92",
+      "exclude": [
+        "*/anat/*",
+        "derivatives/*anatomy/*",
+        "derivatives/atlas/*"
+      ]
+    },
+    "libribrain100": {
+      "source": "huggingface",
+      "identifiers": [
+        "pnpl/LibriBrain",
+        "pnpl/LibriBrain2"
+      ],
+      "description": "LibriBrain100 (Özdogan et al. 2025; LibriBrain2 2026): raw BIDS MEG (MEGIN, sub-0) for Sherlock 1-9, TIMIT, MOCHA-TIMIT and The Moth, plus the preprocessed 250 Hz h5 of Sherlock1 chapters 11-12 for sub-1 to sub-32 (no raw data released); derivatives that duplicate raw data excluded",
+      "url": "https://huggingface.co/datasets/pnpl/LibriBrain",
+      "exclude": [
+        "LibriBrain/*/derivatives/serialised*",
+        "LibriBrain2/MOCHATIMIT/derivatives/serialised*",
+        "LibriBrain2/Sherlock8/derivatives/serialised*",
+        "LibriBrain2/Sherlock9/derivatives/serialised*",
+        "LibriBrain2/TIMIT/derivatives/serialised*",
+        "LibriBrain2/TheMoth/derivatives/serialised*",
+        "*/derivatives/preproc/*"
+      ]
+    },
     "mai2023": {
       "source": "openneuro",
       "identifiers": [

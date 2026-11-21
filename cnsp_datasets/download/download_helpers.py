@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import os
 import json
 import re
@@ -364,19 +365,29 @@ def walk_osf_directory_fetch_files(osf_dir_url, file_metadata=None):
 
 
 async def _fetch_osf_dir_async(client, url):
-    """Async version of fetch_osf_leaves_branches."""
-    response = await client.get(url)
-    response.raise_for_status()
+    """Async version of fetch_osf_leaves_branches; follows the listing's pages (OSF returns 10 items per page by
+    default) and backs off when rate-limited (HTTP 429)."""
     leaves, branches = [], []
-    for item in response.json()["data"]:
-        if item["attributes"]["kind"] == "file":
-            leaves.append({
-                "name": item["attributes"]["materialized_path"].strip("/"),
-                "url": item["links"]["download"],
-                "checksum": "md5:" + item["attributes"]["extra"]["hashes"]["md5"],
-            })
-        elif item["attributes"]["kind"] == "folder":
-            branches.append(item["relationships"]["files"]["links"]["related"]["href"])
+    url = url + ("&" if "?" in url else "?") + "page[size]=100"
+    while url:
+        for attempt in range(8):
+            response = await client.get(url)
+            if response.status_code != 429:
+                break
+            await asyncio.sleep(2 ** attempt)
+        response.raise_for_status()
+        page = response.json()
+        for item in page["data"]:
+            if item["attributes"]["kind"] == "file":
+                leaves.append({
+                    "name": item["attributes"]["materialized_path"].strip("/"),
+                    "url": item["links"]["download"],
+                    "size": item["attributes"]["size"],
+                    "checksum": "md5:" + item["attributes"]["extra"]["hashes"]["md5"],
+                })
+            elif item["attributes"]["kind"] == "folder":
+                branches.append(item["relationships"]["files"]["links"]["related"]["href"])
+        url = page["links"].get("next")
     return leaves, branches
 
 
@@ -604,22 +615,52 @@ def resolve_doi(doi):
 
 
 def id_to_downloadables_radboud_rdr(id, rdr_server="https://webdav.data.ru.nl"):
-
     """
-    id e.g. dutch_eeg_speech_register_corpus_dsc_807_v1
-    """
+    Files of a Radboud Data Repository collection, from its MANIFEST.txt (sha256 per file).
 
-    data_root     = f"{rdr_server}/cls/{id}"
-    manifest_url  = f"{data_root}/MANIFEST.txt"
-    response = requests.get(manifest_url, timeout=30)
+    id: a public "cls" collection, e.g. "dutch_eeg_speech_register_corpus_dsc_807_v1", or a path with the
+    collection type, e.g. "dccn/DSC_3011085.05_995_v1". Collections under a data use agreement (most "dccn" ones)
+    need the downloading user's WebDAV credentials in RADBOUD_USERNAME and RADBOUD_PASSWORD (data.ru.nl account
+    with the agreement accepted); the manifest itself is public.
+    """
+    data_root = f"{rdr_server}/{id if '/' in id else 'cls/' + id}"
+    response = requests.get(f"{data_root}/MANIFEST.txt", timeout=30)
     response.raise_for_status()
-    manifest_text = response.text
 
-    # each line is "<md5> <path>"; split once so paths containing spaces survive
-    manifest_lines = manifest_text.strip().splitlines()
-    manifest_entries = [line.split(maxsplit=1) for line in manifest_lines if line.strip()]
-    checksums, names = zip(*manifest_entries)
-    urls = [f"{data_root}/{name}" for name in names]
+    headers = None
+    if os.environ.get("RADBOUD_USERNAME"):
+        token = base64.b64encode(f"{os.environ['RADBOUD_USERNAME']}:{os.environ['RADBOUD_PASSWORD']}".encode())
+        headers = {"Authorization": f"Basic {token.decode()}"}
 
-    urls = [{"name": name, "url": url, "checksum": f"sha256:{checksum}"} for name, url, checksum in zip(names, urls, checksums)]
-    return urls
+    # each line is "<sha256> <path>"; split once so paths containing spaces survive
+    entries = [line.split(maxsplit=1) for line in response.text.strip().splitlines() if line.strip()]
+    return [{"name": name, "url": f"{data_root}/{quote(name)}", "checksum": f"sha256:{checksum}", "headers": headers}
+            for checksum, name in entries]
+
+
+def id_to_downloadables_huggingface(repo):
+    """
+    Files of a Hugging Face dataset repo, e.g. "pnpl/LibriBrain" ("<repo>@<revision>" pins a revision), named
+    "<repo name>/<path>" so that several repos can share one download directory.
+
+    LFS files carry sha256 checksums; small git-tracked files only git blob hashes, so they get none.
+    """
+    repo, _, revision = repo.partition("@")
+    revision = revision or "main"
+    url = f"https://huggingface.co/api/datasets/{repo}/tree/{revision}?recursive=true"
+    files = []
+    while url:  # the tree listing is paginated through Link headers
+        response = requests.get(url, timeout=60)
+        if response.status_code != 200:
+            raise Exception(f"Failed to list Hugging Face dataset {repo}: {response.status_code}")
+        files += [f for f in response.json() if f["type"] == "file"]
+        url = response.links.get("next", {}).get("url")
+    return [
+        {
+            "name": f"{repo.split('/')[-1]}/{f['path']}",
+            "url": f"https://huggingface.co/datasets/{repo}/resolve/{revision}/{quote(f['path'])}",
+            "size": f["size"],
+            "checksum": f"sha256:{f['lfs']['oid']}" if f.get("lfs") else None,
+        }
+        for f in files
+    ]
