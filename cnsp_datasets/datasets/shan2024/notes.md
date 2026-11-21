@@ -54,7 +54,7 @@ Onset = S 1 + tube delay; drift correction (default on); 1000 Hz by default. Sti
 ## 9. Upstream issues (to report)
 1. The 7-bit trials after the experiment are undocumented (section 3).
 
-## 10. Validation (2026-11-20; EP1, EP2, 1000 Hz, no re-reference) — brainstem tier not reached
+## 10. Validation (2026-11-20; EP1, EP2, 1000 Hz, no re-reference) — brainstem tier not reached by the validator
 `tmp/review/shan2024/validation.{json,png}`, `by_condition/`.
 - All 22 subjects pooled: low r 0.038 (22/22 significant, TRF peak 31 ms), MLR SNR 1.44 (6/22), **brainstem SNR
   0.92 (1/22)**: tier `mlr`. Per condition: low tier in 10 of 12 (classical and news: none), MLR in interview only.
@@ -77,3 +77,22 @@ Onset = S 1 + tube delay; drift correction (default on); 1000 Hz by default. Sti
   content for all 24 events.tsv, every other .tsv/.json sidecar, CHANGES, README and 37 sampled wavs (clip 000 of
   every type + 25 random); only dataset_description.json differs (NEMAR's). The authors' derivation
   (`derive_music_speech_ABR.py`) maps clips by events.tsv row order and reads these wavs, as the adaptor does.
+
+## 11. ANM regressors: the brainstem response is there (2026-11-21)
+- Regressors as the authors' `regressor_gen/IHC_ANM_regressor_gen.py` `anm()` (Zilany 2014 via the `cochlea`
+  package, HSR rates at 43 CFs 125 Hz - 16 kHz, 65 dB SPL re rms 0.01, summed, +1 ms, 10 kHz, both polarities):
+  `tmp/review/scripts/shan2024_anm.py`, run in a separate env (`tmp/review/anm_env`; cochlea 2 needs a
+  `np.fft.fftpack` stub on current numpy). ~15 CPU-h for 480 clips.
+- Derivation the authors' way (`derive_music_speech_ABR.py`; `tmp/review/scripts/shan2024_anm_abr.py`) on the
+  adaptor's EEG (10 kHz, drift-corrected, onset = S 1 + tube delay), EP1/EP2 mean, 150-2000 Hz for display:
+
+  | regressor | wave V > 4x noise: all / music / speech | grand average |
+  |---|---|---|
+  | ANM (+2.75 ms, as the authors) | 22/22 / 21/22 / 22/22 | wave V 7.3 ms, 40x noise SD |
+  | half-wave rectified audio | 12/22 / 0/22 / 13/22 | wave V 7.5 ms, 11x |
+
+  (`tmp/review/shan2024/anm_vs_rect.png`.) As in the paper: the rectified regressor is weak for speech and fails
+  for music; the ANM regressor gives clear ABRs for both. The validator's brainstem tier uses the audio, hence
+  `mlr`. Mapping, timing and the added tube delay are right (wave V 7.3-7.4 ms, cf. clicks 7.7-8.0 ms,
+  polonenko2024 7.8 ms).
+- The adaptor ships audio only; the ANM regressors are not in the dataset and need the external model.
