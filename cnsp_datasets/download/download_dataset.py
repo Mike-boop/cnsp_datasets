@@ -21,10 +21,13 @@ class Dataset:
     description: str
     url: Optional[str] = None
     exclude: List[str] = field(default_factory=list)
+    include: List[str] = field(default_factory=list)
 
     def resolve_downloadables(self) -> List[dict]:
-        """Files to download, minus those whose name matches an `exclude` glob pattern."""
+        """Files to download: those matching an `include` glob pattern (all if none), minus `exclude` matches."""
         files = self._resolve()
+        if self.include:
+            files = [f for f in files if any(fnmatch(f["name"], pat) for pat in self.include)]
         return [f for f in files if not any(fnmatch(f["name"], pat) for pat in self.exclude)]
 
     def _resolve(self) -> List[dict]:
@@ -93,6 +96,7 @@ def load_registry(path: str) -> Dict[str, Dataset]:
             description=description,
             url=url,
             exclude=entry.get("exclude", []),
+            include=entry.get("include", []),
         )
     return registry
 

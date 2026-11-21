@@ -39,6 +39,26 @@
         "*/derivatives/preproc/*"
       ]
     },
+    "libribrain100_moth": {
+      "source": "openneuro",
+      "identifiers": [
+        "10.18112/openneuro.ds003020.v4.0.0"
+      ],
+      "description": "The 30 Moth stories of LibriBrain100 (not redistributed there), from LeBel et al. (2023) OpenNeuro ds003020: download into <libribrain100 download>/ds003020",
+      "url": "https://openneuro.org/datasets/ds003020/versions/4.0.0",
+      "include": [
+        "stimuli/alternateithicatom.wav", "stimuli/beneaththemushroomcloud.wav", "stimuli/birthofanation.wav",
+        "stimuli/bluehope.wav", "stimuli/breakingupintheageofgoogle.wav", "stimuli/cautioneating.wav",
+        "stimuli/comingofageondeathrow.wav", "stimuli/firetestforlove.wav", "stimuli/fromboyhoodtofatherhood.wav",
+        "stimuli/goingthelibertyway.wav", "stimuli/goldiethegoldfish.wav", "stimuli/howtodraw.wav",
+        "stimuli/leavingbaghdad.wav", "stimuli/lifeanddeathontheoregontrail.wav", "stimuli/lifereimagined.wav",
+        "stimuli/mayorofthefreaks.wav", "stimuli/notontheusualtour.wav", "stimuli/onlyonewaytofindout.wav",
+        "stimuli/stagefright.wav", "stimuli/swimmingwithastronauts.wav", "stimuli/thatthingonmyarm.wav",
+        "stimuli/thecurse.wav", "stimuli/thepostmanalwayscalls.wav", "stimuli/thetriangleshirtwaistconnection.wav",
+        "stimuli/thumbsup.wav", "stimuli/treasureisland.wav", "stimuli/undertheinfluence.wav",
+        "stimuli/vixenandtheussr.wav", "stimuli/wheretheressmoke.wav", "stimuli/wildwomenanddancingqueens.wav"
+      ]
+    },
     "mai2023": {
       "source": "openneuro",
       "identifiers": [
