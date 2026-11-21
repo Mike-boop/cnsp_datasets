@@ -72,7 +72,8 @@ class LibriBrain100Adaptor:
         if sub == 0:
             fifs = sorted(glob.glob(os.path.join(self.download_dir, repo, task, "sub-0", f"ses-{ses}", "meg",
                                                  "*_meg.fif")))
-            return fifs[0] if fifs else None  # split-01 (MNE reads the following splits itself)
+            splits = [f for f in fifs if "_split-" in f]
+            return "|".join(splits) if splits else (fifs[0] if fifs else None)  # see _read_fif
         h5 = glob.glob(os.path.join(self.download_dir, repo, task, "derivatives", "serialised*",
                                     f"sub-{sub}_ses-{ses}_*.h5"))
         return h5[0] if h5 else None
@@ -185,7 +186,7 @@ def _wav_on_source_clock(path: str, k: float):
 @lru_cache(maxsize=1)
 def _read(path: str, reference: str) -> mne.io.BaseRaw:
     if path.endswith(".fif"):
-        raw = mne.io.read_raw_fif(path, preload=False, verbose="ERROR")
+        raw = _read_fif(path.split("|"))
         return raw.pick(mne.pick_types(raw.info, meg=True, eog=True, ecg=True, emg=True))
     with h5py.File(path) as f:
         names = [c.strip() for c in f.attrs["channel_names"].split(",")]
@@ -198,6 +199,24 @@ def _read(path: str, reference: str) -> mne.io.BaseRaw:
             info["dev_head_t"], info["dig"], info["projs"], info["bads"] = None, None, [], []
             info["hpi_results"], info["hpi_meas"], info["hpi_subsystem"] = [], [], None
         return mne.io.RawArray(f["data"][:], info, verbose="ERROR")
+
+
+def _read_fif(files: list) -> mne.io.BaseRaw:
+    """
+    A raw FIF, or BIDS splits (`_split-01`, `_split-02`, ...) joined. MNE 1.9 fails to follow these splits
+    ('PosixPath' has no 'split'), and a split read on its own reports the whole recording, so each split is read
+    alone and cropped to its own buffers (notes.md section 6). Some sessions also hold a plain `_meg.fif`: the first
+    part of an MNE-style split whose continuation was not released; it is not used when splits exist.
+    """
+    if len(files) == 1:
+        return mne.io.read_raw_fif(files[0], preload=False, verbose="ERROR")
+    parts = []
+    for f in files:
+        raw = mne.io.read_raw_fif(f, preload=False, on_split_missing="ignore", verbose="ERROR")
+        first, last = raw._raw_extras[0]["bounds"][[0, -1]]
+        sf = raw.info["sfreq"]
+        parts.append(raw.crop((first - raw.first_samp) / sf, (last - 1 - raw.first_samp) / sf))
+    return mne.concatenate_raws(parts, verbose="ERROR")
 
 
 def _meg_loader(path: str, t0: float, t1: float, reference: str):

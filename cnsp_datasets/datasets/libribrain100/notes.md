@@ -32,13 +32,14 @@ Findings that explain `adaptor.py`. Review scripts and results: `tmp/review/libr
 ## 3. Stimuli
 | task | audio in the release | adaptor |
 |---|---|---|
-| Sherlock1-7, 9 | LibriVox chapters, `stimuli/audio/*.wav` (Sherlock1: 22.05 kHz int16) | rebuilt as played (section 4) |
-| Sherlock8 | none | MEG only, `stimulus=[]` (TODO above) |
+| Sherlock1-7, 9 | LibriVox chapters, `stimuli/audio/*.wav` (LibriBrain: 22.05 kHz int16; Sherlock9: 44.1 kHz) | rebuilt as played (sections 4-5) |
+| Sherlock8 | none | MEG + words/phones TextGrid, no audio (TODO above) |
 | MOCHA-TIMIT | 921 sentence wavs | placed at their onsets |
-| TIMIT | not redistributed (LDC licence) | MEG only, `stimulus=[]` |
+| TIMIT | not redistributed (LDC licence) | MEG + words/phones TextGrid, no audio |
 | TheMoth | not redistributed (copyright) | rebuilt from OpenNeuro ds003020 (section 5) |
 
-- Session k of Sherlock1 is chapter k (session events end ~8 s before the chapter wav; checked for ses-1-10 and 12).
+- Which wav a session played is established by content, not by number or duration (section 5): durations alone
+  are ambiguous, and Sherlock3 has 9 wavs for 12 sessions.
 - Events (`derivatives/events`): `kind` = word / phoneme / silence (/ nonspeech for TheMoth), `timemeg` (s from the
   start of the recording, i.e. after `first_samp`), `timeds` (same at 250 Hz, within 2 ms), `timechapter` /
   `timepodcast` / `timesentence` (time in the source audio). The BIDS `events.tsv` next to the FIF are copies.
@@ -55,7 +56,31 @@ Findings that explain `adaptor.py`. Review scripts and results: `tmp/review/libr
   segment's first event) is placed at its `timemeg`, with zeros in the gaps. The stimulus is named per subject and
   session because the gaps differ between sessions.
 
-## 5. TheMoth audio from OpenNeuro ds003020
+## 5. Sherlock wavs vs the events: wavmap.py / wavmap.csv
+- Content match (`wavmap.py`, run on the sub-0 events of every Sherlock session): the 100 Hz log-energy envelope of each
+  candidate wav, read on the `timechapter` axis, against the events' word mask; then 60 s windows every 30 s and a
+  Theil-Sen line through the window lags give wav_time = k * timechapter + c and the range where the match holds.
+- **The LibriBrain (2025) wavs are not on the events' time axis.** Sherlock9 (LibriBrain2) matches its
+  same-numbered wav at r ~ 0.75 with lag 0.00-0.02 s throughout. Sherlock1-7 match their wavs only after rescaling:
+  Sherlock1, 2, 4-7 by k = 44100/44000 (the wav is 0.227% longer than the chapter time), Sherlock3 by k = 44000/44100
+  (shorter); with that, r ~ 0.72-0.79 and the window lags scatter 4-9 ms around the line (c = 0-20 ms, resolution
+  10 ms). A 44.1 vs 44 kHz mix-up when the wavs were made, presumably.
+- Which clock the audio was played on: regressing the MEG interval between segment starts on the `timechapter`
+  interval gives slopes of -400 to +400 ppm (not +2270 ppm) plus a constant 12-16 ms gap per segment (1-3 ms in
+  Sherlock9), so the played audio followed `timechapter`; the adaptor resamples each wav by k (polyphase 440/441)
+  before cutting the segments.
+- Breaks: the match holds over the whole session in 89 of 106 sessions (incl. LibriBrain2 Sherlock1 ch 11-12). It
+  breaks part-way in Sherlock4 ses-2 (at 930 s of 2617 s) and ses-9 (1350/2611), Sherlock6 ses-3 (2040/3645) and
+  ses-10 (1620/2551): after the break the lag runs off at ~1% (Sherlock4 ses-2 loses the match entirely after
+  ~1700 s). Sherlock3 matches its wav k for k = 1-9 (r ~ 0.6 over the first 300 s) but the lag wanders non-linearly
+  (-0.05 to -3.8 s over 2500 s, ses-3), so only the first 90-210 s pass. No wav matches Sherlock3 ses-10-12
+  (stories 10-12 are not in the release), Sherlock4 ses-8 and Sherlock6 ses-14.
+- The adaptor splits a session at the break: trial 1 = the verified part with audio, trial 2 (`_part-2`) = the rest
+  with MEG and TextGrid only; verified stretches under 60 s are not split off (Sherlock3: whole sessions without
+  audio). Sessions without a match have no audio. A per-segment (piecewise) alignment could recover Sherlock3 and
+  the post-break parts; not done.
+
+## 6. TheMoth audio from OpenNeuro ds003020
 - The 30 stories are among the 84 stories of LeBel et al. 2023 (OpenNeuro ds003020 v4.0.0, `stimuli/<story>.wav`,
   44.1 kHz; `derivatives/TextGrids/<story>.TextGrid`), same story ids.
 - Check (`moth_match.py`, results `tmp/review/libribrain100/moth_match.csv`): LibriBrain `timepodcast` word onsets vs
@@ -64,8 +89,9 @@ Findings that explain `adaptor.py`. Review scripts and results: `tmp/review/libr
   between two forced aligners. Story lengths agree (wav 0.2-17 s longer than the last LibriBrain word). So
   `timepodcast` is ds003020 wav time to within ~10 ms; the presented audio is rebuilt from these wavs as in
   section 4. Residual constant offsets of a few ms per story cannot be excluded by word alignment.
+- Download: registry entry `libribrain100_moth` (the 30 wavs) into `<libribrain100 download>/ds003020`.
 
-## 6. Neural data
+## 7. Neural data
 - MEGIN (Elekta) 306 channels (102 magnetometers, 204 planar gradiometers), 1000 Hz, 0.03-330 Hz online; EOG001-002,
   ECG003, EMG004, STI101, 11 IAS (internal active shielding) channels and SYS201. Continuous HPI. Head shape
   digitised. Raw data: no SSS/MaxFilter applied; the calibration files are in `LibriBrain/metadata/neo/`.
@@ -73,9 +99,26 @@ Findings that explain `adaptor.py`. Review scripts and results: `tmp/review/libr
   0.1-125 Hz band-pass; `times` starts at 0 = recording start, so `timemeg` applies directly. No sensor geometry in
   the file: channel positions and coil types are taken from a sub-0 raw FIF (same scanner); the device-to-head
   transform is not available.
+- Raw FIF splits: many sessions are stored as BIDS splits (`_split-01`, `_split-02`, ...). MNE 1.9 fails to follow
+  them ("'PosixPath' object has no attribute 'split'"), and a split read alone reports the whole recording (reading
+  past its own buffers returns filler), so the adaptor reads each split, crops it to its own buffers and joins them
+  (Sherlock3 ses-1: 28000-1684000, 1684000-3340000, 3340000-3448000 -> 3420 s). Some sessions also hold a plain
+  `_meg.fif`: the first part of an MNE-style split whose continuation (`_meg-1.fif`) was not released (identical to
+  split-01 where checked); it is used only when there are no splits.
+- Kept channels: MEG, EOG, ECG, EMG (IAS shielding, SYS201 and STI101 dropped).
 
-## 7. Upstream issues
+## 8. Checks
+- The rebuilt audio against its own TextGrid (`libribrain_rebuild_check.py`, 60 s windows): lags within +-30 ms
+  (10 ms resolution), r 0.63-0.83 (Sherlock1 sub-0 ses-1 and sub-1 ses-11, MOCHA-TIMIT ses-1).
+- Word-onset evoked field (`libribrain_wordERF.py`, sub-0 Sherlock1 ses-1 raw, 2836 words, gradiometers 1-20 Hz): GFP
+  peaks at 195 ms (and ~320 ms), about twice the random-onset maximum: `timemeg` is on the MEG clock.
+
+## 9. Upstream issues
 - Sherlock1 sub-0 ses-11: the BIDS `*_events.tsv`, `*_channels.tsv` and `*_meg.json` are 0-byte files on Hugging Face,
   and the folder holds `sub-0_ses-1_coordsystem.json` (session 1's name). The events exist in
   `derivatives/events/` as `run-2`, while the raw FIF is `run-1`.
 - Sherlock8 has no stimuli.
+- LibriBrain (2025) wavs are 44.1/44 kHz rescaled relative to the events (section 5); Sherlock3 does not match
+  linearly; stories 10-12 of Sherlock3 and the wavs of Sherlock4 ses-8 and Sherlock6 ses-14 are missing.
+- Raw FIF: plain `_meg.fif` files that are the first part of an MNE split without its continuation, next to the
+  BIDS splits (section 7).
