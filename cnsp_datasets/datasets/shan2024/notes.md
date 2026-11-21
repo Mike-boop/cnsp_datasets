@@ -81,8 +81,8 @@ Onset = S 1 + tube delay; drift correction (default on); 1000 Hz by default. Sti
 ## 11. ANM regressors: the brainstem response is there (2026-11-21)
 - Regressors as the authors' `regressor_gen/IHC_ANM_regressor_gen.py` `anm()` (Zilany 2014 via the `cochlea`
   package, HSR rates at 43 CFs 125 Hz - 16 kHz, 65 dB SPL re rms 0.01, summed, +1 ms, 10 kHz, both polarities):
-  `tmp/review/scripts/shan2024_anm.py`, run in a separate env (`tmp/review/anm_env`; cochlea 2 needs a
-  `np.fft.fftpack` stub on current numpy). ~15 CPU-h for 480 clips.
+  **`datasets/shan2024/anm_regressors.py`** (kept in the repo; run in a separate env with `cochlea`; cochlea 2
+  needs a `np.fft.fftpack` stub on current numpy). ~15 CPU-h for 480 clips.
 - Derivation the authors' way (`derive_music_speech_ABR.py`; `tmp/review/scripts/shan2024_anm_abr.py`) on the
   adaptor's EEG (10 kHz, drift-corrected, onset = S 1 + tube delay), EP1/EP2 mean, 150-2000 Hz for display:
 
@@ -95,4 +95,6 @@ Onset = S 1 + tube delay; drift correction (default on); 1000 Hz by default. Sti
   for music; the ANM regressor gives clear ABRs for both. The validator's brainstem tier uses the audio, hence
   `mlr`. Mapping, timing and the added tube delay are right (wave V 7.3-7.4 ms, cf. clicks 7.7-8.0 ms,
   polonenko2024 7.8 ms).
-- The adaptor ships audio only; the ANM regressors are not in the dataset and need the external model.
+- **Decision (2026-11-21): the adaptor ships audio only** (the ANM regressors are not in the dataset and need the
+  external model). Users who want brainstem responses to these clips generate them with `anm_regressors.py`.
+  Validation tier stays `mlr` for the audio feature; the response itself is confirmed above.
