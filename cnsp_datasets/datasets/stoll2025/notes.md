@@ -160,6 +160,14 @@ Low-tier peaks at 230-270 ms in three dichotic conditions (single FCz-earlobe ch
 channel peaks late), not an offset: the brainstem tier passes with the same onsets. To compare with the
 coherence results (`tmp/review/coherence_peaky/`).
 
+## 13b. Validation, cortical montage (`stoll2025_cortex`, 2026-11-21; 32 channels, average reference)
+`tmp/review/stoll2025_cortex/validation.{json,png}`. exp1 (28) and exp2 (24) only (exp3 has no cortical files):
+52 subjects, 4786 trials, native rates (1 kHz exp1, 500 Hz exp2). Tiers low and mlr (500 Hz cannot carry the
+brainstem tier). **Tier mlr**: low r 0.038 (52/52 significant), TRF peak 109 ms; MLR SNR 1.52 (62%), peak
+20-30 ms. The validator's figure failed on the mixed lag grids (1 kHz vs 500 Hz); fixed in `validate/report.py`
+(interpolation onto the finest grid). The low tier's jitter/drift estimates (SD 320 ms, 141 ppm) are noise
+(as in the other datasets), not timing problems.
+
 ## 14. Coherence: attended vs ignored (2026-11-21; open observation)
 `tmp/review/coherence_peaky/stoll2025*` (coherence of the 5 s-window envelope with the EEG / median of a
 mismatched-trial null), plot `tmp/review/coherence_peaky/stoll2025_attention.png`, same talker attended vs ignored:
