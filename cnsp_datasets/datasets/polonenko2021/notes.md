@@ -86,8 +86,25 @@ cut/repeated copies: 5,280 trials. Drift per recording from the start-to-start i
   (noise). A cross-correlation (EEG and audio > 1.5 kHz) gives -0.5 ms in two subjects and +1.7 ms in a third,
   and the same method gives +0.5 ms on ds008065 (markers at the transducer): not a usable calibration.
   Per-trial audio polarity is therefore not checkable either (no sign of alternation in the code or READMEs).
-- Remaining check: wave V latency of the broadband pulse-train ABR vs polonenko2024 (same lab, onset at the
-  eardrum) after standardising.
+- **Wave V latency check** (`tmp/review/scripts/wave_v_latency.py`: standardised 1 kHz data, channel mean,
+  pulse train row 0, 30-450 Hz deconvolution, peak at 4-10 ms): Exp1 broadband 7.35 ms grand average (15
+  subjects, per-subject median 7.31, IQR 7.07-7.74) vs polonenko2024 7.83 ms (15 subjects; markers + 0.81 ms,
+  artefact-confirmed in ds005408). Uncorrected markers would put polonenko2021 ~0.8 ms *later* than the truth;
+  it is 0.5 ms earlier, so onset = S 1 is consistent with the README (the remaining difference: different
+  stimuli and f0s).
 
-## 10. Open
-- Validate (overall and per condition); wave V latency check; coherence.
+## 10. Validation (2026-11-21; A1, A2, 1000 Hz, no re-reference)
+`tmp/review/polonenko2021/validation.{json,png}`, `by_condition/`.
+
+| condition | low r (sig) | mlr SNR (sig) | brainstem SNR (sig) | tier |
+|---|---|---|---|---|
+| all (44 subjects) | 0.073 (1.00) | 2.88 (0.82) | 3.57 (0.86) | brainstem |
+| exp1-unaltered / broadband / multiband | 0.065 / 0.066 / 0.066 | 2.18 / 1.63 / 1.79 | 2.82 / 3.62 / 2.20 | brainstem |
+| exp2-male-broadband / multiband | 0.059 / 0.069 | 1.47 / 1.57 | 3.47 / 1.76 | brainstem |
+| exp2-female-broadband / multiband | 0.065 / 0.068 | 1.78 / 2.42 | 3.11 / 1.91 | brainstem |
+| exp3-male / female (multiband) | 0.090 / 0.091 | 2.11 / 3.10 | 1.51 / 2.80 | brainstem |
+
+Broadband > multiband at the brainstem tier, as in the paper (multiband spreads the response over bands; the
+validator uses the audio). Coherence (`tmp/review/coherence_peaky/polonenko2021_*`): f0-band peak for the male
+narrator (80-150 Hz: 4.8x the null in exp1-broadband, 2.8x exp2-male-broadband), at 150-300 Hz for the female
+(1.5x); 1-8 Hz 2.4-9x.
