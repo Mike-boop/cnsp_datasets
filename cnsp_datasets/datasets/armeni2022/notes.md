@@ -47,7 +47,11 @@ Audio as shipped, TextGrids (words, phones) for story parts, transcripts in `sti
 ## 6. Alignment (verified)
 - The authors measured each part's delay between trigger and sound from UADC003 (phase slope of the coherence at
   150-250 Hz, `dm_audiodelay.m`): 50-114 ms, varying from part to part. The released `wav_onset` events already
-  include it (fractional samples).
+  include it: event onset = trigger (`derivatives/fieldtrip-preprocessing/.../trl.mat`, (begsample - 1 - offset) /
+  1200) + `audiodelay.mat`, to 0.0 ms (checked: sub-001 ses-001, sub-002 ses-004, sub-003 ses-008). The paper
+  describes `audiodelay.mat` as "the audio delay between the audio recording onset in each session and the MEG
+  system trigger sending". Eye blinks were removed by the authors with ICA components of the MEG (`selcomp.mat`),
+  not with EOG channels.
 - Check (`armeni_audio_lag.py`, UADC003 vs wav, envelope cross-correlation and Theil-Sen through 10 s windows):
   sound within -1.8 to +1.4 ms of the shipped `wav_onset` in every story part checked (r = 0.90-0.97); the
   noise-ceiling repeats at -1.6 ms. The adaptor uses the shipped onsets.
