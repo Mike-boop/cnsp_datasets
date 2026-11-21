@@ -23,12 +23,13 @@ def _style(ax, title, xlabel, ylabel):
 def _trf_panel(ax, res, title, window=None, noise=None):
     """Mean over subjects of the TRF GFP relative to that subject's median null GFP at each lag (noise level = 1)."""
     if res:
-        lags = np.array(res[0]["lags_s"]) * 1e3
+        lags = np.array(max((s["lags_s"] for s in res), key=len)) * 1e3  # finest grid (mixed rates)
         if window is not None:
             ax.axvspan(window[0] * 1e3, window[1] * 1e3, color=TRUE, alpha=0.1, linewidth=0, label="latency window")
         if noise is not None:
             ax.axvspan(noise[0] * 1e3, noise[1] * 1e3, color=NULL, alpha=0.15, linewidth=0, label="noise window")
-        rel = lambda key: np.mean([np.array(s[key]) / np.array(s["null_gfp_50"]) for s in res], 0)  # noqa: E731
+        rel = lambda key: np.mean([np.interp(lags, np.array(s["lags_s"]) * 1e3,  # noqa: E731
+                                             np.array(s[key]) / np.array(s["null_gfp_50"])) for s in res], 0)
         ax.fill_between(lags, 1, rel("null_gfp_95"), color=NULL, alpha=0.3, linewidth=0,
                         label="null median to 95th percentile")
         ax.axhline(1, color=NULL, linewidth=1)
