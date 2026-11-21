@@ -1,1 +1,66 @@
-the publicly-available data does not include empty-room recordings.
+# schueller2024: notes
+
+Findings that explain `adaptor.py`. Review results and scripts: `tmp/review/schueller2024/`,
+`tmp/review/scripts/meg/schueller_*.py` (2026-11-21).
+
+## 1. Source
+- Zenodo 12793944 (Set1: participants 1-19 + `Audio/` + `Participants_Overview.pdf`), 12794769 (Set2: 20-38),
+  12794808 (Set3: 39-58). CC BY 4.0, v1 (2024-07-22).
+- Papers: Schüller et al. 2023, J Neurosci 43(44):7429, doi:10.1523/JNEUROSCI.1247-23.2023 (22 participants);
+  preprints doi:10.1101/2024.07.25.605057 and 10.1101/2024.08.01.606154 (the full 58-participant set).
+- Code: github.com/Al2606/MEG-Analysis-Pipeline (source reconstruction and a TRF demo; nothing on cutting or
+  alignment).
+- The raw recordings of the same experiment (BTi files with the `EXT 004` audio channel, EEG, empty room) are the
+  non-public `schuller2022full` dataset on branch `internal`; they were used here to verify the release (section 6).
+  The public release does not include empty-room recordings.
+
+## 2. Layout
+- `Set<n>/<participant>/{LP,HP}_speaker_attended/data_meg.fif`: one run per attended speaker.
+- `Set1/Audio/attended_speech/audiobook{1,3}_{1..5}.wav` (int16 mono, 44.1 kHz) and
+  `Set1/Audio/ignored_speech/audiobook{2,4}_{1..5}.wav` (float64, two identical channels, 44.1 kHz). Only Set1
+  carries the audio; the adaptor reads it from there.
+
+## 3. Stimulus <-> trial mapping
+- Two German audiobooks played diotically at once, one per narrator: LP (low pitch) and HP (high pitch). Attention
+  switched every chapter, starting with LP (paper). Each run is the authors' concatenation of the 5 chapters with
+  that attended speaker.
+- Pairing (attended, ignored): LP runs = audiobook1 + audiobook4, HP runs = audiobook3 + audiobook2. Verified:
+  paired wavs have identical lengths, and the median f0 (autocorrelation, chapter 1, 30-90 s) is 88 Hz (book1),
+  91 Hz (book2), 119 Hz (book3), 124 Hz (book4), so the ignored track is always the other narrator. The internal
+  raw-data adaptor (`schuller2022full`) uses the same pairing.
+- The ignored track's ~5 s delayed start ("the noise audiobook started ~5 s later") is inside its wav (first
+  sound at 5.08-5.09 s); attended speech starts at 0.15 s (book1) and 2.06 s (book3).
+- Run length = sum over chapters of ceil(n_audio * 1000 / 44100) samples, exactly: 959415 (HP) and 1247855 (LP)
+  in every Set1 participant (959416 for HP in participants 18 and 19: one extra sample at the end). The adaptor
+  cuts trials at these cumulative boundaries.
+- Trial numbers follow presentation order (LP 1, HP 1, LP 2, ...: inferred from "starting with the LP speaker");
+  conditions `lp-attended` / `hp-attended`. Same stimuli for all participants.
+
+## 4. Speech features
+Audio only (as shipped). No transcripts or word alignments in the release.
+
+## 5. Neural data
+- 4D Neuroimaging Magnes 3600 WH, 248 magnetometers (`A1`-`A248`), in T (cal 1.0). No reference sensors, EEG,
+  EOG or audio channel in the release; head-shape points (~3900) and dev_head_t are kept in the FIF.
+- Online analog band-pass 1.0-200 Hz (paper; the FIF header says 1-500 Hz). The authors notched 50 Hz harmonics
+  (FIR, 0.5 Hz transition) and resampled 1017.25 -> 1000 Hz. Kept at 1000 Hz (no further resampling).
+
+## 6. Alignment (verified against the raw recordings)
+- Authors: cross-correlation of the stimulus with the analog audio channel recorded by the MEG logger (the sound-card
+  output, before the 2 m tubes), "accuracy 1 ms". The Zenodo text gives the tube delay as 6 ms; the paper does not
+  mention it.
+- Check (`schueller_cut_check.py`, participant 1 = raw P2, matched by identical meas_date 2023-01-13 16:07:38): each
+  Zenodo chapter was located in the raw MEG by cross-correlating its MEG (10 channels, 2-40 Hz, r > 0.995) and
+  compared with the chapter onset in `EXT 004`. Over the 10 chapters the release starts 0.16-1.13 ms after the
+  stimtrack onset (whole-sample stimtrack onsets at 1017.25 Hz, so within ~1 ms), and the release's time base
+  matches the raw file to < 0.1 ppm. So the release is cut at the electrical onset: **the 6 ms acoustic delay is not
+  compensated**. `tube_delay=True` (default) starts each trial 6 ms after its boundary and ends it at the next
+  boundary (the last 6 ms of a chapter would belong to the next chapter's recording).
+- Drift (sound card vs MEG clock): no audio channel in the release, so it cannot be estimated from the release
+  itself; see section 7.
+
+## 7. Drift
+In progress (`schueller_drift.py` on the raw recordings: Theil-Sen through 10 s windows, `jehn2025_base.drift`).
+
+## 8. Open questions
+- Set2/Set3: Zenodo returned HTTP 403 ("unusual traffic") to this server on 2026-11-21; only Set1 is checked.
