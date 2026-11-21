@@ -1,4 +1,4 @@
-# stoll2025: selective attention, subcortical + cortical EEG (OpenNeuro ds006434) — in progress
+# stoll2025: selective attention, subcortical + cortical EEG (OpenNeuro ds006434)
 
 ## 1. Source
 - OpenNeuro ds006434 v1.2.0 (`10.18112/openneuro.ds006434.v1.2.0`), EEG-BIDS.
@@ -64,7 +64,7 @@
 ## 6. Evidence files
 `tmp/review/stoll2025/polarity/` (per-trial TRFs, plot), `tmp/review/stoll2025/flipcheck/`.
 
-## 8. exp2 (dichotic) findings
+## 7. exp2 (dichotic) findings
 - 60 x 64 s trials (sub-dichotic02: 47, the recording stops inside the 47th; sub-dichotic12: 61 starts, the 14th
   was restarted after 26.6 s). The adaptor skips trials that run past the end and trials whose next start comes
   less than 64 s later (the authors drop the same two).
@@ -84,18 +84,18 @@
 - Single subcortical channel `FCz` (FCz minus one earlobe, side counterbalanced across subjects, not documented
   per subject).
 
-## 9. exp3 (passive) findings
+## 8. exp3 (passive) findings
 - 32 trials: 8 story/distractor pairs (`stim/{fM,fW}/{story,distractor}[trial_order - 1]`, 48 kHz, padded to
   8,214,463 samples = 171.13 s), each played 4 times in a row; story + distractor summed diotically. 4 ID bits
   (3 trial order, 1 focus) between S 1 and S 2; events.tsv `trial_order` (1-4), `focus_order` (0 fM, 1 fW).
 - **Polarity alternates across the 4 repetitions** (notebook: "trial polarity alternated"; not in events.tsv).
   From the ER-2 artefact (template projection, 40 s windows agree within every trial, so no within-trial flips):
   sub-passive18 plays the stored waveform in repetitions 1 and 3, sub-passive17 in 2 and 4: the starting
-  polarity differs between subjects. Per-trial result for all subjects: section 10.
+  polarity differs between subjects. Per-trial result for all subjects: section 9.
 - Marker drift (S 2 at 171.1146 s): 11.5 ppm (sub-passive17, 18). The 25 kHz EEG is resampled to 1 kHz.
 - The authors analyse 10-130 s of each trial (padding); the adaptor keeps the full trial.
 
-## 10. Per-trial polarity (all subjects)
+## 9. Per-trial polarity (all subjects)
 `tmp/review/scripts/stoll2025_trial_polarity.py` -> `tmp/review/stoll2025/trial_polarity/`: per trial (and story),
 deconvolution on the stored audio, projected onto the ER-2 artefact template (exp1 sub-diotic23, stored audio;
 the artefact is biphasic, so the sign of the largest peak alone is unreliable).
@@ -109,7 +109,7 @@ the artefact is biphasic, so the sign of the largest peak alone is unreliable).
   (median z -5.8 vs +3.0 by ear), other strong subjects differ in size by ear: independent confirmation that the
   ear routing follows `att_side`/`att_story`.
 
-## 11. Adaptor (stoll2025 = subcortex; stoll2025_cortex = 32-channel cortical files of exp1 and exp2)
+## 10. Adaptor (stoll2025 = subcortex; stoll2025_cortex = 32-channel cortical files of exp1 and exp2)
 - Subjects: label number + 100 x experiment (exp1 101-129, exp2 202-225, exp3 317-331). Conditions
   `diotic-attend-{female,male}`, `dichotic-attend-{female,male}-side{0,1}` (side of the attended talker),
   `passive-{fM,fW}`. Trials numbered by start marker within the recording.
@@ -119,17 +119,17 @@ the artefact is biphasic, so the sign of the largest peak alone is unreliable).
 - 1000 Hz by default; cortex keeps 1 kHz (exp1) and 500 Hz (exp2) (never upsampled); exp3 25 kHz -> 1 kHz.
 - Stimuli: exp1 `wrinkle_chNN`, `alchemyst_chNN` (audio 48 kHz, pulses; `anm` with save_anm=True), attended one
   marked; exp2 `<talker>_dichotic_chNN` (24414.0625 Hz as shipped; the wav header says 24414); exp3
-  `exp3_<fM|fW>_<story|distractor>K[_inv]` (none attended; `_inv` = negated, from section 10).
+  `exp3_<fM|fW>_<story|distractor>K[_inv]` (none attended; `_inv` = negated, from section 9).
 - Not included: exp1 silences (`*_silent`: in the stimulus file, the authors zero the EEG there), exp2 ANM
   regressors (36 x 640,000 at 10 kHz: 36 entries for 30 chapters, unclear), exp3 EMD features (truncated file).
 
-## 12. Data size (from the adaptor's trials; stimulus durations)
+## 11. Data size (from the adaptor's trials; stimulus durations)
 66 participants, 5234 trials (subcortex). exp1 28 x 2.13 h (120 x 64 s; 59.7 h); exp2 24 x 1.06 h (sub-dichotic02
 0.82; 25.4 h); exp3 14 x 1.52 h (32 x 171.1 s padded; README: ~117 s of audio each, i.e. ~1.04 h; 21.3 h padded).
 Total ~106 h (padded exp3) or ~99 h. Per condition: diotic attend female / male 28 x 1.07; dichotic each of 4
 (attended talker x side) 24 x 0.26; passive fM / fW 14 x 0.76 (padded).
 
-## 7. Upstream issues (to report; collected in `tmp/review/upstream_issues.md`)
+## 12. Upstream issues (to report; collected in `tmp/review/upstream_issues.md`)
 1. `stimuli/exp1Diotic/flip_signs` and `stimuli/exp3Passive/EMDdict_padded_48k` truncated on OpenNeuro.
    flip_signs is only needed to undo the within-trial polarity alternation (the stored audio is as played);
    the README should also say that the stored exp1 audio alternates polarity across segments.
@@ -159,3 +159,13 @@ scores the attended talker (diotic/dichotic) or the first stimulus by name (pass
 Low-tier peaks at 230-270 ms in three dichotic conditions (single FCz-earlobe channel; 0.5-8 Hz TRF of one
 channel peaks late), not an offset: the brainstem tier passes with the same onsets. To compare with the
 coherence results (`tmp/review/coherence_peaky/`).
+
+## 14. Coherence: attended vs ignored (2026-11-21; open observation)
+`tmp/review/coherence_peaky/stoll2025*` (coherence of the 5 s-window envelope with the EEG / median of a
+mismatched-trial null), plot `tmp/review/coherence_peaky/stoll2025_attention.png`, same talker attended vs ignored:
+- dichotic: attended > ignored at nearly all frequencies, both montages (as expected);
+- **diotic: ignored > attended at ~1-3 Hz** (up to 2x: subcortical female talker 14x vs 7x the null at 1 Hz;
+  cortical: smaller, male talker about equal), while attended > ignored at 4-10 Hz.
+A swapped attention label would flip both bands, so a labelling error is unlikely; the lowest bins are the weakest
+estimates (5 cycles per window at 1 Hz, small noisy null), and attended/ignored come from different trials and
+blocks. Not investigated further (per-subject ratios or 10 s windows would tell).

@@ -21,14 +21,13 @@
   those keys in the same file names and layout (~30 GB); the adaptor reads either.
 - The two `Pilot_Stimuli_Female_*` zips return HTTP 401 (embargoed/private on Dryad); the pilot is left out.
 - README lists `Exp1_Stimuli_Female_*` and `Pilot_Stimuli_Male_*` zips that are not on Dryad; Exp1 used only the
-  male narrator (dataset README), so the former were never needed. Pilot male stimuli: to check.
+  male narrator (dataset README), so the former were never needed. The pilot is left out (its male stimuli are not on Dryad).
 
-## 3. Trials and triggers (from the READMEs and code; to verify against the data)
+## 3. Trials and triggers (from the READMEs and code; checked in 3b, 9)
 - 64 s trials played back to back; S 1 at each start, then the trial number (0-119) as 4/8 bits. Stories advance
   through the session (alchemyst000_unaltered, alchemyst001_broadband, ...). Several subjects have two runs
   (battery died) and repeated trials after a restart; the authors keep one copy (`code/...:160-171`).
-- **Tube delay:** Exp1-3 READMEs: "already corrected" in the triggers; Pilot README: NOT corrected. To verify from
-  the ER-2 artefact as for stoll2025.
+- **Tube delay:** Exp1-3 READMEs: "already corrected" in the triggers; Pilot README: NOT corrected. Checked in section 9.
 - **Drift:** no end markers; the authors derive the clock ratio from start-to-start intervals (nominal 64 s) per
   run (`clock_adjust = 64 / (64 + median diff)`; pilot: fixed 64 / 64.001967 from exp3 = 30.7 ppm).
 

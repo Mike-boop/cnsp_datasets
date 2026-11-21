@@ -76,7 +76,7 @@ deconvolution (30-2000 Hz, 10 kHz, drift-corrected EEG, mean of A1/A2) per subje
 - Half-wave-rectified audio as played: wave V at ~7.5 ms identical in both groups (r = 0.94-0.99); with flips
   ignored the inverted group is misaligned (r = -0.25..-0.94).
 
-## 10. To check in validation
+## 10. Validation set-up (results: section 12)
 - Validate without re-referencing (`--reference ""`; both channels are FCz minus an earlobe).
 - The validator scores the first stimulus by name (one of the talkers in mixtures): per-condition scores will drop
   with the number of talkers.
