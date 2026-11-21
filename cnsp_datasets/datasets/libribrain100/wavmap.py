@@ -1,12 +1,12 @@
 """
 Which wav each LibriBrain Sherlock session played, and where: wav_time = k * timechapter + c, valid up to
-valid_until_s (notes.md section 4). Writes wavmap.csv next to this file, which the adaptor reads.
+valid_until_s (notes.md section 5). Writes wavmap.csv next to this file, which the adaptor reads.
 
-For every candidate wav of the book and each candidate scale k0 (44000/44100, 1, 44100/44000: the releases mix up
-44.1 and 44 kHz), the 100 Hz log-energy envelope of the wav, read on the timechapter axis, is correlated with the
-events' word mask (first 300 s, offsets up to +-30 s). For the best (wav, k0), 60 s windows every 30 s give lags;
-the map is valid up to the first of three consecutive windows whose lag is > 50 ms off (or r < 0.3), and a
-Theil-Sen line through the valid windows gives k and c. Sessions without a match (r stays < 0.3) are left out.
+For every candidate wav of the book, the 100 Hz log-energy envelope of the wav, read on the timechapter axis, is
+correlated with the events' word mask (first 300 s, offsets up to +-30 s). For the best wav, 60 s windows every 30 s
+give lags; the map is valid up to the first of three consecutive windows whose lag is > 50 ms off (or r < 0.3), and
+a Theil-Sen line through the valid windows gives k and c. Sessions without a match, or with a scale k != 1 (a
+spurious match), are left out.
 
     python -m cnsp_datasets.datasets.libribrain100.wavmap <download dir>
 """
@@ -24,7 +24,7 @@ from scipy.stats import theilslopes
 
 OUT = os.path.join(os.path.dirname(__file__), "wavmap.csv")
 FS = 100
-SCALES = (44000 / 44100, 1.0, 44100 / 44000)
+SCALES = (1.0,)
 BOOKS = [f"LibriBrain/Sherlock{i}" for i in range(1, 8)] + ["LibriBrain2/Sherlock9"]
 
 
@@ -75,6 +75,8 @@ def fit_session(m: np.ndarray, env: dict) -> dict | None:
     if ok.sum() < 3:
         return None
     slope, icpt = theilslopes(ll[:stop][ok], tt[:stop][ok])[:2]
+    if abs(k0 * (1 + slope) - 1) > 1e-4:
+        return None  # a spurious match: the audio plays at its own rate (k = 1) wherever it matches
     resid = ll[:stop][ok] - (slope * tt[:stop][ok] + icpt)
     return dict(wav=name, k=k0 * (1 + slope), c_s=k0 * (lag0 + icpt), r=r0, resid_sd_ms=1e3 * resid.std(),
                 valid_until_s=float(tt[stop] - 30) if stop < len(tt) else n / FS, source_end_s=n / FS)

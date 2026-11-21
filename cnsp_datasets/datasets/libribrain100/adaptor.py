@@ -12,7 +12,6 @@ import mne
 import numpy as np
 import pandas as pd
 from scipy.io import wavfile
-from scipy.signal import resample_poly
 
 from cnsp_datasets.datasets.broderick2019_natural.utils import multi_tier_dict_to_textgrid
 from cnsp_datasets.datasets.libribrain100 import wavmap
@@ -33,7 +32,7 @@ class LibriBrain100Adaptor:
 
     The audio was played in sentence-sized segments with short gaps, so the stimulus is rebuilt per session: each
     segment of the source audio is placed at its MEG time (`timemeg`), zeros in between. Sherlock chapters come from
-    the release's wavs through wavmap.csv (which wav, its 44.1/44 kHz scale k and offset c, and how far the match
+    the release's wavs through wavmap.csv (which wav, its offset c, and how far the match
     holds); a session whose match breaks is split there into trial 1 (audio) and trial 2 (MEG and TextGrid only).
     TheMoth audio comes from OpenNeuro ds003020 (`<download>/ds003020/stimuli`), MOCHA-TIMIT from its sentence wavs;
     TIMIT and Sherlock8 have no audio. Every trial has a words/phones TextGrid on the trial's time axis. See notes.md.
@@ -170,15 +169,11 @@ def _textgrid_loader(ev: pd.DataFrame, part: pd.DataFrame, t0: float):
 
 @lru_cache(maxsize=2)
 def _wav_on_source_clock(path: str, k: float):
-    """The wav resampled so that one second of it is one second of source time (k = wav s per source s)."""
+    """The wav (wavmap.csv only keeps maps with k = 1 within 100 ppm, so it is used as it is)."""
+    if abs(k - 1) > 1e-4:
+        raise ValueError(f"{path}: unexpected scale {k}")
     fs, x = wavfile.read(path)
-    x = x[:, 0] if x.ndim == 2 else x
-    if k != 1.0:
-        up, down = (440, 441) if k > 1 else (441, 440)  # the two scales in wavmap.csv: 44100/44000 and its inverse
-        if abs(k - down / up) > 1e-4:
-            raise ValueError(f"{path}: scale {k} is not 44.1/44 kHz")
-        x = resample_poly(x.astype(np.float32), up, down).astype(x.dtype)
-    return fs, x
+    return fs, (x[:, 0] if x.ndim == 2 else x)
 
 
 # --------------------------------------------------------------------------------------------------- MEG

@@ -60,25 +60,23 @@ Findings that explain `adaptor.py`. Review scripts and results: `tmp/review/libr
 - Content match (`wavmap.py`, run on the sub-0 events of every Sherlock session): the 100 Hz log-energy envelope of each
   candidate wav, read on the `timechapter` axis, against the events' word mask; then 60 s windows every 30 s and a
   Theil-Sen line through the window lags give wav_time = k * timechapter + c and the range where the match holds.
-- **The LibriBrain (2025) wavs are not on the events' time axis.** Sherlock9 (LibriBrain2) matches its
-  same-numbered wav at r ~ 0.75 with lag 0.00-0.02 s throughout. Sherlock1-7 match their wavs only after rescaling:
-  Sherlock1, 2, 4-7 by k = 44100/44000 (the wav is 0.227% longer than the chapter time), Sherlock3 by k = 44000/44100
-  (shorter); with that, r ~ 0.72-0.79 and the window lags scatter 4-9 ms around the line (c = 0-20 ms, resolution
-  10 ms). A 44.1 vs 44 kHz mix-up when the wavs were made, presumably.
+- Result: **k = 1** (within 20 ppm) and c = 0-20 ms (10 ms resolution) for 91 sessions: the release's wavs are on
+  the events' time axis. Maps at any other scale are rejected as spurious.
+- *Correction (2026-11-21):* a first version of `envelope()` used an integer hop of fs // 100 samples, i.e. 220 for
+  the 22.05 kHz LibriBrain wavs (220.5 needed): a 100.227 Hz frame rate read as 100 Hz. It made those wavs look
+  0.227% too long ("a 44.1/44 kHz mix-up", k = 44100/44000) and the adaptor rescaled them, so the rebuilt audio
+  drifted ~1.4 s per 10 min against the annotations. Found with the annotation TRF test (section 8); frames now
+  use exact edges. Sherlock9 (44.1 kHz, exact hop) was never affected.
 - Which clock the audio was played on: regressing the MEG interval between segment starts on the `timechapter`
-  interval gives slopes of -400 to +400 ppm (not +2270 ppm) plus a constant 12-16 ms gap per segment (1-3 ms in
-  Sherlock9), so the played audio followed `timechapter`; the adaptor resamples each wav by k (polyphase 440/441)
-  before cutting the segments.
-- Breaks: the match holds over the whole session in 89 of 106 sessions (incl. LibriBrain2 Sherlock1 ch 11-12). It
-  breaks part-way in Sherlock4 ses-2 (at 930 s of 2617 s) and ses-9 (1350/2611), Sherlock6 ses-3 (2040/3645) and
-  ses-10 (1620/2551): after the break the lag runs off at ~1% (Sherlock4 ses-2 loses the match entirely after
-  ~1700 s). Sherlock3 matches its wav k for k = 1-9 (r ~ 0.6 over the first 300 s) but the lag wanders non-linearly
-  (-0.05 to -3.8 s over 2500 s, ses-3), so only the first 90-210 s pass. No wav matches Sherlock3 ses-10-12
-  (stories 10-12 are not in the release), Sherlock4 ses-8 and Sherlock6 ses-14.
+  interval gives slopes of -400 to +400 ppm plus a constant 12-16 ms gap per segment (1-3 ms in Sherlock9): the
+  segments were played back to back on the `timechapter` clock with small gaps.
+- Breaks: the match holds over the whole session in 87 sessions. It breaks part-way in Sherlock4 ses-2 (at 930 s
+  of 2617 s), ses-9 (1350/2611), Sherlock6 ses-3 (2040/3645) and ses-10 (1620/2551): after the break the window lags
+  run off (Sherlock4 ses-2 loses the match entirely after ~1700 s). **Sherlock3** does not match its wavs (stories
+  1-9 are there; the lag wanders non-linearly), and no wav matches Sherlock3 ses-10-12, Sherlock4 ses-8 and Sherlock6
+  ses-14.
 - The adaptor splits a session at the break: trial 1 = the verified part with audio, trial 2 (`_part-2`) = the rest
-  with MEG and TextGrid only; verified stretches under 60 s are not split off (Sherlock3: whole sessions without
-  audio). Sessions without a match have no audio. A per-segment (piecewise) alignment could recover Sherlock3 and
-  the post-break parts; not done.
+  with MEG and TextGrid only; sessions without a match have no audio. Per-segment alignment for these: section 5b.
 
 ## 6. TheMoth audio from OpenNeuro ds003020
 - The 30 stories are among the 84 stories of LeBel et al. 2023 (OpenNeuro ds003020 v4.0.0, `stimuli/<story>.wav`,
@@ -108,8 +106,15 @@ Findings that explain `adaptor.py`. Review scripts and results: `tmp/review/libr
 - Kept channels: MEG, EOG, ECG, EMG (IAS shielding, SYS201 and STI101 dropped).
 
 ## 8. Checks
-- The rebuilt audio against its own TextGrid (`libribrain_rebuild_check.py`, 60 s windows): lags within +-30 ms
-  (10 ms resolution), r 0.63-0.83 (Sherlock1 sub-0 ses-1 and sub-1 ses-11, MOCHA-TIMIT ses-1).
+- **Annotation TRF test** (`annot_trf.py`; the user's suggestion): ridge TRF from the authors' phoneme- and
+  word-onset impulse trains (TextGrid, trial time) to the Hilbert envelope (< 50 Hz, 200 Hz) of the rebuilt audio,
+  in 120 s windows. Correct timing: the same kernel in every window. After the envelope fix, every session tested
+  (sub-0 Sherlock1, 2, 4 ses-2 part 1, 5, 7, 9; TheMoth ses-1; MOCHA-TIMIT ses-2; h5 sub-1 and sub-13 Sherlock1 ch
+  11) shows overlapping word kernels (dip at 0, peak at 85-125 ms) and phoneme kernels peaking at 0-15 ms (noisier
+  for TheMoth and MOCHA-TIMIT). Figures `tmp/review/libribrain100/annot_trf_fixed.png` (before the fix:
+  `annot_trf_linear.png`, no consistent kernel for the 22.05 kHz wavs).
+- The rebuilt audio against its own word mask (`libribrain_rebuild_check.py`) is NOT a sufficient check: the zero gaps
+  between segments line up with the pauses by construction, so it passed with the mis-scaled audio too.
 - Word-onset evoked field (`libribrain_wordERF.py`, sub-0 Sherlock1 ses-1 raw, 2836 words, gradiometers 1-20 Hz): GFP
   peaks at 195 ms (and ~320 ms), about twice the random-onset maximum: `timemeg` is on the MEG clock.
 
@@ -118,7 +123,7 @@ Findings that explain `adaptor.py`. Review scripts and results: `tmp/review/libr
   and the folder holds `sub-0_ses-1_coordsystem.json` (session 1's name). The events exist in
   `derivatives/events/` as `run-2`, while the raw FIF is `run-1`.
 - Sherlock8 has no stimuli.
-- LibriBrain (2025) wavs are 44.1/44 kHz rescaled relative to the events (section 5); Sherlock3 does not match
-  linearly; stories 10-12 of Sherlock3 and the wavs of Sherlock4 ses-8 and Sherlock6 ses-14 are missing.
+- Sherlock3's wavs do not match its events (section 5); stories 10-12 of Sherlock3 and the wavs of Sherlock4 ses-8
+  and Sherlock6 ses-14 are missing; four sessions lose the match part-way.
 - Raw FIF: plain `_meg.fif` files that are the first part of an MNE split without its continuation, next to the
   BIDS splits (section 7).
