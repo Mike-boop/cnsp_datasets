@@ -50,3 +50,19 @@ Audio as shipped, TextGrids (words, phones) for story parts, transcripts in `sti
 ## 7. Drift
 - +5.7 ppm (Theil-Sen, 10 s windows of the 70-250 Hz waveform; 5.4-6.0 in every part checked): the MEG clock runs
   fast relative to the audio, ~2.7 ms over an 8 min part. `drift_correction=True` (default).
+- All 30 sessions, 196 story parts (`tmp/review/armeni2022/audio_lag.csv`): onset -0.1 +- 0.8 ms relative to the shipped
+  `wav_onset` (largest +3.1 and +3.3 ms: session 8 part 7 in sub-001 and sub-003, the same wav, so probably the
+  authors' delay estimate for that wav); drift +5.73 +- 0.14 ppm, participant medians 5.70-5.76.
+
+## 8. Validation (sessions 1-3 of each participant, story parts, magnetometers (axial gradiometers), no re-referencing)
+`validate_subset.py armeni2022 ... mag low,mlr,brainstem "r.condition == 'story' and r.session <= 3"` (adaptor
+defaults: 1000 Hz, +5.7 ppm drift); results and figure `tmp/review/armeni2022/validation_ses1-3/`.
+- low: mean r 0.061 (0.061 / 0.047 / 0.076), 3/3 above the nulls.
+- mlr: SNR 2.57, 3/3 significant (peaks ~27, 40, 50 ms).
+- brainstem tier (30-250 Hz, 28-45 ms): SNR 3.03, 3/3 significant. **Validation tier: brainstem.**
+- **Stimulus artefact at lag 0:** the 30-250 Hz TRF has a narrow spike at -2.5 and +0.5 ms, ~10x the null, i.e. the
+  sound picked up electromagnetically by the sensors. It confirms the audio-MEG alignment to ~1-2 ms; exclude lags
+  around 0 in high-frequency analyses (the tier's noise and latency windows do not include it).
+
+## 9. Data size
+3 participants: story parts 8.76 h each (26.3 h), noise-ceiling repeats 1.06 h each (3.2 h); 29.5 h in total.
