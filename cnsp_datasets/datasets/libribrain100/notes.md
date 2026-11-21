@@ -5,7 +5,7 @@ Findings that explain `adaptor.py`. Review scripts and results: `tmp/review/libr
 
 ## TODO
 - **Sherlock8 stimuli**: the release has no `Sherlock8/stimuli/` (no audio, no README); its MEG is standardised
-  without a stimulus. When the LibriBrain authors release the Sherlock8 audio (check the HF repo
+  without audio (MEG + TextGrid). When the LibriBrain authors release the Sherlock8 audio (check the HF repo
   `pnpl/LibriBrain2` after the 2026 competition embargo ends), add it like Sherlock1-7/9 and re-standardise.
 - **Sherlock1 sub-13 to sub-32**: only the first half (sub-13-22) or first quarter (sub-23-32) of each session is
   released (competition embargo; the BIDS raw data of sub-1-32 is embargoed too). Re-download when the rest is out;
