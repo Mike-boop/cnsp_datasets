@@ -75,8 +75,24 @@ Findings that explain `adaptor.py`. Review scripts and results: `tmp/review/libr
   run off (Sherlock4 ses-2 loses the match entirely after ~1700 s). **Sherlock3** does not match its wavs (stories
   1-9 are there; the lag wanders non-linearly), and no wav matches Sherlock3 ses-10-12, Sherlock4 ses-8 and Sherlock6
   ses-14.
-- The adaptor splits a session at the break: trial 1 = the verified part with audio, trial 2 (`_part-2`) = the rest
-  with MEG and TextGrid only; sessions without a match have no audio. Per-segment alignment for these: section 5b.
+- These sessions are handled by the per-segment alignment (section 5b).
+
+## 5b. Per-segment alignment: segalign.py / segmap.csv
+- Tracking the lag (30 s windows every 10 s, each searched near the previous lag) shows that the wavs of these
+  sessions are the right recordings throughout (window r 0.6-0.8) but drift against the events: Sherlock3 ses-3
+  reaches -15.5 s after 2550 s (-0.6%, unevenly), Sherlock4 ses-2 is at 0 up to ~945 s, then drifts ~-1% to -17.4 s.
+  The pauses (or pacing) of the release's wav differ from what was played, so no single line fits.
+- `segalign.py`: lag curve as above; per playback segment, the curve's lag at the segment start refined within
+  +-150 ms in a 10 s window (parabolic peak), outliers (> 150 ms from a 5-segment running median) replaced by the
+  median. `segmap.csv`: wav start per segment. Sessions with a median local r < 0.5 are left out.
+- Result: Sherlock3 ses-1-8, Sherlock4 ses-2 and ses-9, Sherlock6 ses-3, ses-10 and ses-14: 100% of the segments
+  aligned, median local r 0.76-0.79. Sherlock4 ses-8 (its wav matches 16% of the segments at r 0.25) is left out:
+  no audio. Sherlock3 ses-9 matches linearly (wavmap). Sherlock3 ses-10-12: no wav.
+- Annotation TRF test (section 8) on the rebuilt audio of Sherlock3 ses-1 (55 min) and Sherlock4 ses-2 (whole
+  session, incl. the 28 min after the break): word and phoneme kernels overlap in every window, as for the linearly
+  mapped sessions (`tmp/review/libribrain100/annot_trf_segalign.png`).
+- The adaptor prefers segmap.csv over wavmap.csv. Consecutive segments without audio become trials of their own
+  (MEG + TextGrid); stretches with audio shorter than 60 s are treated as without.
 
 ## 6. TheMoth audio from OpenNeuro ds003020
 - The 30 stories are among the 84 stories of LeBel et al. 2023 (OpenNeuro ds003020 v4.0.0, `stimuli/<story>.wav`,
@@ -124,6 +140,7 @@ Findings that explain `adaptor.py`. Review scripts and results: `tmp/review/libr
   `derivatives/events/` as `run-2`, while the raw FIF is `run-1`.
 - Sherlock8 has no stimuli.
 - Sherlock3's wavs do not match its events (section 5); stories 10-12 of Sherlock3 and the wavs of Sherlock4 ses-8
-  and Sherlock6 ses-14 are missing; four sessions lose the match part-way.
+  is missing (or does not match); Sherlock3 and four other sessions do not follow the events linearly (pauses edited;
+  recovered by per-segment alignment).
 - Raw FIF: plain `_meg.fif` files that are the first part of an MNE split without its continuation, next to the
   BIDS splits (section 7).

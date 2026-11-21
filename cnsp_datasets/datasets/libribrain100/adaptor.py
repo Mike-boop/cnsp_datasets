@@ -14,7 +14,7 @@ import pandas as pd
 from scipy.io import wavfile
 
 from cnsp_datasets.datasets.broderick2019_natural.utils import multi_tier_dict_to_textgrid
-from cnsp_datasets.datasets.libribrain100 import wavmap
+from cnsp_datasets.datasets.libribrain100 import segalign, wavmap
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -32,8 +32,10 @@ class LibriBrain100Adaptor:
 
     The audio was played in sentence-sized segments with short gaps, so the stimulus is rebuilt per session: each
     segment of the source audio is placed at its MEG time (`timemeg`), zeros in between. Sherlock chapters come from
-    the release's wavs through wavmap.csv (which wav, its offset c, and how far the match
-    holds); a session whose match breaks is split there into trial 1 (audio) and trial 2 (MEG and TextGrid only).
+    the release's wavs through wavmap.csv (which wav, its offset, and how far the linear match holds) or, where the
+    wav does not follow the events linearly, segmap.csv (per-segment alignment, segalign.py). Consecutive segments
+    without audio (no wav, or a stretch the alignment could not place) become trials of their own (MEG + TextGrid);
+    trials are numbered in order (`_part-N` stimulus names after the first).
     TheMoth audio comes from OpenNeuro ds003020 (`<download>/ds003020/stimuli`), MOCHA-TIMIT from its sentence wavs;
     TIMIT and Sherlock8 have no audio. Every trial has a words/phones TextGrid on the trial's time axis. See notes.md.
     """
@@ -41,6 +43,7 @@ class LibriBrain100Adaptor:
     def __init__(self, download_dir: str):
         self.download_dir = download_dir
         self.wavmap = wavmap.read()
+        self.segmap = segalign.read().set_index(["task", "session"]).sort_index()
 
     def parse(self) -> Iterable[TrialRecord]:
         for events in sorted(glob.glob(os.path.join(self.download_dir, "LibriBrain*", "*", "derivatives", "events",
@@ -51,17 +54,13 @@ class LibriBrain100Adaptor:
             if meg is None:
                 continue
             ev = pd.read_csv(events, sep="\t")
-            segs = segments(ev, SOURCE.get(task, "timechapter"))
-            audio_until = self._audio_until(task, sub, ses, segs)
-            parts = [segs[segs.src_start < audio_until], segs[segs.src_start >= audio_until]]
-            for trial, part in enumerate((p for p in parts if len(p)), 1):
-                with_audio = part.src_start.iloc[0] < audio_until
+            segs = self._audio_sources(task, ses, segments(ev, SOURCE.get(task, "timechapter")))
+            for trial, part in enumerate(_runs(segs), 1):
                 name = f"{task.lower()}_sub-{sub}_ses-{ses}" + ("" if trial == 1 else f"_part-{trial}")
                 t0, t1 = part.meg_start.iloc[0], (part.meg_start + part.src_end - part.src_start).iloc[-1]
                 stimuli = [StimulusRecord("audio", name, _textgrid_loader(ev, part, t0), True, "textgrid")]
-                if with_audio:
-                    stimuli.insert(0, StimulusRecord("audio", name, self._audio_loader(task, ses, part, t0, t1),
-                                                     True, "audio"))
+                if part.wav.notna().all():
+                    stimuli.insert(0, StimulusRecord("audio", name, _audio_loader(part, t0, t1), True, "audio"))
                 yield TrialRecord(subject=sub, session=ses, trial=trial, condition=task.lower(), ns_type="meg",
                                   stimulus=stimuli, neural_data_fn=_meg_loader(meg, t0, t1, self._reference_fif()))
 
@@ -83,49 +82,62 @@ class LibriBrain100Adaptor:
         return sorted(glob.glob(os.path.join(self.download_dir, "LibriBrain", "Sherlock1", "sub-0", "ses-*", "meg",
                                              "*_meg.fif")))[0]
 
-    def _audio_until(self, task: str, sub: int, ses: int, segs: pd.DataFrame) -> float:
-        """Source time up to which the session has verified audio (-inf: none)."""
-        if task in NO_AUDIO:
-            return -np.inf
-        if task not in ("TheMoth", "MOCHATIMIT"):
-            if (task, ses) not in self.wavmap.index:
-                return -np.inf
-            until = self.wavmap.loc[(task, ses), "valid_until_s"]
-            if until < self.wavmap.loc[(task, ses), "source_end_s"] and until - segs.src_start.iloc[0] < MIN_AUDIO:
-                return -np.inf
-            return until
-        return np.inf
-
     # ----------------------------------------------------------------------------------------------- audio
 
-    def _source_wav(self, task: str, ses: int, seg) -> tuple[str, float, float]:
-        """(wav path, k, c) for one segment: wav_time = k * source_time + c."""
+    def _audio_sources(self, task: str, ses: int, segs: pd.DataFrame) -> pd.DataFrame:
+        """Adds per segment the wav it is read from (`wav`, NaN: no audio), where (`wav_start`, s) and whether the whole
+        wav is played (`whole`: MOCHA-TIMIT sentences)."""
+        segs = segs.assign(wav=np.nan, wav_start=np.nan, whole=False).astype({"wav": object})
+        audio = os.path.join(self.download_dir, "LibriBrain2" if task in ("Sherlock8", "Sherlock9", "MOCHATIMIT")
+                             else "LibriBrain", task, "stimuli", "audio")
+        if task in NO_AUDIO:
+            return segs
         if task == "TheMoth":
-            story = seg.wavile.split("/")[1]
-            return os.path.join(self.download_dir, "ds003020", "stimuli", f"{story}.wav"), 1.0, 0.0
+            story = segs.wavile.str.split("/").str[1]
+            return segs.assign(wav=self.download_dir + "/ds003020/stimuli/" + story + ".wav", wav_start=segs.src_start)
         if task == "MOCHATIMIT":
-            return os.path.join(self.download_dir, "LibriBrain2", task, "stimuli", "audio",
-                                os.path.basename(seg.wavile)), 1.0, 0.0
-        row = self.wavmap.loc[(task, ses)]
-        repo = "LibriBrain2" if task in ("Sherlock8", "Sherlock9") else "LibriBrain"
-        return os.path.join(self.download_dir, repo, task, "stimuli", "audio", row.wav), row.k, row.c_s
+            return segs.assign(wav=audio + "/" + segs.wavile.map(os.path.basename), wav_start=0.0, whole=True)
+        if (task, ses) in self.segmap.index:  # per-segment alignment (segalign.py)
+            m = self.segmap.loc[(task, ses)]
+            start = pd.Series(m.wav_start_s.values, index=m.src_start.round(3).values)
+            segs["wav_start"] = segs.src_start.round(3).map(start)
+            segs.loc[segs.wav_start.notna(), "wav"] = audio + "/" + m.wav.iloc[0]
+        elif (task, ses) in self.wavmap.index:  # one linear map, valid up to valid_until_s (wavmap.py)
+            row = self.wavmap.loc[(task, ses)]
+            ok = segs.src_start < row.valid_until_s
+            segs.loc[ok, "wav"] = audio + "/" + row.wav
+            segs.loc[ok, "wav_start"] = segs.src_start[ok] + row.c_s
+        return segs
 
-    def _audio_loader(self, task: str, ses: int, part: pd.DataFrame, t0: float, t1: float):
-        def _loader():
-            out, fs_out = None, None
-            for seg in part.itertuples():
-                path, k, c = self._source_wav(task, ses, seg)
-                fs, x = _wav_on_source_clock(path, round(k, 8))
-                if out is None:
-                    fs_out, out = fs, np.zeros(math.ceil((t1 - t0) * fs), dtype=x.dtype)
-                a = int(round((seg.src_start + c / k) * fs))
-                b = len(x) if task == "MOCHATIMIT" else int(round((seg.src_end + c / k) * fs))
-                o = int(round((seg.meg_start - t0) * fs))
-                chunk = x[max(a, 0):b][:len(out) - o]
-                out[o:o + len(chunk)] = chunk
-            return {"fs": fs_out, "data": out[None, :]}
 
-        return _loader
+def _runs(segs: pd.DataFrame) -> list:
+    """Consecutive segments with / without audio; stretches with audio shorter than MIN_AUDIO count as without."""
+    has = segs.wav.notna().values
+    run_id = np.r_[0, np.cumsum(has[1:] != has[:-1])]
+    for r in np.unique(run_id[has]):
+        part = segs[run_id == r]
+        if (part.src_end - part.src_start).sum() < MIN_AUDIO:
+            has[run_id == r] = False
+    segs = segs.assign(wav=segs.wav.where(has))
+    run_id = np.r_[0, np.cumsum(has[1:] != has[:-1])]
+    return [segs[run_id == r] for r in np.unique(run_id)]
+
+
+def _audio_loader(part: pd.DataFrame, t0: float, t1: float):
+    def _loader():
+        out, fs_out = None, None
+        for seg in part.itertuples():
+            fs, x = _wav(seg.wav)
+            if out is None:
+                fs_out, out = fs, np.zeros(math.ceil((t1 - t0) * fs), dtype=x.dtype)
+            a = int(round(seg.wav_start * fs))
+            b = len(x) if seg.whole else a + int(round((seg.src_end - seg.src_start) * fs))  # sentence wavs: whole
+            o = int(round((seg.meg_start - t0) * fs))
+            chunk = x[max(a, 0):b][:len(out) - o]
+            out[o:o + len(chunk)] = chunk
+        return {"fs": fs_out, "data": out[None, :]}
+
+    return _loader
 
 
 def segments(ev: pd.DataFrame, src: str) -> pd.DataFrame:
@@ -168,15 +180,10 @@ def _textgrid_loader(ev: pd.DataFrame, part: pd.DataFrame, t0: float):
 
 
 @lru_cache(maxsize=2)
-def _wav_on_source_clock(path: str, k: float):
-    """The wav (wavmap.csv only keeps maps with k = 1 within 100 ppm, so it is used as it is)."""
-    if abs(k - 1) > 1e-4:
-        raise ValueError(f"{path}: unexpected scale {k}")
+def _wav(path: str):
     fs, x = wavfile.read(path)
     return fs, (x[:, 0] if x.ndim == 2 else x)
 
-
-# --------------------------------------------------------------------------------------------------- MEG
 
 @lru_cache(maxsize=1)
 def _read(path: str, reference: str) -> mne.io.BaseRaw:
