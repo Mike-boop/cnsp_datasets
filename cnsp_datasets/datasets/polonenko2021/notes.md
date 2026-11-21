@@ -17,7 +17,7 @@
   `<Exp>_Stimuli_<Narrator>_Narrator_<NN-NN>/<Narrator>Narrator<NNN>_bands[_aud].hdf5` (Exp3: `_aud`), each
   ~1.7-2 GB of float64 synthesis intermediates (`phase`, `x_harm*`, `mixer`, `t0`, ...). Only `fs` (44100),
   `x` (unaltered), `x_play_single` (broadband peaky), `x_play_band` (multiband peaky; Exp3 stereo, one ear per
-  channel), `pulse_inds/idx_k` and `fc_band` are needed. `tmp/review/scripts/polonenko2021_compact.py` keeps just
+  channel), `pulse_inds/idx_k` and `fc_band` are needed. `compact_stimuli.py` (this folder) keeps just
   those keys in the same file names and layout (~30 GB); the adaptor reads either.
 - The two `Pilot_Stimuli_Female_*` zips return HTTP 401 (embargoed/private on Dryad); the pilot is left out.
 - README lists `Exp1_Stimuli_Female_*` and `Pilot_Stimuli_Male_*` zips that are not on Dryad; Exp1 used only the
