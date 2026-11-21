@@ -25,14 +25,28 @@ Findings that explain `adaptor.py`. Review scripts and results: `tmp/review/arme
   (`noise_ceiling.wav`, played twice after each part; `noise_codes = [100 150]`).
 - One trial per `wav_onset` event, numbered in recording order; conditions `story` and `repeat`.
 - Word and phoneme onsets: events `word_onset_<part>` / `phoneme_onset_<part>` (value = label, with duration). The
-  adaptor builds the TextGrid relative to the part's onset.
+  adaptor builds a part's TextGrid relative to the part's onset, from the first participant whose annotations of the
+  part start at its own `wav_onset` (within 0.1 s); within a wav the timings are the same for every participant.
+- **sub-003 ses-008 (crashed run 3; paper, "Repeated run")**: the script crashed in run 3 and was restarted at run 3.
+  The recording holds the aborted playback (08_3 from 1211.8 s) and the complete restart (from 2022.9 s, ending at the
+  run-3 offset marker 2549.05 s), but **no `wav_onset` for run 3** (codes 10, 20, 40-70; the authors' `trl.mat` also
+  lacks run 3). The adaptor adds the restart with the onset measured on UADC003 (2022.901 s; 08_3.wav r = 0.98, other
+  parts <= 0.13). The codes of the other parts match their audio (r 0.97-0.98). Its **word annotations are shifted
+  by one part** after the crash: the words of part 3 start at part 4's onset (2685.85 s), part 4's at part 5's, ...,
+  part 7 has none; hence the TextGrids from another participant (sub-001 for session 8).
 
 ## 4. Speech features
 Audio as shipped, TextGrids (words, phones) for story parts, transcripts in `stimuli/*.txt` (not carried).
 
 ## 5. Neural data
-- CTF-275: 269 axial gradiometers (MNE `mag`; 6 dead/removed), 29 reference sensors (`ref_meg`), 1200 Hz, head
-  casts (continuous head localisation channels HLC* dropped). UADC003 = audio copy (kept, `misc`). MNE names carry
+- CTF-275: 269 axial gradiometers (MNE `mag`; 6 dead/removed), 29 reference sensors (`ref_meg`), 1200 Hz (analog
+  anti-alias low-pass 300 Hz), head casts (continuous head localisation channels HLC* dropped).
+- Kept extra channels (paper, Table 5): UADC003 (audio), UADC005-007 (EyeLink x, y, pupil diameter on the MEG
+  clock). UADC004 (a second audio channel) is not kept.
+- Known bad channels (paper): sub-003 ses-004 MRC23, MLO22, "MRP5", MLC23; "MRP5" is MRP55 (1-40 Hz SD 24x and 99.9th
+  percentile jumps 38x the channel median, the other MRP5x ~1x; MLO22 24x, MLC23 2.5x, MRC23 0.9x in 300-900 s).
+  Marked bad in that session's trials. Not marked (paper): MRP57 spikes in sub-003 ses-003; slow-drift artefacts in
+  sub-002 ses-009 run 1, sub-003 ses-004 run 4, ses-005 run 1, ses-006 run 6, ses-008 run 4. UADC003 = audio copy (kept, `misc`). MNE names carry
   the system suffix (`UADC003-4302`).
 - EEG057-064 (BIDS type `eeg`, use not documented) carry no physiological signal and are dropped (user's decision
   2026-11-21). Checked on sub-001 ses-001: EEG057 ~1.4 mV and EEG059 ~0.35 mV (0.5-40 Hz) of broadband noise with
@@ -72,7 +86,9 @@ defaults: 1000 Hz, +5.7 ppm drift); results and figure `tmp/review/armeni2022/va
 - mlr: SNR 2.57, 3/3 significant (peaks ~27, 40, 50 ms).
 - brainstem tier (30-250 Hz, 28-45 ms): SNR 3.03, 3/3 significant. **Validation tier: brainstem.**
 - **Stimulus artefact at lag 0:** the 30-250 Hz TRF has a narrow spike at -2.5 and +0.5 ms, ~10x the null, i.e. the
-  sound picked up electromagnetically by the sensors. It confirms the audio-MEG alignment to ~1-2 ms; exclude lags
+  sound picked up electromagnetically by the sensors.
+- Sound delivery (paper): "a sound pressure transducer through two plastic tubes terminating in plastic insert
+  earpieces"; tube length and acoustic delay not reported, not corrected. It confirms the audio-MEG alignment to ~1-2 ms; exclude lags
   around 0 in high-frequency analyses (the tier's noise and latency windows do not include it).
 
 ## 9. Data size
