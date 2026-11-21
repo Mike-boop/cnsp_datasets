@@ -38,7 +38,7 @@ def crop_on_audio_clock(raw: mne.io.BaseRaw, onset: float, n_out: int, drift: fl
     raw = raw.copy().pick(picks) if picks is not None else raw
     fir = antialias(sfreq, sfreq_out) if sfreq_out < sfreq else None
     pad = (len(fir) // 2 if fir is not None else 0) + SPLINE_ORDER + 1
-    if fir is None and np.allclose(positions, np.round(positions)):
+    if fir is None and np.all(np.abs(positions - np.round(positions)) < 1e-6):
         idx = np.round(positions).astype(int)
         data = raw.get_data(start=idx[0], stop=idx[-1] + 1)
     else:

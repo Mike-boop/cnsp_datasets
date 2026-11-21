@@ -59,8 +59,20 @@ Audio only (as shipped). No transcripts or word alignments in the release.
 - Drift (sound card vs MEG clock): no audio channel in the release, so it cannot be estimated from the release
   itself; see section 7.
 
-## 7. Drift
-In progress (`schueller_drift.py` on the raw recordings: Theil-Sen through 10 s windows, `jehn2025_base.drift`).
+## 7. Drift (drift.py, drift.csv)
+- Measured on the non-public raw recordings (`drift.py`: stimtrack `EXT 004` resampled to 1 kHz, chapter onset by
+  cross-correlation, `jehn2025_base.drift.trial_drift`: 2-200 Hz, 10 s windows every 5 s, Theil-Sen). `drift.csv`:
+  one row per raw recording x chapter (61 recordings, 610 chapters; `trial` as in the adaptor), with the recording's
+  meas_date.
+- Result: **+8.46 ppm** median (6.3-10.5 per chapter; participant medians 7.1-9.8, rising over the months of
+  recording; LP and HP chapters agree), onset -0.27 +- 0.30 ms. Per-subject plot:
+  `tmp/review/schueller2024/drift/drift_per_subject.png`. At 8.5 ppm a 5 min chapter ends 2.5 ms late.
+- Matching to the release: a release run has the same meas_date as its raw recording (participant 1 = P2, ...;
+  18 of the 19 Set1 participants; participant 15 (2023-04-05) has no raw recording: `P15-no data` is empty and there is
+  no P17).
+- `drift="subject"` (default): the participant's median over chapters with >= 10 valid windows, the dataset median
+  for participants without raw data; `"dataset"`: +8.46 ppm for everyone; `None`: no correction. Applied by
+  resampling each trial onto the audio clock (`standardise/clock.py`, quintic spline).
 
 ## 8. Open questions
 - Set2/Set3: Zenodo returned HTTP 403 ("unusual traffic") to this server on 2026-11-21; only Set1 is checked.

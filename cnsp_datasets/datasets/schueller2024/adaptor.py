@@ -8,8 +8,10 @@ from typing import Iterable
 
 import mne
 import numpy as np
+import pandas as pd
 from scipy.io import wavfile
 
+from cnsp_datasets.standardise.clock import crop_on_audio_clock
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 FS_MEG = 1000
@@ -17,6 +19,8 @@ TUBE_DELAY = 0.006  # 2 m tubes from the loudspeakers (Zenodo description)
 N_CHAPTERS = 5
 # attended speaker -> (attended audiobook, ignored audiobook); verified by duration and f0 (notes.md section 3)
 BOOKS = {"LP": (1, 4), "HP": (3, 2)}
+DRIFT_CSV = os.path.join(os.path.dirname(__file__), "drift.csv")  # from drift.py (raw recordings)
+MIN_WINDOWS = 10  # chapters with fewer valid drift windows are not used
 
 
 class Schueller2024Adaptor:
@@ -29,13 +33,19 @@ class Schueller2024Adaptor:
     gaps): chapter k fills ceil(n_k * 1000 / 44100) samples, so trials are cut at the cumulative boundaries. One
     trial per chapter; trials numbered in presentation order (LP chapter 1, HP chapter 1, LP chapter 2, ...).
     tube_delay=True starts each trial 6 ms after its boundary (acoustic delay of the tubes); the trial ends at the
-    next boundary. Stimuli: attended and ignored audio as shipped (44.1 kHz; the ignored track already holds its
-    ~5 s delayed start). See notes.md.
+    next boundary. drift: sound-card vs MEG clock drift measured on the raw recordings (drift.csv, per chapter;
+    matched to the release by meas_date), corrected by resampling each trial onto the audio clock: "subject"
+    (default: the participant's median; participants without raw data get the dataset median), "dataset" (median
+    over all chapters, +8.5 ppm) or None. Stimuli: attended and ignored audio as shipped (44.1 kHz; the ignored
+    track already holds its ~5 s delayed start). See notes.md.
     """
 
-    def __init__(self, download_dir: str, tube_delay: bool = True):
+    def __init__(self, download_dir: str, tube_delay: bool = True, drift: str | None = "subject"):
+        if drift not in ("subject", "dataset", None):
+            raise ValueError(f"drift must be 'subject', 'dataset' or None, not {drift!r}")
         self.download_dir = download_dir
         self.delay = round(TUBE_DELAY * FS_MEG) if tube_delay else 0
+        self.drift = drift
         self.audio_dir = os.path.join(download_dir, "Set1", "Audio")
 
     def parse(self) -> Iterable[TrialRecord]:
@@ -53,8 +63,25 @@ class Schueller2024Adaptor:
                     condition=f"{speaker.lower()}-attended",
                     ns_type="meg",
                     stimulus=[self._stimulus(att, k, True), self._stimulus(ign, k, False)],
-                    neural_data_fn=_meg_loader(fif, bounds[k - 1] + self.delay, bounds[k]),
+                    neural_data_fn=self._meg_loader(fif, bounds[k - 1] + self.delay, bounds[k]),
                 )
+
+    def drift_of(self, raw: mne.io.BaseRaw) -> float:
+        """Drift (fraction, > 0: MEG clock fast) for one run, following self.drift."""
+        if self.drift is None:
+            return 0.0
+        table = _drift_table()
+        rows = table[table.meas_date == str(raw.info["meas_date"])]
+        if self.drift == "subject" and len(rows):
+            return float(rows.drift_ppm.median()) * 1e-6
+        return float(table.drift_ppm.median()) * 1e-6
+
+    def _meg_loader(self, fif: str, start: int, stop: int):
+        def _loader():
+            raw = _read(fif)
+            return crop_on_audio_clock(raw, start, min(stop, raw.n_times) - start, self.drift_of(raw))
+
+        return _loader
 
     def wav(self, book: int, chapter: int) -> str:
         stream = "attended_speech" if book in (1, 3) else "ignored_speech"
@@ -81,13 +108,10 @@ def _read(fif: str) -> mne.io.BaseRaw:
     return mne.io.read_raw_fif(fif, preload=False, verbose="ERROR")
 
 
-def _meg_loader(fif: str, start: int, stop: int):
-    def _loader():
-        raw = _read(fif)
-        stop_ = min(stop, raw.n_times)
-        return raw.copy().crop(start / FS_MEG, (stop_ - 1) / FS_MEG).load_data()
-
-    return _loader
+@lru_cache(maxsize=1)
+def _drift_table() -> pd.DataFrame:
+    d = pd.read_csv(DRIFT_CSV)
+    return d[d.n_windows >= MIN_WINDOWS]
 
 
 ADAPTOR = Schueller2024Adaptor
