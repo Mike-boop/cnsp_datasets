@@ -134,7 +134,25 @@ Findings that explain `adaptor.py`. Review scripts and results: `tmp/review/libr
 - Word-onset evoked field (`libribrain_wordERF.py`, sub-0 Sherlock1 ses-1 raw, 2836 words, gradiometers 1-20 Hz): GFP
   peaks at 195 ms (and ~320 ms), about twice the random-onset maximum: `timemeg` is on the MEG clock.
 
-## 9. Upstream issues
+## 9. From the paper (Mantegna et al. 2026, arXiv 2608.25204, appendix B)
+- Participants: 33 (sub-0 deep, sub-1-32 broad); 16 native English speakers, 17 fluent L2 speakers. sub-1-32 heard
+  chapters 11 and 12 of A Study in Scarlet in one ~1 h session (short break between chapters).
+- Stimuli: converted to wav and resampled to 48 kHz (SoX) for presentation; segmented into utterances by voice
+  activity detection in Praat (59 dB intensity threshold, >= 600 ms) and corrected by hand; word/phoneme timings by
+  Gentle forced alignment on the segments. Presentation with PsychoPy; a parallel-port trigger at each segment onset
+  ("millisecond temporal accuracy"): the STI101 code 20 of section 4.
+- Sound delivery: "non-metallic air tube earphones (Aero Technologies)", ~70 dB SPL; the tube delay is not reported
+  and not corrected.
+- Acquisition: MEGIN Triux Neo, 1000 Hz, online 0.01-330 Hz (BIDS sidecars: 0.03 Hz); five HPI coils (continuous);
+  bipolar EOG (EOG001 horizontal, outer canthi; EOG002 vertical, left eye), ECG003 (clavicle-hip), EMG (jaw, lower
+  lip, chin; one or three EMG channels depending on the session). Kept by the adaptor.
+- h5 preprocessing: head movement correction and realignment to a common reference head position, bad channels
+  interpolated, non-extended SSS, 50/100 Hz notch, 0.1-125 Hz zero-phase Butterworth, 250 Hz. The common reference
+  head position is not in the files (so the h5 trials carry no device-to-head transform).
+- Standard splits: Sherlock1 ses-11 validation, ses-12 test (sub-0); for sub-1-32 the first half of ses-11 for
+  training (the released halves/quarters follow from the competition).
+
+## 10. Upstream issues
 - Sherlock1 sub-0 ses-11: the BIDS `*_events.tsv`, `*_channels.tsv` and `*_meg.json` are 0-byte files on Hugging Face,
   and the folder holds `sub-0_ses-1_coordsystem.json` (session 1's name). The events exist in
   `derivatives/events/` as `run-2`, while the raw FIF is `run-1`.
