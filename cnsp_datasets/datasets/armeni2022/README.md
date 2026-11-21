@@ -47,6 +47,7 @@ sessions, with head casts to keep the head still.
   TextGrids here come from another participant (same wav, same timings).
 - Short slow-drift artefacts in five runs (listed in the paper and `notes.md`); a high-pass at ~0.5 Hz removes them.
 - Sound came through plastic tubes from a transducer; the acoustic delay is not reported and not corrected.
-- Eye tracking (EyeLink) is in the download but not carried into the standardised data.
+- The EyeLink's own files (`eyelink/*.asc`: blink and saccade events) are not carried; its gaze and pupil signals are,
+  as the MEG channels `UADC005`-`UADC007`.
 
 Details: `notes.md`.
