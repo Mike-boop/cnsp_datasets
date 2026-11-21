@@ -1,5 +1,20 @@
 {
   "datasets": {
+    "jehn2024": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.10980117"
+      ],
+      "description": "Jehn et al. (2024) dataset",
+      "url": "https://zenodo.org/records/10980117"
+    },
+    "mai2023": {
+      "source": "openneuro",
+      "identifiers": [
+        "10.18112/openneuro.ds004703.v1.1.0"
+      ],
+      "description": "Mai et al. (2023) dataset"
+    },
       "accou2023": {
       "source": "dataverse",
       "identifiers": ["10.48804/K3VSND"],
@@ -101,11 +116,47 @@
       "identifiers": ["10.5281/zenodo.4518754"],
       "description": "Narayanan et al. (2021) dataset"
     },
+    "polonenko2021": {
+      "source": "dryad",
+      "identifiers": ["10.5061/dryad.12jm63xwd"],
+      "description": "Polonenko & Maddox (2021) eLife peaky speech dataset (pilot + 3 experiments; zips; Dryad needs DRYAD_TOKEN)",
+      "url": "https://datadryad.org/dataset/doi:10.5061/dryad.12jm63xwd"
+    },
+    "polonenko2024": {
+      "source": "openneuro",
+      "identifiers": ["10.18112/openneuro.ds005340.v1.0.4"],
+      "description": "Polonenko & Maddox (2024) peaky speech at shifted f0s (peaky_pitchshift)",
+      "url": "https://openneuro.org/datasets/ds005340/versions/1.0.4"
+    },
+    "polonenko2025": {
+      "source": "openneuro",
+      "identifiers": ["10.18112/openneuro.ds005408.v1.0.1"],
+      "description": "Polonenko & Maddox (2025) peaky speech with 1-5 talkers (peaky_snr)",
+      "url": "https://openneuro.org/datasets/ds005408/versions/1.0.1"
+    },
+    "polonenko2026": {
+      "source": "openneuro",
+      "identifiers": ["10.18112/openneuro.ds008065.v1.0.1"],
+      "description": "Polonenko & Eisenreich (2026) multiband peaky speech ABRs (3 experiments)",
+      "url": "https://openneuro.org/datasets/ds008065/versions/1.0.1"
+    },
     "schueller2024": {
       "source": "zenodo",
       "identifiers": ["10.5281/zenodo.12793944", "10.5281/zenodo.12794769", "10.5281/zenodo.12794808"],
       "description": "Schueller et al. (2024) dataset",
       "url": "https://zenodo.org/records/12793944"
+    },
+    "shan2024": {
+      "source": "nemar",
+      "identifiers": ["on004356@v1.0.0"],
+      "description": "Shan et al. (2024) music vs speech ABRs (NEMAR mirror of OpenNeuro ds004356)",
+      "url": "https://nemar.org/dataset/on004356"
+    },
+    "stoll2025": {
+      "source": "openneuro",
+      "identifiers": ["10.18112/openneuro.ds006434.v1.2.0"],
+      "description": "Stoll et al. (2025) selective attention, subcortical and cortical EEG (3 experiments)",
+      "url": "https://openneuro.org/datasets/ds006434/versions/1.2.0"
     },
     "varano2022": {
       "source": "zenodo",
