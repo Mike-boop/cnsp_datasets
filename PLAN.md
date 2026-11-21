@@ -247,6 +247,15 @@ HPC server). Data is never kept long term here.
 - Enforced by `.claude/hooks/storage_guard.py` (PreToolUse): blocks writes outside `tmp/` under the datasets
   root, and blocks download/standardise commands while `tmp/` exceeds 1 TB.
 
+### Zenodo usage limits (promised to the Zenodo moderators, 2026-11-21)
+Zenodo blocked this server (HTTP 403, "unusual traffic") on 2026-11-21. The user promised:
+- **at most three concurrent file downloads** from Zenodo at a time (`download_dataset` caps `max_workers` at 3
+  for Zenodo sources; keep any other script at <= 3 too);
+- **at most 1-2 Zenodo datasets downloaded per day** (log each one, with the date, in the review handover so
+  other sessions can count).
+Check access with a single request before starting; never work around a block (no user-agent changes, proxies or
+other hosts).
+
 ## 8. Future work
 
 - **BIDS re-uploads of weissbart2019 and etard2019** (the user moderates their Zenodo records): EEG-BIDS with the

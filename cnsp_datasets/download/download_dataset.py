@@ -9,6 +9,7 @@ from cnsp_datasets.download import download_helpers
 from cnsp_datasets.download.data_downloader import DataDownloader
 
 REGISTRY_PATH = resources.files("cnsp_datasets.download").joinpath("dataset_registry.json")
+ZENODO_MAX_WORKERS = 3  # promised to the Zenodo moderators (2026-11-21); see PLAN.md section 7
 
 ### First define a structure for the entries in dataset_registry.json
 
@@ -130,6 +131,8 @@ def download_dataset(
         max_workers = os.cpu_count() or 4
 
     ds = registry[dataset_name]
+    if ds.source == "zenodo":
+        max_workers = min(max_workers, ZENODO_MAX_WORKERS)
     downloadables = ds.resolve_downloadables()
 
     download_manager = DataDownloader(
