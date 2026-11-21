@@ -162,9 +162,11 @@ coherence results (`tmp/review/coherence_peaky/`).
 
 ## 13b. Validation, cortical montage (`stoll2025_cortex`, 2026-11-21; 32 channels, average reference)
 `tmp/review/stoll2025_cortex/validation.{json,png}`. exp1 (28) and exp2 (24) only (exp3 has no cortical files):
-52 subjects, 4786 trials, native rates (1 kHz exp1, 500 Hz exp2). Tiers low and mlr (500 Hz cannot carry the
-brainstem tier). **Tier mlr**: low r 0.038 (52/52 significant), TRF peak 109 ms; MLR SNR 1.52 (62%), peak
-20-30 ms. The validator's figure failed on the mixed lag grids (1 kHz vs 500 Hz); fixed in `validate/report.py`
+52 subjects, 4786 trials, native rates (1 kHz exp1, 500 Hz exp2). **Tier brainstem**: low r 0.038 (52/52
+significant), TRF peak 109 ms; MLR SNR 1.52 (62%), peak 20-30 ms; brainstem SNR 1.28 (23/52 = 44%; exp1 1.26,
+12/28; exp2 at 500 Hz 1.31, 11/24; run separately: `tmp/review/stoll2025_cortex/brainstem/`). The 30-250 Hz TRF
+has a peak at ~8 ms (wave V window) but its largest peaks are at 15 and 20-30 ms (middle-latency components in
+the band); about half the subcortical montage's SNR (2.55, 77%). The validator's figure failed on the mixed lag grids (1 kHz vs 500 Hz); fixed in `validate/report.py`
 (interpolation onto the finest grid). The low tier's jitter/drift estimates (SD 320 ms, 141 ppm) are noise
 (as in the other datasets), not timing problems.
 

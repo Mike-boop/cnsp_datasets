@@ -42,7 +42,9 @@ Cortical: 52 participants (exp1, exp2), 4786 trials.
 ## Validation
 - **Subcortical:** brainstem tier overall (SNR 2.55, 77% of 66 subjects) and in all conditions except
   `passive-fW` (low tier).
-- **Cortical:** middle-latency tier (low r 0.038, 52/52 subjects; MLR SNR 1.52).
+- **Cortical:** brainstem tier, but weakly. Low r 0.038 (52/52 subjects); MLR SNR 1.52; brainstem SNR 1.28
+  (44% of subjects), with a wave V peak at ~8 ms smaller than the middle-latency peaks at 15-30 ms. Use the
+  subcortical montage for brainstem analyses.
 
 ## Caveats
 - **Polarity:**
