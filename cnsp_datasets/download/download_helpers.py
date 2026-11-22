@@ -10,7 +10,6 @@ import tarfile
 import requests
 import httpx
 
-from bs4 import BeautifulSoup
 from pathlib import Path
 from urllib.parse import quote, urlparse
 
@@ -189,65 +188,51 @@ def doi_to_downloadables_dataverse(doi, dataverse_server="https://rdr.kuleuven.b
 
     return file_data
 
-def doi_to_downloadables_drum(doi):
-
+def id_to_downloadables_drum(item_uuid, api="https://api.drum.lib.umd.edu/server/api"):
     """
-    Get a list of downloadable files from a DSpace DOI.
-
-    Example doi string format: "10.13016/M2599Z52H"
-
-    Note:
-    This function scrapes the HTML page for the DOI to find file links, then queries the Drum API for metadata including checksums.
-    This approach may break if the Drum website structure changes; we should at a minimum add informative error-handling to indicate
-    if this has happened (prompting an update to our code).
-
-    DSpace has an API but the UMD Drum requires an access token for it, which we typically do not have. My best guess at how the API could
-    be used (with an access token) is provided in a separate function in this file.
+    Files of a UMD DRUM (DSpace 7) item from its public REST API, e.g. "79afc7aa-560d-442d-b201-ab63e7f1e69f" (the id
+    in https://drum.lib.umd.edu/items/<id>). Only the ORIGINAL bundle (not thumbnails or extracted text).
     """
+    response = requests.get(f"{api}/core/items/{item_uuid}/bundles", timeout=60)
+    response.raise_for_status()
+    original = next(b for b in response.json()["_embedded"]["bundles"] if b["name"] == "ORIGINAL")
 
-    dataset_url = f"https://doi.org/{doi.strip('/')}"
-    response = requests.get(dataset_url, allow_redirects=True)
+    bitstreams = []
+    url = original["_links"]["bitstreams"]["href"] + "?size=100"
+    while url:  # the bitstream listing is paginated
+        response = requests.get(url, timeout=60)
+        response.raise_for_status()
+        page = response.json()
+        bitstreams += page["_embedded"]["bitstreams"]
+        url = page["_links"].get("next", {}).get("href")
+    return [
+        {
+            "name": b["name"],
+            "url": b["_links"]["content"]["href"],
+            "size": b["sizeBytes"],
+            "checksum": f"{b['checkSum']['checkSumAlgorithm'].lower()}:{b['checkSum']['value']}",
+        }
+        for b in bitstreams
+    ]
 
-    if response.status_code != 200:
-        raise Exception(f"Failed to retrieve metadata for DOI {doi}: {response.status_code}")
-    
-    file_data = []
-    
-    soup = BeautifulSoup(response.text, 'html.parser')
-    for link in soup.find_all("link", rel="item"):
 
-        url = link.get("href")
-
-        if "/bitstreams/" not in url:
-            continue
-
-        file_uuid = url.split("/")[-2]
-
-        drum_api_url = f"https://api.drum.lib.umd.edu/server/api/core/bitstreams/{file_uuid}"
-
-        response = requests.get(drum_api_url)
-        if response.status_code != 200:
-            raise Exception(f"Failed to retrieve metadata for URL {drum_api_url}: {response.status_code}")
-        
-        metadata = response.json()
-
-        name = metadata["metadata"]["dc.title"][0]["value"]
-
-        if "checkSum" in metadata["metadata"]:
-            checksum = ":".join([
-                metadata["metadata"]["checkSum"]["checkSumAlgorithm"],
-                metadata["metadata"]["checkSum"]["value"]
-            ])
-        else:
-            checksum = None
-
-        file_data.append({
-            "name": name,
-            "url": url,
-            "checksum": checksum
-        })
-
-    return file_data
+def id_to_downloadables_eprints(eprint_id, server="https://eprints.soton.ac.uk"):
+    """
+    Public files of an EPrints record (e.g. the University of Southampton repository) from its JSON export, e.g.
+    "438737" (the id in https://eprints.soton.ac.uk/id/eprint/<id>).
+    """
+    response = requests.get(f"{server}/cgi/export/eprint/{eprint_id}/JSON/eprint-{eprint_id}.js", timeout=60)
+    response.raise_for_status()
+    return [
+        {
+            "name": f["filename"],
+            "url": f["uri"],
+            "size": int(f["filesize"]),
+            "checksum": f"{f['hash_type'].lower()}:{f['hash']}" if f.get("hash") else None,
+        }
+        for doc in response.json().get("documents", []) if doc.get("security") == "public"
+        for f in doc.get("files", [])
+    ]
 
 def id_to_downloadables_deepblue(id):
     """
@@ -558,69 +543,6 @@ async def _walk_openneuro_async(dataset_id, tag, endpoint):
                 pending.extend(sub_branches)
 
     return all_leaves
-
-### DSpace helpers
-### UMD Drum is a DSpace repository, and we could use the corresponding API to get download links to the dataset files.
-### At present, an access token is required to use the API, which we do not have. Therefore, we are web-scraping the HTML
-### page for the DOI (see above).
-
-def drum_doi_to_uuid(doi):
-    """
-    Resolve a DOI and extract the DRUM UUID from the redirected URL.
-
-    Args:
-        doi (str): A DOI string (e.g., '10.13016/M2599Z52H')
-
-    Returns:
-        str: The UUID of the DRUM item.
-    """
-    doi_url = f"https://doi.org/{doi}"
-    try:
-        response = requests.get(doi_url, allow_redirects=True)
-        final_url = response.url
-        parsed = urlparse(final_url)
-        if "items" in parsed.path:
-            uuid = parsed.path.split("/")[-1]
-            return uuid
-        else:
-            raise ValueError("UUID not found in the redirected URL.")
-    except Exception as e:
-        raise RuntimeError(f"Failed to resolve DOI: {e}")
-    
-def doi_to_downloadables_dspace_api(doi, dspace_server="https://api.drum.lib.umd.edu"):
-    """
-    Get a list of downloadable files from a DSpace DOI.
-
-    Example doi string format: "10.13016/M2599Z52H"
-
-    NOTE drum requires authentication to access the API... we can just scrape the html instead I guess.
-    """
-
-    # Resolve the DOI to get the UUID
-    uuid = drum_doi_to_uuid(doi)
-
-    # Construct the URL for the DSpace item
-    dspace_api_url = f"{dspace_server}/server/api/"
-
-    bitstreams_url = f"https://api.drum.lib.umd.edu/server/api/core/bitstreams/{uuid}"
-
-    response = requests.get(bitstreams_url)
-    if response.status_code != 200:
-        raise Exception(f"Failed to retrieve bitstreams: {response.status_code}")
-    
-    bitstreams = response.json()['_embedded']['bitstreams']
-
-    # Step 3: Extract file names and download URLs
-    file_data = []
-    for bitstream in bitstreams:
-        file_info = {
-            "name": bitstream['name'],
-            "url": f"{dspace_api_url}/core/bitstreams/{bitstream['uuid']}/content"
-        }
-        file_data.append(file_info)
-
-    return file_data
-
 
 def resolve_doi(doi):
     url = f"https://doi.org/{doi}"

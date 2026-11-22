@@ -94,6 +94,8 @@ class TestResolveDownloadables:
             "dataverse": "cnsp_datasets.download.download_helpers.doi_to_downloadables_dataverse",
             "openneuro": "cnsp_datasets.download.download_helpers.doi_to_downloadables_openneuro",
             "deepblue": "cnsp_datasets.download.download_helpers.id_to_downloadables_deepblue",
+            "drum": "cnsp_datasets.download.download_helpers.id_to_downloadables_drum",
+            "eprints": "cnsp_datasets.download.download_helpers.id_to_downloadables_eprints",
         }
         dummy_file = [{"url": "http://x.com/f", "name": "f.mat", "checksum": None}]
 

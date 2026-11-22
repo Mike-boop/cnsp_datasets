@@ -323,3 +323,47 @@ class TestScidbListing:
         assert len(files) == 46
         assert all(f["checksum"].startswith("md5:") and f["url"].startswith("https://") for f in files)
         assert "PassiveListening/sub-01.zip" in {f["name"] for f in files}
+
+
+class TestDrum:
+    def _json(self, payload):
+        return MagicMock(status_code=200, json=MagicMock(return_value=payload))
+
+    @staticmethod
+    def _bitstream(name, uuid):
+        return {"name": name, "sizeBytes": 5, "checkSum": {"checkSumAlgorithm": "MD5", "value": "abc"},
+                "_links": {"content": {"href": f"https://api/core/bitstreams/{uuid}/content"}}}
+
+    @patch("cnsp_datasets.download.download_helpers.requests.get")
+    def test_original_bundle_all_pages(self, mock_get):
+        bundles = {"_embedded": {"bundles": [
+            {"name": "THUMBNAIL", "_links": {"bitstreams": {"href": "https://api/thumbs"}}},
+            {"name": "ORIGINAL", "_links": {"bitstreams": {"href": "https://api/orig"}}},
+        ]}}
+        page1 = {"_embedded": {"bitstreams": [self._bitstream("S01.zip", "u1")]},
+                 "_links": {"next": {"href": "https://api/orig?page=1&size=100"}}}
+        page2 = {"_embedded": {"bitstreams": [self._bitstream("S02.zip", "u2")]}, "_links": {}}
+        mock_get.side_effect = [self._json(bundles), self._json(page1), self._json(page2)]
+
+        files = download_helpers.id_to_downloadables_drum("item-uuid")
+
+        assert [f["name"] for f in files] == ["S01.zip", "S02.zip"]
+        assert files[0] == {"name": "S01.zip", "url": "https://api/core/bitstreams/u1/content", "size": 5,
+                            "checksum": "md5:abc"}
+        assert "items/item-uuid/bundles" in mock_get.call_args_list[0].args[0]
+        assert mock_get.call_args_list[1].args[0] == "https://api/orig?size=100"
+
+
+class TestEprints:
+    @patch("cnsp_datasets.download.download_helpers.requests.get")
+    def test_public_files_with_md5(self, mock_get):
+        mock_get.return_value = MagicMock(status_code=200, json=MagicMock(return_value={"documents": [
+            {"security": "public", "files": [{"filename": "a.bdf", "filesize": "12", "hash_type": "MD5",
+                                              "hash": "abc", "uri": "https://e/id/file/1"}]},
+            {"security": "staffonly", "files": [{"filename": "b.zip", "filesize": "3", "uri": "https://e/id/file/2"}]},
+        ]}))
+
+        files = download_helpers.id_to_downloadables_eprints("438737")
+
+        assert files == [{"name": "a.bdf", "url": "https://e/id/file/1", "size": 12, "checksum": "md5:abc"}]
+        assert "/cgi/export/eprint/438737/JSON/" in mock_get.call_args.args[0]
