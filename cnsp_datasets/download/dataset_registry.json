@@ -284,9 +284,9 @@
     "chen2026": {
       "source": "scidb",
       "identifiers": ["chen2026/scidb_files.json"],
-      "description": "ChineseEEG-2 (Chen et al., 2026), Science Data Bank 10.57760/sciencedb.chnneuro.00001 V5; raw EEG and materials (the filtered/preprocessed derivatives and embeddings are excluded)",
+      "description": "ChineseEEG-2 (Chen et al., 2026), Science Data Bank 10.57760/sciencedb.chnneuro.00001 V5; PassiveListening raw EEG and materials (derivatives, embeddings and the ReadingAloud part are excluded; user 2026-11-22)",
       "url": "https://www.scidb.cn/en/detail?dataSetId=cf79be5a415c488b9ebbee97e77a2f16",
-      "exclude": ["*/derivatives/*", "materials&embeddings/*_embedding.zip"]
+      "exclude": ["*/derivatives/*", "materials&embeddings/*_embedding.zip", "ReadingAloud/*"]
     },
     "chen2026_audio": {
       "source": "huggingface",
