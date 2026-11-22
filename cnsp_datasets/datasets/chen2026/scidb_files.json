@@ -1,0 +1,631 @@
+{
+  "dataset": "ChineseEEG-2",
+  "doi": "10.57760/sciencedb.chnneuro.00001",
+  "landing_page": "https://www.scidb.cn/en/detail?dataSetId=cf79be5a415c488b9ebbee97e77a2f16",
+  "version": "V5",
+  "license": "CC0",
+  "total_size_bytes": 102512204563,
+  "n_files": 46,
+  "audio_repo": "https://huggingface.co/datasets/moriartyJM/ChineseEEG-2_audio",
+  "note": "Listing made by hand from the landing page (Science Data Bank has no anonymous listing API). download_url works without login and supports ranges (tested 2026-11-21); md5 checked after download.",
+  "tree": {
+    "PassiveListening": {
+      "derivatives": {
+        "filtered": {
+          "sub-01.zip": {
+            "size_bytes": 1441075394,
+            "md5": "e22639e80b6d13636e95d69e73fb0141",
+            "file_id": "2d7d91ff22408c7b50892481c9d659b8",
+            "download_url": "https://china.scidb.cn/download?fileId=2d7d91ff22408c7b50892481c9d659b8"
+          },
+          "sub-02.zip": {
+            "size_bytes": 1408465108,
+            "md5": "8daaad445faef0a4c61049ba246dc9c5",
+            "file_id": "ae7cca2e7e49eb04a04b34867dd0de99",
+            "download_url": "https://china.scidb.cn/download?fileId=ae7cca2e7e49eb04a04b34867dd0de99"
+          },
+          "sub-03.zip": {
+            "size_bytes": 1394979319,
+            "md5": "dc316e985ac38f92b2e6a330be65be5b",
+            "file_id": "84a4b7ea24e70f919bd80e956ae3a1af",
+            "download_url": "https://china.scidb.cn/download?fileId=84a4b7ea24e70f919bd80e956ae3a1af"
+          },
+          "sub-04.zip": {
+            "size_bytes": 1520435626,
+            "md5": "8451b1558e05ef97850089c8c110a19e",
+            "file_id": "305ff17061ec0b0ed1590d6874cecb81",
+            "download_url": "https://china.scidb.cn/download?fileId=305ff17061ec0b0ed1590d6874cecb81"
+          },
+          "sub-05.zip": {
+            "size_bytes": 1562499425,
+            "md5": "64e7805981fd22bed4d67f3dcaba1940",
+            "file_id": "96cb76f2dea310c18bcfc0ceab83c17b",
+            "download_url": "https://china.scidb.cn/download?fileId=96cb76f2dea310c18bcfc0ceab83c17b"
+          },
+          "sub-06.zip": {
+            "size_bytes": 1329029701,
+            "md5": "9eac45e92d88a18a8991773f32898cd3",
+            "file_id": "fe686ac280390e0c73904570d6694eb0",
+            "download_url": "https://china.scidb.cn/download?fileId=fe686ac280390e0c73904570d6694eb0"
+          },
+          "sub-07.zip": {
+            "size_bytes": 1519074510,
+            "md5": "72c7e1cfc8453cd9307d5b53338a8e2c",
+            "file_id": "f65ae4847e1bd3ae657a0718cbc0bd2e",
+            "download_url": "https://china.scidb.cn/download?fileId=f65ae4847e1bd3ae657a0718cbc0bd2e"
+          },
+          "sub-08.zip": {
+            "size_bytes": 1609176368,
+            "md5": "008dc3092cc802bc4b1284c853814ab1",
+            "file_id": "c67f1c6d0fd93b139751a66afab57fc1",
+            "download_url": "https://china.scidb.cn/download?fileId=c67f1c6d0fd93b139751a66afab57fc1"
+          }
+        },
+        "preprocessed": {
+          "sub-01.zip": {
+            "size_bytes": 1726631268,
+            "md5": "484dde6429a79fec650760344fae76bd",
+            "file_id": "f01f9f4f7d097f3c4a9442d8192b6a0f",
+            "download_url": "https://china.scidb.cn/download?fileId=f01f9f4f7d097f3c4a9442d8192b6a0f"
+          },
+          "sub-02.zip": {
+            "size_bytes": 1707941237,
+            "md5": "3fc1e94a3cd59c686700692845cf350d",
+            "file_id": "f52d93a839553d084935ca164b022dc1",
+            "download_url": "https://china.scidb.cn/download?fileId=f52d93a839553d084935ca164b022dc1"
+          },
+          "sub-03.zip": {
+            "size_bytes": 1693507315,
+            "md5": "aa7f006c5b6ae5e3aab337b158b53d38",
+            "file_id": "2acebee4ae60cbedd7351a6cce12cbde",
+            "download_url": "https://china.scidb.cn/download?fileId=2acebee4ae60cbedd7351a6cce12cbde"
+          },
+          "sub-04.zip": {
+            "size_bytes": 1737283253,
+            "md5": "99d434dca8a4ccf7631b28dd711e62f5",
+            "file_id": "5a95136c2aa1a0bd93417ca783fb7504",
+            "download_url": "https://china.scidb.cn/download?fileId=5a95136c2aa1a0bd93417ca783fb7504"
+          },
+          "sub-05.zip": {
+            "size_bytes": 1767656499,
+            "md5": "02a6a4f75a2fb331f24423135ae5c241",
+            "file_id": "1691e60397752e72f72ba951316f73e4",
+            "download_url": "https://china.scidb.cn/download?fileId=1691e60397752e72f72ba951316f73e4"
+          },
+          "sub-06.zip": {
+            "size_bytes": 1770762770,
+            "md5": "5bd7aeeaf549f9a37106e3819fcaad35",
+            "file_id": "9522d836d8194fbd53e3b31b3f35eaae",
+            "download_url": "https://china.scidb.cn/download?fileId=9522d836d8194fbd53e3b31b3f35eaae"
+          },
+          "sub-07.zip": {
+            "size_bytes": 1916665664,
+            "md5": "819eaf0301aef2bc25f1ba88788eb02c",
+            "file_id": "d65c7800373127c8781a57bb3e6b93b3",
+            "download_url": "https://china.scidb.cn/download?fileId=d65c7800373127c8781a57bb3e6b93b3"
+          },
+          "sub-08.zip": {
+            "size_bytes": 2029322716,
+            "md5": "b81c3d61531c2c4300c7a01cd4650288",
+            "file_id": "fedad0ec6c99bfde660c503fa5fe902a",
+            "download_url": "https://china.scidb.cn/download?fileId=fedad0ec6c99bfde660c503fa5fe902a"
+          }
+        }
+      },
+      "dataset_description.json": {
+        "size_bytes": 208,
+        "md5": "259dcd0b77f9004c7de42e2eb7d705e3",
+        "file_id": "4ba5ca583bf253e23435a3caba3fbde6",
+        "download_url": "https://china.scidb.cn/download?fileId=4ba5ca583bf253e23435a3caba3fbde6"
+      },
+      "participants.json": {
+        "size_bytes": 440,
+        "md5": "6d3ed5c9381faec74bc86e0c9e75cc7e",
+        "file_id": "518b023f05ba129529ec990a3b3bc10c",
+        "download_url": "https://china.scidb.cn/download?fileId=518b023f05ba129529ec990a3b3bc10c"
+      },
+      "participants.tsv": {
+        "size_bytes": 116,
+        "md5": "45f36d1df495f82d2f8f9d2c0987996d",
+        "file_id": "57853b62fccbd9831e9c56370e4d7702",
+        "download_url": "https://china.scidb.cn/download?fileId=57853b62fccbd9831e9c56370e4d7702"
+      },
+      "sub-01.zip": {
+        "size_bytes": 5874616455,
+        "md5": "f6a9fa10660fa5e6e1486caee89e1343",
+        "file_id": "5e7fbcd5d5424a9fa8cb65352b844070",
+        "download_url": "https://china.scidb.cn/download?fileId=5e7fbcd5d5424a9fa8cb65352b844070"
+      },
+      "sub-02.zip": {
+        "size_bytes": 5725694076,
+        "md5": "fb2e3eeb007fceaaa9ee28884e53da4b",
+        "file_id": "1645a2dcb69922b7b796593efed6e3ce",
+        "download_url": "https://china.scidb.cn/download?fileId=1645a2dcb69922b7b796593efed6e3ce"
+      },
+      "sub-03.zip": {
+        "size_bytes": 5684810536,
+        "md5": "870b22828eab9abf877263ef09870aaf",
+        "file_id": "fc69b78b63448b96b117b3cc05bd5953",
+        "download_url": "https://china.scidb.cn/download?fileId=fc69b78b63448b96b117b3cc05bd5953"
+      },
+      "sub-04.zip": {
+        "size_bytes": 6002317474,
+        "md5": "04870648791a4ec669901abe492e27e1",
+        "file_id": "992e0eeebf0d8b4cd1fd7f349ea0e7ba",
+        "download_url": "https://china.scidb.cn/download?fileId=992e0eeebf0d8b4cd1fd7f349ea0e7ba"
+      },
+      "sub-05.zip": {
+        "size_bytes": 6280264605,
+        "md5": "083716938a32671b3272b3ed1ce2b580",
+        "file_id": "a8b83fd780bd29e0831e0fe7e7de19d7",
+        "download_url": "https://china.scidb.cn/download?fileId=a8b83fd780bd29e0831e0fe7e7de19d7"
+      },
+      "sub-06.zip": {
+        "size_bytes": 5439294049,
+        "md5": "7dc3b80e81a9425532653f0d628f164b",
+        "file_id": "6996f9453d1d3d5bcc7a56bf55ac5cd4",
+        "download_url": "https://china.scidb.cn/download?fileId=6996f9453d1d3d5bcc7a56bf55ac5cd4"
+      },
+      "sub-07.zip": {
+        "size_bytes": 6159375159,
+        "md5": "8afbec19f60a7f3cf374da226ebc1183",
+        "file_id": "ceddcb58987569aa158f1ddf307b1543",
+        "download_url": "https://china.scidb.cn/download?fileId=ceddcb58987569aa158f1ddf307b1543"
+      },
+      "sub-08.zip": {
+        "size_bytes": 6562083124,
+        "md5": "c53e9b38bcde586a060214b44b543cee",
+        "file_id": "82f4ba3c2eafe4ad6fe391a119902a24",
+        "download_url": "https://china.scidb.cn/download?fileId=82f4ba3c2eafe4ad6fe391a119902a24"
+      }
+    },
+    "ReadingAloud": {
+      "derivatives": {
+        "filtered": {
+          "sub-f1.zip": {
+            "size_bytes": 2232280913,
+            "md5": "1ec762a6a6b58dc656d8c69c3ba3ee63",
+            "file_id": "96ebc69b417df42b7decf0df05052c32",
+            "download_url": "https://china.scidb.cn/download?fileId=96ebc69b417df42b7decf0df05052c32"
+          },
+          "sub-f2.zip": {
+            "size_bytes": 2192729240,
+            "md5": "bc2724409961cfe8cddf908dab2f2312",
+            "file_id": "9f9f172f9a843d5f3ce647639c903f10",
+            "download_url": "https://china.scidb.cn/download?fileId=9f9f172f9a843d5f3ce647639c903f10"
+          },
+          "sub-m1.zip": {
+            "size_bytes": 1645135131,
+            "md5": "d937617c120aba76021f78b9abce3c23",
+            "file_id": "38e8386438a77fafd6d8acd101dbf5b9",
+            "download_url": "https://china.scidb.cn/download?fileId=38e8386438a77fafd6d8acd101dbf5b9"
+          },
+          "sub-m2.zip": {
+            "size_bytes": 1689636564,
+            "md5": "1ab3f850200d742d1404404e5befb204",
+            "file_id": "01f1185213e6cdc70c490c09f1e03b45",
+            "download_url": "https://china.scidb.cn/download?fileId=01f1185213e6cdc70c490c09f1e03b45"
+          }
+        },
+        "preprocessed": {
+          "sub-f1.zip": {
+            "size_bytes": 3796237374,
+            "md5": "f3233169b338007e85ce436f80cc3d91",
+            "file_id": "c10980ca40b3908dad17a12b10c476b4",
+            "download_url": "https://china.scidb.cn/download?fileId=c10980ca40b3908dad17a12b10c476b4"
+          },
+          "sub-f2.zip": {
+            "size_bytes": 3709966370,
+            "md5": "5c866aa3f98d833fe9eed6a0827eaf07",
+            "file_id": "e417d1fa032bd936336962e91ccbad1f",
+            "download_url": "https://china.scidb.cn/download?fileId=e417d1fa032bd936336962e91ccbad1f"
+          },
+          "sub-m1.zip": {
+            "size_bytes": 2788379403,
+            "md5": "d0b6be529f6ffa5ea3b3d01aea027e0a",
+            "file_id": "d5465150e236ee7d8f895fb866e3945b",
+            "download_url": "https://china.scidb.cn/download?fileId=d5465150e236ee7d8f895fb866e3945b"
+          },
+          "sub-m2.zip": {
+            "size_bytes": 2870319208,
+            "md5": "1d5fcb532bc6330b6f43c20939565542",
+            "file_id": "3902ec71bb7a6e022b2687e773625eaa",
+            "download_url": "https://china.scidb.cn/download?fileId=3902ec71bb7a6e022b2687e773625eaa"
+          }
+        }
+      },
+      "dataset_description.json": {
+        "size_bytes": 219,
+        "md5": "81505027ad8986c534c384152eee52d6",
+        "file_id": "79d1b09acbc4a9512df0f84f79239ac2",
+        "download_url": "https://china.scidb.cn/download?fileId=79d1b09acbc4a9512df0f84f79239ac2"
+      },
+      "participants.json": {
+        "size_bytes": 460,
+        "md5": "f0664a006d7bfed5f5172033e01bf1e7",
+        "file_id": "204d85d99f6b1a4c701b9c6463cdfe56",
+        "download_url": "https://china.scidb.cn/download?fileId=204d85d99f6b1a4c701b9c6463cdfe56"
+      },
+      "participants.tsv": {
+        "size_bytes": 76,
+        "md5": "f1cfae70ce9d6feae8309bb8e5bd4802",
+        "file_id": "ec2726a16a653039e2dd36108521df79",
+        "download_url": "https://china.scidb.cn/download?fileId=ec2726a16a653039e2dd36108521df79"
+      },
+      "sub-f1.zip": {
+        "size_bytes": 2223466427,
+        "md5": "04d27d014947ae68e23d8204e6ad2949",
+        "file_id": "f26a5d49d41628d0c7b4bcb4b786faaf",
+        "download_url": "https://china.scidb.cn/download?fileId=f26a5d49d41628d0c7b4bcb4b786faaf"
+      },
+      "sub-f2.zip": {
+        "size_bytes": 2203845075,
+        "md5": "58bae1abd874ba645e05fd27dd09487a",
+        "file_id": "7e2ae5fc7d893a017d79864296ce7e22",
+        "download_url": "https://china.scidb.cn/download?fileId=7e2ae5fc7d893a017d79864296ce7e22"
+      },
+      "sub-m1.zip": {
+        "size_bytes": 1619264382,
+        "md5": "22072f19139e3860410ee3eb5d10b70e",
+        "file_id": "4d8047dcf55175992cb39c83d15f7d94",
+        "download_url": "https://china.scidb.cn/download?fileId=4d8047dcf55175992cb39c83d15f7d94"
+      },
+      "sub-m2.zip": {
+        "size_bytes": 1662924629,
+        "md5": "b1cd295056c32c18dfaeb546daa134c1",
+        "file_id": "46c06ec339de9a5db9d22d4d1cdc5f1d",
+        "download_url": "https://china.scidb.cn/download?fileId=46c06ec339de9a5db9d22d4d1cdc5f1d"
+      }
+    },
+    "materials&embeddings": {
+      "audio_embedding.zip": {
+        "size_bytes": 720300,
+        "md5": "7a324177226699e6c55b9259373f7550",
+        "file_id": "86bc7fb3e4ff3cd996dc0951bfca9185",
+        "download_url": "https://china.scidb.cn/download?fileId=86bc7fb3e4ff3cd996dc0951bfca9185"
+      },
+      "original_novel.zip": {
+        "size_bytes": 147872,
+        "md5": "dc27b2fcf227509d8d8da3a887dced73",
+        "file_id": "b8f0df41378c240936f1a437e0085f8e",
+        "download_url": "https://china.scidb.cn/download?fileId=b8f0df41378c240936f1a437e0085f8e"
+      },
+      "text_embedding.zip": {
+        "size_bytes": 14183150,
+        "md5": "39c19a6e168471f427b69e87ce5a5318",
+        "file_id": "8085d300669cbe96dd6b756102f1dc16",
+        "download_url": "https://china.scidb.cn/download?fileId=8085d300669cbe96dd6b756102f1dc16"
+      }
+    },
+    "README": {
+      "size_bytes": 5355,
+      "md5": "b078ed442e73df26498f363a7ccb7962",
+      "file_id": "9d3b04aa274412c25aeee5ba557a720b",
+      "download_url": "https://china.scidb.cn/download?fileId=9d3b04aa274412c25aeee5ba557a720b"
+    }
+  },
+  "files": [
+    {
+      "path": "PassiveListening/derivatives/filtered/sub-01.zip",
+      "size_bytes": 1441075394,
+      "md5": "e22639e80b6d13636e95d69e73fb0141",
+      "file_id": "2d7d91ff22408c7b50892481c9d659b8",
+      "download_url": "https://china.scidb.cn/download?fileId=2d7d91ff22408c7b50892481c9d659b8"
+    },
+    {
+      "path": "PassiveListening/derivatives/filtered/sub-02.zip",
+      "size_bytes": 1408465108,
+      "md5": "8daaad445faef0a4c61049ba246dc9c5",
+      "file_id": "ae7cca2e7e49eb04a04b34867dd0de99",
+      "download_url": "https://china.scidb.cn/download?fileId=ae7cca2e7e49eb04a04b34867dd0de99"
+    },
+    {
+      "path": "PassiveListening/derivatives/filtered/sub-03.zip",
+      "size_bytes": 1394979319,
+      "md5": "dc316e985ac38f92b2e6a330be65be5b",
+      "file_id": "84a4b7ea24e70f919bd80e956ae3a1af",
+      "download_url": "https://china.scidb.cn/download?fileId=84a4b7ea24e70f919bd80e956ae3a1af"
+    },
+    {
+      "path": "PassiveListening/derivatives/filtered/sub-04.zip",
+      "size_bytes": 1520435626,
+      "md5": "8451b1558e05ef97850089c8c110a19e",
+      "file_id": "305ff17061ec0b0ed1590d6874cecb81",
+      "download_url": "https://china.scidb.cn/download?fileId=305ff17061ec0b0ed1590d6874cecb81"
+    },
+    {
+      "path": "PassiveListening/derivatives/filtered/sub-05.zip",
+      "size_bytes": 1562499425,
+      "md5": "64e7805981fd22bed4d67f3dcaba1940",
+      "file_id": "96cb76f2dea310c18bcfc0ceab83c17b",
+      "download_url": "https://china.scidb.cn/download?fileId=96cb76f2dea310c18bcfc0ceab83c17b"
+    },
+    {
+      "path": "PassiveListening/derivatives/filtered/sub-06.zip",
+      "size_bytes": 1329029701,
+      "md5": "9eac45e92d88a18a8991773f32898cd3",
+      "file_id": "fe686ac280390e0c73904570d6694eb0",
+      "download_url": "https://china.scidb.cn/download?fileId=fe686ac280390e0c73904570d6694eb0"
+    },
+    {
+      "path": "PassiveListening/derivatives/filtered/sub-07.zip",
+      "size_bytes": 1519074510,
+      "md5": "72c7e1cfc8453cd9307d5b53338a8e2c",
+      "file_id": "f65ae4847e1bd3ae657a0718cbc0bd2e",
+      "download_url": "https://china.scidb.cn/download?fileId=f65ae4847e1bd3ae657a0718cbc0bd2e"
+    },
+    {
+      "path": "PassiveListening/derivatives/filtered/sub-08.zip",
+      "size_bytes": 1609176368,
+      "md5": "008dc3092cc802bc4b1284c853814ab1",
+      "file_id": "c67f1c6d0fd93b139751a66afab57fc1",
+      "download_url": "https://china.scidb.cn/download?fileId=c67f1c6d0fd93b139751a66afab57fc1"
+    },
+    {
+      "path": "PassiveListening/derivatives/preprocessed/sub-01.zip",
+      "size_bytes": 1726631268,
+      "md5": "484dde6429a79fec650760344fae76bd",
+      "file_id": "f01f9f4f7d097f3c4a9442d8192b6a0f",
+      "download_url": "https://china.scidb.cn/download?fileId=f01f9f4f7d097f3c4a9442d8192b6a0f"
+    },
+    {
+      "path": "PassiveListening/derivatives/preprocessed/sub-02.zip",
+      "size_bytes": 1707941237,
+      "md5": "3fc1e94a3cd59c686700692845cf350d",
+      "file_id": "f52d93a839553d084935ca164b022dc1",
+      "download_url": "https://china.scidb.cn/download?fileId=f52d93a839553d084935ca164b022dc1"
+    },
+    {
+      "path": "PassiveListening/derivatives/preprocessed/sub-03.zip",
+      "size_bytes": 1693507315,
+      "md5": "aa7f006c5b6ae5e3aab337b158b53d38",
+      "file_id": "2acebee4ae60cbedd7351a6cce12cbde",
+      "download_url": "https://china.scidb.cn/download?fileId=2acebee4ae60cbedd7351a6cce12cbde"
+    },
+    {
+      "path": "PassiveListening/derivatives/preprocessed/sub-04.zip",
+      "size_bytes": 1737283253,
+      "md5": "99d434dca8a4ccf7631b28dd711e62f5",
+      "file_id": "5a95136c2aa1a0bd93417ca783fb7504",
+      "download_url": "https://china.scidb.cn/download?fileId=5a95136c2aa1a0bd93417ca783fb7504"
+    },
+    {
+      "path": "PassiveListening/derivatives/preprocessed/sub-05.zip",
+      "size_bytes": 1767656499,
+      "md5": "02a6a4f75a2fb331f24423135ae5c241",
+      "file_id": "1691e60397752e72f72ba951316f73e4",
+      "download_url": "https://china.scidb.cn/download?fileId=1691e60397752e72f72ba951316f73e4"
+    },
+    {
+      "path": "PassiveListening/derivatives/preprocessed/sub-06.zip",
+      "size_bytes": 1770762770,
+      "md5": "5bd7aeeaf549f9a37106e3819fcaad35",
+      "file_id": "9522d836d8194fbd53e3b31b3f35eaae",
+      "download_url": "https://china.scidb.cn/download?fileId=9522d836d8194fbd53e3b31b3f35eaae"
+    },
+    {
+      "path": "PassiveListening/derivatives/preprocessed/sub-07.zip",
+      "size_bytes": 1916665664,
+      "md5": "819eaf0301aef2bc25f1ba88788eb02c",
+      "file_id": "d65c7800373127c8781a57bb3e6b93b3",
+      "download_url": "https://china.scidb.cn/download?fileId=d65c7800373127c8781a57bb3e6b93b3"
+    },
+    {
+      "path": "PassiveListening/derivatives/preprocessed/sub-08.zip",
+      "size_bytes": 2029322716,
+      "md5": "b81c3d61531c2c4300c7a01cd4650288",
+      "file_id": "fedad0ec6c99bfde660c503fa5fe902a",
+      "download_url": "https://china.scidb.cn/download?fileId=fedad0ec6c99bfde660c503fa5fe902a"
+    },
+    {
+      "path": "PassiveListening/dataset_description.json",
+      "size_bytes": 208,
+      "md5": "259dcd0b77f9004c7de42e2eb7d705e3",
+      "file_id": "4ba5ca583bf253e23435a3caba3fbde6",
+      "download_url": "https://china.scidb.cn/download?fileId=4ba5ca583bf253e23435a3caba3fbde6"
+    },
+    {
+      "path": "PassiveListening/participants.json",
+      "size_bytes": 440,
+      "md5": "6d3ed5c9381faec74bc86e0c9e75cc7e",
+      "file_id": "518b023f05ba129529ec990a3b3bc10c",
+      "download_url": "https://china.scidb.cn/download?fileId=518b023f05ba129529ec990a3b3bc10c"
+    },
+    {
+      "path": "PassiveListening/participants.tsv",
+      "size_bytes": 116,
+      "md5": "45f36d1df495f82d2f8f9d2c0987996d",
+      "file_id": "57853b62fccbd9831e9c56370e4d7702",
+      "download_url": "https://china.scidb.cn/download?fileId=57853b62fccbd9831e9c56370e4d7702"
+    },
+    {
+      "path": "PassiveListening/sub-01.zip",
+      "size_bytes": 5874616455,
+      "md5": "f6a9fa10660fa5e6e1486caee89e1343",
+      "file_id": "5e7fbcd5d5424a9fa8cb65352b844070",
+      "download_url": "https://china.scidb.cn/download?fileId=5e7fbcd5d5424a9fa8cb65352b844070"
+    },
+    {
+      "path": "PassiveListening/sub-02.zip",
+      "size_bytes": 5725694076,
+      "md5": "fb2e3eeb007fceaaa9ee28884e53da4b",
+      "file_id": "1645a2dcb69922b7b796593efed6e3ce",
+      "download_url": "https://china.scidb.cn/download?fileId=1645a2dcb69922b7b796593efed6e3ce"
+    },
+    {
+      "path": "PassiveListening/sub-03.zip",
+      "size_bytes": 5684810536,
+      "md5": "870b22828eab9abf877263ef09870aaf",
+      "file_id": "fc69b78b63448b96b117b3cc05bd5953",
+      "download_url": "https://china.scidb.cn/download?fileId=fc69b78b63448b96b117b3cc05bd5953"
+    },
+    {
+      "path": "PassiveListening/sub-04.zip",
+      "size_bytes": 6002317474,
+      "md5": "04870648791a4ec669901abe492e27e1",
+      "file_id": "992e0eeebf0d8b4cd1fd7f349ea0e7ba",
+      "download_url": "https://china.scidb.cn/download?fileId=992e0eeebf0d8b4cd1fd7f349ea0e7ba"
+    },
+    {
+      "path": "PassiveListening/sub-05.zip",
+      "size_bytes": 6280264605,
+      "md5": "083716938a32671b3272b3ed1ce2b580",
+      "file_id": "a8b83fd780bd29e0831e0fe7e7de19d7",
+      "download_url": "https://china.scidb.cn/download?fileId=a8b83fd780bd29e0831e0fe7e7de19d7"
+    },
+    {
+      "path": "PassiveListening/sub-06.zip",
+      "size_bytes": 5439294049,
+      "md5": "7dc3b80e81a9425532653f0d628f164b",
+      "file_id": "6996f9453d1d3d5bcc7a56bf55ac5cd4",
+      "download_url": "https://china.scidb.cn/download?fileId=6996f9453d1d3d5bcc7a56bf55ac5cd4"
+    },
+    {
+      "path": "PassiveListening/sub-07.zip",
+      "size_bytes": 6159375159,
+      "md5": "8afbec19f60a7f3cf374da226ebc1183",
+      "file_id": "ceddcb58987569aa158f1ddf307b1543",
+      "download_url": "https://china.scidb.cn/download?fileId=ceddcb58987569aa158f1ddf307b1543"
+    },
+    {
+      "path": "PassiveListening/sub-08.zip",
+      "size_bytes": 6562083124,
+      "md5": "c53e9b38bcde586a060214b44b543cee",
+      "file_id": "82f4ba3c2eafe4ad6fe391a119902a24",
+      "download_url": "https://china.scidb.cn/download?fileId=82f4ba3c2eafe4ad6fe391a119902a24"
+    },
+    {
+      "path": "ReadingAloud/derivatives/filtered/sub-f1.zip",
+      "size_bytes": 2232280913,
+      "md5": "1ec762a6a6b58dc656d8c69c3ba3ee63",
+      "file_id": "96ebc69b417df42b7decf0df05052c32",
+      "download_url": "https://china.scidb.cn/download?fileId=96ebc69b417df42b7decf0df05052c32"
+    },
+    {
+      "path": "ReadingAloud/derivatives/filtered/sub-f2.zip",
+      "size_bytes": 2192729240,
+      "md5": "bc2724409961cfe8cddf908dab2f2312",
+      "file_id": "9f9f172f9a843d5f3ce647639c903f10",
+      "download_url": "https://china.scidb.cn/download?fileId=9f9f172f9a843d5f3ce647639c903f10"
+    },
+    {
+      "path": "ReadingAloud/derivatives/filtered/sub-m1.zip",
+      "size_bytes": 1645135131,
+      "md5": "d937617c120aba76021f78b9abce3c23",
+      "file_id": "38e8386438a77fafd6d8acd101dbf5b9",
+      "download_url": "https://china.scidb.cn/download?fileId=38e8386438a77fafd6d8acd101dbf5b9"
+    },
+    {
+      "path": "ReadingAloud/derivatives/filtered/sub-m2.zip",
+      "size_bytes": 1689636564,
+      "md5": "1ab3f850200d742d1404404e5befb204",
+      "file_id": "01f1185213e6cdc70c490c09f1e03b45",
+      "download_url": "https://china.scidb.cn/download?fileId=01f1185213e6cdc70c490c09f1e03b45"
+    },
+    {
+      "path": "ReadingAloud/derivatives/preprocessed/sub-f1.zip",
+      "size_bytes": 3796237374,
+      "md5": "f3233169b338007e85ce436f80cc3d91",
+      "file_id": "c10980ca40b3908dad17a12b10c476b4",
+      "download_url": "https://china.scidb.cn/download?fileId=c10980ca40b3908dad17a12b10c476b4"
+    },
+    {
+      "path": "ReadingAloud/derivatives/preprocessed/sub-f2.zip",
+      "size_bytes": 3709966370,
+      "md5": "5c866aa3f98d833fe9eed6a0827eaf07",
+      "file_id": "e417d1fa032bd936336962e91ccbad1f",
+      "download_url": "https://china.scidb.cn/download?fileId=e417d1fa032bd936336962e91ccbad1f"
+    },
+    {
+      "path": "ReadingAloud/derivatives/preprocessed/sub-m1.zip",
+      "size_bytes": 2788379403,
+      "md5": "d0b6be529f6ffa5ea3b3d01aea027e0a",
+      "file_id": "d5465150e236ee7d8f895fb866e3945b",
+      "download_url": "https://china.scidb.cn/download?fileId=d5465150e236ee7d8f895fb866e3945b"
+    },
+    {
+      "path": "ReadingAloud/derivatives/preprocessed/sub-m2.zip",
+      "size_bytes": 2870319208,
+      "md5": "1d5fcb532bc6330b6f43c20939565542",
+      "file_id": "3902ec71bb7a6e022b2687e773625eaa",
+      "download_url": "https://china.scidb.cn/download?fileId=3902ec71bb7a6e022b2687e773625eaa"
+    },
+    {
+      "path": "ReadingAloud/dataset_description.json",
+      "size_bytes": 219,
+      "md5": "81505027ad8986c534c384152eee52d6",
+      "file_id": "79d1b09acbc4a9512df0f84f79239ac2",
+      "download_url": "https://china.scidb.cn/download?fileId=79d1b09acbc4a9512df0f84f79239ac2"
+    },
+    {
+      "path": "ReadingAloud/participants.json",
+      "size_bytes": 460,
+      "md5": "f0664a006d7bfed5f5172033e01bf1e7",
+      "file_id": "204d85d99f6b1a4c701b9c6463cdfe56",
+      "download_url": "https://china.scidb.cn/download?fileId=204d85d99f6b1a4c701b9c6463cdfe56"
+    },
+    {
+      "path": "ReadingAloud/participants.tsv",
+      "size_bytes": 76,
+      "md5": "f1cfae70ce9d6feae8309bb8e5bd4802",
+      "file_id": "ec2726a16a653039e2dd36108521df79",
+      "download_url": "https://china.scidb.cn/download?fileId=ec2726a16a653039e2dd36108521df79"
+    },
+    {
+      "path": "ReadingAloud/sub-f1.zip",
+      "size_bytes": 2223466427,
+      "md5": "04d27d014947ae68e23d8204e6ad2949",
+      "file_id": "f26a5d49d41628d0c7b4bcb4b786faaf",
+      "download_url": "https://china.scidb.cn/download?fileId=f26a5d49d41628d0c7b4bcb4b786faaf"
+    },
+    {
+      "path": "ReadingAloud/sub-f2.zip",
+      "size_bytes": 2203845075,
+      "md5": "58bae1abd874ba645e05fd27dd09487a",
+      "file_id": "7e2ae5fc7d893a017d79864296ce7e22",
+      "download_url": "https://china.scidb.cn/download?fileId=7e2ae5fc7d893a017d79864296ce7e22"
+    },
+    {
+      "path": "ReadingAloud/sub-m1.zip",
+      "size_bytes": 1619264382,
+      "md5": "22072f19139e3860410ee3eb5d10b70e",
+      "file_id": "4d8047dcf55175992cb39c83d15f7d94",
+      "download_url": "https://china.scidb.cn/download?fileId=4d8047dcf55175992cb39c83d15f7d94"
+    },
+    {
+      "path": "ReadingAloud/sub-m2.zip",
+      "size_bytes": 1662924629,
+      "md5": "b1cd295056c32c18dfaeb546daa134c1",
+      "file_id": "46c06ec339de9a5db9d22d4d1cdc5f1d",
+      "download_url": "https://china.scidb.cn/download?fileId=46c06ec339de9a5db9d22d4d1cdc5f1d"
+    },
+    {
+      "path": "materials&embeddings/audio_embedding.zip",
+      "size_bytes": 720300,
+      "md5": "7a324177226699e6c55b9259373f7550",
+      "file_id": "86bc7fb3e4ff3cd996dc0951bfca9185",
+      "download_url": "https://china.scidb.cn/download?fileId=86bc7fb3e4ff3cd996dc0951bfca9185"
+    },
+    {
+      "path": "materials&embeddings/original_novel.zip",
+      "size_bytes": 147872,
+      "md5": "dc27b2fcf227509d8d8da3a887dced73",
+      "file_id": "b8f0df41378c240936f1a437e0085f8e",
+      "download_url": "https://china.scidb.cn/download?fileId=b8f0df41378c240936f1a437e0085f8e"
+    },
+    {
+      "path": "materials&embeddings/text_embedding.zip",
+      "size_bytes": 14183150,
+      "md5": "39c19a6e168471f427b69e87ce5a5318",
+      "file_id": "8085d300669cbe96dd6b756102f1dc16",
+      "download_url": "https://china.scidb.cn/download?fileId=8085d300669cbe96dd6b756102f1dc16"
+    },
+    {
+      "path": "README",
+      "size_bytes": 5355,
+      "md5": "b078ed442e73df26498f363a7ccb7962",
+      "file_id": "9d3b04aa274412c25aeee5ba557a720b",
+      "download_url": "https://china.scidb.cn/download?fileId=9d3b04aa274412c25aeee5ba557a720b"
+    }
+  ]
+}

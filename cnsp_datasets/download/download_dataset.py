@@ -55,6 +55,9 @@ class Dataset:
         if self.source == "huggingface":
             getter = download_helpers.id_to_downloadables_huggingface
             return _gather(getter, self.identifiers)
+        if self.source == "scidb":
+            getter = download_helpers.listing_to_downloadables_scidb
+            return _gather(getter, self.identifiers)
         if self.source == "radboud_rdr":
             getter = download_helpers.id_to_downloadables_radboud_rdr
             return _gather(getter, self.identifiers)

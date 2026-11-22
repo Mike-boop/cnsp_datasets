@@ -664,3 +664,14 @@ def id_to_downloadables_huggingface(repo):
         }
         for f in files
     ]
+
+
+def listing_to_downloadables_scidb(listing):
+    """
+    Files of a Science Data Bank (scidb.cn) dataset, from a listing shipped with the adaptor, e.g.
+    "chen2026/scidb_files.json" (relative to cnsp_datasets/datasets): the site lists files only to a browser.
+    """
+    path = Path(__file__).parents[1] / "datasets" / listing
+    files = json.loads(path.read_text(encoding="utf-8"))["files"]
+    return [{"name": f["path"], "url": f["download_url"], "size": f["size_bytes"], "checksum": f"md5:{f['md5']}"}
+            for f in files]

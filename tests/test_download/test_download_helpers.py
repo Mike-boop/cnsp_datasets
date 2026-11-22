@@ -314,3 +314,11 @@ class TestDryadAuth:
         mock_post.return_value = MagicMock(status_code=200, json=MagicMock(return_value={"access_token": "t2"}))
         assert download_helpers._dryad_token() == "t2"
         assert mock_post.call_args.kwargs["data"]["grant_type"] == "client_credentials"
+
+
+class TestScidbListing:
+    def test_shipped_chen2026_listing(self):
+        files = download_helpers.listing_to_downloadables_scidb("chen2026/scidb_files.json")
+        assert len(files) == 46
+        assert all(f["checksum"].startswith("md5:") and f["url"].startswith("https://") for f in files)
+        assert "PassiveListening/sub-01.zip" in {f["name"] for f in files}
