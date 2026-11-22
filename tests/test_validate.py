@@ -4,6 +4,7 @@ from scipy.signal import resample_poly
 
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 from cnsp_datasets.validate import group_by_subject, validate
+from cnsp_datasets.validate.load import load_neural, stimulus_feature
 
 FS_AUDIO, FS, DUR = 8000, 1000, 40
 
@@ -69,3 +70,20 @@ def test_no_response_does_not_pass():
     records = _records(gain=0.0, dc=1e-3, silence=2.0, n_subjects=4)
     s = validate(group_by_subject(records), picks="eeg", n_jobs=4)["summary"]
     assert s["validation_tier"] == "none", s
+
+
+def test_bads_are_excluded_when_picking_by_type():
+    raw = mne.io.RawArray(np.random.default_rng(0).standard_normal((3, 1000)),
+                          mne.create_info(["E0", "E1", "E2"], FS, "eeg"), verbose="ERROR")
+    raw.info["bads"] = ["E1"]
+    record = TrialRecord(1, 1, 1, "c", "eeg", None, lambda: raw.copy())
+    assert load_neural(record, "eeg", "average").ch_names == ["E0", "E2"]
+    assert load_neural(record, ["E1"]).ch_names == ["E1"]  # named channels are kept
+
+
+def test_hf_feature_from_envelope_needs_a_high_rate():
+    env = np.random.default_rng(0).random(DUR * FS)
+    fast = StimulusRecord("audio", "a", lambda: {"fs": FS, "data": env[None]}, feature_name="envelope")
+    slow = StimulusRecord("audio", "b", lambda: {"fs": 100, "data": env[None, :DUR * 100]}, feature_name="envelope")
+    assert np.allclose(stimulus_feature(fast, "hf", FS, {}), env)
+    assert stimulus_feature(slow, "hf", FS, {}) is None

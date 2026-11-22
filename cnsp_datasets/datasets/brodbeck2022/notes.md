@@ -319,10 +319,12 @@ dead channel excluded (section 13). Ratio to the null:
 Native only: 60-120 Hz 1.02; 120-250 Hz and 250-500 Hz ~1.00. Consistent with the tiers: strong below 8 Hz, a weak
 excess at 30-60 Hz, nothing above 120 Hz.
 
-## 15. Repo validator gaps (found here; pending the user's decision)
+## 15. Repo validator gaps (found here; both fixed in `validate/load.py` on 2026-11-22, after this validation)
 - `load.stimulus_feature(.., 'hf')` returns None for envelope-only stimuli (it builds the hf feature only from
   audio), so `--tiers low,mlr` silently skips mlr for this dataset. The review script patched it to use the
   1000 Hz envelope as the hf feature.
 - `--picks mag` keeps the bad channels (`raw.pick('mag')` does not exclude bads). The review script picks good
   gradiometers itself; the repo CLI run (`validation/repo/validation.json`) includes the bads (low mean r 0.032,
   12/12, unaffected in practice).
+- Fixes (user, 2026-11-22): `load_neural` now excludes `info['bads']` when picking by type, and the 'hf' feature
+  uses a shipped envelope when it is sampled at the hf rate or above. The numbers above predate the fixes.

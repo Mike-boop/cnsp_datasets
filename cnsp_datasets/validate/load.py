@@ -38,27 +38,34 @@ def bandpass(x, band, fs, order=4):
 
 
 def load_neural(record, picks, reference=None):
-    """Raw at its native rate, picked and (for EEG) re-referenced; reference is 'average', channel names or None."""
+    """
+    Raw at its native rate, picked and (for EEG) re-referenced; reference is 'average', channel names or None.
+    Channels in info['bads'] are excluded when picking by type (explicitly named channels are kept).
+    """
     raw = record.neural_data_fn()
     raw.load_data(verbose="ERROR")
     ref = None
     if reference == "average":
-        ref = raw.copy().pick(picks).get_data().mean(0)
+        ref = raw.copy().pick(picks, exclude="bads").get_data().mean(0)
     elif reference:
         ref = raw.get_data(picks=list(reference)).mean(0)
-    raw.pick(picks)
+    raw.pick(picks, exclude="bads")
     if ref is not None:
         raw._data -= ref
     return raw
 
 
 def stimulus_feature(stim, tier, fs, cache):
-    """Envelope ('low') or half-wave-rectified waveform ('hf') at fs, cached across subjects."""
-    if tier == "hf" and stim.feature_name != "audio":
-        return None
+    """
+    Envelope ('low') or high-rate feature ('hf') at fs, cached across subjects. For 'hf': the half-wave-rectified
+    waveform from audio, or a shipped envelope sampled at fs or above (None below: no content in the hf bands).
+    """
     key = (stim.modality, stim.name, stim.feature_name, tier, fs)
     if key not in cache:
         data = stim.data_fn()
+        if tier == "hf" and stim.feature_name != "audio" and data["fs"] < fs:
+            cache[key] = None
+            return None
         steps = [ResampleStimulus(fs)]
         if stim.feature_name == "audio":
             steps.insert(0, HilbertEnvelope() if tier == "low" else HalfWaveRectify())
