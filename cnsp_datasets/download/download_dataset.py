@@ -10,6 +10,7 @@ from cnsp_datasets.download.data_downloader import DataDownloader
 
 REGISTRY_PATH = resources.files("cnsp_datasets.download").joinpath("dataset_registry.json")
 ZENODO_MAX_WORKERS = 3  # promised to the Zenodo moderators (2026-11-21); see PLAN.md section 7
+SOURCE_READ_TIMEOUT = {"scidb": 300}  # seconds; Science Data Bank often takes > 15 s to start or resume a stream
 
 ### First define a structure for the entries in dataset_registry.json
 
@@ -116,6 +117,7 @@ def download_dataset(
     verify_checksum: bool = False,
     include: Iterable[str] = (),
     exclude: Iterable[str] = (),
+    read_timeout: Optional[float] = None,
 ) -> None:
     """
     Download a named dataset to a specified directory.
@@ -130,6 +132,7 @@ def download_dataset(
     - verify_checksum (bool): Whether to verify checksums if provided in the metadata.
     - include, exclude (glob patterns): further filters on top of the registry entry's own, e.g. a pilot subset
       `exclude=["sub-0[7-9]/*", "sub-1*/*"]`; `include` keeps only matching files.
+    - read_timeout (float): seconds a stalled transfer may wait for data (default 15, longer for slow sources).
     """
     registry: Dict[str, Dataset] = load_registry(REGISTRY_PATH)
 
@@ -155,6 +158,7 @@ def download_dataset(
         retries=retries,
         skip_existing=skip_existing,
         verify_checksum=verify_checksum,
+        read_timeout=read_timeout or SOURCE_READ_TIMEOUT.get(ds.source, 15),
     )
     download_manager.download_batch(downloadables)
 
