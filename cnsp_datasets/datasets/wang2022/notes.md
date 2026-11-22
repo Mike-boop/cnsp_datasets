@@ -323,3 +323,31 @@ each exactly the wav length). All at 1000 Hz, 306 MEG + 1 misc (BIO001), `line_f
 the events.tsv samples in all 300 trials; no Beg reconstructed (no fallback). `sss_rank` 67-72 (69 in 183
 trials). 107 GB on disk (float32), peak RSS 4.3 GB, ~17 s per trial. The 60 stimuli (wav + TextGrid) written
 once.
+
+## 13. Validation (2026-11-22)
+Script `tmp/review/scripts/meg/wang2022_validate.py` (output `tmp/review/wang2022/validation`, per-subject caches
+`cache/asis/S00N.json`). Data as standardised (authors' tSSS, no further Maxwell filtering), 102 magnetometers;
+repo `checks.validate_subject` (low / mlr / brainstem) + backward model (64 Hz, 0.5-8 Hz, lags 0-250 ms,
+leave-one-trial-out ridge, 50 circular-shift + mismatched nulls, lag sweep +-1 s). sub-01..06 (sub-01..05 the
+pilot of section 12; sub-06 standardised afterwards with the same adaptor, 57 trials, runs 58-60 skipped):
+357 trials, 30.13 h, 5.02 h per participant (4.83-5.06).
+
+Per subject: forward low r / backward r (95th pct circular null) / lag-sweep peak / mlr SNR (p) / brainstem SNR (p):
+S1 0.064 / 0.337 (0.031) / 0 s / 2.94 (0.0099) / 0.61 (1.0); S2 0.062 / 0.381 (0.033) / 0 s / 2.59 (0.0099) /
+0.51 (1.0); S3 0.073 / 0.439 (0.039) / 0 s / 1.77 (0.0099) / 0.53 (1.0); S4 0.049 / 0.275 (0.034) / 0 s / 1.46
+(0.0099) / 0.37 (1.0); S5 0.049 / 0.398 (0.030) / 0 s / 3.40 (0.0099) / 0.88 (0.97); S6 0.043 / 0.285 (0.033) /
+0 s / 1.82 (0.0099) / 0.70 (1.0). Low-tier p at the null floor in all (circular 1/51 = 0.0196, mismatch 0.048).
+**Tier: mlr for all 6; brainstem not reached** (`validation_tier="mlr"`, `VALIDATION_NOTE` in the adaptor). The
+lag-sweep peak at 0 s in every subject confirms onset + 500 ppm drift at 64 Hz resolution (15.6 ms).
+
+Coherence (magnetometers vs envelope, 5 s Hann, 4 s overlap, ratio to one global circular-shift surrogate, all
+6 subjects), 128 Hz / native: 0.2-1 Hz 10.93 / 10.92; 1-4 Hz 8.31 / 8.32; 4-8 Hz 8.02 / 8.05; 8-15 Hz 2.76 /
+2.72; 15-30 Hz 1.43 / 1.46; 30-60 Hz 1.23 / 1.29; 60-120 Hz - / 1.35; 120-250 Hz - / 1.13; 250-500 Hz - / 1.02.
+DNN offset not applicable (EEG classifier). The trials already on disk were written with `validation_tier` null
+(the tier was set in the adaptor afterwards).
+
+Open (not investigated): the 30-250 Hz ("brainstem") forward TRF has a sharp spike at about -22 ms, before the
+sound, inside the noise window (-75..-20 ms); the native coherence has a small bump near 100 Hz. Likely an
+artifact time-locked to the audio (e.g. electrical/magnetic pickup from the earphone transducers, which precedes
+the sound by the onset's acoustic delay); it inflates the noise estimate and may explain part of the low
+brainstem SNR. It does not affect the low and mlr tiers. Figures: tmp/review/wang2022/validation/figs/.

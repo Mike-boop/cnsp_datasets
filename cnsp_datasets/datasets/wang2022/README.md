@@ -15,7 +15,8 @@ visits. The same participants also did the stories in fMRI (not in scope).
 ## Size
 **12 participants, 717 trials (one per story) of 240.0-406.4 s, 60.48 h in total; 5.04 h per participant (range
 4.83-5.06 h).** Every participant has all 60 stories (5.06 h) except sub-06 (57; runs 58-60 are not on OpenNeuro,
-see Caveats). Pilot standardised: sub-01..05, 300 trials, 25.30 h.
+see Caveats). Standardised and validated so far: sub-01..06, **357 trials, 30.13 h; 5.02 h per participant
+(4.83-5.06 h)** (sub-01..05 as the pilot, sub-06 afterwards with the same adaptor).
 
 ## What is provided
 - **MEG:** Elekta-Neuromag TRIUX (Peking University), 102 magnetometers (`mag`, T) and 204 planar gradiometers
@@ -36,7 +37,7 @@ see Caveats). Pilot standardised: sub-01..05, 300 trials, 25.30 h.
   fixed order for all participants). Each trial starts at the sound onset and is as long as the wav (the
   recordings continue >= 11.7 s after every wav end).
 - Trial metadata (`raw.info["description"]`, JSON): story, visit and position, Beg/End trigger samples, onset,
-  sound delay, drift applied, MaxFilter settings and SSS rank, `validation_tier`.
+  sound delay, drift applied, MaxFilter settings and SSS rank, `validation_tier` and `validation_note`.
 
 ## Alignment
 - **Software triggers** (`alignment_method` `sw_trigger`): the presentation script sends TTL 1 (Beg) on the
@@ -57,7 +58,46 @@ see Caveats). Pilot standardised: sub-01..05, 300 trials, 25.30 h.
   other participants (`beg_reconstructed` true; ~1 ms uncertainty).
 
 ## Validation
-Not yet validated (`validation_tier` null).
+**mlr tier in all 6 validated participants** (sub-01..06, 357 trials, 30.13 h; `validation_tier: mlr`); the
+brainstem tier is not reached. Data as shipped (the authors' tSSS, no further Maxwell filtering), 102 magnetometers,
+no re-referencing. Repo `checks.validate_subject` (low / mlr / brainstem) plus a backward model (64 Hz, 0.5-8 Hz,
+lags 0-250 ms, leave-one-trial-out ridge, 50 circular-shift and mismatched-stimulus nulls, lag sweep +-1 s). For
+MEG the "brainstem" tier tests the 30-250 Hz cortical response at 28-45 ms, not a brainstem response.
+
+| subject | trials | low forward r | backward r (95th pct circular null) | lag-sweep peak | mlr SNR (p) | brainstem SNR (p) |
+|---|---|---|---|---|---|---|
+| sub-01 | 60 | 0.064 | 0.337 (0.031) | 0 s | 2.94 (0.0099) | 0.61 (1.0) |
+| sub-02 | 60 | 0.062 | 0.381 (0.033) | 0 s | 2.59 (0.0099) | 0.51 (1.0) |
+| sub-03 | 60 | 0.073 | 0.439 (0.039) | 0 s | 1.77 (0.0099) | 0.53 (1.0) |
+| sub-04 | 60 | 0.049 | 0.275 (0.034) | 0 s | 1.46 (0.0099) | 0.37 (1.0) |
+| sub-05 | 60 | 0.049 | 0.398 (0.030) | 0 s | 3.40 (0.0099) | 0.88 (0.97) |
+| sub-06 | 57 | 0.043 | 0.285 (0.033) | 0 s | 1.82 (0.0099) | 0.70 (1.0) |
+| median | | 0.056 | 0.359 | | 2.21 (mean 2.33) | 0.57 (mean 0.60) |
+
+- **Low tier:** every participant at the null floor (circular-shift p 0.0196 = 1/51, mismatched-stimulus p 0.048).
+  **mlr** (30-60 Hz, 18-45 ms): significant in 6/6 (p at the floor, 1/101). **Brainstem** (30-250 Hz): SNR < 1 in
+  every participant, not significant.
+- **Backward decoder** above its circular-shift null by 8-13x in every participant; the lag sweep peaks at 0 s in
+  all six (64 Hz, one sample = 15.6 ms), i.e. the onsets (Beg + 39.5 ms) and the +500 ppm drift hold end to end at
+  that resolution. It cannot confirm the 39.5 ms delay more finely.
+- sub-04 and sub-06 (the weak participants of the exploration, Caveats) have the lowest backward r, but both pass
+  the low and mlr tiers.
+- **Coherence** (MEG magnetometers vs the envelope, 5 s Hann windows, 4 s overlap, ratio to one global
+  circular-shift surrogate; all 6 participants, 357 trials), 128 Hz / native 1000 Hz:
+
+  | band (Hz) | 0.2-1 | 1-4 | 4-8 | 8-15 | 15-30 | 30-60 | 60-120 | 120-250 | 250-500 |
+  |---|---|---|---|---|---|---|---|---|---|
+  | 128 Hz | 10.93 | 8.31 | 8.02 | 2.76 | 1.43 | 1.23 | - | - | - |
+  | 1000 Hz | 10.92 | 8.32 | 8.05 | 2.72 | 1.46 | 1.29 | 1.35 | 1.13 | 1.02 |
+
+- **DNN offset:** not applicable (the match-mismatch classifier is trained on EEG).
+- **Not validated:** sub-07..12 (not standardised yet); the gradiometers; BIO001.
+- **Suitable for:** low-frequency envelope tracking and decoding (strong: coherence 8-11x the surrogate below
+  8 Hz), word- and character-level analyses (forced-aligned TextGrids), middle-latency (30-60 Hz) cortical
+  responses, and between-story comparisons (60 stories, the same for every participant). **Not suitable for**
+  30-250 Hz / sub-millisecond timing or subcortical (ABR/FFR-type) analyses: software triggers with an onset known
+  only from the authors' 39.5 ms measurement, drift from a neural estimate (+-10 ppm, +-4 ms at the end of a story),
+  ~10 ms story-specific trigger modes, and the brainstem tier fails. The tSSS cannot be undone (rank 67-72).
 
 ## Decisions taken (coordinator, 2026-11-22; to revisit)
 - **Files standardised as shipped** (authors' tSSS); no further Maxwell filtering, no use of the ICA/0.1-40 Hz
@@ -70,8 +110,8 @@ Not yet validated (`validation_tier` null).
 ## Caveats
 - tSSS (30 s, 0.98) is already in the data and cannot be undone; the data rank is 67-72 (`sss_rank`).
 - Continuous HPI (293, 307, 314, 321 Hz) was on during recording; whether tSSS removed the lines is not checked.
-- Two participants (sub-04, sub-06 in the pilot download) show 3-4x weaker envelope tracking than the others in
-  every visit; not a trigger problem.
+- Two participants (sub-04, sub-06) show 3-4x weaker envelope tracking than the others in every visit; not a
+  trigger problem. Both still reach the mlr tier (Validation).
 - Upstream: sub-05 and sub-06 runs 58-60 are the same files (sub-05's recordings by `meas_date` and head
   position); sub-06's own runs 58-60 are missing. Annotation files of stories 1, 2, 10-29 sit in neighbouring
   folders (the adaptor finds them by name). meg.json says 60 Hz line frequency; the recordings show 50 Hz.

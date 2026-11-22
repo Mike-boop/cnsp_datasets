@@ -35,6 +35,8 @@ NOTES = ("MEG as shipped: the authors' tSSS (MaxFilter 2.2.15, 30 s buffer, corr
          "a per-story scatter of +-20 ms (playback side; not used). line_freq 50 Hz (meg.json says 60). cHPI "
          "293/307/314/321 Hz was on (possibly reduced by tSSS). Participant names/birthdays removed from "
          "subject_info.")
+VALIDATION_NOTE = ("mlr tier in all 6 validated participants (sub-01..06), data as shipped (authors' tSSS, no further "
+                   "Maxwell filtering), 102 magnetometers; brainstem tier not reached (30-250 Hz SNR 0.37-0.88)")
 
 
 class Wang2022Adaptor:
@@ -155,6 +157,7 @@ def _meg_loader(fif: str, wav: str, drift: float, interval: float | None, extra:
         out.info["description"] = provenance(
             "sw_trigger", "software (code run_story*.m: parallel-port TTL after PsychPortAudio Start; 39.5 ms "
             "sound delay measured with a sound sensor by the authors, paper)", note, drift_ppm=500, jitter_ms=1,
+            validation_tier="mlr", validation_note=VALIDATION_NOTE,
             drift_corrected_ppm=round(drift * 1e6, 3), **extra, beg_sample=round(float(beg), 1), end_sample=end,
             beg_reconstructed=interval is not None, sound_delay_ms=SOUND_DELAY_MS, onset_sample=round(onset, 1),
             sss=(f"tSSS by the authors ({raw.info['proc_history'][0]['creator']}; in/out order "
