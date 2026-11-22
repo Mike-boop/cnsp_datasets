@@ -1,0 +1,2856 @@
+{
+ "dataset": "vanheusden2020",
+ "date": "2026-11-22",
+ "data": "308 trials, 20 subjects (S_001..S_027), conditions aided (155 trials) / unaided (153); EEG 1024 Hz, 32 scalp channels (EXG1/EXG2 mastoids are misc, not picked); stimulus = shipped 44.1 kHz wav (band-limited ~4.05 kHz)",
+ "source": "FlatSinkV1 /data_storage/gu08wuvu/datasets/tmp/review/vanheusden2020/standardised (FlatSourceV1, assume_first_attended=True)",
+ "code": "worktree /home/gu08wuvu/cnsp_datasets_batch2, branch dev-batch2 @ 3e21f3e",
+ "repo_validator_cli": "python -m cnsp_datasets.validate vanheusden2020 --standardised-dir <std> --first-attended --picks eeg --reference average --n-subjects 0 (per condition: same validate() call on the records of one condition, scripts/run_validator.py)",
+ "config": {
+  "picks": "eeg",
+  "reference": "average",
+  "LOW": {
+   "fs": 64,
+   "band": [
+    0.5,
+    8.0
+   ],
+   "lags": [
+    -0.2,
+    0.6
+   ],
+   "valid": [
+    -0.15,
+    0.5
+   ],
+   "alpha": 1.0,
+   "n_folds": 5,
+   "n_circ": 50,
+   "n_mismatch": 20,
+   "min_shift": 5.0,
+   "offset_range": 0.5
+  },
+  "HF": {
+   "fs": 1000,
+   "lags": [
+    -0.1,
+    0.1
+   ],
+   "valid": [
+    -0.075,
+    0.075
+   ],
+   "noise": [
+    -0.075,
+    -0.02
+   ],
+   "n_null": 100,
+   "min_shift": 1.0,
+   "alpha": 1.0
+  },
+  "TIERS": {
+   "mlr": {
+    "band": [
+     30,
+     60
+    ],
+    "window": {
+     "eeg": [
+      0.018,
+      0.045
+     ],
+     "meg": [
+      0.018,
+      0.045
+     ]
+    }
+   },
+   "brainstem": {
+    "band": [
+     30,
+     250
+    ],
+    "window": {
+     "eeg": [
+      0.004,
+      0.009
+     ],
+     "meg": [
+      0.028,
+      0.045
+     ]
+    }
+   }
+  },
+  "seed": 0
+ },
+ "scripts": [
+  "/data_storage/gu08wuvu/datasets/tmp/review/vanheusden2020/validation/run_validator.py",
+  "/data_storage/gu08wuvu/datasets/tmp/review/vanheusden2020/validation/trial_meta.py",
+  "/data_storage/gu08wuvu/datasets/tmp/review/vanheusden2020/validation/summarise.py",
+  "/data_storage/gu08wuvu/datasets/tmp/review/vanheusden2020/validation/write_validation.py",
+  "/data_storage/gu08wuvu/datasets/tmp/review/vanheusden2020/validation/zero_lag_bump.py",
+  "/data_storage/gu08wuvu/datasets/tmp/review/vanheusden2020/validation/s014_sweep.py"
+ ],
+ "pass_criteria": {
+  "low": "population mean r above the circular-shift null (p_circ < 0.05) and the mismatched-stimulus null (p_mismatch < 0.05); p floors 1/51 = 0.0196 and 1/21 = 0.0476",
+  "mlr": "population mean SNR (RMS 18-45 ms / RMS -75..-20 ms, 30-60 Hz, half-wave-rectified audio) above 100 circular-shift nulls, p < 0.05 (floor 1/101 = 0.0099)",
+  "brainstem": "same, 30-250 Hz, window 4-9 ms (EEG)",
+  "cumulative": "a tier counts only if all lower tiers pass",
+  "subject_level": "subject tier: low if subject p_circ and p_mismatch < 0.05; mlr/brainstem if the subject's permutation p < 0.05 (cumulative)"
+ },
+ "sanity": {
+  "n_trials": 308,
+  "n_errors": 0,
+  "duration_neural_minus_stimulus_s": {
+   "n": 308,
+   "min": -0.01171875,
+   "q25": -0.0087890625,
+   "median": -0.0078125,
+   "q75": -0.004150390625,
+   "max": 0.0,
+   "mean": -0.006563260957792208
+  },
+  "eeg_median_std_after_1Hz_hp_V": {
+   "n": 308,
+   "min": 2.653534622017048e-06,
+   "q25": 5.128007733286259e-06,
+   "median": 6.216764157375713e-06,
+   "q75": 7.937092789204958e-06,
+   "max": 1.3050758107055009e-05,
+   "mean": 6.337293788885921e-06
+  },
+  "n_trials_flat": 0,
+  "n_flat_channels": 0,
+  "n_trials_nan": 0,
+  "n_flagged": 0,
+  "flags": [],
+  "n_bads_marked": 0,
+  "note": "neural trials are 0-12 ms shorter than the stimulus at 64 Hz rounding (ceil at 1024 Hz vs wav); no unit, flat or NaN flags; no channels marked bad"
+ },
+ "tiers": {
+  "pooled": {
+   "low": {
+    "n_subjects": 20,
+    "mean_r": 0.0576796046824528,
+    "median_r": 0.053669436293751274,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "frac_subjects_sig": 1.0,
+    "trf_peak_s": 0.171875,
+    "jitter_sd_ms": 99.04369496481422,
+    "jitter_mad_ms": 12.733061171590716,
+    "drift_ppm_median": 53.53077565091925,
+    "drift_ppm_se": 278.45566192926356,
+    "pass": true
+   },
+   "mlr": {
+    "n_subjects": 20,
+    "mean_snr": 1.4560350976448704,
+    "p": 0.009900990099009901,
+    "frac_subjects_sig": 0.6,
+    "pass": true
+   },
+   "brainstem": {
+    "n_subjects": 20,
+    "mean_snr": 0.9907155539852152,
+    "p": 0.44554455445544555,
+    "frac_subjects_sig": 0.0,
+    "pass": false
+   }
+  },
+  "aided": {
+   "low": {
+    "n_subjects": 20,
+    "mean_r": 0.05670825487915878,
+    "median_r": 0.05435470195449142,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "frac_subjects_sig": 0.95,
+    "trf_peak_s": 0.171875,
+    "jitter_sd_ms": 1561.5704637128329,
+    "jitter_mad_ms": 13.117848953425858,
+    "drift_ppm_median": 51.57499464084153,
+    "drift_ppm_se": 253.82523401360726,
+    "pass": true
+   },
+   "mlr": {
+    "n_subjects": 20,
+    "mean_snr": 1.249255706023582,
+    "p": 0.009900990099009901,
+    "frac_subjects_sig": 0.3,
+    "pass": true
+   },
+   "brainstem": {
+    "n_subjects": 20,
+    "mean_snr": 0.9418219253913727,
+    "p": 0.8613861386138614,
+    "frac_subjects_sig": 0.0,
+    "pass": false
+   }
+  },
+  "unaided": {
+   "low": {
+    "n_subjects": 20,
+    "mean_r": 0.05736192530286314,
+    "median_r": 0.05584858973155491,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "frac_subjects_sig": 0.95,
+    "trf_peak_s": 0.171875,
+    "jitter_sd_ms": 101.41274385868346,
+    "jitter_mad_ms": 15.049242586237641,
+    "drift_ppm_median": 24.411213903542006,
+    "drift_ppm_se": 300.3154264995765,
+    "pass": true
+   },
+   "mlr": {
+    "n_subjects": 20,
+    "mean_snr": 1.3287888935076912,
+    "p": 0.009900990099009901,
+    "frac_subjects_sig": 0.45,
+    "pass": true
+   },
+   "brainstem": {
+    "n_subjects": 20,
+    "mean_snr": 0.9673094164711504,
+    "p": 0.7722772277227723,
+    "frac_subjects_sig": 0.05,
+    "pass": false
+   }
+  }
+ },
+ "validation_tier_per_condition": {
+  "aided": "mlr",
+  "unaided": "mlr"
+ },
+ "validation_tier_pooled": "mlr",
+ "validation_tier": "mlr",
+ "subject_pass_counts": {
+  "pooled": {
+   "low_circ": 20,
+   "low_mismatch": 20,
+   "low_both": 20,
+   "mlr": 12,
+   "brainstem": 0,
+   "n_subjects": 20
+  },
+  "aided": {
+   "low_circ": 19,
+   "low_mismatch": 19,
+   "low_both": 18,
+   "mlr": 6,
+   "brainstem": 0,
+   "n_subjects": 20
+  },
+  "unaided": {
+   "low_circ": 19,
+   "low_mismatch": 19,
+   "low_both": 19,
+   "mlr": 9,
+   "brainstem": 1,
+   "n_subjects": 20
+  }
+ },
+ "subject_tier_counts": {
+  "pooled": {
+   "none": 0,
+   "low": 8,
+   "mlr": 12,
+   "brainstem": 0
+  },
+  "aided": {
+   "none": 2,
+   "low": 12,
+   "mlr": 6,
+   "brainstem": 0
+  },
+  "unaided": {
+   "none": 1,
+   "low": 10,
+   "mlr": 8,
+   "brainstem": 1
+  }
+ },
+ "r_per_subject": {
+  "pooled": {
+   "n": 20,
+   "min": 0.0330032845039704,
+   "q25": 0.044599737232754455,
+   "median": 0.053669436293751274,
+   "q75": 0.06971453833952876,
+   "max": 0.091703845813671,
+   "mean": 0.0576796046824528
+  },
+  "aided": {
+   "n": 20,
+   "min": 0.024501305658059955,
+   "q25": 0.04698493908343423,
+   "median": 0.05435470195449142,
+   "q75": 0.06870668801154486,
+   "max": 0.09264648665214187,
+   "mean": 0.05670825487915878
+  },
+  "unaided": {
+   "n": 20,
+   "min": 0.023454878750511724,
+   "q25": 0.042400683618150074,
+   "median": 0.05584858973155491,
+   "q75": 0.06950750390417303,
+   "max": 0.10216587504588993,
+   "mean": 0.05736192530286314
+  }
+ },
+ "per_subject": {
+  "pooled": {
+   "1": {
+    "n_trials": 16,
+    "n_errors": 0,
+    "low_r": 0.08470126469608677,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.005969703450268841,
+    "low_null_mismatch_95": 0.005609062599070978,
+    "trial_offset_median_ms": -0.6504044246973614,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 11.625005953676778
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 15.33154378911956
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.1299239922749433,
+    "mlr_p": 0.25742574257425743,
+    "brainstem_snr": 0.6683636963480526,
+    "brainstem_p": 0.9207920792079208,
+    "subject_tier": "low"
+   },
+   "2": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.08305927354585138,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.01802085302568593,
+    "low_null_mismatch_95": 0.011374426643867327,
+    "trial_offset_median_ms": -1.3498426991535544,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 7.996747864757104
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 11.246033628345801
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.7188259168320825,
+    "mlr_p": 0.009900990099009901,
+    "brainstem_snr": 0.9067092439626634,
+    "brainstem_p": 0.5643564356435643,
+    "subject_tier": "mlr"
+   },
+   "4": {
+    "n_trials": 15,
+    "n_errors": 0,
+    "low_r": 0.03739343583525546,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.019113702982676766,
+    "low_null_mismatch_95": 0.010790435959950077,
+    "trial_offset_median_ms": -12.519271927134923,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 3.184694311652465
+     },
+     "P2": {
+      "lag_s": 0.1875,
+      "gfp_rel": 5.427141036405112
+     },
+     "global_peak_s": 0.0
+    },
+    "mlr_snr": 1.4901013539511716,
+    "mlr_p": 0.039603960396039604,
+    "brainstem_snr": 1.0648924328390499,
+    "brainstem_p": 0.32673267326732675,
+    "subject_tier": "mlr"
+   },
+   "5": {
+    "n_trials": 16,
+    "n_errors": 0,
+    "low_r": 0.06188614275063118,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.008869183633517092,
+    "low_null_mismatch_95": 0.00988619956967293,
+    "trial_offset_median_ms": 1.5986325587434427,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 10.273193518350395
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 11.498754439321718
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.2177017338139575,
+    "mlr_p": 0.12871287128712872,
+    "brainstem_snr": 1.0014557820581937,
+    "brainstem_p": 0.46534653465346537,
+    "subject_tier": "low"
+   },
+   "6": {
+    "n_trials": 16,
+    "n_errors": 0,
+    "low_r": 0.06941763048224728,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.010236676907918102,
+    "low_null_mismatch_95": 0.007222563252789073,
+    "trial_offset_median_ms": -6.724377198298354,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 7.843222529221312
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 8.896123813080829
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.21236858402579,
+    "mlr_p": 0.07920792079207921,
+    "brainstem_snr": 0.93510979674602,
+    "brainstem_p": 0.6831683168316832,
+    "subject_tier": "low"
+   },
+   "7": {
+    "n_trials": 16,
+    "n_errors": 0,
+    "low_r": 0.07060526191137317,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.006702985898452393,
+    "low_null_mismatch_95": 0.0027411006560733807,
+    "trial_offset_median_ms": -2.8377336201870533,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 12.242593579103982
+     },
+     "P2": {
+      "lag_s": 0.15625,
+      "gfp_rel": 13.666317246130676
+     },
+     "global_peak_s": 0.15625
+    },
+    "mlr_snr": 0.9406187605313464,
+    "mlr_p": 0.5643564356435643,
+    "brainstem_snr": 0.9320906128161346,
+    "brainstem_p": 0.5643564356435643,
+    "subject_tier": "low"
+   },
+   "8": {
+    "n_trials": 16,
+    "n_errors": 0,
+    "low_r": 0.054099332391478065,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.008097822945459913,
+    "low_null_mismatch_95": 0.009204821562677807,
+    "trial_offset_median_ms": -2.6413140271887943,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.09375,
+      "gfp_rel": 4.257499623905952
+     },
+     "P2": {
+      "lag_s": 0.1875,
+      "gfp_rel": 5.784131763289819
+     },
+     "global_peak_s": 0.1875
+    },
+    "mlr_snr": 0.779032530906921,
+    "mlr_p": 0.8415841584158416,
+    "brainstem_snr": 0.726078467164558,
+    "brainstem_p": 0.9207920792079208,
+    "subject_tier": "low"
+   },
+   "9": {
+    "n_trials": 16,
+    "n_errors": 0,
+    "low_r": 0.08543830316118499,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.010439573740967009,
+    "low_null_mismatch_95": 0.009647257145735541,
+    "trial_offset_median_ms": 3.0621916096074058,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 10.832942409780456
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 11.600142259176732
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.8460004158324232,
+    "mlr_p": 0.009900990099009901,
+    "brainstem_snr": 0.9296303024150423,
+    "brainstem_p": 0.5841584158415841,
+    "subject_tier": "mlr"
+   },
+   "10": {
+    "n_trials": 16,
+    "n_errors": 0,
+    "low_r": 0.04062355924878707,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.006166819546339006,
+    "low_null_mismatch_95": 0.009224171785416986,
+    "trial_offset_median_ms": 1.6270372609366655,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.09375,
+      "gfp_rel": 4.786660011965454
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 7.7036690033494475
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.5190521186295252,
+    "mlr_p": 0.039603960396039604,
+    "brainstem_snr": 1.007243839808077,
+    "brainstem_p": 0.38613861386138615,
+    "subject_tier": "mlr"
+   },
+   "11": {
+    "n_trials": 16,
+    "n_errors": 0,
+    "low_r": 0.0330032845039704,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.008199541458475875,
+    "low_null_mismatch_95": 0.006771562425456598,
+    "trial_offset_median_ms": 8.810598903872327,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 4.097978153153362
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 5.077756249366494
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.3798927112181811,
+    "mlr_p": 0.06930693069306931,
+    "brainstem_snr": 1.0953136794045684,
+    "brainstem_p": 0.27722772277227725,
+    "subject_tier": "low"
+   },
+   "12": {
+    "n_trials": 16,
+    "n_errors": 0,
+    "low_r": 0.05554821092812315,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.00870041328532431,
+    "low_null_mismatch_95": 0.01059527405953709,
+    "trial_offset_median_ms": 4.488204325808686,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 7.846519310811525
+     },
+     "P2": {
+      "lag_s": 0.15625,
+      "gfp_rel": 8.242229300738648
+     },
+     "global_peak_s": 0.15625
+    },
+    "mlr_snr": 1.9024266697729828,
+    "mlr_p": 0.009900990099009901,
+    "brainstem_snr": 0.9817312205786274,
+    "brainstem_p": 0.5445544554455446,
+    "subject_tier": "mlr"
+   },
+   "13": {
+    "n_trials": 16,
+    "n_errors": 0,
+    "low_r": 0.060020034181132616,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.007829224040880513,
+    "low_null_mismatch_95": 0.008296953493971991,
+    "trial_offset_median_ms": 1.1160048266902942,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.0625,
+      "gfp_rel": 8.367841254570447
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 8.573715623478805
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.3301400602780868,
+    "mlr_p": 0.04950495049504951,
+    "brainstem_snr": 0.7797732868347745,
+    "brainstem_p": 0.9603960396039604,
+    "subject_tier": "mlr"
+   },
+   "14": {
+    "n_trials": 16,
+    "n_errors": 0,
+    "low_r": 0.03677716781653123,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.021149145198354792,
+    "low_null_mismatch_95": 0.018244157213761478,
+    "trial_offset_median_ms": 5.5181449544126755,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 3.2469425522053883
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 4.351722299970683
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.3310248243259475,
+    "mlr_p": 0.09900990099009901,
+    "brainstem_snr": 1.0319111763502975,
+    "brainstem_p": 0.37623762376237624,
+    "subject_tier": "low"
+   },
+   "16": {
+    "n_trials": 16,
+    "n_errors": 0,
+    "low_r": 0.04973360390135485,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.0053479614267063534,
+    "low_null_mismatch_95": 0.0051607911484010385,
+    "trial_offset_median_ms": 0.3948978728778678,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 7.122420455565961
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 9.5616516779857
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.5637607293187308,
+    "mlr_p": 0.009900990099009901,
+    "brainstem_snr": 1.1978468071596575,
+    "brainstem_p": 0.09900990099009901,
+    "subject_tier": "mlr"
+   },
+   "17": {
+    "n_trials": 16,
+    "n_errors": 0,
+    "low_r": 0.03757336048300575,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.006636614403957799,
+    "low_null_mismatch_95": 0.008317071482700424,
+    "trial_offset_median_ms": 1.665947440587867,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 4.593534402841842
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 6.029164393478614
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.5055364846432693,
+    "mlr_p": 0.009900990099009901,
+    "brainstem_snr": 1.2481427424309655,
+    "brainstem_p": 0.06930693069306931,
+    "subject_tier": "mlr"
+   },
+   "18": {
+    "n_trials": 16,
+    "n_errors": 0,
+    "low_r": 0.05199232893535505,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.005802579505036371,
+    "low_null_mismatch_95": 0.0026737423947506157,
+    "trial_offset_median_ms": -8.20761171679924,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 6.472304320640828
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 6.805174667586459
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.6331378717770197,
+    "mlr_p": 0.009900990099009901,
+    "brainstem_snr": 0.7523212672046949,
+    "brainstem_p": 0.9405940594059405,
+    "subject_tier": "mlr"
+   },
+   "19": {
+    "n_trials": 14,
+    "n_errors": 0,
+    "low_r": 0.04592512989407691,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.013399585912700922,
+    "low_null_mismatch_95": 0.015227400809391271,
+    "trial_offset_median_ms": -1.2336523027802815,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.09375,
+      "gfp_rel": 8.407620758802391
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 7.279947426459479
+     },
+     "global_peak_s": 0.09375
+    },
+    "mlr_snr": 1.7908423084735183,
+    "mlr_p": 0.009900990099009901,
+    "brainstem_snr": 1.1141548307694777,
+    "brainstem_p": 0.1188118811881188,
+    "subject_tier": "mlr"
+   },
+   "20": {
+    "n_trials": 15,
+    "n_errors": 0,
+    "low_r": 0.05085138297291523,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.006388765694878019,
+    "low_null_mismatch_95": 0.0073417680249408266,
+    "trial_offset_median_ms": 1.7396636615614969,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.0625,
+      "gfp_rel": 8.275100591243758
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 7.394245216149277
+     },
+     "global_peak_s": 0.0625
+    },
+    "mlr_snr": 1.7187568640803197,
+    "mlr_p": 0.009900990099009901,
+    "brainstem_snr": 1.4350607969396487,
+    "brainstem_p": 0.06930693069306931,
+    "subject_tier": "mlr"
+   },
+   "24": {
+    "n_trials": 16,
+    "n_errors": 0,
+    "low_r": 0.091703845813671,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.0048647902135195015,
+    "low_null_mismatch_95": 0.0048594570871084465,
+    "trial_offset_median_ms": -1.4446722027157406,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 13.535433587010829
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 16.251713831112408
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.1593704770215731,
+    "mlr_p": 0.1485148514851485,
+    "brainstem_snr": 1.0933643751783881,
+    "brainstem_p": 0.19801980198019803,
+    "subject_tier": "low"
+   },
+   "27": {
+    "n_trials": 16,
+    "n_errors": 0,
+    "low_r": 0.05323954019602448,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.005103044596885654,
+    "low_null_mismatch_95": 0.007980938423787673,
+    "trial_offset_median_ms": 1.9231971197928508,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 6.635402515733413
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 8.069321961814294
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.952187545189615,
+    "mlr_p": 0.019801980198019802,
+    "brainstem_snr": 0.9131167226954091,
+    "brainstem_p": 0.5247524752475248,
+    "subject_tier": "mlr"
+   }
+  },
+  "aided": {
+   "1": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.07980370605301916,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.005044052713512843,
+    "low_null_mismatch_95": 0.0067778587974065985,
+    "trial_offset_median_ms": 1.6069042166232586,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 7.83605048668279
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 12.018090929120895
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.0049023638045678,
+    "mlr_p": 0.43564356435643564,
+    "brainstem_snr": 0.7579953009948532,
+    "brainstem_p": 0.8217821782178217,
+    "subject_tier": "low"
+   },
+   "2": {
+    "n_trials": 4,
+    "n_errors": 0,
+    "low_r": 0.047939325118812146,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.019999970307974135,
+    "low_null_mismatch_95": 0.03384482074931,
+    "trial_offset_median_ms": -2.1304126136834225,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 5.04387999344834
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 7.149817766603819
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.4855423291500116,
+    "mlr_p": 0.019801980198019802,
+    "brainstem_snr": 0.6793623732327587,
+    "brainstem_p": 1.0,
+    "subject_tier": "mlr"
+   },
+   "4": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.024501305658059955,
+    "low_p_circ": 0.058823529411764705,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.016149586261394053,
+    "low_null_mismatch_95": 0.012240028671031165,
+    "trial_offset_median_ms": -11.33877644200697,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.09375,
+      "gfp_rel": 2.380068948019528
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 2.807575954902361
+     },
+     "global_peak_s": 0.0
+    },
+    "mlr_snr": 1.2133775683566166,
+    "mlr_p": 0.07920792079207921,
+    "brainstem_snr": 1.0747208780455741,
+    "brainstem_p": 0.3564356435643564,
+    "subject_tier": "none"
+   },
+   "5": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.048791092502357296,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.0118770336622441,
+    "low_null_mismatch_95": 0.010556071330627432,
+    "trial_offset_median_ms": 3.9882751891634163,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 5.674642154811734
+     },
+     "P2": {
+      "lag_s": 0.15625,
+      "gfp_rel": 6.573241554705538
+     },
+     "global_peak_s": 0.15625
+    },
+    "mlr_snr": 1.1829457829566254,
+    "mlr_p": 0.1188118811881188,
+    "brainstem_snr": 0.8365656714901604,
+    "brainstem_p": 0.7722772277227723,
+    "subject_tier": "low"
+   },
+   "6": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.07524011305051118,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.01215122900676497,
+    "low_null_mismatch_95": 0.01047796276797912,
+    "trial_offset_median_ms": -7.782972960317873,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 6.947191079110181
+     },
+     "P2": {
+      "lag_s": 0.15625,
+      "gfp_rel": 7.085500934613499
+     },
+     "global_peak_s": 0.15625
+    },
+    "mlr_snr": 0.8383037093354164,
+    "mlr_p": 0.7029702970297029,
+    "brainstem_snr": 1.0025062435196581,
+    "brainstem_p": 0.504950495049505,
+    "subject_tier": "low"
+   },
+   "7": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.07108088822918637,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.011540476623508487,
+    "low_null_mismatch_95": 0.007055003996044815,
+    "trial_offset_median_ms": -1.6066097640568664,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 9.19199895244146
+     },
+     "P2": {
+      "lag_s": 0.15625,
+      "gfp_rel": 9.733831873903949
+     },
+     "global_peak_s": 0.15625
+    },
+    "mlr_snr": 1.3473851659251885,
+    "mlr_p": 0.04950495049504951,
+    "brainstem_snr": 0.8213819197402227,
+    "brainstem_p": 0.7524752475247525,
+    "subject_tier": "mlr"
+   },
+   "8": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.04412178097730048,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.0102899759185129,
+    "low_null_mismatch_95": 0.001135779635266391,
+    "trial_offset_median_ms": -3.7804608628944765,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.09375,
+      "gfp_rel": 3.875420514801472
+     },
+     "P2": {
+      "lag_s": 0.1875,
+      "gfp_rel": 4.109078177216874
+     },
+     "global_peak_s": 0.1875
+    },
+    "mlr_snr": 0.9184830768352928,
+    "mlr_p": 0.5148514851485149,
+    "brainstem_snr": 0.9099481024550303,
+    "brainstem_p": 0.6138613861386139,
+    "subject_tier": "low"
+   },
+   "9": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.09264648665214187,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.011712966273802593,
+    "low_null_mismatch_95": 0.014938071208425403,
+    "trial_offset_median_ms": 3.11743281578819,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 8.726467798918266
+     },
+     "P2": {
+      "lag_s": 0.15625,
+      "gfp_rel": 8.746566437182276
+     },
+     "global_peak_s": 0.15625
+    },
+    "mlr_snr": 0.9403303147482491,
+    "mlr_p": 0.44554455445544555,
+    "brainstem_snr": 0.8667905966650348,
+    "brainstem_p": 0.6732673267326733,
+    "subject_tier": "low"
+   },
+   "10": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.035729842024781744,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.011371127961312177,
+    "low_null_mismatch_95": 0.008230316571876464,
+    "trial_offset_median_ms": 1.1548506539943164,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.09375,
+      "gfp_rel": 3.494786050303828
+     },
+     "P2": {
+      "lag_s": 0.1875,
+      "gfp_rel": 4.756878369238291
+     },
+     "global_peak_s": 0.1875
+    },
+    "mlr_snr": 1.3759665550524292,
+    "mlr_p": 0.09900990099009901,
+    "brainstem_snr": 0.8739145881610545,
+    "brainstem_p": 0.7821782178217822,
+    "subject_tier": "low"
+   },
+   "11": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.02724335479410859,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.009293623636012023,
+    "low_null_mismatch_95": 0.006939727690938697,
+    "trial_offset_median_ms": 4.200863864457405,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 3.2688265848541116
+     },
+     "P2": {
+      "lag_s": 0.1875,
+      "gfp_rel": 3.9291868897094253
+     },
+     "global_peak_s": 0.1875
+    },
+    "mlr_snr": 1.255684429437699,
+    "mlr_p": 0.1188118811881188,
+    "brainstem_snr": 0.894653248723704,
+    "brainstem_p": 0.7227722772277227,
+    "subject_tier": "low"
+   },
+   "12": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.06500577577386536,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.014474428684929043,
+    "low_null_mismatch_95": 0.009628477463029424,
+    "trial_offset_median_ms": -9.534923440841888,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 5.7003797101504485
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 6.179995087891795
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.7838865502954027,
+    "mlr_p": 0.009900990099009901,
+    "brainstem_snr": 1.2189313335442475,
+    "brainstem_p": 0.07920792079207921,
+    "subject_tier": "mlr"
+   },
+   "13": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.06261696972540354,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.011242118486752403,
+    "low_null_mismatch_95": 0.00973480977467898,
+    "trial_offset_median_ms": -1.2200201046379653,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.0625,
+      "gfp_rel": 5.531106207865597
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 6.8785116318021675
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.0454330466416297,
+    "mlr_p": 0.2871287128712871,
+    "brainstem_snr": 0.7649916827073637,
+    "brainstem_p": 0.9207920792079208,
+    "subject_tier": "low"
+   },
+   "14": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.037183699720154735,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.09523809523809523,
+    "low_null_circ_95": 0.02634623274142631,
+    "low_null_mismatch_95": 0.02380089876188012,
+    "trial_offset_median_ms": 5.798675363785146,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 3.0730204725380306
+     },
+     "P2": {
+      "lag_s": 0.15625,
+      "gfp_rel": 3.5093373870447957
+     },
+     "global_peak_s": 0.15625
+    },
+    "mlr_snr": 1.2529197405255117,
+    "mlr_p": 0.0594059405940594,
+    "brainstem_snr": 0.7462726278630994,
+    "brainstem_p": 0.9405940594059405,
+    "subject_tier": "none"
+   },
+   "16": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.048174218309019155,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.010415122565522185,
+    "low_null_mismatch_95": 0.006125643926393864,
+    "trial_offset_median_ms": -0.11027311883256763,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 5.41960187364687
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 7.54368907282696
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.0429449986560542,
+    "mlr_p": 0.22772277227722773,
+    "brainstem_snr": 1.2037803816527932,
+    "brainstem_p": 0.13861386138613863,
+    "subject_tier": "low"
+   },
+   "17": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.05198531105154389,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.006724807286095524,
+    "low_null_mismatch_95": 0.010911934776088239,
+    "trial_offset_median_ms": 4.844328940518131,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 3.3440840292305336
+     },
+     "P2": {
+      "lag_s": 0.1875,
+      "gfp_rel": 6.932851444978894
+     },
+     "global_peak_s": 0.1875
+    },
+    "mlr_snr": 1.425192677322702,
+    "mlr_p": 0.04950495049504951,
+    "brainstem_snr": 1.0412463776152956,
+    "brainstem_p": 0.4158415841584158,
+    "subject_tier": "mlr"
+   },
+   "18": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.054640344612179134,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.008188455753564531,
+    "low_null_mismatch_95": 0.0039764558644122755,
+    "trial_offset_median_ms": -7.373006812016433,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 4.495245195972837
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 5.554325222992518
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.0915019862870046,
+    "mlr_p": 0.1485148514851485,
+    "brainstem_snr": 0.8740050633846161,
+    "brainstem_p": 0.7524752475247525,
+    "subject_tier": "low"
+   },
+   "19": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.06791528793899769,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.01968243035617642,
+    "low_null_mismatch_95": 0.008852892896415106,
+    "trial_offset_median_ms": 0.5984886753267399,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.09375,
+      "gfp_rel": 8.146815280524596
+     },
+     "P2": {
+      "lag_s": 0.1875,
+      "gfp_rel": 6.335010734643443
+     },
+     "global_peak_s": 0.09375
+    },
+    "mlr_snr": 1.7379793444920193,
+    "mlr_p": 0.009900990099009901,
+    "brainstem_snr": 1.1075384596375937,
+    "brainstem_p": 0.22772277227722773,
+    "subject_tier": "mlr"
+   },
+   "20": {
+    "n_trials": 7,
+    "n_errors": 0,
+    "low_r": 0.054069059296803716,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.010961190458965629,
+    "low_null_mismatch_95": 0.010613134667055405,
+    "trial_offset_median_ms": 0.5140745514262544,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.0625,
+      "gfp_rel": 7.430003778744912
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 4.285802455024343
+     },
+     "global_peak_s": 0.0625
+    },
+    "mlr_snr": 1.6714849654658652,
+    "mlr_p": 0.019801980198019802,
+    "brainstem_snr": 1.2378116121468856,
+    "brainstem_p": 0.18811881188118812,
+    "subject_tier": "mlr"
+   },
+   "24": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.08928503827844148,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.007194693799925432,
+    "low_null_mismatch_95": 0.010060287099557336,
+    "trial_offset_median_ms": -0.9665014454897574,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 10.166474812704097
+     },
+     "P2": {
+      "lag_s": 0.15625,
+      "gfp_rel": 11.878403871030217
+     },
+     "global_peak_s": 0.15625
+    },
+    "mlr_snr": 1.0912147721894516,
+    "mlr_p": 0.16831683168316833,
+    "brainstem_snr": 1.2286647150129006,
+    "brainstem_p": 0.1188118811881188,
+    "subject_tier": "low"
+   },
+   "27": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.05619149781648815,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.00825140701996921,
+    "low_null_mismatch_95": 0.009789568134186636,
+    "trial_offset_median_ms": 0.6989878315689941,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 5.71152949441392
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 6.876983804303953
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.279634742993902,
+    "mlr_p": 0.10891089108910891,
+    "brainstem_snr": 0.695357331234603,
+    "brainstem_p": 0.900990099009901,
+    "subject_tier": "low"
+   }
+  },
+  "unaided": {
+   "1": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.08345601082382308,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.006110111272138377,
+    "low_null_mismatch_95": 0.00925173017497263,
+    "trial_offset_median_ms": -2.744545500798227,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 7.898225823596171
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 11.103057177028044
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.2509264290213427,
+    "mlr_p": 0.15841584158415842,
+    "brainstem_snr": 1.1364118554236693,
+    "brainstem_p": 0.26732673267326734,
+    "subject_tier": "low"
+   },
+   "2": {
+    "n_trials": 4,
+    "n_errors": 0,
+    "low_r": 0.10216587504588993,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.015699599597103892,
+    "low_null_mismatch_95": 0.020761151489623406,
+    "trial_offset_median_ms": -0.4176561130475912,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 6.725197388744563
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 8.674236315916929
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.760167127497124,
+    "mlr_p": 0.009900990099009901,
+    "brainstem_snr": 0.922323436576498,
+    "brainstem_p": 0.594059405940594,
+    "subject_tier": "mlr"
+   },
+   "4": {
+    "n_trials": 7,
+    "n_errors": 0,
+    "low_r": 0.0694574275277575,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.026548678588147398,
+    "low_null_mismatch_95": 0.019558865967473273,
+    "trial_offset_median_ms": 11.686575346193866,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 3.8230675377822227
+     },
+     "P2": {
+      "lag_s": 0.203125,
+      "gfp_rel": 5.946185671950758
+     },
+     "global_peak_s": 0.203125
+    },
+    "mlr_snr": 1.45773420242359,
+    "mlr_p": 0.039603960396039604,
+    "brainstem_snr": 0.9415964427541403,
+    "brainstem_p": 0.6435643564356436,
+    "subject_tier": "mlr"
+   },
+   "5": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.06965773303341957,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.014399286903557079,
+    "low_null_mismatch_95": 0.013217378583758049,
+    "trial_offset_median_ms": 2.651027623426093,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 8.50522248609732
+     },
+     "P2": {
+      "lag_s": 0.15625,
+      "gfp_rel": 10.189555430740263
+     },
+     "global_peak_s": 0.15625
+    },
+    "mlr_snr": 1.037198060332699,
+    "mlr_p": 0.37623762376237624,
+    "brainstem_snr": 0.838846752151255,
+    "brainstem_p": 0.8514851485148515,
+    "subject_tier": "low"
+   },
+   "6": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.06239891126932346,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.015160258307296724,
+    "low_null_mismatch_95": 0.014380052926969242,
+    "trial_offset_median_ms": -0.7179667524371101,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 5.146366573691321
+     },
+     "P2": {
+      "lag_s": 0.15625,
+      "gfp_rel": 5.570806784382472
+     },
+     "global_peak_s": 0.15625
+    },
+    "mlr_snr": 1.031638134096164,
+    "mlr_p": 0.37623762376237624,
+    "brainstem_snr": 0.900673850455031,
+    "brainstem_p": 0.6732673267326733,
+    "subject_tier": "low"
+   },
+   "7": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.06894383272445465,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.006691449793113926,
+    "low_null_mismatch_95": 0.007243155416713756,
+    "trial_offset_median_ms": -3.5336311413427053,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 8.104831850207212
+     },
+     "P2": {
+      "lag_s": 0.15625,
+      "gfp_rel": 8.602300829916446
+     },
+     "global_peak_s": 0.15625
+    },
+    "mlr_snr": 0.8297203862772728,
+    "mlr_p": 0.7722772277227723,
+    "brainstem_snr": 0.9947658775392585,
+    "brainstem_p": 0.37623762376237624,
+    "subject_tier": "low"
+   },
+   "8": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.06189861514533689,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.012567182077255537,
+    "low_null_mismatch_95": 0.0046011378543305255,
+    "trial_offset_median_ms": -0.3550238796777034,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.109375,
+      "gfp_rel": 2.4916805226606886
+     },
+     "P2": {
+      "lag_s": 0.28125,
+      "gfp_rel": 4.196320616634378
+     },
+     "global_peak_s": 0.28125
+    },
+    "mlr_snr": 0.6591276008073825,
+    "mlr_p": 0.9603960396039604,
+    "brainstem_snr": 0.7399142322964964,
+    "brainstem_p": 0.9207920792079208,
+    "subject_tier": "low"
+   },
+   "9": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.07517782546307841,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.012426759065735801,
+    "low_null_mismatch_95": 0.00790421253049405,
+    "trial_offset_median_ms": 2.547437847715046,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 7.6864927838149075
+     },
+     "P2": {
+      "lag_s": 0.15625,
+      "gfp_rel": 8.037463060405825
+     },
+     "global_peak_s": 0.15625
+    },
+    "mlr_snr": 2.598925171614523,
+    "mlr_p": 0.009900990099009901,
+    "brainstem_snr": 0.9547777309132666,
+    "brainstem_p": 0.5247524752475248,
+    "subject_tier": "mlr"
+   },
+   "10": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.038570774045539886,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.00880350130727989,
+    "low_null_mismatch_95": 0.008223246106632014,
+    "trial_offset_median_ms": -2.5700547153631326,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.09375,
+      "gfp_rel": 3.6582696321659705
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 5.666879856207587
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.1793144223299663,
+    "mlr_p": 0.1485148514851485,
+    "brainstem_snr": 1.043248388047166,
+    "brainstem_p": 0.40594059405940597,
+    "subject_tier": "low"
+   },
+   "11": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.034463842025259615,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.009166797254620065,
+    "low_null_mismatch_95": 0.0063776994573051275,
+    "trial_offset_median_ms": 1.2614414603744004,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 2.8217260386169394
+     },
+     "P2": {
+      "lag_s": 0.15625,
+      "gfp_rel": 3.322976259347522
+     },
+     "global_peak_s": 0.15625
+    },
+    "mlr_snr": 1.038155211029101,
+    "mlr_p": 0.3564356435643564,
+    "brainstem_snr": 0.9627896820471109,
+    "brainstem_p": 0.5148514851485149,
+    "subject_tier": "low"
+   },
+   "12": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.046676790635908384,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.011851168985057456,
+    "low_null_mismatch_95": 0.010327184020648368,
+    "trial_offset_median_ms": -1.5653529449364405,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 4.886939335379198
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 5.4197592346741335
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.1118387023447198,
+    "mlr_p": 0.1485148514851485,
+    "brainstem_snr": 0.8342035275795109,
+    "brainstem_p": 0.8118811881188119,
+    "subject_tier": "low"
+   },
+   "13": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.0629505072364034,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.008216285265163041,
+    "low_null_mismatch_95": 0.005842622510065515,
+    "trial_offset_median_ms": -1.4353774638198662,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.0625,
+      "gfp_rel": 6.609905142428477
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 6.271521507689961
+     },
+     "global_peak_s": 0.0625
+    },
+    "mlr_snr": 1.6955810799894728,
+    "mlr_p": 0.009900990099009901,
+    "brainstem_snr": 0.8228435096369073,
+    "brainstem_p": 0.8415841584158416,
+    "subject_tier": "mlr"
+   },
+   "14": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.023454878750511724,
+    "low_p_circ": 0.09803921568627451,
+    "low_p_mismatch": 0.09523809523809523,
+    "low_null_circ_95": 0.02456735253039726,
+    "low_null_mismatch_95": 0.022411145052852976,
+    "trial_offset_median_ms": 0.3921740502865999,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 2.395406926865129
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 3.1181691700353746
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.0169470922992008,
+    "mlr_p": 0.45544554455445546,
+    "brainstem_snr": 0.9757158660293509,
+    "brainstem_p": 0.45544554455445546,
+    "subject_tier": "none"
+   },
+   "16": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.04555463655368553,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.010986405879616017,
+    "low_null_mismatch_95": 0.007661888550321299,
+    "trial_offset_median_ms": 3.9989852429350896,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 4.561146407115925
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 6.5906631475814565
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.4849320085272977,
+    "mlr_p": 0.009900990099009901,
+    "brainstem_snr": 0.7838289491411023,
+    "brainstem_p": 0.9405940594059405,
+    "subject_tier": "mlr"
+   },
+   "17": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.026051305054591595,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.007399431497411065,
+    "low_null_mismatch_95": 0.009038492416668825,
+    "trial_offset_median_ms": 2.4370507958854017,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 3.2340679116056954
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 3.980447757650012
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.089994797448327,
+    "mlr_p": 0.22772277227722773,
+    "brainstem_snr": 1.0912446785534085,
+    "brainstem_p": 0.2376237623762376,
+    "subject_tier": "low"
+   },
+   "18": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.04197571273411248,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.008145192288485597,
+    "low_null_mismatch_95": 0.006002951693254001,
+    "trial_offset_median_ms": -3.5912808360594766,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 4.368152632004773
+     },
+     "P2": {
+      "lag_s": 0.15625,
+      "gfp_rel": 4.470625348148539
+     },
+     "global_peak_s": 0.15625
+    },
+    "mlr_snr": 1.5072464208568421,
+    "mlr_p": 0.019801980198019802,
+    "brainstem_snr": 0.8782882598248419,
+    "brainstem_p": 0.6534653465346535,
+    "subject_tier": "mlr"
+   },
+   "19": {
+    "n_trials": 6,
+    "n_errors": 0,
+    "low_r": 0.04979856431777293,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.027783917176434792,
+    "low_null_mismatch_95": 0.030978290656183148,
+    "trial_offset_median_ms": -3.8894161155820557,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.09375,
+      "gfp_rel": 4.370932651409292
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 4.806481792686749
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.3284454454001073,
+    "mlr_p": 0.0297029702970297,
+    "brainstem_snr": 1.1300513037212163,
+    "brainstem_p": 0.1485148514851485,
+    "subject_tier": "mlr"
+   },
+   "20": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.04919605300408385,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.010711855902002193,
+    "low_null_mismatch_95": 0.012378857125056491,
+    "trial_offset_median_ms": 2.05434962862856,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.078125,
+      "gfp_rel": 5.553522562674304
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 5.6252702012059785
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.3364174818346612,
+    "mlr_p": 0.04950495049504951,
+    "brainstem_snr": 1.1163150140240872,
+    "brainstem_p": 0.24752475247524752,
+    "subject_tier": "mlr"
+   },
+   "24": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.09284687008681387,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.006549755059205049,
+    "low_null_mismatch_95": 0.00984331320461362,
+    "trial_offset_median_ms": -0.2488646632630479,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 9.447231060044595
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 12.498879764737312
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.2252356910784146,
+    "mlr_p": 0.0891089108910891,
+    "brainstem_snr": 0.9298531645451745,
+    "brainstem_p": 0.6732673267326733,
+    "subject_tier": "low"
+   },
+   "27": {
+    "n_trials": 8,
+    "n_errors": 0,
+    "low_r": 0.04254234057949594,
+    "low_p_circ": 0.0196078431372549,
+    "low_p_mismatch": 0.047619047619047616,
+    "low_null_circ_95": 0.0074627873179083275,
+    "low_null_mismatch_95": 0.006138991252388086,
+    "trial_offset_median_ms": 3.2204721289458274,
+    "trf_peaks": {
+     "N1": {
+      "lag_s": 0.140625,
+      "gfp_rel": 4.224015616783446
+     },
+     "P2": {
+      "lag_s": 0.171875,
+      "gfp_rel": 5.558105983737603
+     },
+     "global_peak_s": 0.171875
+    },
+    "mlr_snr": 1.9362324049456185,
+    "mlr_p": 0.009900990099009901,
+    "brainstem_snr": 1.348495808163511,
+    "brainstem_p": 0.039603960396039604,
+    "subject_tier": "brainstem"
+   }
+  }
+ },
+ "low_failing_subjects": {
+  "aided": {
+   "S_004": "r 0.025, p_circ 0.059, p_mismatch 0.048",
+   "S_014": "r 0.037, p_circ 0.020, p_mismatch 0.095"
+  },
+  "unaided": {
+   "S_014": "r 0.023, p_circ 0.098, p_mismatch 0.095"
+  },
+  "pooled": "none (all 20 at the p floors)"
+ },
+ "lag_sweep": {
+  "status": "MISSING in the repo validator: no global stimulus-shift sweep against a fixed model. The closest repo output is the per-trial peak shift (+-0.5 s, parabolic) of each held-out trial against the subject model trained on the other trials; a constant offset common to all trials is absorbed by that model and cannot be seen. Tolerance: none defined in the repo; compared here with 1 sample at 64 Hz (15.6 ms) as in earlier reports.",
+  "subject_median_trial_offset_ms": {
+   "pooled": {
+    "n": 20,
+    "min": -12.519271927134923,
+    "q25": -1.743832658834004,
+    "median": 0.755451349784081,
+    "q75": 1.7855470261193354,
+    "max": 8.810598903872327,
+    "mean": -0.28321797920318614,
+    "boot95": [
+     -1.3972574509346476,
+     1.702805551074682
+    ]
+   },
+   "aided": {
+    "n": 20,
+    "min": -11.33877644200697,
+    "q25": -2.542924675986186,
+    "median": 0.20190071629684336,
+    "q75": 1.9845363664144915,
+    "max": 5.798675363785146,
+    "mean": -0.9660537731063187,
+    "boot95": [
+     -1.8685111888701444,
+     1.3808774353087876
+    ]
+   },
+   "unaided": {
+    "n": 20,
+    "min": -3.8894161155820557,
+    "q25": -1.8165283875431135,
+    "median": -0.3019442714703756,
+    "q75": 2.4646475588428127,
+    "max": 11.686575346193866,
+    "mean": 0.45901719990317635,
+    "boot95": [
+     -1.5019898978921105,
+     2.245700212256981
+    ]
+   }
+  },
+  "within_tolerance": "yes: population median +0.76 ms pooled (bootstrap 95% -1.40..+1.70), aided +0.20, unaided -0.30; every subject median within +-12.5 ms",
+  "jitter_mad_ms": {
+   "pooled": 12.733061171590716,
+   "aided": 13.117848953425858,
+   "unaided": 15.049242586237641
+  },
+  "jitter_sd_ms": {
+   "pooled": 99.04369496481422,
+   "aided": 1561.5704637128329,
+   "unaided": 101.41274385868346
+  },
+  "jitter_sd_note": "SD is not robust: weak trials land at the +-500 ms search edge, and aided S_014 trial 9 (first of its 2nd recording) has an offset of -19470 ms (outside the +-500 ms range: the parabolic step in models.peak_shift is unbounded when the curvature is near zero), which drives the aided SD to 1562 ms",
+  "drift_ppm": {
+   "pooled": {
+    "median": 53.53077565091925,
+    "se": 278.45566192926356
+   },
+   "aided": {
+    "median": 51.57499464084153,
+    "se": 253.82523401360726
+   },
+   "unaided": {
+    "median": 24.411213903542006,
+    "se": 300.3154264995765
+   }
+  },
+  "explorer_absolute_check": "notes.md 6: leave-one-subject-out lag peak -20..+24 ms, aided mean 0.0 ms, unaided -1.4 ms (explorer script, not the repo validator)"
+ },
+ "latency_trf": {
+  "method": "repo low-tier forward TRF (0.5-8 Hz envelope, 64 Hz, all trials of the subject), GFP over 32 channels / median circular-null GFP; N1 = max in 50-150 ms, P2 = max in 150-300 ms. The validator stores the GFP only (no signed channel TRFs), so N1/P2 polarity cannot be checked: these are GFP maxima, 15.6 ms grid",
+  "grand": {
+   "pooled": {
+    "N1": {
+     "lag_s": 0.140625,
+     "gfp_rel": 6.895389240702987
+    },
+    "P2": {
+     "lag_s": 0.171875,
+     "gfp_rel": 8.827440573354982
+    },
+    "global_peak_s": 0.171875
+   },
+   "aided": {
+    "N1": {
+     "lag_s": 0.140625,
+     "gfp_rel": 5.058778736495353
+    },
+    "P2": {
+     "lag_s": 0.171875,
+     "gfp_rel": 6.465231314700382
+    },
+    "global_peak_s": 0.171875
+   },
+   "unaided": {
+    "N1": {
+     "lag_s": 0.140625,
+     "gfp_rel": 5.006153563464586
+    },
+    "P2": {
+     "lag_s": 0.171875,
+     "gfp_rel": 6.380335710876994
+    },
+    "global_peak_s": 0.171875
+   }
+  },
+  "subject": {
+   "pooled": {
+    "N1": {
+     "n": 20,
+     "min": 0.0625,
+     "q25": 0.12890625,
+     "median": 0.140625,
+     "q75": 0.140625,
+     "max": 0.140625,
+     "mean": 0.12578125
+    },
+    "P2": {
+     "n": 20,
+     "min": 0.15625,
+     "q25": 0.171875,
+     "median": 0.171875,
+     "q75": 0.171875,
+     "max": 0.1875,
+     "mean": 0.171875
+    }
+   },
+   "aided": {
+    "N1": {
+     "n": 20,
+     "min": 0.0625,
+     "q25": 0.09375,
+     "median": 0.140625,
+     "q75": 0.140625,
+     "max": 0.140625,
+     "mean": 0.1234375
+    },
+    "P2": {
+     "n": 20,
+     "min": 0.15625,
+     "q25": 0.15625,
+     "median": 0.171875,
+     "q75": 0.17578125,
+     "max": 0.1875,
+     "mean": 0.17109375
+    }
+   },
+   "unaided": {
+    "N1": {
+     "n": 20,
+     "min": 0.0625,
+     "q25": 0.1328125,
+     "median": 0.140625,
+     "q75": 0.140625,
+     "max": 0.140625,
+     "mean": 0.12734375
+    },
+    "P2": {
+     "n": 20,
+     "min": 0.15625,
+     "q25": 0.15625,
+     "median": 0.171875,
+     "q75": 0.171875,
+     "max": 0.28125,
+     "mean": 0.17421875
+    }
+   }
+  },
+  "note": "the grand GFP has one dominant peak at 172 ms (pooled GFP/null 8.8) with local maxima near 0 ms (4.6) and 78 ms (3.9); the 'N1' value at 141 ms is the window edge on the rising flank of the 172 ms peak, not a separate maximum. Separate N1/P2 latencies are not resolvable from the repo output",
+  "mlr_gfp_peak_ms": {
+   "pooled": 43,
+   "aided": 40,
+   "unaided": 42
+  },
+  "brainstem_band_gfp_peak_ms": {
+   "pooled": 36,
+   "aided": 37,
+   "unaided": 25,
+   "note": "no peak in 4-9 ms (GFP/null ~1.0); the 30-250 Hz maxima sit at 24-45 ms, i.e. middle-latency content"
+  }
+ },
+ "provenance_groups": {
+  "ambiguous": {
+   "n": 41,
+   "min": -0.012562205029761894,
+   "q25": 0.02430524837379029,
+   "median": 0.034025338909571504,
+   "q75": 0.046646020232130325,
+   "max": 0.09023639996872758,
+   "mean": 0.03734273025087315,
+   "frac_r_gt0": 0.926829268292683
+  },
+  "not_ambiguous": {
+   "n": 267,
+   "min": -0.031064805094236515,
+   "q25": 0.04294025889891627,
+   "median": 0.05792729698753601,
+   "q75": 0.07553214651474799,
+   "max": 0.125967759647223,
+   "mean": 0.059537949336025436,
+   "frac_r_gt0": 0.9962546816479401
+  },
+  "ambiguous_vs_not_mannwhitney_p": 3.1594022617451503e-07,
+  "s002_eeg_order": {
+   "n": 4,
+   "min": 0.066817924644927,
+   "q25": 0.09157381827673847,
+   "median": 0.10853415336920655,
+   "q75": 0.11912621013835803,
+   "max": 0.12477726880021967,
+   "mean": 0.10216587504588993,
+   "frac_r_gt0": 1.0
+  },
+  "s002_fixed_order_aided": {
+   "n": 4,
+   "min": 0.01556173277403367,
+   "q25": 0.038736490606066806,
+   "median": 0.04983986096181664,
+   "q75": 0.05904269547456198,
+   "max": 0.07651584577758164,
+   "mean": 0.047939325118812146,
+   "frac_r_gt0": 1.0
+  },
+  "other_subjects": {
+   "n": 300,
+   "min": -0.031064805094236515,
+   "q25": 0.03650486037559849,
+   "median": 0.05562178572049601,
+   "q75": 0.07335610980095847,
+   "max": 0.125967759647223,
+   "mean": 0.05609087870781927,
+   "frac_r_gt0": 0.9866666666666667
+  },
+  "ambiguous_files": {
+   "S_004_aided": {
+    "n": 8,
+    "n_ambiguous": 8,
+    "median_trial_r": 0.029463643272252683,
+    "subject_r": 0.024501305658059955,
+    "p_circ": 0.058823529411764705,
+    "p_mismatch": 0.047619047619047616,
+    "other_condition_subject_r": 0.0694574275277575,
+    "other_condition_median_trial_r": 0.07073238425927275
+   },
+   "S_004_unaided": {
+    "n": 7,
+    "n_ambiguous": 7,
+    "median_trial_r": 0.07073238425927275,
+    "subject_r": 0.0694574275277575,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "other_condition_subject_r": 0.024501305658059955,
+    "other_condition_median_trial_r": 0.029463643272252683
+   },
+   "S_008_aided": {
+    "n": 8,
+    "n_ambiguous": 8,
+    "median_trial_r": 0.042423969710742845,
+    "subject_r": 0.04412178097730048,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "other_condition_subject_r": 0.06189861514533689,
+    "other_condition_median_trial_r": 0.06338340227014688
+   },
+   "S_011_aided": {
+    "n": 8,
+    "n_ambiguous": 8,
+    "median_trial_r": 0.022405630899347363,
+    "subject_r": 0.02724335479410859,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "other_condition_subject_r": 0.034463842025259615,
+    "other_condition_median_trial_r": 0.0359072016911295
+   },
+   "S_017_unaided": {
+    "n": 8,
+    "n_ambiguous": 8,
+    "median_trial_r": 0.033371497259366126,
+    "subject_r": 0.026051305054591595,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "other_condition_subject_r": 0.05198531105154389,
+    "other_condition_median_trial_r": 0.050122295067962536
+   },
+   "S_019_unaided": {
+    "n": 6,
+    "n_ambiguous": 2,
+    "median_trial_r": 0.05999215342740835,
+    "subject_r": 0.04979856431777293,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "other_condition_subject_r": 0.06791528793899769,
+    "other_condition_median_trial_r": 0.0693412669504392,
+    "slot_r": {
+     "1": 0.03435819726799165,
+     "2": -0.0007501943106873682,
+     "3": 0.06790198578523503,
+     "4": 0.07494090606481746,
+     "5": 0.07025817002969911,
+     "6": 0.052082321069581675
+    }
+   }
+  },
+  "S_002": {
+   "aided": {
+    "subject_r": 0.047939325118812146,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "trial_r": {
+     "odin_1_1": 0.01556173277403367,
+     "odin_1_2": 0.07651584577758164,
+     "odin_1_3": 0.05321831204022209,
+     "odin_1_4": 0.04646140988341118
+    }
+   },
+   "unaided": {
+    "subject_r": 0.10216587504588993,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "trial_r": {
+     "odin_1_3": 0.11724252391773748,
+     "odin_1_4": 0.066817924644927,
+     "odin_1_1": 0.12477726880021967,
+     "odin_1_2": 0.09982578282067561
+    }
+   }
+  }
+ },
+ "provenance_note": "order_ambiguous trials score lower (median r 0.034, n 41, vs 0.058, n 267; Mann-Whitney p 3e-7), as expected because these files were flagged for weak tracking; 38/41 have r > 0; the r <= 0 ones are S_004 aided odin_1_2 (-0.013), S_017 unaided odin_1_2 (-0.0005), S_019 unaided slot 2 odin_1_2 (-0.0008, an ambiguous slot). All ambiguous files except S_004 aided pass low at the subject level. S_004 unaided (ambiguous) scores r 0.069 at the p floors, higher than notes.md's 'no usable tracking'. S_002 unaided (EEG-derived order 1_3,1_4,1_1,1_2) scores r 0.102, the highest of the 40 subject-conditions (trials 0.067-0.125); its order was chosen on EEG, so this is partly circular, but no trial is weak",
+ "aided_vs_unaided": {
+  "low_r": {
+   "aided_minus_unaided_mean": -0.0006536704237043538,
+   "median": 0.002378318630032676,
+   "sem": 0.00463622490860326,
+   "n": 20,
+   "wilcoxon_p": 0.7011814117431641
+  },
+  "N1_s": {
+   "aided_minus_unaided_mean": -0.00390625,
+   "median": 0.0,
+   "sem": 0.0025028252949890134,
+   "n": 20,
+   "wilcoxon_p": 0.10247043485974937
+  },
+  "P2_s": {
+   "aided_minus_unaided_mean": -0.003125,
+   "median": 0.0,
+   "sem": 0.005622258103663556,
+   "n": 20,
+   "wilcoxon_p": 0.9025838126526866
+  },
+  "trial_offset_median_ms": {
+   "aided_minus_unaided_mean": -1.4250709730094948,
+   "median": -0.2511397115224043,
+   "sem": 1.41474218972686,
+   "n": 20,
+   "wilcoxon_p": 0.6476554870605469
+  },
+  "mlr_snr": {
+   "aided_minus_unaided_mean": -0.0795331874841094,
+   "median": 0.005863401867481799,
+   "sem": 0.11964404003032794,
+   "n": 20,
+   "wilcoxon_p": 0.7841262817382812
+  },
+  "brainstem_snr": {
+   "aided_minus_unaided_mean": -0.025487491079777668,
+   "median": -0.03625557251086775,
+   "sem": 0.05692553308908645,
+   "n": 20,
+   "wilcoxon_p": 0.6476554870605469
+  },
+  "grand_trf_peaks": {
+   "aided": {
+    "N1": {
+     "lag_s": 0.140625,
+     "gfp_rel": 5.058778736495353
+    },
+    "P2": {
+     "lag_s": 0.171875,
+     "gfp_rel": 6.465231314700382
+    },
+    "global_peak_s": 0.171875
+   },
+   "unaided": {
+    "N1": {
+     "lag_s": 0.140625,
+     "gfp_rel": 5.006153563464586
+    },
+    "P2": {
+     "lag_s": 0.171875,
+     "gfp_rel": 6.380335710876994
+    },
+    "global_peak_s": 0.171875
+   }
+  },
+  "pooled_model_trial_offsets_ms": {
+   "method": "per-trial peak shift against the pooled (both-condition) subject model; per subject median aided minus median unaided",
+   "all_20": {
+    "mean": -18.96,
+    "median": -2.9,
+    "sem": 14.64,
+    "wilcoxon_p": 0.044,
+    "note": "S_004 aided median -283 ms (weak file) dominates the mean"
+   },
+   "without_S004": {
+    "n": 19,
+    "mean": -4.52,
+    "median": -2.4,
+    "sem": 2.56,
+    "wilcoxon_p": 0.08
+   },
+   "interpretation": "no measurable hearing-aid delay; the point estimate has the opposite sign of an aid delay (aided would fit later = positive) and is within the 64 Hz resolution"
+  },
+  "per_condition_offsets_note": "per-condition offsets are relative to each condition's own model, so their difference cannot show a delay; listed in aided_vs_unaided.trial_offset_median_ms for completeness"
+ },
+ "trial_validation_tier_counts": {
+  "aided:mlr": 155,
+  "unaided:mlr": 153
+ },
+ "trial_validation_tier_rule": "per trial = population tier of its condition (both conditions: mlr)",
+ "trial_subject_tier_counts": {
+  "aided:low": 96,
+  "aided:mlr": 43,
+  "aided:none": 16,
+  "unaided:low": 80,
+  "unaided:mlr": 57,
+  "unaided:none": 8,
+  "unaided:brainstem": 8
+ },
+ "trial_validation_tier": {
+  "sub-001_ses-001_trial-009": "mlr",
+  "sub-001_ses-001_trial-010": "mlr",
+  "sub-001_ses-001_trial-011": "mlr",
+  "sub-001_ses-001_trial-012": "mlr",
+  "sub-001_ses-001_trial-013": "mlr",
+  "sub-001_ses-001_trial-014": "mlr",
+  "sub-001_ses-001_trial-015": "mlr",
+  "sub-001_ses-001_trial-016": "mlr",
+  "sub-002_ses-001_trial-001": "mlr",
+  "sub-002_ses-001_trial-002": "mlr",
+  "sub-002_ses-001_trial-003": "mlr",
+  "sub-002_ses-001_trial-004": "mlr",
+  "sub-004_ses-001_trial-001": "mlr",
+  "sub-004_ses-001_trial-002": "mlr",
+  "sub-004_ses-001_trial-003": "mlr",
+  "sub-004_ses-001_trial-004": "mlr",
+  "sub-004_ses-001_trial-005": "mlr",
+  "sub-004_ses-001_trial-006": "mlr",
+  "sub-004_ses-001_trial-007": "mlr",
+  "sub-004_ses-001_trial-008": "mlr",
+  "sub-005_ses-001_trial-001": "mlr",
+  "sub-005_ses-001_trial-002": "mlr",
+  "sub-005_ses-001_trial-003": "mlr",
+  "sub-005_ses-001_trial-004": "mlr",
+  "sub-005_ses-001_trial-005": "mlr",
+  "sub-005_ses-001_trial-006": "mlr",
+  "sub-005_ses-001_trial-007": "mlr",
+  "sub-005_ses-001_trial-008": "mlr",
+  "sub-006_ses-001_trial-001": "mlr",
+  "sub-006_ses-001_trial-002": "mlr",
+  "sub-006_ses-001_trial-003": "mlr",
+  "sub-006_ses-001_trial-004": "mlr",
+  "sub-006_ses-001_trial-005": "mlr",
+  "sub-006_ses-001_trial-006": "mlr",
+  "sub-006_ses-001_trial-007": "mlr",
+  "sub-006_ses-001_trial-008": "mlr",
+  "sub-007_ses-001_trial-009": "mlr",
+  "sub-007_ses-001_trial-010": "mlr",
+  "sub-007_ses-001_trial-011": "mlr",
+  "sub-007_ses-001_trial-012": "mlr",
+  "sub-007_ses-001_trial-013": "mlr",
+  "sub-007_ses-001_trial-014": "mlr",
+  "sub-007_ses-001_trial-015": "mlr",
+  "sub-007_ses-001_trial-016": "mlr",
+  "sub-008_ses-001_trial-001": "mlr",
+  "sub-008_ses-001_trial-002": "mlr",
+  "sub-008_ses-001_trial-003": "mlr",
+  "sub-008_ses-001_trial-004": "mlr",
+  "sub-008_ses-001_trial-005": "mlr",
+  "sub-008_ses-001_trial-006": "mlr",
+  "sub-008_ses-001_trial-007": "mlr",
+  "sub-008_ses-001_trial-008": "mlr",
+  "sub-009_ses-001_trial-001": "mlr",
+  "sub-009_ses-001_trial-002": "mlr",
+  "sub-009_ses-001_trial-003": "mlr",
+  "sub-009_ses-001_trial-004": "mlr",
+  "sub-009_ses-001_trial-005": "mlr",
+  "sub-009_ses-001_trial-006": "mlr",
+  "sub-009_ses-001_trial-007": "mlr",
+  "sub-009_ses-001_trial-008": "mlr",
+  "sub-010_ses-001_trial-001": "mlr",
+  "sub-010_ses-001_trial-002": "mlr",
+  "sub-010_ses-001_trial-003": "mlr",
+  "sub-010_ses-001_trial-004": "mlr",
+  "sub-010_ses-001_trial-005": "mlr",
+  "sub-010_ses-001_trial-006": "mlr",
+  "sub-010_ses-001_trial-007": "mlr",
+  "sub-010_ses-001_trial-008": "mlr",
+  "sub-011_ses-001_trial-001": "mlr",
+  "sub-011_ses-001_trial-002": "mlr",
+  "sub-011_ses-001_trial-003": "mlr",
+  "sub-011_ses-001_trial-004": "mlr",
+  "sub-011_ses-001_trial-005": "mlr",
+  "sub-011_ses-001_trial-006": "mlr",
+  "sub-011_ses-001_trial-007": "mlr",
+  "sub-011_ses-001_trial-008": "mlr",
+  "sub-012_ses-001_trial-001": "mlr",
+  "sub-012_ses-001_trial-002": "mlr",
+  "sub-012_ses-001_trial-003": "mlr",
+  "sub-012_ses-001_trial-004": "mlr",
+  "sub-012_ses-001_trial-005": "mlr",
+  "sub-012_ses-001_trial-006": "mlr",
+  "sub-012_ses-001_trial-007": "mlr",
+  "sub-012_ses-001_trial-008": "mlr",
+  "sub-013_ses-001_trial-009": "mlr",
+  "sub-013_ses-001_trial-010": "mlr",
+  "sub-013_ses-001_trial-011": "mlr",
+  "sub-013_ses-001_trial-012": "mlr",
+  "sub-013_ses-001_trial-013": "mlr",
+  "sub-013_ses-001_trial-014": "mlr",
+  "sub-013_ses-001_trial-015": "mlr",
+  "sub-013_ses-001_trial-016": "mlr",
+  "sub-014_ses-001_trial-009": "mlr",
+  "sub-014_ses-001_trial-010": "mlr",
+  "sub-014_ses-001_trial-011": "mlr",
+  "sub-014_ses-001_trial-012": "mlr",
+  "sub-014_ses-001_trial-013": "mlr",
+  "sub-014_ses-001_trial-014": "mlr",
+  "sub-014_ses-001_trial-015": "mlr",
+  "sub-014_ses-001_trial-016": "mlr",
+  "sub-016_ses-001_trial-009": "mlr",
+  "sub-016_ses-001_trial-010": "mlr",
+  "sub-016_ses-001_trial-011": "mlr",
+  "sub-016_ses-001_trial-012": "mlr",
+  "sub-016_ses-001_trial-013": "mlr",
+  "sub-016_ses-001_trial-014": "mlr",
+  "sub-016_ses-001_trial-015": "mlr",
+  "sub-016_ses-001_trial-016": "mlr",
+  "sub-017_ses-001_trial-001": "mlr",
+  "sub-017_ses-001_trial-002": "mlr",
+  "sub-017_ses-001_trial-003": "mlr",
+  "sub-017_ses-001_trial-004": "mlr",
+  "sub-017_ses-001_trial-005": "mlr",
+  "sub-017_ses-001_trial-006": "mlr",
+  "sub-017_ses-001_trial-007": "mlr",
+  "sub-017_ses-001_trial-008": "mlr",
+  "sub-018_ses-001_trial-009": "mlr",
+  "sub-018_ses-001_trial-010": "mlr",
+  "sub-018_ses-001_trial-011": "mlr",
+  "sub-018_ses-001_trial-012": "mlr",
+  "sub-018_ses-001_trial-013": "mlr",
+  "sub-018_ses-001_trial-014": "mlr",
+  "sub-018_ses-001_trial-015": "mlr",
+  "sub-018_ses-001_trial-016": "mlr",
+  "sub-019_ses-001_trial-001": "mlr",
+  "sub-019_ses-001_trial-002": "mlr",
+  "sub-019_ses-001_trial-003": "mlr",
+  "sub-019_ses-001_trial-004": "mlr",
+  "sub-019_ses-001_trial-005": "mlr",
+  "sub-019_ses-001_trial-006": "mlr",
+  "sub-019_ses-001_trial-007": "mlr",
+  "sub-019_ses-001_trial-008": "mlr",
+  "sub-020_ses-001_trial-001": "mlr",
+  "sub-020_ses-001_trial-002": "mlr",
+  "sub-020_ses-001_trial-003": "mlr",
+  "sub-020_ses-001_trial-004": "mlr",
+  "sub-020_ses-001_trial-005": "mlr",
+  "sub-020_ses-001_trial-006": "mlr",
+  "sub-020_ses-001_trial-007": "mlr",
+  "sub-024_ses-002_trial-009": "mlr",
+  "sub-024_ses-002_trial-010": "mlr",
+  "sub-024_ses-002_trial-011": "mlr",
+  "sub-024_ses-002_trial-012": "mlr",
+  "sub-024_ses-002_trial-013": "mlr",
+  "sub-024_ses-002_trial-014": "mlr",
+  "sub-024_ses-002_trial-015": "mlr",
+  "sub-024_ses-002_trial-016": "mlr",
+  "sub-027_ses-001_trial-001": "mlr",
+  "sub-027_ses-001_trial-002": "mlr",
+  "sub-027_ses-001_trial-003": "mlr",
+  "sub-027_ses-001_trial-004": "mlr",
+  "sub-027_ses-001_trial-005": "mlr",
+  "sub-027_ses-001_trial-006": "mlr",
+  "sub-027_ses-001_trial-007": "mlr",
+  "sub-027_ses-001_trial-008": "mlr",
+  "sub-001_ses-001_trial-001": "mlr",
+  "sub-001_ses-001_trial-002": "mlr",
+  "sub-001_ses-001_trial-003": "mlr",
+  "sub-001_ses-001_trial-004": "mlr",
+  "sub-001_ses-001_trial-005": "mlr",
+  "sub-001_ses-001_trial-006": "mlr",
+  "sub-001_ses-001_trial-007": "mlr",
+  "sub-001_ses-001_trial-008": "mlr",
+  "sub-002_ses-001_trial-005": "mlr",
+  "sub-002_ses-001_trial-006": "mlr",
+  "sub-002_ses-001_trial-007": "mlr",
+  "sub-002_ses-001_trial-008": "mlr",
+  "sub-004_ses-001_trial-009": "mlr",
+  "sub-004_ses-001_trial-010": "mlr",
+  "sub-004_ses-001_trial-011": "mlr",
+  "sub-004_ses-001_trial-012": "mlr",
+  "sub-004_ses-001_trial-013": "mlr",
+  "sub-004_ses-001_trial-014": "mlr",
+  "sub-004_ses-001_trial-015": "mlr",
+  "sub-005_ses-001_trial-009": "mlr",
+  "sub-005_ses-001_trial-010": "mlr",
+  "sub-005_ses-001_trial-011": "mlr",
+  "sub-005_ses-001_trial-012": "mlr",
+  "sub-005_ses-001_trial-013": "mlr",
+  "sub-005_ses-001_trial-014": "mlr",
+  "sub-005_ses-001_trial-015": "mlr",
+  "sub-005_ses-001_trial-016": "mlr",
+  "sub-006_ses-001_trial-009": "mlr",
+  "sub-006_ses-001_trial-010": "mlr",
+  "sub-006_ses-001_trial-011": "mlr",
+  "sub-006_ses-001_trial-012": "mlr",
+  "sub-006_ses-001_trial-013": "mlr",
+  "sub-006_ses-001_trial-014": "mlr",
+  "sub-006_ses-001_trial-015": "mlr",
+  "sub-006_ses-001_trial-016": "mlr",
+  "sub-007_ses-001_trial-001": "mlr",
+  "sub-007_ses-001_trial-002": "mlr",
+  "sub-007_ses-001_trial-003": "mlr",
+  "sub-007_ses-001_trial-004": "mlr",
+  "sub-007_ses-001_trial-005": "mlr",
+  "sub-007_ses-001_trial-006": "mlr",
+  "sub-007_ses-001_trial-007": "mlr",
+  "sub-007_ses-001_trial-008": "mlr",
+  "sub-008_ses-001_trial-009": "mlr",
+  "sub-008_ses-001_trial-010": "mlr",
+  "sub-008_ses-001_trial-011": "mlr",
+  "sub-008_ses-001_trial-012": "mlr",
+  "sub-008_ses-001_trial-013": "mlr",
+  "sub-008_ses-001_trial-014": "mlr",
+  "sub-008_ses-001_trial-015": "mlr",
+  "sub-008_ses-001_trial-016": "mlr",
+  "sub-009_ses-001_trial-009": "mlr",
+  "sub-009_ses-001_trial-010": "mlr",
+  "sub-009_ses-001_trial-011": "mlr",
+  "sub-009_ses-001_trial-012": "mlr",
+  "sub-009_ses-001_trial-013": "mlr",
+  "sub-009_ses-001_trial-014": "mlr",
+  "sub-009_ses-001_trial-015": "mlr",
+  "sub-009_ses-001_trial-016": "mlr",
+  "sub-010_ses-001_trial-009": "mlr",
+  "sub-010_ses-001_trial-010": "mlr",
+  "sub-010_ses-001_trial-011": "mlr",
+  "sub-010_ses-001_trial-012": "mlr",
+  "sub-010_ses-001_trial-013": "mlr",
+  "sub-010_ses-001_trial-014": "mlr",
+  "sub-010_ses-001_trial-015": "mlr",
+  "sub-010_ses-001_trial-016": "mlr",
+  "sub-011_ses-001_trial-009": "mlr",
+  "sub-011_ses-001_trial-010": "mlr",
+  "sub-011_ses-001_trial-011": "mlr",
+  "sub-011_ses-001_trial-012": "mlr",
+  "sub-011_ses-001_trial-013": "mlr",
+  "sub-011_ses-001_trial-014": "mlr",
+  "sub-011_ses-001_trial-015": "mlr",
+  "sub-011_ses-001_trial-016": "mlr",
+  "sub-012_ses-001_trial-009": "mlr",
+  "sub-012_ses-001_trial-010": "mlr",
+  "sub-012_ses-001_trial-011": "mlr",
+  "sub-012_ses-001_trial-012": "mlr",
+  "sub-012_ses-001_trial-013": "mlr",
+  "sub-012_ses-001_trial-014": "mlr",
+  "sub-012_ses-001_trial-015": "mlr",
+  "sub-012_ses-001_trial-016": "mlr",
+  "sub-013_ses-001_trial-001": "mlr",
+  "sub-013_ses-001_trial-002": "mlr",
+  "sub-013_ses-001_trial-003": "mlr",
+  "sub-013_ses-001_trial-004": "mlr",
+  "sub-013_ses-001_trial-005": "mlr",
+  "sub-013_ses-001_trial-006": "mlr",
+  "sub-013_ses-001_trial-007": "mlr",
+  "sub-013_ses-001_trial-008": "mlr",
+  "sub-014_ses-001_trial-001": "mlr",
+  "sub-014_ses-001_trial-002": "mlr",
+  "sub-014_ses-001_trial-003": "mlr",
+  "sub-014_ses-001_trial-004": "mlr",
+  "sub-014_ses-001_trial-005": "mlr",
+  "sub-014_ses-001_trial-006": "mlr",
+  "sub-014_ses-001_trial-007": "mlr",
+  "sub-014_ses-001_trial-008": "mlr",
+  "sub-016_ses-001_trial-001": "mlr",
+  "sub-016_ses-001_trial-002": "mlr",
+  "sub-016_ses-001_trial-003": "mlr",
+  "sub-016_ses-001_trial-004": "mlr",
+  "sub-016_ses-001_trial-005": "mlr",
+  "sub-016_ses-001_trial-006": "mlr",
+  "sub-016_ses-001_trial-007": "mlr",
+  "sub-016_ses-001_trial-008": "mlr",
+  "sub-017_ses-002_trial-009": "mlr",
+  "sub-017_ses-002_trial-010": "mlr",
+  "sub-017_ses-002_trial-011": "mlr",
+  "sub-017_ses-002_trial-012": "mlr",
+  "sub-017_ses-002_trial-013": "mlr",
+  "sub-017_ses-002_trial-014": "mlr",
+  "sub-017_ses-002_trial-015": "mlr",
+  "sub-017_ses-002_trial-016": "mlr",
+  "sub-018_ses-001_trial-001": "mlr",
+  "sub-018_ses-001_trial-002": "mlr",
+  "sub-018_ses-001_trial-003": "mlr",
+  "sub-018_ses-001_trial-004": "mlr",
+  "sub-018_ses-001_trial-005": "mlr",
+  "sub-018_ses-001_trial-006": "mlr",
+  "sub-018_ses-001_trial-007": "mlr",
+  "sub-018_ses-001_trial-008": "mlr",
+  "sub-019_ses-001_trial-009": "mlr",
+  "sub-019_ses-001_trial-010": "mlr",
+  "sub-019_ses-001_trial-011": "mlr",
+  "sub-019_ses-001_trial-012": "mlr",
+  "sub-019_ses-001_trial-013": "mlr",
+  "sub-019_ses-001_trial-014": "mlr",
+  "sub-020_ses-002_trial-008": "mlr",
+  "sub-020_ses-002_trial-009": "mlr",
+  "sub-020_ses-002_trial-010": "mlr",
+  "sub-020_ses-002_trial-011": "mlr",
+  "sub-020_ses-002_trial-012": "mlr",
+  "sub-020_ses-002_trial-013": "mlr",
+  "sub-020_ses-002_trial-014": "mlr",
+  "sub-020_ses-002_trial-015": "mlr",
+  "sub-024_ses-001_trial-001": "mlr",
+  "sub-024_ses-001_trial-002": "mlr",
+  "sub-024_ses-001_trial-003": "mlr",
+  "sub-024_ses-001_trial-004": "mlr",
+  "sub-024_ses-001_trial-005": "mlr",
+  "sub-024_ses-001_trial-006": "mlr",
+  "sub-024_ses-001_trial-007": "mlr",
+  "sub-024_ses-001_trial-008": "mlr",
+  "sub-027_ses-001_trial-009": "mlr",
+  "sub-027_ses-001_trial-010": "mlr",
+  "sub-027_ses-001_trial-011": "mlr",
+  "sub-027_ses-001_trial-012": "mlr",
+  "sub-027_ses-001_trial-013": "mlr",
+  "sub-027_ses-001_trial-014": "mlr",
+  "sub-027_ses-001_trial-015": "mlr",
+  "sub-027_ses-001_trial-016": "mlr"
+ },
+ "reference_datasets": {
+  "note": "hand-aligned reference datasets, same repo validator (forward model, mean r over channels)",
+  "weissbart2019": {
+   "source": "/data_storage/gu08wuvu/datasets/tmp/review/weissbart2019/validation.json",
+   "reference": null,
+   "noise_window": [
+    -0.075,
+    -0.02
+   ],
+   "low": {
+    "n_subjects": 13,
+    "mean_r": 0.03418168558006884,
+    "median_r": 0.03121738860002777,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "frac_subjects_sig": 0.8461538461538461,
+    "trf_peak_s": 0.1875,
+    "pass": true
+   },
+   "mlr": {
+    "n_subjects": 13,
+    "mean_snr": 1.5218227785997522,
+    "p": 0.009900990099009901,
+    "frac_subjects_sig": 0.46153846153846156,
+    "pass": true
+   },
+   "brainstem": {
+    "n_subjects": 13,
+    "mean_snr": 2.461255047264083,
+    "p": 0.009900990099009901,
+    "frac_subjects_sig": 0.9230769230769231,
+    "pass": true
+   },
+   "validation_tier": "brainstem"
+  },
+  "weissbart2019_average_ref_older_config": {
+   "source": "/data_storage/gu08wuvu/datasets/tmp/weissbart2019/validation/validation.json",
+   "reference": "average",
+   "noise_window": [
+    -0.1,
+    -0.02
+   ],
+   "low": {
+    "n_subjects": 13,
+    "mean_r": 0.17197218335508296,
+    "median_r": 0.17383109490338586,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "frac_subjects_sig": 1.0,
+    "pass": true
+   },
+   "mlr": {
+    "n_subjects": 13,
+    "mean_snr": 1.0658719562050136,
+    "p": 0.009900990099009901,
+    "frac_subjects_sig": 0.7692307692307693,
+    "pass": true
+   },
+   "brainstem": {
+    "n_subjects": 13,
+    "mean_snr": 1.5035326101842021,
+    "p": 0.009900990099009901,
+    "frac_subjects_sig": 0.7692307692307693,
+    "pass": true
+   },
+   "validation_tier": "brainstem"
+  },
+  "fuglsang2018": {
+   "source": "/data_storage/gu08wuvu/datasets/tmp/review/fuglsang2018/validation.json",
+   "reference": "average",
+   "noise_window": [
+    -0.075,
+    -0.02
+   ],
+   "low": {
+    "n_subjects": 18,
+    "mean_r": 0.03259924680938208,
+    "median_r": 0.03170038225764067,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "frac_subjects_sig": 0.9444444444444444,
+    "trf_peak_s": 0.15625,
+    "pass": true
+   },
+   "mlr": {
+    "n_subjects": 18,
+    "mean_snr": 0.9957295883326012,
+    "p": 0.4158415841584158,
+    "frac_subjects_sig": 0.1111111111111111,
+    "pass": false
+   },
+   "brainstem": {
+    "n_subjects": 18,
+    "mean_snr": 1.0519112083100497,
+    "p": 0.06930693069306931,
+    "frac_subjects_sig": 0.1111111111111111,
+    "pass": false
+   },
+   "validation_tier": "low"
+  },
+  "bentum2023_read_aloud": {
+   "source": "/data_storage/gu08wuvu/datasets/tmp/review/bentum2023/validation_read-aloud-story_none.json",
+   "reference": [
+    "A2"
+   ],
+   "noise_window": [
+    -0.075,
+    -0.02
+   ],
+   "low": {
+    "n_subjects": 10,
+    "mean_r": 0.037515841697969246,
+    "median_r": 0.03499428606827556,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "frac_subjects_sig": 0.9,
+    "trf_peak_s": 0.15625,
+    "pass": true
+   },
+   "mlr": {
+    "n_subjects": 10,
+    "mean_snr": 1.0218168508586385,
+    "p": 0.5445544554455446,
+    "frac_subjects_sig": 0.0,
+    "pass": false
+   },
+   "brainstem": {
+    "n_subjects": 10,
+    "mean_snr": 1.0115822882855354,
+    "p": 0.31683168316831684,
+    "frac_subjects_sig": 0.0,
+    "pass": false
+   },
+   "validation_tier": "low"
+  }
+ },
+ "missing_checks": [
+  "backward (decoder) model for the low tier: the repo validator fits a forward model only",
+  "global lag sweep with a defined tolerance (see lag_sweep)",
+  "signed TRFs for N1/P2 latencies (validator stores GFP only)",
+  "per-condition split in the CLI (done here by filtering records before validate())",
+  "models.peak_shift should bound the parabolic step to +-1 sample and flag edge argmaxes (not changed here)"
+ ],
+ "anomalies": [
+  "aided S_014 trial 9 (first trial of its 2nd recording) peak-shift offset -19470 ms: estimator artefact (edge argmax + unbounded parabolic step in models.peak_shift); +-30 s sweep shows no tracking at any lag; inflates aided jitter_sd_ms to 1562 ms; MAD 13 ms",
+  "S_014 fails low in both conditions separately (aided p_mismatch 0.095; unaided r 0.023, p_circ 0.098) but passes pooled; notes.md reports large common artifacts in S_014 unaided",
+  "S_004 aided fails low (p_circ 0.059, r 0.025); S_004 unaided passes (r 0.069)",
+  "brainstem: no response (pooled SNR 0.99, p 0.45; unaided 0.97, p 0.77; 1/20 unaided subjects at p < 0.05, chance level); as expected from notes.md 7c",
+  "MLR GFP peak at 40-43 ms, near the upper edge of the 18-45 ms window"
+ ],
+ "figures": [
+  "/data_storage/gu08wuvu/datasets/tmp/vanheusden2020/validation/pooled/validation.png",
+  "/data_storage/gu08wuvu/datasets/tmp/vanheusden2020/validation/aided/validation.png",
+  "/data_storage/gu08wuvu/datasets/tmp/vanheusden2020/validation/unaided/validation.png"
+ ],
+ "raw_validator_outputs": [
+  "/data_storage/gu08wuvu/datasets/tmp/review/vanheusden2020/validation/validator_pooled.json",
+  "/data_storage/gu08wuvu/datasets/tmp/review/vanheusden2020/validation/validator_aided.json",
+  "/data_storage/gu08wuvu/datasets/tmp/review/vanheusden2020/validation/validator_unaided.json"
+ ],
+ "zero_lag_bump": {
+  "question": "secondary GFP bump at ~0 ms in the 0.5-8 Hz forward TRF (pooled GFP/null 4.6 vs 8.8 at 172 ms): autocorrelation or EEG leading the stimulus?",
+  "method": "zero_lag_bump.py, repo low-tier functions; per subject x condition: channel TRF, GFP(0 ms)/GFP(172 ms); synthetic control = EEG simulated from the TRF restricted to 100-300 ms lags, convolved with the real envelopes and refitted with the same ridge; topography correlation of the 0 ms and 172 ms maps",
+  "gfp0_over_gfp172": {
+   "pooled": {
+    "median": 0.51,
+    "min": 0.2,
+    "max": 1.1,
+    "n_gt_0p3": "18/20"
+   },
+   "aided": {
+    "median": 0.53,
+    "min": 0.2,
+    "max": 1.38,
+    "n_gt_0p3": "16/20"
+   },
+   "unaided": {
+    "median": 0.51,
+    "min": 0.18,
+    "max": 0.93,
+    "n_gt_0p3": "18/20"
+   }
+  },
+  "synthetic_control_gfp0_over_gfp172": {
+   "median": 0.03,
+   "max": 0.06
+  },
+  "envelope_autocorr": {
+   "at_31ms": 0.83,
+   "at_62ms": 0.46,
+   "at_172ms": -0.1
+  },
+  "topography": {
+   "subject_corr_0_vs_172_median": 0.89,
+   "subject_range": [
+    -0.33,
+    0.99
+   ],
+   "grand_map_corr": 0.98,
+   "grand_rms_ratio": 0.47,
+   "frontal_polar_share_of_power": 0.03,
+   "frontal_polar_share_expected_uniform": 0.125,
+   "note": "same fronto-central positive / occipital negative pattern as the 172 ms map; no eye-like frontal-polar dominance (Fp1/Fp2/AF3/AF4 3% of power)"
+  },
+  "reference_datasets_gfp0_over_main_peak": {
+   "vanheusden2020": 0.52,
+   "weissbart2019": 0.69,
+   "fuglsang2018": 0.62,
+   "bentum2023_read_aloud": 0.49
+  },
+  "trial_offsets_near_170ms": "pooled run: 1/308 trials in -200..-140 ms, 3/308 in +140..+200 ms, 275/308 within +-50 ms (no subset of trials shifted by a P2 latency)",
+  "conclusion": "not autocorrelation/ridge smearing of the 172 ms peak (synthetic 0.03 vs 0.51 observed); present in nearly all subjects and both conditions, with the P2-like topography and no ocular pattern; the same 0 ms GFP level relative to the main peak (0.49-0.69) is seen in the hand-aligned reference datasets, so it is not specific to this dataset and gives no evidence of a timing error here; the repo check cannot say what the component is (it is a property of the EEG-envelope relation, e.g. a slow component spanning negative lags)"
+ },
+ "s014_aided_trial9": {
+  "question": "offset_s -19.47 for S_014 aided trial 9 (first trial of S_014's 2nd recording, odin_1_1)",
+  "estimator": "artefact of models.peak_shift: the argmax of the +-0.5 s curve sits at the search edge (-0.5 s); np.clip moves the parabola centre to index 1, so the three points are not around a maximum, and with near-zero negative curvature the vertex step 0.5(a-c)/(a-2b+c) is unbounded. In the LOO re-fit (s014_sweep.py) the edge argmax is again -0.500 s and the curvature +1e-4 (no step), giving -0.484 s; the validator's 5-fold model gave a tiny negative curvature and the -19.47 s step",
+  "sweep_pm30s": {
+   "method": "s014_sweep.py: leave-one-trial-out model within condition, channel-summed cross-correlation of EEG and prediction at all shifts within +-30 s, normalised; z against |shift| > 2 s",
+   "trial9": {
+    "z_at_0": 0.56,
+    "max_z_far": 2.66,
+    "sweep_peak_s": -14.98
+   },
+   "other_trials_max_z_far": {
+    "min": 2.0,
+    "max": 3.18
+   },
+   "trials_with_z_at_0_gt_2": "aided trials 15 (4.69), 16 (2.64); unaided trials 1 (2.17); 3 of 16",
+   "conclusion": "trial 9 has no peak at any lag within +-30 s (its maximum is at noise level, like the far-lag maxima of every S_014 trial): no tracking, not a measurable misalignment"
+  },
+  "s014_other_offsets": "the +-0.2-0.5 s offsets of S_014 trials (both conditions) coincide with z_at_0 < 2 and in-range argmaxes at noise peaks or the +-0.5 s edge: weak tracking (subject r 0.037 pooled; notes.md reports large artifacts in S_014 unaided), not trial misalignment",
+  "jitter_sd_without_artefact": "use jitter_mad_ms (aided 13.1 ms); jitter_sd_ms is not robust to this estimator artefact"
+ }
+}
