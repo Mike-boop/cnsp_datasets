@@ -1,20 +1,86 @@
-# Data exploration, standardisation, validation campaign
+# Data campaign: continuous-stimulus M/EEG datasets
 
-__objective:__ add capability to download M/EEG continuous-stimulation datasets and convert them into a standardised form. The conversion should be validated through modelling between the stimuli and the neural signals.
+## What this is for
+Dozens of public M/EEG datasets record the brain while people listen to continuous speech (audiobooks, competing
+talkers, speech in noise) or music. Each one comes in its own layout, units, trigger scheme and timing quirks, so
+reusing several of them takes weeks of detective work, and timing errors often go unnoticed. This campaign makes the
+datasets usable together:
 
-__approach:__ go through the *candidates* tab in /home/gu08wuvu/cnsp_datasets/data_campaign/cnsp-datasets-revised.xlsx in batches. Make sure the repo code can handle downloading the datasets. If a dataset can't be download, determine whether the user should supply an access key. Keys can be provided in /home/gu08wuvu/cnsp_datasets/secrets.json. Manual downloading of data is considered worst-case.
+- **Download.** Every dataset can be downloaded by the repository's own code, from Zenodo, OSF, OpenNeuro, Dryad
+  and other sources, with an access key from `secrets.json` where one is needed.
+- **One format.** Each dataset is converted into the same standard format: `.fif` neural data in common units,
+  stimuli as audio (or the shipped features), and per-trial provenance.
+- **Timing.** Neural data and sound are aligned as accurately as the dataset allows, including clock drift. Every
+  assumption is written down.
+- **Validation.** Each conversion is checked by modelling the brain's response to the sound. That shows what the
+  data are good for: slow cortical tracking only, or also the fast middle-latency and brainstem responses that need
+  millisecond timing.
 
-Download datasets to /data_storage/gu08wuvu/datasets/tmp. Keep storage below 1TB long-term; allow 2TB when data is scheduled to be deleted, but you want my sign-off. Do your standardisation and tests in there.
+The repository is the product. Standardisation must be reproducible from code alone, for example on an HPC server.
+Data is downloaded here only to explore and validate it, and is deleted afterwards.
 
-Data exploration: read the relevant paper (indicated by dataset ID) in the papers/ subdirectory next to this readme. list the data files and understand what data is there: how many subjects, whether raw audio is available, or only derived features. Understand which conditions are available in the data. Standardisation may proceed with derived features, but raw audio is preferred. Understand if any data is missing or incomplete. Understand how neural data are aligned with the audio. If there is a recorded audio channel, then we can usually find more precise values for clock drift and onset/offset triggers. We may not know the tube-induced latency of insert earphones. If there are event markers, be wary that these could be software triggers, with some random offset (mean+jitter) to audio onset, complicating estimation of onset and drift. If there was a second sound channel presented only to the acquisition system, then we can usually obtain highly accurate onset and drift estimates.
+## How each dataset is handled
+1. **Download** to the scratch area (`/data_storage/gu08wuvu/datasets/tmp/review/<dataset>/`), checking every file.
+2. **Explore.** Read the paper (`papers/`) and the authors' code, then work out:
+   - subjects and conditions;
+   - whether raw audio is shipped;
+   - what is missing;
+   - channels and units;
+   - how sound and recording were synchronised: hardware or software triggers, a recorded copy of the audio, or
+     only a start marker.
 
-Standardisation: should save data in a common format, with shared units per modality e.g. V an fT. Keep mastoid electrodes (but name them M1/M2). Keep EOG, ECG, and other peripherals. Rename EOG->VEOG or HEOG if direction of the EOG setup is known; otherwise default to EOG. If multiple EEG systems were used at the same time, save them as separate files. This can avoid problems with MNE re-referencing. Simultaneous EEG and MEG can live in the same fif file. For now, ignore structural/anatomical data, avoid downloading MRI where possible. By default do not bring visual stimuli into the standardised data (this will be revised in a future version), but do still standardise the EEG, along with the audio if multi-modal stimulation. If drift correction can be identified from hardware triggers, apply it automatically. Write usage notes, assumptions, conventions to a notes.md file in the cnsp_datasets.datasets.dataset_id folder. Always attempt to measure drift and save the estimate in notes. You can plot it in the validation folder described below. Flag useless (flat/only electrical noise) channels as bad in the .fif output files. Drop completely unused channels e.g. disconnected peripheral ports; if a channel is flat for a particular participant, just mark it as bad there. Do not rename subjects: keep their original names (usually numbers, but this isn't necessary). This helps with discussing the data. Label trial sessions as accurately as possible.
+   The findings and open questions go into the dataset's `notes.md`, and the user approves the alignment plan.
+3. **Standardise.** Write an adaptor that converts the data, keeping the original reference, subject names and
+   peripheral channels. Bad channels are marked, not removed. Clock drift is measured always, and corrected when
+   the hardware allows it.
+4. **Validate.** Run three checks:
+   - forward models at 0.5-8 Hz;
+   - at 30-60 Hz and 30-250/300 Hz where the sample rate allows;
+   - coherence between neural data and the speech envelope;
 
-Validation: Fit forward models in the 0.5-8Hz range. Obtain per-channel correlation coefficients between the model prediction and the speech envelope. 
-If the dataset is available at 500Hz or higher, also fit forward models in the 30-60Hz (MLR) and 30-300Hz (ABR) frequency bands. 
-plot the forward models as a four-panel figure in /data_storage/gu08wuvu/datasets/tmp/reviews/\<datasetID\>/figures.
-Also plot coherence between the neural signals and the envelopes in this folder. Do a plot for a sample rate of 100/125/128Hz (depending on original sample rate), and the original sample rate, if available at 500Hz or higher. If the original sample rate is higher than 1200Hz, resample to 1000, 1024 or 1200Hz as appropriate first. Use a welch method with a 5s window and 4s overlap. Average complex coherence over participants. See the efficient code at /home/gu08wuvu/eeg-envelope-coherence-neuroimage/scripts/coherence/get_pooled_coherence.py. Perhaps make your own code, either here in data_campaign or elsewhere, for future use.
-For experiments with particularly interesting contrasts, i.e. auditory attention datasets, plot a summary of the contrast using the forward model reconstruction scores (0.5-8Hz only). For example, r-attended-vs-r-ignored.png. Be selective; don't waste time on granular analyses.
-for EEG setups with 32+ channels, use an average reference (but only standardise the data with the original reference scheme). For fewer channels, reference to mastoids.
+   plus a contrast plot for attention experiments. A match-mismatch DNN checks systematic timing offsets; for
+   badly aligned data it estimates onsets and drift, which are documented, not applied by default.
+5. **Document and clean up.** Write a user-facing `README.md` for the dataset, record its data size and commit.
+   With the user's agreement, delete the downloaded and converted data.
 
-Some data have very poor alignment. In these cases, CNN-based match-mismatch decoders have been provided. If the data is of a sufficient quality and length, estimates of onset and, where necessary, drift, may be obtained. See branch bentum-cnn-align. Attempt to use the CNN to align and/or find drift if alignment is very poor. Plot the results of these experiments. Show validation (4-panel forward models) before and after CNN-based onset/drift estimation. Typically we wont use the CNN values in the standardisation, but we will document them in a json in the relevant dataset folder of cnsp_datasets for potential future use.
+The detailed steps are in `WORKFLOW.md`; the original requirements are in `BRIEF.md`.
+
+## Where we are (2026-11-22)
+- **Incorporated:** 40 entries in the spreadsheet's `incorporated` tab, about 950 participants and 1600 listening
+  hours. Each has an adaptor, notes, a validation tier and, for the newer ones, a README.
+  - Public, reviewed datasets are on `main`; newer ones are on `dev` until they are reviewed.
+  - Several datasets reach the brainstem tier, i.e. their timing is good to about a millisecond.
+- **In progress:**
+  - chen2026 (Mandarin, 25 h): the software triggers miss a ~0.5 s sound latency that varies per chapter, so
+    latency and drift are being estimated per chapter with the DNN.
+  - presacco2016 (MEG + EEG, 46 subjects): downloading.
+- **Candidates:** 51 more datasets, about 770 h, ranked in the spreadsheet's `candidates` tab. Next by rank:
+  competing-speaker EEG (peng2026, zhang2025, jaeger2025, wang2026, thornton2025, geirnaert2025), then degraded
+  speech MEG (karunathilake2023, chen2023, karunathilake2025).
+
+`STATUS.md` has the state of every dataset and the open decisions.
+
+## Planned work
+- **First run (now).** Work through the candidates in batches of about three, in rank order.
+- **Second run.**
+  - Rename the repository's datasets to the spreadsheet's ids (`id_changes` tab).
+  - Revisit the timing values that are documented but not applied: DNN offsets, alternative drift estimates.
+  - Re-check drift estimates that used an older peak-picking method.
+  - Re-standardise the datasets whose adaptors changed after their run.
+- **Later.**
+  - Visual stimuli in the standard format.
+  - Carry the authors' quality ratings per trial.
+  - BIDS re-uploads of weissbart2019 and etard2019 with their sound channels.
+  - A DNN aligner trained on the datasets whose timing is known precisely.
+
+## Files here
+| file | contents |
+|---|---|
+| `README.md` | this overview |
+| `BRIEF.md` | the user's original requirements |
+| `WORKFLOW.md` | per-dataset steps, scripts and settings |
+| `LESSONS.md` | checklist of mistakes already made once, with the dataset where each happened |
+| `STATUS.md` | per-dataset state, validation tier, open items |
+| `scripts/` | reusable analysis scripts (coherence, DNN offsets, data size, ...) |
+| `HANDOVER.md` | running jobs and the current task (local only, not in git) |
+| `cnsp-datasets-revised.xlsx`, `papers/` | the dataset spreadsheet and the papers (local only, not in git) |

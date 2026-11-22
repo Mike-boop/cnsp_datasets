@@ -143,12 +143,13 @@ Run on a pilot of ~20 subjects (or all subjects, if fewer) before committing to 
 
 1. **Sanity:** neural trial duration ≈ stimulus duration (after drift correction) for every trial; per-modality
    amplitude in a plausible range after a high-pass (catches unit/scaling errors); no all-flat or all-NaN channels.
-2. **Low-frequency tier (`low`): backward model, 0.5–8 Hz.** Cross-validated envelope reconstruction
-   (leave-one-trial-out within subject), reporting Pearson r per subject and the population distribution. Objective
-   pass criteria:
+2. **Low-frequency tier (`low`): forward model, 0.5–8 Hz** (envelope → every channel). Cross-validated
+   (leave-one-trial-out within subject), reporting the per-channel correlation between prediction and recording,
+   per subject and as a population distribution. Backward models (envelope reconstruction) are an optional extra,
+   e.g. for attention contrasts. Objective pass criteria:
    - above a null distribution built from mismatched stimuli (other trials' envelopes) and circular shifts, per
      subject and at population level;
-   - **lag sweep:** reconstruction score as a function of a global stimulus shift (e.g. ±1 s): the peak must sit
+   - **lag sweep:** prediction score as a function of a global stimulus shift (e.g. ±1 s): the peak must sit
      at 0 lag within tolerance. A non-zero peak measures a constant offset error directly.
    - comparable with hand-aligned reference datasets (section 6).
    - all of the above reported per condition as well as pooled (see section 3, "Per condition").

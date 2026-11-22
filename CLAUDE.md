@@ -10,7 +10,8 @@ the product: every standardisation must be reproducible from code alone. Data is
 3. `data_campaign/STATUS.md`: one row per dataset, open decisions.
 
 As needed:
-- `data_campaign/README.md`: the user's brief for the campaign.
+- `data_campaign/README.md`: overview of the campaign (objectives, approach, progress, plans); `data_campaign/BRIEF.md`:
+  the user's original requirements.
 - `data_campaign/WORKFLOW.md`: the per-dataset steps, from download to deletion.
 - `data_campaign/LESSONS.md`: the checklist of mistakes already made once.
 - `PLAN.md`: the standard format, the alignment rules and the validation tiers (the spec).
