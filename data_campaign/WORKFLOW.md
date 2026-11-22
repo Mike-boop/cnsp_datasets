@@ -1,6 +1,6 @@
 # Per-dataset workflow
 
-The user's brief is `README.md`; the spec (format, alignment, validation tiers) is `../PLAN.md`; the checklist of
+The user's requirements are in `BRIEF.md` (overview: `README.md`); the spec (format, alignment, validation tiers) is `../PLAN.md`; the checklist of
 mistakes already made is `LESSONS.md`. Scratch for a dataset `<d>` lives in `R/<d>/`, where
 `R=/data_storage/gu08wuvu/datasets/tmp/review`. Paths in `scripts/` are this folder's scripts.
 
@@ -56,8 +56,8 @@ low,mlr,brainstem --json R/<d>/validation.json --fig-dir R/<d>`. For a filtered 
 `scripts/validate_subset.py`.
 - **Reference.** Use an average reference for 32 or more EEG channels and mastoids for fewer. The data themselves
   keep the original reference.
-- **Low tier, 0.5-8 Hz.** Forward models with per-channel prediction r; backward models with null distributions and
-  a lag sweep.
+- **Low tier, 0.5-8 Hz.** Forward models with per-channel prediction r, null distributions and a lag sweep (the
+  validator does this); backward models only where useful (attention contrasts).
 - **Higher tiers** (data at ≥ 500 Hz): 30-60 Hz (mlr) and 30-250/300 Hz (brainstem). Run the brainstem tier on
   cortical montages too.
 - **MEG.** Use magnetometers. Raw MEGIN data need tSSS in the validation only (`scripts/meg/*_validate.py` in
