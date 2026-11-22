@@ -390,6 +390,7 @@ later than in accou2023. Lag curves z-scored per trial, pooled over subjects per
   Clean single-talker speech scores within +-5 ms in hand-aligned datasets and competing speech ~-15..-45 ms, so most
   of this is timing, not response latency. Largest offset in the collection (das2019 -81 ms, bentum2023 -68 ms).
   **Not applied** (same handling as das2019/bentum2023); open question for the user: shift all onsets by ~+0.19 s
+  Decided by the user (2026-11-22): document only, no onset correction for now.
   (sound later)?
 - Timeline-derived positions 2 and 3 deviate from position 1 by -51 and +29 ms: the timeline is good to tens of ms
   (explorer: 19-40 ms SD), consistent with the validator's per-section lag spread. A per-section DNN refinement
