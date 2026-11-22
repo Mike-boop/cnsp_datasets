@@ -20,7 +20,8 @@ objective validation before anything counts as done.
 **Out (for now)**
 - Anatomy and source localisation (`AnatRecord` stays, unused).
 - CND output: `cnd_sink.py` is deprecated and will be removed; third parties can convert.
-- DNN-based alignment (`cnsp_datasets/align/`): planned for this edition, but after the pipeline below works.
+- Applying DNN-based alignment in adaptors by default: `cnsp_datasets/align/` is used to check timing and, for
+  poorly aligned data, to estimate onsets/drift that are documented (json/csv in the dataset folder), not applied.
 
 ## 2. Standard format
 
@@ -99,7 +100,7 @@ main session: download (background job + log monitoring)
 | (main session) | dispatches downloads in the background, monitors the log, reports when there are many failures (with log excerpt and message) | nothing in the repo |
 | `data-explorer` | works out the dataset structure (template below); reads any shared code and READMEs | `datasets/<name>/notes.md` |
 | `data-standardiser` | writes the adaptor (`TrialRecord`s), following the explorer's notes and any shared usage code | `datasets/<name>/adaptor.py` |
-| `validator` | runs the objective checks in section 5 and reports numbers, never impressions | `datasets/<name>/validation.json` (figures in `tmp/<name>/validation/`) |
+| `validator` | runs the objective checks in section 5 and reports numbers, never impressions | `datasets/<name>/validation.json` (figures in `tmp/review/<name>/validation/`) |
 | `reviewer` | PEP8, minimalistic style, docstrings present and short; reports findings, does not edit | review comments |
 | `data-documenter` | user-facing documentation: content, provenance, caveats, licence, citation | dataset docs |
 
@@ -118,78 +119,10 @@ Agents say "unknown" rather than guess. Uncertain alignment decisions go to the 
    possible, per condition.
 8. **Open questions** for the human checkpoint.
 
-## 4b. Review checklist (lessons from the 2026-11 adaptor review)
+## 4b. Review checklist
 
-Each item below caught a real error in at least one dataset. Run through them for every dataset.
-
-**Timing and drift**
-- Look for a stimtrack, aux or Sound channel in every download. If the convenience release dropped it, look for
-  the original record with the raw recordings (weissbart2019 and etard2019 dropped `Sound`; their original Zenodo
-  records 7086168 and 7086209 have it).
-- Estimate drift wherever the stimulus is recorded with the EEG: Theil-Sen line through lags in ~10 s windows
-  (`datasets/jehn2025_base/drift.py`). Two endpoint windows are fragile: periodic side peaks in band-passed speech
-  or a ~100 Hz tactile carrier give ms-sized jumps. Authors rarely correct drift (jehn2025 26.7 ppm, bentum2023
-  33.6 ppm). Plot per-subject drift before proposing a correction; clusters can differ (jehn2025: ~18 ppm for a
-  run of subjects).
-- Measure onsets from the stimtrack and compare with the markers: markers can be late or missing (guilleminot2021:
-  one marker 2.39 s late; trials started during a recording pause had none).
-- Check BrainVision `New Segment` annotations (recording pauses: MNE joins segments without a gap) and trials that
-  run past the end of the recording.
-- Nominal file durations rounded to ms add up over concatenated stimuli (bentum2023); use exact durations.
-
-**Mapping and labels**
-- Verify the trial -> stimulus mapping with an independent signal: trial duration vs wav duration (exact to the ms
-  in varano2022), recording order (`first_samp`, `meas_date`), stimtrack correlation, experiment logs.
-- Verify condition labels against the authors' code and the actual stimuli, not just the readme: varano2022 had
-  cartoon/edge swapped; etard2019 SNR labels are unverified (the wavs do not carry the presented level).
-- Verify the attended side/ear per subject from stimtrack channels (jehn2025: three subjects with swapped sides).
-- Readmes and helper files can be wrong: varano2022 condorder README (`trial_index`), jehn2025 code table,
-  etard2019 English sentences/onsets copied from another condition by `align_data.py`.
-- Check every file, not one (channel lists, lengths, annotations).
-
-**Stimuli**
-- Include everything that was played, as separate stimuli: noise/babble tracks, distractors, tactile signals
-  (guilleminot2021 mismatched trials used the tactile buffer rolled by a quarter), embedded sentences.
-- Do not cut stimuli to the EEG: by convention the longer signal is cut where the data are used. Check instead
-  that both start at the same time.
-
-**Validation and interpretation**
-- Validate with an average reference (`--reference average`, the default of `tmp/review/standardise_validate.sh`)
-  so tiers and SNRs compare across datasets. The validator's own default is no re-referencing, which changes the
-  numbers a lot (weissbart2019 30-250 Hz SNR 1.54 average vs 2.46 with the recorded ear reference). Record the
-  reference with every result.
-- Validate per condition (section 3) and look at the TRF plots, not only p-values: a stimulus-locked ripple at all
-  lags (guilleminot2021 30-60 Hz) can pass the MLR test.
-- DNN offsets relative to accou2023: clean speech within +-5 ms; speech in noise ~-15 ms even with measured onsets
-  (response latency, not timing error).
-
-**Data size (record for every dataset)**
-- Number of participants and hours per participant (mean, min-max), overall and per condition, estimated from the
-  stimuli: each trial counts its longest stimulus (simultaneous streams once), summed per participant
-  (`tmp/review/scripts/data_size.py`, headers only; adds rows to `tmp/review/data_size.csv`). Put the numbers in
-  the dataset's `notes.md` and in `tmp/review/data_size.md`. Measure before deleting standardised data.
-- Check a few trials' neural duration against their stimulus: stimuli are not cut to the EEG (the longer signal is
-  cut at the point of use), so the estimate is too high where only part of a stimulus was played (das2019: 2-min
-  repeat trials carry the full 6.5-min track, 2.3 h estimated vs ~1.3 h recorded). Report the recorded figure then.
-- A stimulus's `data_fn` must depend only on its (modality, name, feature): the sink writes one file per name, shared
-  by all trials, and the first trial written wins. Anything trial-specific (cut, shift, resampling) needs its own
-  name or belongs in the trial (varano2022 cuts the audio per trial; see section 8, second pass).
-
-**Running the work**
-- Long jobs detached and resumable (cache per trial/session); a server reboot killed every job once.
-- After relabelling conditions or changing an adaptor, move the dataset's caches aside before re-running: caches
-  keyed by subject/trial/condition silently return the old results (etard2019 DNN offsets after the SNR relabel).
-- Downloads can stop silently: use resumable retries (`curl -C -`) and check the final size.
-- Keep scripts and results out of the session scratchpad (`tmp/review/scripts`).
-
-**Notes as you go (the repo is the record)**
-- Write every finding that explains a choice in the code into the repo's `cnsp_datasets/datasets/<name>/notes.md`
-  as soon as it is established, not only at the end: mapping and its verification, file/label/polarity fixes,
-  units and gains, skipped trials and why, drift, upstream errors (with the evidence: numbers, script names). Point
-  to it from the adaptor's docstring. `tmp/` is deleted when a dataset is done; anything only there is lost.
-- `tmp/review/<name>/notes.md` holds review results and file pointers only. Issues to report to dataset authors
-  are collected in `tmp/review/upstream_issues.md` and also go in the dataset's repo notes (section "Upstream
-  issues").
+Moved to `data_campaign/LESSONS.md` (with the lessons from later batches). The step-by-step
+workflow per dataset, including coherence, DNN checks, data size and clean-up, is `data_campaign/WORKFLOW.md`.
 
 ## 5. Validation (objective)
 
@@ -222,14 +155,9 @@ distributions and figures for the human; it does not decide alignment quality fr
 
 ## 6. Order of work
 
-1. This plan, the agent definitions (`.claude/agents/`) and the storage guard (`.claude/settings.json`).
-2. Validation scripts (section 5).
-3. Calibration: run the pipeline on 2–3 datasets already aligned by hand (e.g. bentum2023, fuglsang2018,
-   weissbart2019). Do the agents reproduce the hand-made adaptors, and what scores do the checks give?
-4. New datasets, one at a time.
-5. Remove `cnd_sink.py`.
-6. DNN aligner (`cnsp_datasets/align/`); the validator's lag sweeps and stimtrack datasets provide training and
-   evaluation targets.
+Steps 1-4 of the original order (plan, agents, validation scripts, calibration on hand-aligned datasets,
+new datasets) are done; new datasets continue through the campaign (`data_campaign/`). Still to do: remove
+`cnd_sink.py`; a DNN aligner trained on the validator's lag sweeps and the stimtrack datasets.
 
 ## 7. Storage
 
@@ -237,8 +165,9 @@ The repository is the product: standardisation must be reproducible from code al
 HPC server). Data is never kept long term here.
 
 - `/data_storage/gu08wuvu/datasets/tmp/` is a working directory only:
-  `tmp/<dataset>/{download,standardised,validation}`. Up to 1 TB while working (raised from 500 GB on 2026-11-20).
-- When a dataset is done, delete `tmp/<dataset>` entirely. Before that, commit the small artefacts to the repo:
+  `tmp/review/<dataset>/{download,standardised,validation}`. Up to 1 TB while working (2 TB with the user's
+  sign-off for data already scheduled for deletion).
+- When a dataset is done, delete its download and standardised data (ask first). Before that, commit the small artefacts to the repo:
   `notes.md`, `adaptor.py` and the validation summary (`datasets/<name>/validation.json`, plus key figures if
   small).
 - Never keep standardised data unless a later step in progress needs it.
@@ -246,6 +175,15 @@ HPC server). Data is never kept long term here.
   re-downloading.
 - Enforced by `.claude/hooks/storage_guard.py` (PreToolUse): blocks writes outside `tmp/` under the datasets
   root, and blocks download/standardise commands while `tmp/` exceeds 1 TB.
+
+### Zenodo usage limits (promised to the Zenodo moderators, 2026-11-21)
+Zenodo blocked this server (HTTP 403, "unusual traffic") on 2026-11-21. The user promised:
+- **at most three concurrent file downloads** from Zenodo at a time (`download_dataset` caps `max_workers` at 3
+  for Zenodo sources; keep any other script at <= 3 too);
+- **at most 1-2 Zenodo datasets downloaded per day** (log each one, with the date, in `data_campaign/HANDOVER.md`
+  so other sessions can count).
+Check access with a single request before starting; never work around a block (no user-agent changes, proxies or
+other hosts).
 
 ## 8. Future work
 
@@ -290,3 +228,12 @@ HPC server). Data is never kept long term here.
 - Same check for other adaptors whose stimulus loaders take trial-specific arguments: bentum2023 builds each block's
   audio from the block's file list and gaps (named by the wav file; confirm every block with that name has the same
   list), guilleminot2021 tactile (delay/roll are in the name: fine).
+- **pkueeg2025 drift (NeuroScan days 1-2).** The adaptor applies the marker-based 76.8 ppm; brain-based estimates
+  on uncorrected data give ~47 ppm (DNN lag slope) and ~22 ppm (backward-decoder lag slope), and the DNN residual
+  on the corrected pilot suggests the marker value overshoots. Kept at 76.8 ppm for now (user, 2026-11-22); the
+  alternatives, the weissbart2019 reference check and candidate scores are in `datasets/pkueeg2025/notes.md`
+  ("Drift re-estimation"). Decide the value, and check whether the marker clock is the stimulus PC's rather than the
+  sound card's.
+- **Constant onset offsets documented, not applied** (user, 2026-11-22): pkueeg2025 (~-75 ms NeuroScan, ~-42 ms
+  Neuracle, DNN vs accou2023) and wang2025 (~-0.19 s, DNN + TRF), alongside das2019 / bentum2023 /
+  broderick2019_cocktail (section 8).

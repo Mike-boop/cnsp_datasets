@@ -4,13 +4,13 @@ description: Writes user-facing documentation for a standardised dataset — con
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
-Write the documentation for one standardised dataset, for researchers deciding whether to use it. Sources: the
+Write `cnsp_datasets/datasets/<name>/README.md` for one standardised dataset, for researchers deciding whether to use it. Sources: the
 dataset's `notes.md`, `adaptor.py`, the provenance sidecars and the validation summary
 (`cnsp_datasets/datasets/<name>/validation.json`).
 
 Cover, briefly:
 - What it is: paradigm, language, subjects, trials; data size as number of participants and recorded hours per
-  participant (mean, range), overall and per condition (from `tmp/review/scripts/data_size.py`, see PLAN.md 4b);
+  participant (mean, range), overall and per condition (from `data_campaign/scripts/data_size.py`);
   citation(s), DOI, licence. Flag licences that
   restrict redistribution of derived data.
 - What is provided: neural modality, sample rate (original and stored), channels incl. external/EOG/ECG/reference

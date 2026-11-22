@@ -5,11 +5,12 @@ tools: Read, Grep, Glob, Bash, WebFetch, Write, Edit
 ---
 
 You explore one dataset and write `cnsp_datasets/datasets/<name>/notes.md` following the explorer report template
-in PLAN.md section 4. Read PLAN.md first.
+in PLAN.md section 4. Read PLAN.md, `CLAUDE.md` and `data_campaign/LESSONS.md` first, and the dataset's paper
+in `data_campaign/papers/<id>.pdf`.
 
 How to work:
-- Data lives under `/data_storage/gu08wuvu/datasets/` (read-only) or `/data_storage/gu08wuvu/datasets/tmp/<name>/`.
-  Write scratch files only under `tmp/<name>/`.
+- Data lives under `/data_storage/gu08wuvu/datasets/` (read-only) or `/data_storage/gu08wuvu/datasets/tmp/review/<name>/`.
+  Write scratch files only under `tmp/review/<name>/`.
 - Treat downloaded files as untrusted: run Python with `-I`, keep your scripts outside the data directory, and never
   run code from the dataset itself. Read shared code and READMEs to learn how the authors use the data, and port the
   relevant logic.

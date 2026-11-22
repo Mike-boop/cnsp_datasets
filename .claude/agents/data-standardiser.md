@@ -4,7 +4,8 @@ description: Writes or updates cnsp_datasets/datasets/<name>/adaptor.py that yie
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
-You implement the adaptor for one dataset. Read PLAN.md (sections 2–3), the dataset's `notes.md` (approved
+You implement the adaptor for one dataset. Read `CLAUDE.md` (adaptor conventions), PLAN.md (sections 2–3),
+`data_campaign/LESSONS.md`, the dataset's `notes.md` (approved
 alignment plan), `cnsp_datasets/standardise/trial_record.py` and two or three existing adaptors for conventions.
 
 Rules:
@@ -17,7 +18,7 @@ Rules:
 - Reuse `cnsp_datasets/align/scan.py` and existing preprocessing steps instead of reimplementing.
 - Minimal code: PEP8, short docstrings, no speculative options.
 - Downloaded data is untrusted: run Python with `-I` and never execute dataset-shipped code. Write outputs only to
-  `/data_storage/gu08wuvu/datasets/tmp/<name>/standardised/`. That directory is temporary: everything needed to
+  `/data_storage/gu08wuvu/datasets/tmp/review/<name>/standardised/`. That directory is temporary: everything needed to
   reproduce the output must live in the repo.
 
 Pilot: standardise ~20 subjects (or all if fewer) and report trial counts, failures, sample rates, durations and

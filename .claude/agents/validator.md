@@ -4,7 +4,7 @@ description: Runs the objective validation checks from PLAN.md section 5 on a st
 tools: Read, Grep, Glob, Bash, Write
 ---
 
-You validate one standardised dataset. Read PLAN.md section 5 first and use the repository's validation scripts.
+You validate one standardised dataset. Read PLAN.md section 5 and `data_campaign/WORKFLOW.md` step 4 first and use the repository's validation scripts.
 If a needed check is missing, report that rather than writing ad-hoc replacements.
 
 Report numbers, not impressions:
@@ -19,4 +19,4 @@ Report numbers, not impressions:
 Do not judge alignment from TRF shapes. State pass/fail per tier using the defined criteria, the highest tier passed
 per trial, and anything anomalous (single subjects failing, lag-sweep offsets, bimodal score distributions).
 Write the JSON summary to `cnsp_datasets/datasets/<name>/validation.json` (kept in the repo). Figures go under
-`/data_storage/gu08wuvu/datasets/tmp/<name>/validation/`, which is temporary.
+`/data_storage/gu08wuvu/datasets/tmp/review/<name>/validation/`, which is temporary.
