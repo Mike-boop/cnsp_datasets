@@ -38,7 +38,7 @@ Validate each conversion by modelling the relation between the stimuli and the n
     drift estimates.
 
 ## Standardisation
-- **Units:** common units per modality, e.g. V and fT.
+- **Units:** common units per modality: stored in SI (V, T), shown by MNE as µV / fT.
 - **Channels:**
   - keep mastoid electrodes, named M1/M2;
   - keep EOG, ECG and other peripherals;
@@ -65,13 +65,13 @@ Validate each conversion by modelling the relation between the stimuli and the n
 
 ## Validation
 - **Forward models, 0.5-8 Hz:** per-channel correlation between the model's prediction and the recorded signal.
-- **Forward models at 30-60 Hz (MLR) and 30-300 Hz (ABR):** only if the data are available at 500 Hz or more.
+- **Forward models at 30-60 Hz (MLR) and 30-250 Hz (ABR):** only if the data are available at 500 Hz or more.
 - **Reference:**
   - average reference for EEG setups with 32 or more channels, mastoids for fewer;
   - this applies only to the analysis: the standardised data keep the original reference.
 - **Figures:**
   - plot the forward models as a four-panel figure in
-    `/data_storage/gu08wuvu/datasets/tmp/reviews/<datasetID>/figures`;
+    `/data_storage/gu08wuvu/datasets/tmp/review/<dataset>/` (or a `figures/` subfolder), named by the repo dataset name;
   - put the coherence plots in the same folder.
 - **Coherence between the neural signals and the envelopes:**
   - one plot at 100/125/128 Hz (depending on the original rate), and one at the original rate if it is 500 Hz or

@@ -35,7 +35,7 @@ Data is downloaded here only to explore and validate it, and is deleted afterwar
    the hardware allows it.
 4. **Validate.** Run three checks:
    - forward models at 0.5-8 Hz;
-   - at 30-60 Hz and 30-250/300 Hz where the sample rate allows;
+   - at 30-60 Hz and 30-250 Hz where the sample rate allows;
    - coherence between neural data and the speech envelope;
 
    plus a contrast plot for attention experiments. A match-mismatch DNN checks systematic timing offsets; for
