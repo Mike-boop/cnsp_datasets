@@ -23,14 +23,15 @@ VISITS = [[1, 11, 31, 41, 56, 46, 36, 26, 16, 6], [21, 51, 2, 12, 32, 42, 47, 37
 SKIP = {("06", 58), ("06", 59), ("06", 60)}  # upstream copies of sub-05's runs (notes.md section 2)
 NO_BEG = {("08", 16), ("09", 7)}  # no Beg trigger (README): Beg = End - median End-Beg of the story
 DRIFT = 500e-6  # MEG clock fast vs the audio clock (MEG response scan, notes.md section 6)
-SOUND_DELAY_MS = 39.5  # Beg trigger -> sound at the participant (paper, sound sensor)
+PAPER_DELAY_MS = 39.5  # Beg trigger -> sound at the participant (paper, sound sensor); too late for these data
+SOUND_DELAY_MS = PAPER_DELAY_MS - 21.0  # audio-locked 30-250 Hz TRF spike at -21 ms in all 6 subjects (notes 13)
 FMRI_OFFSET_S = 10.65  # added to the annotation times by the authors (README)
 BEG, END = 1, 2  # STI101 codes
 BIO = {"BIO001": "bio channel (V), probably one EOG lead (paper mentions EOG; unverified)"}
 NOTES = ("MEG as shipped: the authors' tSSS (MaxFilter 2.2.15, 30 s buffer, correlation 0.98) is already applied "
          "in the files OpenNeuro calls raw; no further SSS, no bads marked (reconstructed by SSS). Onset = STI101 "
-         "code 1 (software TTL after PsychPortAudio Start) + 39.5 ms sound delay (paper; not applied in the "
-         "authors' code). No audio copy: the +500 ppm drift is the dataset value from the MEG envelope response "
+         "code 1 (software TTL after PsychPortAudio Start) + 18.5 ms: the paper's 39.5 ms sound delay (not applied "
+         "in the authors' code) minus 21 ms, where an audio-locked 30-250 Hz artifact put the sound (validation, all 6 subjects; tube delay unknown, not added). No audio copy: the +500 ppm drift is the dataset value from the MEG envelope response "
          "(trigger fit 482 ppm, 95% CI 420-535), corrected by resampling onto the audio clock. The End trigger has "
          "a per-story scatter of +-20 ms (playback side; not used). line_freq 50 Hz (meg.json says 60). cHPI "
          "293/307/314/321 Hz was on (possibly reduced by tSSS). Participant names/birthdays removed from "
@@ -155,11 +156,12 @@ def _meg_loader(fif: str, wav: str, drift: float, interval: float | None, extra:
             out.info["subject_info"] = {"his_id": f"sub-{os.path.basename(fif)[4:6]}",
                                         **{k: si[k] for k in ("sex", "hand") if k in si}}
         out.info["description"] = provenance(
-            "sw_trigger", "software (code run_story*.m: parallel-port TTL after PsychPortAudio Start; 39.5 ms "
-            "sound delay measured with a sound sensor by the authors, paper)", note, drift_ppm=500, jitter_ms=1,
+            "sw_trigger", "software (code run_story*.m: parallel-port TTL after PsychPortAudio Start; 18.5 ms "
+            "sound delay: the paper's sound-sensor 39.5 ms minus 21 ms, from an audio-locked artifact)", note, drift_ppm=500, jitter_ms=1,
             validation_tier="mlr", validation_note=VALIDATION_NOTE,
             drift_corrected_ppm=round(drift * 1e6, 3), **extra, beg_sample=round(float(beg), 1), end_sample=end,
-            beg_reconstructed=interval is not None, sound_delay_ms=SOUND_DELAY_MS, onset_sample=round(onset, 1),
+            beg_reconstructed=interval is not None, sound_delay_ms=SOUND_DELAY_MS, paper_sound_delay_ms=PAPER_DELAY_MS,
+            onset_sample=round(onset, 1),
             sss=(f"tSSS by the authors ({raw.info['proc_history'][0]['creator']}; in/out order "
                  f"{mi['sss_info']['in_order']}/{mi['sss_info']['out_order']}, origin "
                  f"{np.round(mi['sss_info']['origin'] * 1000).astype(int).tolist()} mm head frame, buffer "

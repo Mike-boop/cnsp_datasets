@@ -42,8 +42,10 @@ see Caveats). Standardised and validated so far: sub-01..06, **357 trials, 30.13
 ## Alignment
 - **Software triggers** (`alignment_method` `sw_trigger`): the presentation script sends TTL 1 (Beg) on the
   parallel port right after `PsychPortAudio('Start')` and TTL 2 (End) when playback stops; read from STI101.
-- **Onset = Beg + 39.5 ms**, the delay to the participant measured by the authors with a sound sensor (paper;
-  their own code does not apply it). The MEG envelope response then peaks at a normal M100 latency (110-140 ms),
+- **Onset = Beg + 18.5 ms** (changed 2026-11-22): the authors' sound-sensor delay of 39.5 ms (paper; their own
+  code does not apply it) minus 21 ms, because an audio-locked 30-250 Hz artifact (sharp, 7-15x the null) sat at
+  -21 ms in all six validated participants under Beg + 39.5 ms; 18.5 ms puts it at 0 ms. A tube delay (unknown)
+  is not added. Under the old onset the MEG envelope response peaked at a normal M100 latency (110-140 ms),
   but this cannot pin the delay to better than ~10-20 ms. Beg is consistent between participants to < 1 ms and
   across stories to ~5 ms (MEG response); `jitter_ms` 1.
 - **Clock drift +500 ppm** (MEG clock fast): no audio copy, so the drift is the dataset value from the MEG
@@ -58,6 +60,11 @@ see Caveats). Standardised and validated so far: sub-01..06, **357 trials, 30.13
   other participants (`beg_reconstructed` true; ~1 ms uncertainty).
 
 ## Validation
+**Note:** the numbers below were computed with the old onset (Beg + 39.5 ms) and the stored data still use
+it. With Beg + 18.5 ms, a check on sub-01 (15 trials) moved the artifact to 0 ms and the 30-60 Hz TRF peak from
++15 to +36 ms (SNR 2.59, p 0.01), and the 30-250 Hz tier became significant (SNR 1.71, p 0.01; was 0.61); the
+full dataset has not been re-standardised or re-validated with the new onset.
+
 **mlr tier in all 6 validated participants** (sub-01..06, 357 trials, 30.13 h; `validation_tier: mlr`); the
 brainstem tier is not reached. Data as shipped (the authors' tSSS, no further Maxwell filtering), 102 magnetometers,
 no re-referencing. Repo `checks.validate_subject` (low / mlr / brainstem) plus a backward model (64 Hz, 0.5-8 Hz,
@@ -96,13 +103,13 @@ MEG the "brainstem" tier tests the 30-250 Hz cortical response at 28-45 ms, not 
   8 Hz), word- and character-level analyses (forced-aligned TextGrids), middle-latency (30-60 Hz) cortical
   responses, and between-story comparisons (60 stories, the same for every participant). **Not suitable for**
   30-250 Hz / sub-millisecond timing or subcortical (ABR/FFR-type) analyses: software triggers with an onset known
-  only from the authors' 39.5 ms measurement, drift from a neural estimate (+-10 ppm, +-4 ms at the end of a story),
+  only from an audio-locked artifact (Beg + 18.5 ms; the paper's 39.5 ms is 21 ms late), drift from a neural estimate (+-10 ppm, +-4 ms at the end of a story),
   ~10 ms story-specific trigger modes, and the brainstem tier fails. The tSSS cannot be undone (rank 67-72).
 
 ## Decisions taken (coordinator, 2026-11-22; to revisit)
 - **Files standardised as shipped** (authors' tSSS); no further Maxwell filtering, no use of the ICA/0.1-40 Hz
   derivatives.
-- **Drift +500 ppm for every run**, onset Beg + 39.5 ms (see Alignment).
+- **Drift +500 ppm for every run**, onset Beg + 18.5 ms (the paper's 39.5 ms minus 21 ms; see Alignment).
 - **sub-06 runs 58-60 skipped** (copies of sub-05's runs, see Caveats).
 - **BIO001 kept as `misc`**; participant names, birthday, weight and height removed from the FIF `subject_info`
   (only `sub-XX`, sex and hand kept).

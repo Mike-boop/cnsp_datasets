@@ -346,8 +346,16 @@ Coherence (magnetometers vs envelope, 5 s Hann, 4 s overlap, ratio to one global
 DNN offset not applicable (EEG classifier). The trials already on disk were written with `validation_tier` null
 (the tier was set in the adaptor afterwards).
 
-Open (not investigated): the 30-250 Hz ("brainstem") forward TRF has a sharp spike at about -22 ms, before the
+Resolved below (onset changed): the 30-250 Hz ("brainstem") forward TRF has a sharp spike at about -22 ms, before the
 sound, inside the noise window (-75..-20 ms); the native coherence has a small bump near 100 Hz. Likely an
 artifact time-locked to the audio (e.g. electrical/magnetic pickup from the earphone transducers, which precedes
 the sound by the onset's acoustic delay); it inflates the noise estimate and may explain part of the low
 brainstem SNR. It does not affect the low and mlr tiers. Figures: tmp/review/wang2022/validation/figs/.
+
+**Onset changed (user, 2026-11-22):** per subject, the 30-250 Hz TRF maximum is at -21 ms in all six (7.1-15.1x
+the median null; mlr peaks +14..+31 ms). Read as a zero-lag audio artifact, the sound starts 21 ms before
+Beg + 39.5 ms, so the adaptor now uses Beg + 18.5 ms (`SOUND_DELAY_MS`; the paper's value kept as
+`paper_sound_delay_ms` in the metadata; tube delay unknown, not added). Check on sub-01, 15 trials, new onset:
+30-250 Hz peak +0 ms (7.6x; largest pre-stimulus value 1.9x at -20 ms), SNR 1.71 p 0.01 (was 0.61); 30-60 Hz peak
++36 ms (3.8x), SNR 2.59 p 0.01. The stored standardised data and the validation above use the old onset; not
+re-run (user: close the dataset). `validation_tier` stays mlr (validated); brainstem may pass after a re-run.
