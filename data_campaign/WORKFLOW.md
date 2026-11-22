@@ -58,7 +58,7 @@ low,mlr,brainstem --json R/<d>/validation.json --fig-dir R/<d>`. For a filtered 
   keep the original reference.
 - **Low tier, 0.5-8 Hz.** Forward models with per-channel prediction r, null distributions and a lag sweep (the
   validator does this); backward models only where useful (attention contrasts).
-- **Higher tiers** (data at ≥ 500 Hz): 30-60 Hz (mlr) and 30-250/300 Hz (brainstem). Run the brainstem tier on
+- **Higher tiers** (data at ≥ 500 Hz): 30-60 Hz (mlr) and 30-250 Hz (brainstem). Run the brainstem tier on
   cortical montages too.
 - **MEG.** Use magnetometers. Raw MEGIN data need tSSS in the validation only (`scripts/meg/*_validate.py` in
   `tmp/review/scripts` has examples); the stored data stay raw.
