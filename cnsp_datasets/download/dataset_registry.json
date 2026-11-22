@@ -245,13 +245,15 @@
       "source": "openneuro",
       "identifiers": ["10.18112/openneuro.ds005345.v1.0.1"],
       "description": "Wang et al. (2025) Le Petit Prince multi-talker (EEG part)",
-      "url": "https://openneuro.org/datasets/ds005345/versions/1.0.1"
+      "url": "https://openneuro.org/datasets/ds005345/versions/1.0.1",
+      "exclude": ["sub-*/func/*", "sub-*/anat/*", "derivatives/*"]
     },
     "yang2026": {
       "source": "osf",
       "identifiers": ["qdzgh"],
       "description": "Yang et al. (2026) dataset",
-      "url": "https://osf.io/qdzgh/"
+      "url": "https://osf.io/qdzgh/",
+      "exclude": ["*/anat/*", "*/stimuli/visual/*.zip", "checks-and-validation/*"]
     },
     "harshaiyahav2025": {
       "source": "osf",
