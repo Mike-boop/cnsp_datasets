@@ -127,10 +127,10 @@ mlr p 0.27, brainstem p 0.63.)
   | schueller2024 | 19 | 0.020 (19/19) | 1.05 (4/19) | 1.68 (18/19) | brainstem |
 
 - **Coherence** (MEG vs the envelope, 102 magnetometers, no re-reference; 5 s Hann windows, 4 s overlap; ratio to
-  one global-shift surrogate): on the raw data uninformative (ratios ~1: English 0.83-1.54 below 60 Hz and
-  1.04-1.16 above; Russian 1.09-1.85 at 128 Hz, NaN at the native rate, not investigated; the Russian trials contain
-  all-zero bad channels). A tSSS coherence on 4 participants per site: [PLACEHOLDER: numbers to be filled in from
-  `coherence_batch/native/yang2026_{en,ru}_tsss.json`].
+  one global-shift surrogate): on the raw data weak (English 0.83-1.54 below 60 Hz, 1.04-1.16 above; Russian
+  1.09-1.88, 128 Hz and native rate alike, after the flat channels were marked bad). With tSSS (4 participants per
+  site, native rate) envelope coherence is clear at low frequencies: English 3.29 (0.2-1 Hz), 2.35 (1-4 Hz),
+  2.62 (4-8 Hz), 1.52 (8-15 Hz); Russian 2.08, 1.57, 2.39, 1.39; ~1.02-1.09 from 15 to 500 Hz at both sites.
 - **DNN offset:** not applicable (the match-mismatch classifier is trained on EEG).
 - **Suitable for**, **after tSSS as validated above**: low-frequency envelope tracking and decoding, word- and
   phone-level analyses (forced-aligned TextGrids), middle-latency and 30-250 Hz cortical responses (timing to
