@@ -225,7 +225,8 @@
       "source": "openneuro",
       "identifiers": ["10.18112/openneuro.ds004078.v1.2.1"],
       "description": "Wang et al. (2022) synchronized multimodal neuroimaging (MEG part)",
-      "url": "https://openneuro.org/datasets/ds004078/versions/1.2.1"
+      "url": "https://openneuro.org/datasets/ds004078/versions/1.2.1",
+      "exclude": ["sub-*/func/*", "sub-*/anat/*", "sub-*/dwi/*", "derivatives/preprocessed_data/*", "derivatives/FieldMap/*", "derivatives/head_motion/*", "derivatives/annotations/embeddings/*", "code/fmri/*"]
     },
     "pkueeg2025": {
       "source": "openneuro",
