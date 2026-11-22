@@ -220,6 +220,10 @@ def id_to_downloadables_eprints(eprint_id, server="https://eprints.soton.ac.uk")
     """
     Public files of an EPrints record (e.g. the University of Southampton repository) from its JSON export, e.g.
     "438737" (the id in https://eprints.soton.ac.uk/id/eprint/<id>).
+
+    Southampton serves the files behind an Anubis proof-of-work page (HTTP 401 to scripts, 2026-11): download them in
+    a browser into the download directory and run with skip_existing=True, which checks them against the listed sizes
+    and md5s.
     """
     response = requests.get(f"{server}/cgi/export/eprint/{eprint_id}/JSON/eprint-{eprint_id}.js", timeout=60)
     response.raise_for_status()
