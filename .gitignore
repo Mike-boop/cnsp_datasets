@@ -9,3 +9,12 @@ config.json
 playground/
 .claude/settings.local.json
 
+
+# campaign: local-only material
+data_campaign/papers/
+data_campaign/*.xlsx
+data_campaign/HANDOVER.md
+data_campaign/archive/
+secrets.json
+urls.txt
+tmp/

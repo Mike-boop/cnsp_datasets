@@ -1,0 +1,18 @@
+#!/bin/bash
+# usage: standardise_validate.sh <dataset> [extra validate args...]
+# Standardises <review>/<dataset>/download with the dataset's adaptor (FlatSinkV1), then validates the result.
+set -u
+R=/data_storage/gu08wuvu/datasets/tmp/review
+d=$1; shift
+cd ${CNSP_REPO:-/home/gu08wuvu/cnsp_datasets_dev}
+export MNE_DONTWRITE_HOME=true
+echo "=== $d standardise start $(date)"
+rm -rf $R/$d/standardised
+/home/gu08wuvu/cnsp_datasets/.venv/bin/python -u -c "
+from cnsp_datasets.standardise.format_dataset import format_dataset
+format_dataset('$d', '$R/$d/download', '$R/$d/standardised')
+" > $R/$d/standardise.log 2>&1
+echo "=== $d standardise exit $? $(date)"
+/home/gu08wuvu/cnsp_datasets/.venv/bin/python -u -m cnsp_datasets.validate $d --standardised-dir $R/$d/standardised --n-subjects 0 \
+    --json $R/$d/validation.json --fig-dir $R/$d --reference average "$@" > $R/$d/validate.log 2>&1
+echo "=== $d validate exit $? $(date)"
