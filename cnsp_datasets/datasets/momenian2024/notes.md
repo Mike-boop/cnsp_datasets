@@ -333,6 +333,8 @@ forward per-trial offset -0.448 s; median EEG SD 26.7 µV vs 4-6 µV).
   unchanged) and lists it as `bad_channels` in the sidecar; Part 1 has `quality: "suspect: ..."` (all other trials
   `ok`). Re-standardised HK050 only (`std_scripts/restandardise_sub.py 50`). The validator must honour
   `info["bads"]` (exclude from the average reference) for this to help.
+  (2026-11-22: `cnsp_datasets.validate.load.load_neural` now excludes `info["bads"]` from the picks and the
+  average reference; before, MNE's `pick("eeg")` kept bad channels. The momenian2024 validation predates the fix.)
 - Channel scan of all 194 trials (`std_scripts/chan_scan.py`, `std_chan_scan.json`; 1-40 Hz SD per channel in
   30-s windows vs the trial median): HK050 Part 1 T8 (3.4 mV) is an order of magnitude above anything else. Next:
   HK011 T8 (up to 0.50 mV in 1-4 windows per Part), HK003 T8 (up to 0.28 mV, most windows), HK037 FP1/FP2

@@ -38,15 +38,16 @@ def bandpass(x, band, fs, order=4):
 
 
 def load_neural(record, picks, reference=None):
-    """Raw at its native rate, picked and (for EEG) re-referenced; reference is 'average', channel names or None."""
+    """Raw at its native rate, picked and (for EEG) re-referenced; reference is 'average', channel names or None.
+    Channels in info['bads'] are left out of the picks and the average reference (MNE keeps them unless told)."""
     raw = record.neural_data_fn()
     raw.load_data(verbose="ERROR")
     ref = None
     if reference == "average":
-        ref = raw.copy().pick(picks).get_data().mean(0)
+        ref = raw.copy().pick(picks, exclude="bads").get_data().mean(0)
     elif reference:
         ref = raw.get_data(picks=list(reference)).mean(0)
-    raw.pick(picks)
+    raw.pick(picks, exclude="bads")
     if ref is not None:
         raw._data -= ref
     return raw

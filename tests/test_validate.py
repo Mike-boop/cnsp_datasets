@@ -69,3 +69,16 @@ def test_no_response_does_not_pass():
     records = _records(gain=0.0, dc=1e-3, silence=2.0, n_subjects=4)
     s = validate(group_by_subject(records), picks="eeg", n_jobs=4)["summary"]
     assert s["validation_tier"] == "none", s
+
+
+def test_load_neural_excludes_bads():
+    """Bad channels are left out of the picks and of the average reference."""
+    import mne
+    from types import SimpleNamespace
+    from cnsp_datasets.validate.load import load_neural
+    data = np.vstack([np.ones(100), 3 * np.ones(100), np.zeros(100)])  # C is a dead (all-zero) channel
+    raw = mne.io.RawArray(data, mne.create_info(["A", "B", "C"], 100.0, "eeg"), verbose=False)
+    raw.info["bads"] = ["C"]
+    out = load_neural(SimpleNamespace(neural_data_fn=lambda: raw.copy()), "eeg", "average")
+    assert out.ch_names == ["A", "B"]
+    np.testing.assert_allclose(out.get_data()[:, 0], [-1.0, 1.0])  # reference = mean of A and B only
