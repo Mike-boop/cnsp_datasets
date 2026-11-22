@@ -26,8 +26,9 @@ objective validation before anything counts as done.
 ## 2. Standard format
 
 ### Neural data
-- **Sample rate:** the highest available. Fractional rates are resampled to the nearest "nice" rate
-  (e.g. 1017.25 Hz → 1024 Hz; nice = 250·2ⁿ, 256·2ⁿ, 500·2ⁿ, 1000·2ⁿ). This is a real resample, not a relabel.
+- **Sample rate:** native rates up to 1024 Hz are kept (never upsample). Higher rates are resampled to 1000 or
+  1024 Hz, whichever gives fewer artefacts (1000 Hz for 10/25 kHz recordings). Fractional rates are resampled to the
+  nearest "nice" rate (e.g. 1017.25 Hz → 1024 Hz). This is a real resample, not a relabel.
   When drift correction is applied, it happens in the *same* resample (one corrected ratio, one interpolation).
 - **Units:** MNE stores SI internally (V, T), and so does `.fif`. "Standardised units" means each adaptor scales
   correctly into SI at load time, so that all EEG reads in µV and all MEG in fT when displayed. The validator
@@ -35,10 +36,17 @@ objective validation before anything counts as done.
 - **Channel types:**
   - scalp EEG: `eeg`
   - mastoids and other external EEG electrodes: `misc` (MNE has no "external" type), also listed as external
-    sensors in the metadata
-  - EOG: `eog`; ECG: `ecg`
+    sensors in the metadata. Mastoids are kept and named `M1`/`M2`.
+  - EOG: `eog`, named `VEOG`/`HEOG` when the direction of the setup is known, otherwise `EOG`; ECG: `ecg`. Keep
+    all peripherals (EOG, ECG, others).
   - MEG reference sensors: `ref_meg`
   - stimtrack (audio copy or envelope recorded with the M/EEG): `stim`/`misc`, described in the metadata
+- **Channels kept and dropped:** drop completely unused channels (e.g. disconnected peripheral ports). Channels that
+  are flat or carry only electrical noise for a participant stay in the data and are listed in `info['bads']`.
+- **Files:** EEG from several simultaneous EEG systems goes in separate files (avoids MNE re-referencing
+  problems). Simultaneous EEG and MEG can share one `.fif` file.
+- **Subjects and sessions:** keep the original subject names (no renumbering); label sessions as accurately as the
+  data allow.
 - **Reference:** keep the original reference; record it in the metadata. Do not re-reference during
   standardisation.
 - **Memory:** load lazily (`data_fn` callables). Exception: datasets that ship all trials in one concatenated
@@ -46,6 +54,7 @@ objective validation before anything counts as done.
   than reloading it per trial. Only do this when the file fits comfortably in RAM (rule of thumb: < 16 GB).
 
 ### Speech
+- Visual stimuli are not standardised for now (future version); the M/EEG and the audio of multimodal trials are.
 - Audio as shipped (sample rate untouched); envelopes only when audio is unavailable (`feature_name` says which).
 - TextGrids: tiers named `words` and `phones`; times are relative to the start of the stimulus file.
 - Transcripts as UTF-8 text.
@@ -107,14 +116,18 @@ main session: download (background job + log monitoring)
 Agents say "unknown" rather than guess. Uncertain alignment decisions go to the human checkpoint.
 
 ### Explorer report template (`notes.md`)
-1. **Source:** DOI, licence, citation, related paper(s), shared code.
+1. **Source:** DOI, licence, citation, related paper(s) (`data_campaign/papers/<id>.pdf`), shared code.
 2. **Layout:** where neural files, stimuli and annotations live; file formats.
-3. **Stimulus ↔ trial mapping:** how each recording maps to stimulus files; same stimuli across subjects?
-4. **Speech features available:** raw audio / envelope / transcript / word or phoneme annotations.
+3. **Stimulus ↔ trial mapping:** subjects, conditions, how each recording maps to stimulus files; same stimuli
+   across subjects? Missing or incomplete data.
+4. **Speech features available:** raw audio (preferred) or only derived features / transcript / word or phoneme
+   annotations.
 5. **Neural data:** modality, sample rate, units as shipped, channel list (scalp, mastoids, EOG, ECG, MEG
    reference sensors, stimtrack), reference, head-shape digitisation.
-6. **Alignment:** trigger codes and meaning; hardware or software (documented / inferred / unknown); stimtrack
-   content; proposed alignment and drift-correction method.
+6. **Alignment:** trigger codes and meaning; hardware or software (documented / inferred / unknown; software
+   triggers can have a random offset to the sound onset, mean + jitter); stimtrack content (a recorded audio channel
+   usually gives precise onsets and drift; a second sound channel sent only to the acquisition system gives highly
+   accurate ones); insert-earphone tube latency (often unknown); proposed alignment and drift-correction method.
 7. **Cross-subject duration check:** trigger-derived durations vs stimulus durations; drift/jitter estimate if
    possible, per condition.
 8. **Open questions** for the human checkpoint.
