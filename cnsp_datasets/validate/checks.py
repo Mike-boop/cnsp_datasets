@@ -121,9 +121,14 @@ def low_tier(neural, stims, names, fs, rng):
         lags_s=(lags[keep] / fs).tolist(), gfp=gfp[0].tolist(),
         null_gfp_50=np.median(gfp[1:], 0).tolist(), null_gfp_95=np.percentile(gfp[1:], 95, 0).tolist(),
         peak_s=float(lags[keep][np.argmax(gfp[0])] / fs),
-        trial_offsets_s=(offsets[:, 0] / fs).tolist(),
-        drift_ppm=((offsets[:, 2] - offsets[:, 1]) / fs / half_s * 1e6).tolist(),
+        trial_offsets_s=_none_for_nan(offsets[:, 0] / fs),
+        drift_ppm=_none_for_nan((offsets[:, 2] - offsets[:, 1]) / fs / half_s * 1e6),
     )
+
+
+def _none_for_nan(x):
+    """List with NaN replaced by None (valid JSON)."""
+    return [None if np.isnan(v) else float(v) for v in x]
 
 
 def snr(trf, lags_s, window, noise):
@@ -223,14 +228,18 @@ def group_summary(subjects, tiers=ALL_TIERS):
         null_m = np.array(mm).mean(0) if all(mm) else None
         gfp = np.mean([np.array(s["gfp"]) / np.array(s["null_gfp_50"]) for s in low], 0)
         # jitter: spread of trial offsets around each subject's median; drift: per-trial half-to-half change
-        rel = np.concatenate([np.array(s["trial_offsets_s"]) - np.median(s["trial_offsets_s"]) for s in low])
-        drift = np.concatenate([s["drift_ppm"] for s in low])
+        # offsets at the search edge are None (no peak within LOW offset_range) and are left out
+        offs = [np.array(s["trial_offsets_s"], dtype=float) for s in low]
+        rel = np.concatenate([o - np.nanmedian(o) for o in offs if np.isfinite(o).any()] or [np.array([])])
+        rel = rel[np.isfinite(rel)]
+        drift = np.array([d for s in low for d in s["drift_ppm"] if d is not None])
         summary["low"] = dict(
             n_subjects=len(low), mean_r=float(r.mean()), median_r=float(np.median(r)),
             p_circ=p_value(r.mean(), null_c), p_mismatch=p_value(r.mean(), null_m) if null_m is not None else None,
             frac_subjects_sig=float(np.mean([s["p_circ"] < ALPHA for s in low])),
             trf_peak_s=float(low[0]["lags_s"][np.argmax(gfp)]),
             jitter_sd_ms=float(1e3 * rel.std()), jitter_mad_ms=float(1e3 * 1.4826 * np.median(np.abs(rel))),
+            n_offsets_at_edge=int(sum((~np.isfinite(o)).sum() for o in offs)),
             drift_ppm_median=float(np.median(drift)),
             drift_ppm_se=float(1.2533 * drift.std() / np.sqrt(len(drift))),
         )

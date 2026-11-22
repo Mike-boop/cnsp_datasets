@@ -122,7 +122,8 @@ forward model, 32 scalp channels, average reference.
   SEM 1.4) or MLR SNR. A hearing-aid delay of a few ms cannot be resolved at this resolution.
 - **S_014 `aided` trial 9** has a -19.5 s offset in the validator output. This is an **estimator artefact**: an
   unbounded parabolic step in `models.peak_shift` at the search edge. It is not a misalignment. A ±30 s sweep finds
-  no tracking at any lag. This trial inflates the aided jitter SD to 1562 ms, so use the MAD.
+  no tracking at any lag. In the committed validation.json this trial inflates the aided jitter SD to 1562 ms; the
+  estimator has since been fixed (edge maxima are left out), giving 72 ms SD and 12.4 ms MAD for aided.
 - **Coherence** (EEG-envelope, complex mean over subjects, average reference, 5 s Hann windows with 4 s overlap,
   ratio to a surrogate):
 

@@ -42,7 +42,7 @@ def convolve(s, trf, lags, n):
 def peak_shift(x, pred, max_shift):
     """
     Shift d (samples; sub-sample by parabolic interpolation) maximising sum_c sum_t x_c(t) pred_c(t - d),
-    for |d| <= max_shift.
+    for |d| <= max_shift; NaN if the maximum is at the search edge (no peak within the range).
 
     Positive d: x fits best with the prediction delayed by d.
     """
@@ -50,8 +50,10 @@ def peak_shift(x, pred, max_shift):
     g = irfft((rfft(x, axis=-1) * np.conj(rfft(pred, axis=-1))).sum(0), n=n)
     d = np.arange(-max_shift, max_shift + 1)
     y = g[d % n]
-    i = int(np.clip(np.argmax(y), 1, len(y) - 2))
-    a, b, c = y[i - 1:i + 2]
+    i = int(np.argmax(y))
+    if i in (0, len(y) - 1):
+        return np.nan
+    a, b, c = y[i - 1:i + 2]  # b is the maximum, so the vertex lies within half a sample of d[i]
     return float(d[i] + (0.5 * (a - c) / (a - 2 * b + c) if a - 2 * b + c < 0 else 0.0))
 
 

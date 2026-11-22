@@ -5,6 +5,7 @@ from scipy.signal import resample_poly
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 from cnsp_datasets.validate import group_by_subject, validate
 from cnsp_datasets.validate.load import load_neural, stimulus_feature
+from cnsp_datasets.validate.models import peak_shift
 
 FS_AUDIO, FS, DUR = 8000, 1000, 40
 
@@ -87,3 +88,11 @@ def test_hf_feature_from_envelope_needs_a_high_rate():
     slow = StimulusRecord("audio", "b", lambda: {"fs": 100, "data": env[None, :DUR * 100]}, feature_name="envelope")
     assert np.allclose(stimulus_feature(fast, "hf", FS, {}), env)
     assert stimulus_feature(slow, "hf", FS, {}) is None
+
+
+def test_peak_shift_interior_and_edge():
+    rng = np.random.default_rng(0)
+    pred = rng.standard_normal((2, 2000))
+    assert abs(peak_shift(np.roll(pred, 7, axis=-1), pred, 20) - 7) < 0.5
+    ramp = np.tile(np.linspace(0, 1, 2000), (2, 1))  # correlation keeps rising towards one edge: no interior peak
+    assert np.isnan(peak_shift(ramp, ramp[:, ::-1], 20))

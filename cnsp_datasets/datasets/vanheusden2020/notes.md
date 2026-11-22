@@ -269,7 +269,10 @@ filtered before `validate()`); scripts and raw outputs in `tmp/review/vanheusden
   (argmax at the -0.5 s edge, the clipped parabola is not around a maximum and the near-zero curvature makes the
   vertex step unbounded). A +-30 s LOO sweep (`s014_sweep.py`) finds no peak at any lag (z at 0 = 0.56, far max
   2.66, as in the other trials' far lags): no tracking, not misalignment. It drives the aided jitter SD to 1562 ms;
-  use the MAD. Suggested repo fix (not made): bound the parabolic step to +-1 sample and flag edge argmaxes.
+  use the MAD. Fixed in the repo afterwards (2026-11-22): `peak_shift` returns NaN for an edge argmax, and the
+  summary leaves such trials out and counts them (`n_offsets_at_edge`). Aided re-run (low tier) with the fix:
+  jitter SD 72 ms (was 1562), MAD 12.4 ms, 3 offsets at the edge, mean r unchanged. Figures:
+  `validation/extra_s014_sweep.png` (S_014 vs S_009 sweeps) and `validation/extra_zero_lag_bump.png`.
 - Order provenance: `order_ambiguous` trials median r 0.034 (n 41) vs 0.058 (n 267), Mann-Whitney p 3e-7; expected,
   these files were flagged for weak tracking. 38/41 have r > 0. S_002 unaided (EEG-derived order) r 0.102, the
   highest subject-condition (trials 0.067-0.125); partly circular.
