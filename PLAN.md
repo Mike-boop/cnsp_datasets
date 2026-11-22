@@ -288,6 +288,15 @@ other hosts).
   Option: carry such flags per trial or subject (e.g. in the provenance sidecar) so users can filter.
 
 ### Second pass (later)
+- **pkueeg2025 drift (NeuroScan days 1-2).** The adaptor applies the marker-based 76.8 ppm; brain-based estimates
+  on uncorrected data give ~47 ppm (DNN lag slope) and ~22 ppm (backward-decoder lag slope), and the DNN residual
+  on the corrected pilot suggests the marker value overshoots. Kept at 76.8 ppm for now (user, 2026-11-22); the
+  alternatives, the weissbart2019 reference check and candidate scores are in `datasets/pkueeg2025/notes.md`
+  ("Drift re-estimation"). Decide the value, and check whether the marker clock is the stimulus PC's rather than the
+  sound card's.
+- **Constant onset offsets documented, not applied** (user, 2026-11-22): pkueeg2025 (~-75 ms NeuroScan, ~-42 ms
+  Neuracle, DNN vs accou2023) and wang2025 (~-0.19 s, DNN + TRF), alongside das2019 / bentum2023 /
+  broderick2019_cocktail (section 8).
 - **varano2022 audio cut.** `_make_audio_loader` cuts `AVbook/A/<part>.wav` to the trial's EEG length, which only
   shortens the 95 mismatched AV trials (EEG stops at the shorter video). The stimulus is named by the part alone, so
   the stored `audio/<part>` is whichever trial was written first: if a mismatched trial came first, the matched
