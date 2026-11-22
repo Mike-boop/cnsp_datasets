@@ -134,6 +134,20 @@ Findings that explain `adaptor.py`. Review scripts and results: `tmp/review/libr
 - Word-onset evoked field (`libribrain_wordERF.py`, sub-0 Sherlock1 ses-1 raw, 2836 words, gradiometers 1-20 Hz): GFP
   peaks at 195 ms (and ~320 ms), about twice the random-onset maximum: `timemeg` is on the MEG clock.
 
+## 8b. Validation (2026-11-21/22)
+| run | subjects / trials | low r | mlr (30-60 Hz) | 30-250 Hz (28-45 ms) |
+|---|---|---|---|---|
+| h5 sub-1-32 (250 Hz, SSS by the authors) | 32 / 64 | **0.054** (31/32 sig.) | SNR 1.01, p 0.10 | n/a (125 Hz low-pass) |
+| sub-0 raw (Sherlock1, 2, 4 ses-2, 5, 7, TheMoth x2, MOCHA x2) | 1 / 9 | 0.021 (sig.) | SNR 1.08, p 0.10 | SNR 1.02, p 0.12 |
+| sub-0 with tSSS in the validation only (10 s, fine-cal + cross-talk; same trials) | 1 / 9 | 0.030 (sig.) | SNR 0.95, p 0.53 | SNR 1.10, p 0.03 |
+
+`validate_subset.py` / `validate_sss.py`; figures `tmp/review/libribrain100/validation_{h5,sub0,sub0_sss}/`.
+**Validation tier: low.** The raw sub-0 30-60 Hz TRF shows the stimulus artefact at 0 ms (timing to ~1 ms); tSSS
+removes it (external source) and leaves a ~43 Hz ripple at all lags (periodic, not a response). The formal 30-250 Hz
+pass with tSSS (p 0.03, one subject) is not convincing: peaks of the same size at negative lags. High-frequency
+timing is not verified (software segment triggers, ~+-3 ms; one deep subject); the alignment itself is confirmed by
+the annotation TRF test, the artefact at 0 ms and the low tier.
+
 ## 9. From the paper (Mantegna et al. 2026, arXiv 2608.25204, appendix B)
 - Participants: 33 (sub-0 deep, sub-1-32 broad); 16 native English speakers, 17 fluent L2 speakers. sub-1-32 heard
   chapters 11 and 12 of A Study in Scarlet in one ~1 h session (short break between chapters).
