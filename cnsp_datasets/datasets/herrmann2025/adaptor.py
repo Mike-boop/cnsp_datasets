@@ -19,13 +19,13 @@ from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 LOW_TIER_MAX_SNR = 10.8
 # No clear speech tracking under the logged mapping (notes 3); kept and flagged.
 WEAK_TRACKING = {"na10", "na21", "na55", "na61", "na64", "na65"}
-MASTOIDS = {"EXG1": "left mastoid", "EXG2": "right mastoid"}  # BioSemi convention, unverified (notes 5)
+MASTOIDS = {"EXG1": "M1", "EXG2": "M2"}  # left/right mastoid: BioSemi convention, unverified (notes 5)
 MARKER_BASE, MARKER_ON = 254, 255  # Status & 0xFF; one rising edge per story (notes 6)
 PTA_HZ = (500, 1000, 2000, 4000)  # pure-tone average, both ears
 AUDIO_FS = 44100
 NOTES = ("Onset = Status marker rising edge (254 -> 255), inferred software marker from MATLAB/Psychtoolbox; "
          "marker vs sound onset agrees to within a few tens of ms (ERP), no stimtrack, no drift estimate. "
-         "Original CMS/DRL reference; EXG1/EXG2 = left/right mastoid (convention, unverified).")
+         "Original CMS/DRL reference; EXG1/EXG2 = left/right mastoid, renamed M1/M2 (convention, unverified).")
 WEAK_NOTE = "No clear speech tracking under the logged story mapping (cause unknown; notes 3)."
 
 
@@ -33,7 +33,7 @@ class Herrmann2025Adaptor:
     """
     Herrmann 2025 (OSF p8nxq): younger (na01-na26) and older (na40-na65) adults listen to 20 stories (~1.7 min),
     4 in clear and one at each of 16 SNRs (57 to -6 dB) in 12-talker babble; 5 BioSemi blocks of 4 stories.
-    16 scalp channels + EXG1/EXG2 (mastoids, `misc`) at 1024 Hz, as recorded (CMS/DRL, no re-referencing).
+    16 scalp channels + M1/M2 (mastoids, EXG1/EXG2 as recorded, `misc`) at 1024 Hz, as recorded (CMS/DRL, no re-referencing).
 
     Only blocks with a MATLAB log are used (146 of 260): the log names the wav of each story; unlogged blocks have
     unknown story and SNR (18 participants have none). Trial = 4 * (block - 1) + position (1-20).
@@ -69,7 +69,7 @@ class Herrmann2025Adaptor:
                     NOTES + (" " + WEAK_NOTE if pid in WEAK_TRACKING else ""),
                     story=title, wav=wav, snr_db=None if clear else float(snr),
                     block=block, position_in_block=pos + 1, marker_sample=int(onset),
-                    reference="CMS/DRL (as recorded)", external_sensors=MASTOIDS,
+                    reference="CMS/DRL (as recorded)", external_sensors={"M1": "left mastoid (EXG1)", "M2": "right mastoid (EXG2)"},
                     weak_tracking=pid in WEAK_TRACKING, **self._subject_info(pid), **babble,
                     validation_tier="low" if not clear and float(snr) <= LOW_TIER_MAX_SNR else "mlr",
                 )
@@ -106,7 +106,8 @@ class Herrmann2025Adaptor:
             raw.drop_channels(["Status"])
             start = onset / raw.info["sfreq"]
             raw.crop(start, start + duration, include_tmax=False).load_data(verbose="ERROR")
-            raw.set_channel_types({c: "misc" for c in MASTOIDS}, verbose="ERROR")
+            raw.rename_channels(MASTOIDS)
+            raw.set_channel_types({c: "misc" for c in MASTOIDS.values()}, verbose="ERROR")
             raw.set_montage(make_standard_montage("standard_1020"))
             raw.info["description"] = description
             return raw

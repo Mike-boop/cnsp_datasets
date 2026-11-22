@@ -23,7 +23,7 @@ and na60, which are also missing from the demographics. Asking the author for th
 
 ## What is provided
 - **EEG:** BioSemi ActiveTwo at 1024 Hz (stored unchanged), 16 scalp channels (10-20 names, `standard_1020`
-  template positions) and `EXG1`/`EXG2` (left/right mastoid by BioSemi convention, unverified) as `misc`.
+  template positions) and `M1`/`M2` (left/right mastoid, recorded as `EXG1`/`EXG2`; BioSemi convention, unverified) as `misc`.
   Reference as recorded (CMS/DRL); the authors re-reference to the mastoid mean. No EOG, no stimtrack.
 - **Stimuli** (`audio`, 44.1 kHz mono, as shipped, all at the same RMS):
   - `<Title>`: the clean story, marked as attended (every trial);

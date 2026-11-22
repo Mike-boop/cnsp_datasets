@@ -239,6 +239,10 @@ Each presentation counts the wav duration (401.528 s English, 412.462 s Russian)
    **Decided (coordinator, 2026-11-22, user asleep; revisit):** **changed from the explorer default: the EEG is
    dropped** (precedents: the user dropped armeni2022's EEG; habersetzer2025 sub-01's EEG dropped). Alternative: keep
    it as `eeg` in the MEG trial (nose reference), or separate `_eeg` adaptors later.
+   **Revised (user, 2026-11-22 evening):** keep the EEG inside the MEG trials as `eeg` channels (nose reference, as
+   recorded; flat-channel check extended to EEG). Tested on English sub-1, sub-11 and Russian sub-2 (64/70 EEG
+   channels, all with positions, median sd 21-35 uV, FIF EEG bads kept). The validation, coherence and data size
+   above were computed on the MEG-only pilot; the EEG has not been validated.
 9. **Channels kept**: MEG (306), EEG, EOG (EOG001/002 or EOG061/062), ECG (ECG003 / ECG063), audio copy as `misc`
    (English MISC006 and MISC007, Russian MISC005), described in the metadata. Drop: English MISC001-005 (content
    unknown, not audio), STI*, SYS201; Russian MISC201-206/301-306 (all zero), STI201/STI301, `recordedinerror`

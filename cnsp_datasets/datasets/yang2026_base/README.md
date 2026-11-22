@@ -35,7 +35,10 @@ One condition per site (`conversation`); hours = wav duration x presentations.
 - **Other channels:** EOG (2, `eog`), ECG (`ecg`) and the recorded copy of the sound (`misc`; English MISC006 and
   MISC007, identical; Russian MISC005). Head-shape digitisation, fiducials, HPI coils and the device-to-head
   transform are kept. Continuous HPI (5 coils, 293-328 Hz) is in the data.
-- **Not included:** the simultaneous EEG (64/70 channels, nose reference) in the same files, the 20 s practice
+- **EEG:** the simultaneous EEG (`eeg`; English 64, Russian 70 channels, digitised positions), nose reference as
+  recorded; FIF bads kept and flat channels marked bad. Not validated (validation, coherence and data size below are
+  from the MEG).
+- **Not included:** the 20 s practice
   excerpt (no wav), the empty-room recordings, button presses, and the visual dot stimulus shown during listening.
 - **Stimuli** (one per site, shared by all trials): `conversation_en` (48 kHz, 401.53 s), `conversation_ru`
   (44.1 kHz, 412.46 s).
@@ -141,8 +144,7 @@ mlr p 0.27, brainstem p 0.63.)
 
 ## Decisions taken (coordinator, 2026-11-22; to revisit)
 - **Raw data standardised** (least processed); Maxwell filtering is up to the user (see Validation for settings).
-- **EEG dropped** (precedent: armeni2022's EEG dropped by the user); it could be kept as `eeg` (nose reference) or
-  added as separate `_eeg` adaptors later.
+- **EEG kept in the MEG trials** (user, 2026-11-22), nose reference as recorded; not validated.
 - **Onset = fitted audio-copy onset + 7.3 ms assumed tube delay** (precedent: schueller2024's +6 ms tube delay).
 - **Drift corrected per presentation** from `drift.csv` at both sites (default `drift_correction="presentation"`).
 - **sub-E12 run-1 presentation 2:** the playback paused ~15 ms at wav ~352 s; onset and drift are fitted on the

@@ -35,7 +35,7 @@ SITES = {
 }
 DROP = {"recordedinerror"}  # R1, R2: a second channel typed ECG, recorded in error
 NOTES = ("Raw MEG as shipped: no SSS/MaxFilter (fine-calibration and cross-talk files in the dataset root); FIF bads "
-         "kept. The simultaneous EEG is not included. Onset = audio-copy onset fitted against the wav (10 s windows, "
+         "kept. Simultaneous EEG (nose reference, as recorded) included as `eeg` channels. Onset = audio-copy onset fitted against the wav (10 s windows, "
          "Theil-Sen; code 3 of STI101 & 0xFF only locates the presentation) + 7.3 ms assumed tube delay (2.5 m ER3 "
          "tubes; the authors' delay configuration is not shared). Clock drift (English ~+538 ppm, Russian ~-0.7 ppm) "
          "corrected by resampling onto the audio clock. cHPI lines (293-328 Hz) remain in the data. Visual dots ran "
@@ -91,7 +91,7 @@ class Yang2026Adaptor:
                 acoustic_delay_ms=ACOUSTIC_DELAY_MS, onset_sample=round(float(onset), 4),
                 fit_windows=int(m.n_windows), fit_end_s=fit_end,
                 sss=f"none (raw as shipped; {', '.join(self.cfg['sss'])} in the dataset root)",
-                reference="none (MEG)", external_sensors=self.cfg["audio_copy"],
+                reference="MEG: none; EEG: nose (as recorded)", external_sensors=self.cfg["audio_copy"],
                 chpi="continuous HPI, 5 coils at 293, 307, 314, 321, 328 Hz, not removed")
             if fit_end is not None:
                 extra["glitch"] = f"playback paused ~15 ms at wav ~352 s; trial ends at wav {fit_end} s"
@@ -154,11 +154,11 @@ def _meg_loader(fif: str, onset: float, n_out: int, drift: float, cfg: dict, ext
     def _loader():
         raw = _read(fif)
         picks = [c for c, t in zip(raw.ch_names, raw.get_channel_types())
-                 if (t in ("mag", "grad", "eog", "ecg") and c not in DROP) or c in cfg["audio_copy"]]
+                 if (t in ("mag", "grad", "eeg", "eog", "ecg") and c not in DROP) or c in cfg["audio_copy"]]
         out = crop_on_audio_clock(raw, onset, n_out, drift, picks=picks, sfreq_out=1000)
-        dead = []  # flat (constant) MEG channels the FIF does not mark (notes 12); the drift interpolation leaves
-        for kind in ("mag", "grad"):  # ~1e-22 numerical ripple on them, so compare with the type's median std
-            idx = mne.pick_types(out.info, meg=kind, exclude=[])
+        dead = []  # flat (constant) MEG/EEG channels the FIF does not mark (notes 12); the drift interpolation leaves
+        for kind in ("mag", "grad", "eeg"):  # ~1e-22 numerical ripple on them, so compare with the type's median std
+            idx = mne.pick_types(out.info, meg=kind if kind != "eeg" else False, eeg=kind == "eeg", exclude=[])
             sd = out._data[idx].std(axis=1)
             dead += [out.ch_names[i] for i, s in zip(idx, sd)
                      if s < 1e-6 * np.median(sd) and out.ch_names[i] not in out.info["bads"]]
