@@ -11,7 +11,7 @@ alignment plan), `cnsp_datasets/standardise/trial_record.py` and two or three ex
 Rules:
 - Follow the approved alignment plan. If the data contradicts it, stop and report — do not improvise a new method.
 - Format (PLAN.md section 2): highest sample rate, rounded to a nice rate by real resampling; drift correction folded
-  into the same resample; SI units; mastoids/external electrodes as `misc`; EOG/ECG/`ref_meg` kept; original
+  into the same resample; SI units; mastoids as `misc` named M1/M2; EOG (VEOG/HEOG if known)/ECG/`ref_meg` kept; original
   reference; head-shape digitisation kept; provenance sidecar per trial.
 - Speech: least-processed form available; TextGrids with `words`/`phones` tiers relative to the stimulus start.
 - Lazy loading via `data_fn` callables; cache a concatenated source file only when it fits in RAM.

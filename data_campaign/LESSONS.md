@@ -71,7 +71,7 @@ before closing a dataset. Add new lessons here, not in the handover.
 - **Raw MEGIN data without SSS fail the high-frequency tiers.** Use tSSS in the validation only.
 
 ## Validation and interpretation
-- **Validate with an average reference.** Without re-referencing the numbers change a lot (weissbart2019 30-250 Hz
+- **Validate with an average reference** (32+ EEG channels; mastoids for fewer). Without re-referencing the numbers change a lot (weissbart2019 30-250 Hz
   SNR 2.46 vs 1.54). Record the reference with every result.
 - **Look at the TRF plots, not only the p-values.**
   - A stimulus-locked ripple at all lags can pass the MLR test (guilleminot2021).
