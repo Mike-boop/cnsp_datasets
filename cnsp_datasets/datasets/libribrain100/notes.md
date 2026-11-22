@@ -3,13 +3,30 @@
 Findings that explain `adaptor.py`. Review scripts and results: `tmp/review/libribrain100/`,
 `tmp/review/scripts/meg/` (2026-11-21).
 
-## TODO
-- **Sherlock8 stimuli**: the release has no `Sherlock8/stimuli/` (no audio, no README); its MEG is standardised
-  without audio (MEG + TextGrid). When the LibriBrain authors release the Sherlock8 audio (check the HF repo
-  `pnpl/LibriBrain2` after the 2026 competition embargo ends), add it like Sherlock1-7/9 and re-standardise.
-- **Sherlock1 sub-13 to sub-32**: only the first half (sub-13-22) or first quarter (sub-23-32) of each session is
-  released (competition embargo; the BIDS raw data of sub-1-32 is embargoed too). Re-download when the rest is out;
-  raw FIF for sub-1-32 would then replace the preprocessed h5.
+## Embargo (2026 competition) and TODO
+- **What the authors say** (`pnpl/LibriBrain2` README, 2026-11-21): "some of the data in Sherlock1 have been
+  embargoed until after this year (2026)'s open machine learning competition, but will be released after.
+  Specifically, we've included the full serialised data for sub-1 through sub-12, but reduced data for the remaining
+  subjects. [...] To avoid data leakage during the competition, BIDS for Sherlock1 are being embargoed too."
+- **What is held back** (as of 2026-11-21):
+  - Sherlock1 sub-13-22: only the first half of each session (h5 `desc-firsthalf`); sub-23-32: only the first
+    quarter (`desc-firstquarter`). Chapters 11 and 12 (the competition's validation/test chapters).
+  - Raw BIDS FIF of Sherlock1 sub-1-32: not released at all (so these subjects are standardised from the authors'
+    preprocessed 250 Hz h5).
+  - Sherlock8: no `stimuli/` folder (no audio, no README). Not stated as embargoed; the user expects it to come
+    with the post-competition release. Its MEG is standardised without audio (MEG + TextGrid).
+- **When it is lifted** (check `pnpl/LibriBrain2` on Hugging Face after the competition, i.e. from 2027):
+  1. Re-list the repo (`id_to_downloadables_huggingface`) and compare with the registry's `exclude` patterns: if raw
+     BIDS FIF for Sherlock1 sub-1-32 appear, drop the h5 exception (`LibriBrain2/Sherlock1/derivatives/
+     serialised*` is kept on purpose) and exclude the h5 instead; the adaptor's `_meg_file` prefers raw FIF only for
+     sub-0 now: extend it to any subject with raw FIF (and keep the h5 path as fallback).
+  2. Full sessions for sub-13-32: nothing to change in the adaptor if they arrive as h5 with the same naming
+     (without `desc-...`); check `_meg_file`'s glob.
+  3. Sherlock8 audio: run `python -m cnsp_datasets.datasets.libribrain100.wavmap <download>` (add
+     `LibriBrain2/Sherlock8` to `wavmap.BOOKS`), then `segalign` for sessions that do not map linearly, remove
+     Sherlock8 from the adaptor's `NO_AUDIO`, rerun the annotation TRF test (`tmp/review/scripts/meg/annot_trf.py`)
+     on a few sessions, and re-standardise.
+  4. Update the README (Size, What is provided, Caveats) and the data size.
 
 ## 1. Source
 - Hugging Face `pnpl/LibriBrain` (Sherlock1-7, the 2025 competition release) and `pnpl/LibriBrain2` (Sherlock1
