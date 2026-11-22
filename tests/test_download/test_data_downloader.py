@@ -308,3 +308,35 @@ class TestDownloadLog:
         _, rows = _read_log(tmp_path / "download_log.tsv")
         assert sorted(r["file"] for r in rows) == sorted(f"{i}.bin" for i in range(10))
         assert all(r["url"] == f"http://example.com/{r['file'][:-4]}" for r in rows)
+
+
+class TestPoliteness:
+
+    @patch("cnsp_datasets.download.data_downloader.time.sleep")
+    def test_refused_is_not_retried(self, mock_sleep, mock_get, downloader, tmp_path):
+        mock_get.return_value = _make_response(status=401)
+
+        result = downloader._download_one("http://example.com/f", str(tmp_path / "out.bin"))
+
+        assert "Failed" in result and "401" in result
+        assert mock_get.call_count == 1
+        mock_sleep.assert_not_called()
+
+    @patch("cnsp_datasets.download.data_downloader.time.sleep")
+    def test_honours_retry_after(self, mock_sleep, mock_get, downloader, tmp_path):
+        throttled = _make_response(status=429)
+        throttled.headers["Retry-After"] = "42"
+        mock_get.side_effect = [throttled, _make_response()]
+
+        result = downloader._download_one("http://example.com/f", str(tmp_path / "out.bin"))
+
+        assert "Downloaded" in result
+        mock_sleep.assert_called_once_with(42)
+
+    def test_retry_after_is_capped(self):
+        from cnsp_datasets.download.data_downloader import MAX_RETRY_AFTER, _HTTPError, _retry_delay
+        assert _retry_delay(_HTTPError(503, "100000"), 1) == MAX_RETRY_AFTER
+
+    def test_sessions_send_user_agent(self, downloader):
+        from cnsp_datasets.download.data_downloader import USER_AGENT
+        assert downloader._session().headers["User-Agent"] == USER_AGENT

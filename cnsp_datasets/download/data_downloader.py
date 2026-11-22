@@ -12,6 +12,24 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
 
 
+USER_AGENT = "dataset-downloader/0.1 (python-requests)"  # generic: no project or personal details
+MAX_RETRY_AFTER = 300  # seconds
+
+
+class _HTTPError(Exception):
+    def __init__(self, status, retry_after=None):
+        super().__init__(f"HTTP {status}")
+        self.status, self.retry_after = status, retry_after
+
+
+def _retry_delay(error, attempt):
+    """Seconds before the next attempt: the server's Retry-After on 429/503 (capped), else capped backoff."""
+    retry_after = getattr(error, "retry_after", None)
+    if getattr(error, "status", None) in (429, 503) and retry_after and retry_after.isdigit():
+        return min(int(retry_after), MAX_RETRY_AFTER)
+    return min(2 ** attempt, 60) + random.uniform(0, 1)
+
+
 class DataDownloader:
     """
     A class to download files from URLs with optional checksum verification and progress bar.
@@ -76,6 +94,7 @@ class DataDownloader:
         session = getattr(self._local, "session", None)
         if session is None:
             session = self._local.session = requests.Session()
+            session.headers["User-Agent"] = USER_AGENT
         return session
 
     def _is_complete(self, file_path, expected_size=None, expected_checksum=None):
@@ -128,8 +147,11 @@ class DataDownloader:
         while attempt <= self.retries:
             try:
                 with self._session().get(url, stream=True, timeout=self.timeout, headers=headers) as response:
+                    if response.status_code in (401, 403):  # refused: retrying won't help and isn't polite
+                        tqdm.write(f"Failed: {name} (HTTP {response.status_code})")
+                        return f"Failed: {name} (Exception: HTTP {response.status_code})"
                     if response.status_code != 200:
-                        raise Exception(f"HTTP {response.status_code}")
+                        raise _HTTPError(response.status_code, response.headers.get("Retry-After"))
                     total_size = self._response_size(response)
 
                     # otherwise use the response headers; the body is never read if we skip
@@ -162,9 +184,9 @@ class DataDownloader:
                 if attempt > self.retries:
                     tqdm.write(f"Failed: {name} ({type(e).__name__}: {e})")
                     return f"Failed: {name} ({type(e).__name__}: {e})"
-                # capped exponential backoff with jitter; the Radboud WebDAV server returns
-                # spurious 404s under load, so failures are usually transient
-                time.sleep(min(2 ** attempt, 60) + random.uniform(0, 1))
+                # capped exponential backoff with jitter (the Radboud WebDAV server returns spurious 404s under
+                # load, so failures are usually transient), or the server's Retry-After on 429/503
+                time.sleep(_retry_delay(e, attempt))
 
     def download_batch(self, file_metadata, parallel=True):
         """

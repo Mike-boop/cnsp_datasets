@@ -168,3 +168,18 @@ def test_download_dataset_extra_filters(tmp_path, monkeypatch):
     dd.download_dataset("wang2022", str(tmp_path), max_workers=1, extract_archives=False,
                         exclude=["sub-0[7-9]/*", "sub-1*/*"])
     assert got == ["README", "sub-01/meg/a.fif"]
+
+
+@pytest.mark.parametrize("source, requested, expected", [
+    ("zenodo", None, 3), ("zenodo", 8, 3), ("eprints", None, 1), ("openneuro", None, 4), ("openneuro", 2, 2),
+])
+def test_max_workers_capped_per_source(tmp_path, monkeypatch, source, requested, expected):
+    import importlib
+    dd = importlib.import_module("cnsp_datasets.download.download_dataset")
+    monkeypatch.setattr(dd, "load_registry", lambda path: {"x": dd.Dataset("x", source, ["id"], "")})
+    monkeypatch.setattr(dd.Dataset, "resolve_downloadables", lambda self: [])
+    workers = []
+    monkeypatch.setattr(dd.DataDownloader, "__init__", lambda self, *a, **k: workers.append(k["max_workers"]))
+    monkeypatch.setattr(dd.DataDownloader, "download_batch", lambda self, f: None)
+    dd.download_dataset("x", str(tmp_path), max_workers=requested, extract_archives=False)
+    assert workers == [expected]

@@ -1,4 +1,3 @@
-import os
 import json
 import importlib.resources as resources
 
@@ -9,7 +8,12 @@ from cnsp_datasets.download import download_helpers
 from cnsp_datasets.download.data_downloader import DataDownloader
 
 REGISTRY_PATH = resources.files("cnsp_datasets.download").joinpath("dataset_registry.json")
-ZENODO_MAX_WORKERS = 3  # promised to the Zenodo moderators (2026-11-21); see PLAN.md section 7
+DEFAULT_MAX_WORKERS = 4  # parallel downloads per dataset; be polite to the repositories
+SOURCE_MAX_WORKERS = {
+    "zenodo": 3,  # promised to the Zenodo moderators (2026-11-21); see PLAN.md section 7
+    "drum": 2,
+    "eprints": 1,
+}
 SOURCE_READ_TIMEOUT = {"scidb": 300}  # seconds; Science Data Bank often takes > 15 s to start or resume a stream
 
 ### First define a structure for the entries in dataset_registry.json
@@ -131,7 +135,8 @@ def download_dataset(
     Parameters:
     - dataset_name (str): Name of the dataset as specified in dataset_registry.json.
     - download_dir (str): Directory to download the dataset into.
-    - max_workers (int): Number of parallel download workers.
+    - max_workers (int): Number of parallel download workers (default and cap: SOURCE_MAX_WORKERS, else
+      DEFAULT_MAX_WORKERS).
     - retries (int): Number of retries for failed downloads.
     - skip_existing (bool): Skip files that already exist and match the expected checksum.
     - extract_archives (bool): Whether to extract archives after download.
@@ -146,13 +151,9 @@ def download_dataset(
         available = ", ".join(sorted(registry.keys()))
         raise ValueError(f"Dataset '{dataset_name}' is not available. Available datasets are: {available}")
     
-    # if max_workers is not specified, set it to the number of CPUs
-    if max_workers is None:
-        max_workers = os.cpu_count() or 4
-
     ds = registry[dataset_name]
-    if ds.source == "zenodo":
-        max_workers = min(max_workers, ZENODO_MAX_WORKERS)
+    cap = SOURCE_MAX_WORKERS.get(ds.source, DEFAULT_MAX_WORKERS)
+    max_workers = min(max_workers or cap, cap)
     downloadables = ds.resolve_downloadables()
     if include:
         downloadables = [f for f in downloadables if any(fnmatch(f["name"], pat) for pat in include)]
