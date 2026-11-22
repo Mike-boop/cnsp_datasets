@@ -40,7 +40,8 @@ def bandpass(x, band, fs, order=4):
 def load_neural(record, picks, reference=None):
     """
     Raw at its native rate, picked and (for EEG) re-referenced; reference is 'average', channel names or None.
-    Channels in info['bads'] are excluded when picking by type (explicitly named channels are kept).
+    Channels in info['bads'] are left out of the picks and the average reference when picking by type (MNE keeps
+    them unless told); explicitly named channels are kept.
     """
     raw = record.neural_data_fn()
     raw.load_data(verbose="ERROR")

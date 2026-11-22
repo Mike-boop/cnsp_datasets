@@ -119,7 +119,7 @@ Explorer notes, 2026-11-21/22. Scratch scripts and figures: `tmp/review/herrmann
 - Stimuli per trial: `<Title>_L<SNR>` mixture as played (44.1 kHz); `<Title>` clean speech (the LInf wav, shared by
   all trials of that story); babble `<Title>_L<SNR>_babble` = mixture - a*clean (derived, separate name per file).
   Clear trials: mixture == clean, no babble.
-- EEG at 1024 Hz unchanged; EXG1/EXG2 `misc`; original CMS/DRL reference kept.
+- EEG at 1024 Hz unchanged; EXG1/EXG2 renamed M1/M2 (user, 2026-11-22), `misc`; original CMS/DRL reference kept.
 - Onset = marker; no drift correction.
 
 ## 10. Open questions (recommended default in brackets)

@@ -4,7 +4,7 @@ from scipy.signal import resample_poly
 
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 from cnsp_datasets.validate import group_by_subject, validate
-from cnsp_datasets.validate.load import load_neural, stimulus_feature
+from cnsp_datasets.validate.load import stimulus_feature
 from cnsp_datasets.validate.models import peak_shift
 
 FS_AUDIO, FS, DUR = 8000, 1000, 40
@@ -73,13 +73,17 @@ def test_no_response_does_not_pass():
     assert s["validation_tier"] == "none", s
 
 
-def test_bads_are_excluded_when_picking_by_type():
-    raw = mne.io.RawArray(np.random.default_rng(0).standard_normal((3, 1000)),
-                          mne.create_info(["E0", "E1", "E2"], FS, "eeg"), verbose="ERROR")
-    raw.info["bads"] = ["E1"]
-    record = TrialRecord(1, 1, 1, "c", "eeg", None, lambda: raw.copy())
-    assert load_neural(record, "eeg", "average").ch_names == ["E0", "E2"]
-    assert load_neural(record, ["E1"]).ch_names == ["E1"]  # named channels are kept
+def test_load_neural_excludes_bads():
+    """Bad channels are left out of the picks and of the average reference."""
+    import mne
+    from types import SimpleNamespace
+    from cnsp_datasets.validate.load import load_neural
+    data = np.vstack([np.ones(100), 3 * np.ones(100), np.zeros(100)])  # C is a dead (all-zero) channel
+    raw = mne.io.RawArray(data, mne.create_info(["A", "B", "C"], 100.0, "eeg"), verbose=False)
+    raw.info["bads"] = ["C"]
+    out = load_neural(SimpleNamespace(neural_data_fn=lambda: raw.copy()), "eeg", "average")
+    assert out.ch_names == ["A", "B"]
+    np.testing.assert_allclose(out.get_data()[:, 0], [-1.0, 1.0])  # reference = mean of A and B only
 
 
 def test_hf_feature_from_envelope_needs_a_high_rate():
