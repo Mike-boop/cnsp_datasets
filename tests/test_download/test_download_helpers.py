@@ -166,6 +166,7 @@ class TestAsyncOSFWalk:
                 "attributes": {
                     "kind": "file",
                     "materialized_path": f"/{name}",
+                    "size": 1,
                     "extra": {"hashes": {"md5": md5}},
                 },
                 "links": {"download": url},
@@ -175,7 +176,7 @@ class TestAsyncOSFWalk:
                 "attributes": {"kind": "folder"},
                 "relationships": {"files": {"links": {"related": {"href": folder_url}}}},
             })
-        return {"data": data}
+        return {"data": data, "links": {"next": None}}
 
     def test_single_level_no_subdirs(self):
         page = self._osf_page(files=[("data.mat", "http://osf.io/dl/data", "abc123")])
@@ -207,7 +208,7 @@ class TestAsyncOSFWalk:
 
         async def fake_get(url, **kwargs):
             r = MagicMock()
-            r.json.return_value = pages[url]
+            r.json.return_value = pages[url.split("?")[0]]
             r.raise_for_status = MagicMock()
             return r
 
@@ -227,9 +228,9 @@ class TestAsyncOSFWalk:
         pages = {"http://osf.io/root/": root_page, "http://osf.io/dir/": dir_page}
 
         async def fake_get(url, **kwargs):
-            visited.append(url)
+            visited.append(url.split("?")[0])
             r = MagicMock()
-            r.json.return_value = pages[url]
+            r.json.return_value = pages[url.split("?")[0]]
             r.raise_for_status = MagicMock()
             return r
 

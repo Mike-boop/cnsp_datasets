@@ -152,3 +152,17 @@ class TestDownloadDataset:
             dd_mod.download_dataset("fuglsang2018", str(tmp_path), extract_archives=True)
 
         mock_helpers.extract_archives.assert_called_once()
+
+
+def test_download_dataset_extra_filters(tmp_path, monkeypatch):
+    """include/exclude given to download_dataset filter on top of the registry entry."""
+    import importlib
+    dd = importlib.import_module("cnsp_datasets.download.download_dataset")  # the package exports a same-named function
+    files = [{"name": n, "url": "u", "checksum": None} for n in
+             ("README", "sub-01/meg/a.fif", "sub-07/meg/b.fif", "sub-12/meg/c.fif")]
+    monkeypatch.setattr(dd.Dataset, "resolve_downloadables", lambda self: files)
+    got = []
+    monkeypatch.setattr(dd.DataDownloader, "download_batch", lambda self, f: got.extend(x["name"] for x in f))
+    dd.download_dataset("wang2022", str(tmp_path), max_workers=1, extract_archives=False,
+                        exclude=["sub-0[7-9]/*", "sub-1*/*"])
+    assert got == ["README", "sub-01/meg/a.fif"]

@@ -477,6 +477,9 @@ def doi_to_downloadables_openneuro(doi, endpoint="https://openneuro.org/crn/grap
     return asyncio.run(_walk_openneuro_async(openneuro_id, tag, endpoint))
 
 
+OPENNEURO_RETRIES = 6
+
+
 async def _fetch_openneuro_dir_async(client, endpoint, dataset_id, tag, branch):
     """
     Fetch one OpenNeuro directory node and return (leaves, sub_branches).
@@ -484,11 +487,20 @@ async def _fetch_openneuro_dir_async(client, endpoint, dataset_id, tag, branch):
     Pass branch=None for the root level (no tree_id in the query).
     """
     query, variables = get_snapshot_files(dataset_id, tag, tree_id=branch["id"] if branch else None)
-    response = await client.post(
-        endpoint,
-        json={"query": query, "variables": variables},
-        headers={"Content-Type": "application/json"},
-    )
+    for attempt in range(OPENNEURO_RETRIES):  # the GraphQL endpoint returns transient 502s under load
+        try:
+            async with OPENNEURO_LIMIT:
+                response = await client.post(
+                    endpoint,
+                    json={"query": query, "variables": variables},
+                    headers={"Content-Type": "application/json"},
+                )
+            if response.status_code < 500:
+                break
+        except httpx.TransportError:
+            if attempt == OPENNEURO_RETRIES - 1:
+                raise
+        await asyncio.sleep(2 ** attempt)
     response.raise_for_status()
 
     leaves, sub_branches = [], []
@@ -524,6 +536,8 @@ async def _walk_openneuro_async(dataset_id, tag, endpoint):
     Starts with the root listing, then fans out across all subdirectories
     in parallel at each level until no directories remain.
     """
+    global OPENNEURO_LIMIT
+    OPENNEURO_LIMIT = asyncio.Semaphore(8)  # bounded fan-out; created inside the running event loop
     all_leaves = []
 
     async with httpx.AsyncClient(timeout=30) as client:

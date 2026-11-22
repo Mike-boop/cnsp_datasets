@@ -114,6 +114,8 @@ def download_dataset(
     skip_existing: bool = False,
     extract_archives: bool = True,
     verify_checksum: bool = False,
+    include: Iterable[str] = (),
+    exclude: Iterable[str] = (),
 ) -> None:
     """
     Download a named dataset to a specified directory.
@@ -126,6 +128,8 @@ def download_dataset(
     - skip_existing (bool): Skip files that already exist and match the expected checksum.
     - extract_archives (bool): Whether to extract archives after download.
     - verify_checksum (bool): Whether to verify checksums if provided in the metadata.
+    - include, exclude (glob patterns): further filters on top of the registry entry's own, e.g. a pilot subset
+      `exclude=["sub-0[7-9]/*", "sub-1*/*"]`; `include` keeps only matching files.
     """
     registry: Dict[str, Dataset] = load_registry(REGISTRY_PATH)
 
@@ -141,6 +145,9 @@ def download_dataset(
     if ds.source == "zenodo":
         max_workers = min(max_workers, ZENODO_MAX_WORKERS)
     downloadables = ds.resolve_downloadables()
+    if include:
+        downloadables = [f for f in downloadables if any(fnmatch(f["name"], pat) for pat in include)]
+    downloadables = [f for f in downloadables if not any(fnmatch(f["name"], pat) for pat in exclude)]
 
     download_manager = DataDownloader(
         download_dir,
