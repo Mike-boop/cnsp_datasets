@@ -30,6 +30,13 @@ before closing a dataset. Add new lessons here, not in the handover.
   - Check for trials that run past the end of the recording.
   - File durations rounded to ms add up over concatenated stimuli (bentum2023).
 - **Frame rates.** Never use an integer hop `fs // FS` for envelopes: 220 for 22.05 kHz is a 0.227% stretch.
+- **Fractional-lag reads need band-limited interpolation.** `align/scan.py:joint_fit` once read window scores at
+  fractional lags linearly, which lowers the noise variance everywhere except at zero drift, so the fit favoured
+  0 ppm (chen2026: every estimate 0 ± 0). Fixed in 1038567 (`upsample_lags`); test a drift estimator on pure noise.
+- **Trigger matching must tolerate dropped events.** Matching by exact event counts fails: chen2026 chapters miss up
+  to 4 of ~150 events, and some files hold several chapters. Match the sequence robustly (best-covered match).
+- **Logged playback times may not be acoustic.** hassan2026's per-device playback timestamps (0 / +80 / +160 ms)
+  did not match the sound: a microphone and the EEG showed the devices sounding together, ~0.7 s later.
 - **`np.allclose` has a relative tolerance.** At sample positions ~1e5 it treats ppm drifts as zero (`clock.py`
   once silently skipped drift correction).
 
@@ -41,7 +48,8 @@ before closing a dataset. Add new lessons here, not in the handover.
   - etard2019 SNR labels;
   - jehn2025 three subjects with swapped sides (stimtrack).
 - **Readmes and helper files can be wrong**: varano2022 `trial_index`, the jehn2025 code table, etard2019
-  `align_data.py` copying onsets between conditions. Upstream errors also include:
+  `align_data.py` copying onsets between conditions. Cross-check the authors' mapping and metadata files against
+  the EEG itself (piazza2025 L1L 13–15 and kulasingham2021 R2522 were mapped wrongly). Upstream errors also include:
   - ds008065 events off by one and a 100× EEG gain;
   - ds006434 truncated files.
 - **Check every file, not one**: channel lists, lengths, annotations, zip integrity (truncated uploads in
@@ -60,6 +68,7 @@ before closing a dataset. Add new lessons here, not in the handover.
 - **A stimulus `data_fn` must depend only on (modality, name, feature).** The sink writes one file per name and the
   first trial written wins, so anything trial-specific needs its own name (varano2022 audio cut).
 - **Test polarity both ways** when trials alternate polarity.
+- **Releases may ship no stimulus at all** (straetmans2021). Check the listing for audio before downloading.
 
 ## Channels and units
 - **Dead or broken channels can mimic misalignment** under an average reference (momenian2024 HK050 T8). Mark
@@ -69,12 +78,20 @@ before closing a dataset. Add new lessons here, not in the handover.
   - `validate.load.load_neural` excludes bads since 75b48d4.
   - `--picks mag` in the validator CLI still keeps them.
 - **Raw MEGIN data without SSS fail the high-frequency tiers.** Use tSSS in the validation only.
+- **Unit labels can be wrong both ways.** diliberto2020 shipped ADC counts; hassan2026 shipped volts labelled
+  "ADC". Check amplitudes in the data, not the label.
+- **Verify an unlabelled channel order** by nearest-neighbour correlation: neighbouring electrodes correlate most.
+- **Raw OPM data: high-pass the whole recording before cutting trials** (li2025); filtering each segment leaves
+  edge artefacts.
 
 ## Validation and interpretation
 - **Validate with an average reference** (32+ EEG channels; mastoids for fewer). Without re-referencing the numbers change a lot (weissbart2019 30-250 Hz
   SNR 2.46 vs 1.54). Record the reference with every result.
 - **Look at the TRF plots, not only the p-values.**
-  - A stimulus-locked ripple at all lags can pass the MLR test (guilleminot2021).
+  - A regular ~10 ms ripple at all lags in the 30-60 or 30-250 Hz TRF is an artefact, not a pass
+    (guilleminot2021, chen2026).
+  - A stimulus artefact can fake a brainstem pass: deoisres2023 S03 gave spikes at -3..0 ms. Look at negative
+    lags.
   - A spike at -21 ms meant a wrong onset delay (wang2022).
 - **`validate.load.stimulus_feature(..., 'hf')`** returns None for envelope-only stimuli, so `--tiers low,mlr`
   silently skips mlr. `--tiers` is comma-separated.
@@ -82,10 +99,14 @@ before closing a dataset. Add new lessons here, not in the handover.
 - **DNN offsets vs accou2023 are not absolute.** pkueeg2025 (Mandarin) gave -42 to -79 ms after a known correction,
   cause unknown. Cross-check with TRF latencies against a reference dataset in the same code (herrmann2025,
   weissbart2019).
+- **Never search one estimator near another's answer.** Restricting the DNN peak to ±0.3 s of the decoder latency
+  made the two agree by construction (chen2026 sub-01 GD 9; unrestricted, the DNN had no significant peak).
 - **Speech in noise** gives ~-15 ms DNN offsets even with measured onsets: that is response latency, not a timing
   error.
 
 ## Data size
+- **Estimate the output size from one written trial** before a pilot or full run: chen2023's pilot was 80 GB, not
+  the 21 GB guessed.
 - Count each trial's longest stimulus (simultaneous streams once), summed per participant. Where stimuli are longer
   than the recording, report the recorded duration (das2019: 2.3 h estimated vs ~1.3 h recorded).
 
@@ -94,11 +115,17 @@ before closing a dataset. Add new lessons here, not in the handover.
   - Detach them and make them resumable: a server reboot and a Claude Code restart have each killed everything.
   - After relabelling conditions or changing an adaptor, move the caches aside: caches keyed by subject, trial or
     condition silently return old results (etard2019 DNN offsets).
+- **A Claude Code crash loses its agents, but detached jobs survive.** Resume the agents from their transcripts.
 - **scipy.fft caches a plan per transform length**, ~5 GB each for long awkward lengths. Pad to `next_fast_len`.
 - **`multiprocessing.Pool` with fork hung** in a numpy-threaded parent. Use `get_context("spawn")`.
 - **Downloads.**
   - They can stop silently or time out (DRUM 15 s read timeout): check the final sizes.
   - ePrints serves an Anubis proof-of-work gate (HTTP 401). Don't circumvent it; ask for a manual download.
+  - Zenodo blocked this server twice (2026-11-21; 2026-11-23 after six requests in one evening). Stop at the first
+    403 and never retry from elsewhere; `.claude/hooks/command_guard.py` blocks Zenodo while
+    `tmp/review/ZENODO_BLOCKED` exists.
+- **Readdir on the NHR vault is unreliable** (listings can miss files). Verify a backup file by file with `stat`
+  against the manifest.
 - **The downloader's `extract_archives=True` deletes the zips** after extraction (chen2026 backup).
 - **A shared git index in a worktree** lets another session's staged files slip into your commit (ea493e7). Commit
   with explicit paths.

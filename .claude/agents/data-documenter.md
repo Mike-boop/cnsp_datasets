@@ -15,9 +15,13 @@ Cover, briefly:
   restrict redistribution of derived data.
 - What is provided: neural modality, sample rate (original and stored), channels incl. external/EOG/ECG/reference
   sensors; speech features (audio/envelope/transcript/TextGrids) or their absence.
-- How it was aligned: method, trigger type and how that was established, drift and jitter estimates.
+- How it was aligned: method, trigger type and how that was established, drift and jitter estimates; the alignment
+  grade (PLAN.md section 3) with its one line of evidence.
+- How to get it: download steps, including gated access or credentials (`secrets.json` keys); adaptor options
+  (e.g. turning off a brain-based onset) and their defaults.
 - Validation: tier reached and key numbers; what the dataset is (not) suitable for, e.g. no brainstem analyses
   with software-trigger jitter.
 - Known issues and excluded data.
 
-Facts only, taken from the sources above; mark anything unverified as such.
+Facts only, taken from the sources above; mark anything unverified as such. Follow "Rules for agents" in
+`data_campaign/WORKFLOW.md`.

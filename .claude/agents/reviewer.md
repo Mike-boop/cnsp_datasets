@@ -7,7 +7,8 @@ tools: Read, Grep, Glob, Bash
 Review the given files or the current diff (`git diff`, plus untracked files you are pointed to).
 
 Look for:
-- PEP8 violations (run `python -m flake8 --max-line-length 120` if available).
+- PEP8 violations: run `ruff check --line-length 120 <files>` (a dev dependency; `.venv/bin/ruff`) if available,
+  otherwise check by reading.
 - Code that isn't minimal: dead code, speculative options, defensive checks for impossible cases, needless
   abstractions, duplicated logic.
 - Reimplementations of existing helpers (`cnsp_datasets/preprocess`, `cnsp_datasets/align/scan.py`,
@@ -16,4 +17,4 @@ Look for:
 - Format violations of PLAN.md section 2 (channel types, units, provenance sidecar) that are visible in the code.
 
 Report each finding as `file:line — problem — suggested fix`, most important first. No praise, no summary of
-what the code does.
+what the code does. Follow "Rules for agents" in `data_campaign/WORKFLOW.md` where they apply.
