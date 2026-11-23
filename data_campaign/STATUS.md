@@ -53,6 +53,7 @@ Last updated: 2026-11-23.
 | straetmans2021 | straetmans2021 | dev | none (no stimulus shipped; sanity only) | download 1.2 GB + standardised in tmp | kept as EEG-only (user, 2026-11-23); ask the authors for the wavs |
 | winchester2026 | winchester2026 | dev | low (all 31; 3 conditions; ceiling at 125 Hz envelopes) | download 5.4 GB + standardised 4.4 GB in tmp | music (piano); envelopes only, no audio; 9 subj at 250 Hz, 22 at 500 Hz; subject 5 looks broken; licence not stated |
 | li2025 | li2025 | dev | low (offset-corrected in validation only; higher tiers not credible) | 18.9 GB MEG download + 12 GB standardised in tmp | OPM-MEG; sound ~0.80 s (sub-31..47) / ~0.55 s (sub-48..60) after the file start: documented, user to decide; sub-54 truncated upstream |
+| diliberto2020 | diliberto2020 | dev | low (all 20; ceiling: 64 Hz envelope, no audio) | 12 GB download+extracted + 13 GB standardised in tmp | music (Bach); ADC counts scaled to V (inferred); presentation order not shipped; CC0 |
 
 Not in the campaign sheet: mai2023 (dev, iEEG, not reviewed), jehn2024 (dev), karengal2025 / koelbl2021 /
 schuller2022full (internal).
@@ -62,7 +63,6 @@ schuller2022full (internal).
 |---|---|---|---|---|
 | chen2026 | chen2026 | dev (notes only, no adaptor) | downloaded (49 GB) + NHR vault backup verified (md5 13/13 local, 178/178 sizes on vault); 281 chapters trigger-verified (24.8 h; sub-05 LP 14/27, sub-06 GD 4 absent) | user decisions on per-chapter latency (option B proposed) and +16 ppm drift; then adaptor reading `timing_table_proposal.csv` |
 | hassan2026 | hassan2026 | dev (registry + notes, 1273cb2) | blocked: HF repo gated (auto-approve), no token; 5.15 GB without video | user accepts terms + adds HF token (`hf`) to secrets.json; then download, explore, adaptor |
-| diliberto2020 | diliberto2020 | dev (registry c75d67f) | blocked: Dryad token expired (401); 6.0 GB, CC0; 64 Hz envelope + MIDI, no audio | user: fresh Dryad token or client id/secret in secrets.json; then `R/scripts/diliberto2020_download.sh` |
 
 ## Open items across datasets
 - **Push `dev`**: many commits are ahead of `origin/dev`; needs the user's approval.
