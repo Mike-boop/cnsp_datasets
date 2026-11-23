@@ -4,7 +4,8 @@ vocode.m, filter_bands.m, greenwud.m), with the toolbox defaults and the paramet
 200-7000 Hz, Greenwood-spaced bands, half-wave rectified envelope low-passed at 250 Hz, noise carrier, RMS matched.
 
 The authors' noise was seeded from the clock (toolbox default `sum(100*clock)`), so the noise fine structure cannot
-be reproduced: a rebuild matches the presented sound in its band envelopes only. See notes.md, section 5.
+be reproduced: a rebuild matches the presented sound in its band envelopes only. See notes.md, section 4.
+scipy's filtfilt pads the edges slightly differently from MATLAB's (first and last samples only).
 """
 from __future__ import annotations
 
@@ -34,6 +35,7 @@ def vocode(x: np.ndarray, fs: float, n: int, seed: int) -> np.ndarray:
         y = sosfiltfilt(band, x)
         env = np.maximum(filtfilt(b_env, a_env, np.maximum(y, 0)), 0)
         noise = np.sign(np.random.default_rng(seed).random(x.size) - 0.5)  # re-seeded per band, as rng() in vocode.m
+        # env / max(env) as in vocode.m; a no-op under the band RMS match below
         mod = sosfiltfilt(band, env / env.max() * noise)
         out += mod / _rms(mod) * _rms(y)
     return out / _rms(out) * rms_out
