@@ -25,6 +25,7 @@ LAGS = np.arange(round(-1.5 * FS), round(1.5 * FS) + 1)  # TRF lags of trf_weigh
 MATCH_LAGS = np.arange(round(-1.5 * FS), round(2.5 * FS) + 1)  # lags of the TRFs whose delay is estimated
 N = N_TIMES * FS // 1000
 N_PARTS = 5  # parts per recording for the delays' consistency check
+PART_WINDOW = 0.3  # s: each part is matched within this of its recording's whole-recording delay
 # template lags -0.2..+0.6 s; the same indices in LAGS and MATCH_LAGS (both grids start at -1.5 s)
 WIN = np.where((LAGS >= -0.2 * FS) & (LAGS <= 0.6 * FS))[0]
 CANDS = np.arange(0, len(MATCH_LAGS) - WIN[-1])  # shifts that keep the window within the fitted lags (0..1.9 s)
@@ -136,6 +137,13 @@ def match_curve(template: np.ndarray, W: np.ndarray) -> np.ndarray:
     return np.array([np.corrcoef(template, W[WIN + k].ravel())[0, 1] for k in CANDS])
 
 
-def match_delay(curve: np.ndarray) -> float:
-    """Best-matching delay (s) of a match curve, parabolic refinement."""
-    return peak_offset(curve) / FS
+def match_delay(curve: np.ndarray, near: float | None = None) -> float:
+    """
+    Best-matching delay (s) of a match curve, parabolic refinement; only within PART_WINDOW of near (s) if given (a
+    maximum on that window's edge is returned unrefined).
+    """
+    lo, hi = 0, len(curve)
+    if near is not None:
+        lo = max(lo, int(np.ceil((near - PART_WINDOW) * FS)))
+        hi = min(hi, int(np.floor((near + PART_WINDOW) * FS)) + 1)
+    return (lo + peak_offset(curve[lo:hi])) / FS

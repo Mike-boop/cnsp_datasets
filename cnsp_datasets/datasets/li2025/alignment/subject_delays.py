@@ -6,12 +6,13 @@ Template: group A's onset-corrected TRF (trf_weights.py, mean over subjects, cha
 -0.2..+0.6 s). Each subject's uncorrected TRF is refitted over the wider MATCH_LAGS (-1.5..+2.5 s; common.match_trfs,
 cached in <out>/match_trfs), so delays of 0..1.9 s can be searched. The delay of a TRF is its best match to the
 template (common.match_curve / match_delay). Per subject: delay and peak r of the whole-recording TRF, median and MAD
-of the five parts' delays (sub-54, truncated: two halves of its 698 s) and, for group A, the delay against a
-leave-one-subject-out template (circularity check). Unreliable (peak r < MIN_R or parts MAD > MAX_MAD): the group's
-delay (adaptor ONSET_DELAY_S), flagged. Ambiguous (adopted delays only): another local maximum of the match curve,
-search edges included, within AMBIG_R of the best r and more than AMBIG_S away (flagged, delay kept). <out>:
-subject_delays.png, part_delays.json (input of drift.py) and heldout_delays.json (delays from parts 1,3,5 and from
-2,4, input of heldout.py).
+of the five parts' delays (each part matched only within common.PART_WINDOW = 0.3 s of the whole-recording delay, so
+a weak part cannot lock onto a far peak; sub-54, truncated: two halves of its 698 s) and, for group A, the delay
+against a leave-one-subject-out template (circularity check). Unreliable (peak r < MIN_R or parts MAD > MAX_MAD):
+the group's delay (adaptor ONSET_DELAY_S), flagged. Ambiguous (adopted delays only): another local maximum of the
+match curve, search edges included, within AMBIG_R of the best r and more than AMBIG_S away (flagged, delay kept).
+<out>: subject_delays.png, part_delays.json (input of drift.py) and heldout_delays.json (delays from parts 1,3,5 and
+from 2,4, input of heldout.py).
 """
 import json
 import os
@@ -25,7 +26,7 @@ from cnsp_datasets.datasets.li2025.adaptor import ONSET_CSV, ONSET_DELAY_S
 from cnsp_datasets.datasets.li2025.alignment.common import (CANDS, FS, WIN, group, load_weights, match_curve,
                                                              match_delay, match_trfs)
 
-# MIN_R, MAX_MAD, AMBIG_R and AMBIG_S: keep in sync with adaptor.SUBJECT_METHOD
+# MIN_R, MAX_MAD, AMBIG_R, AMBIG_S and common.PART_WINDOW: keep in sync with adaptor.SUBJECT_METHOD
 MIN_R = 0.15
 MAX_MAD = 0.05  # s
 AMBIG_R = 0.15  # a second peak this close to the best match r ...
@@ -45,12 +46,16 @@ def second_peak(c):
 
 
 def estimate(template, W, parts):
-    """Match of a TRF and of its parts: delay (s), peak r, at search edge, parts' delays, median and MAD (s), curves."""
+    """
+    Match of a TRF and of its parts: delay (s), peak r, at search edge, parts' delays (each within PART_WINDOW of the
+    TRF's delay), their median and MAD (s), curves.
+    """
     c = match_curve(template, W)
+    delay = match_delay(c)
     pc = [match_curve(template, p) for p in parts]
-    part_delays = np.array([match_delay(x) for x in pc])
+    part_delays = np.array([match_delay(x, near=delay) for x in pc])
     med = float(np.median(part_delays))
-    return dict(delay=match_delay(c), r=float(c.max()), edge=bool(c.argmax() == len(c) - 1), part_delays=part_delays,
+    return dict(delay=delay, r=float(c.max()), edge=bool(c.argmax() == len(c) - 1), part_delays=part_delays,
                 parts_median=med, parts_mad=float(np.median(np.abs(part_delays - med))), curve=c, part_curves=pc)
 
 

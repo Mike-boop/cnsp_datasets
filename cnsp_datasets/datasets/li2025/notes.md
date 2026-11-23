@@ -93,15 +93,17 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
   ms at 1000 Hz, so the correction is a crop, no resampling). `Li2025Adaptor(onset=...)`: `"subject"` (default),
   `"group"` (`ONSET_DELAY_S`: 0.80 s sub-31..47, 0.42 s sub-48..60; the previous default) or `"none"` (shipped
   first sample). Native 1000 Hz kept; the audio (1519.235 s) is longer than the remaining recording and is not
-  cut. Sidecar: `alignment_method = onset_only` (the provenance vocabulary has no brain-based value), `trigger_type`
-  "unknown (inferred software ...) + onset_correction_s", plus `onset_correction_s`, `onset_correction_method`,
-  `recording_group` and, only with `onset="subject"`, `onset_match_r`, `onset_parts_mad_ms`, `onset_fallback`,
-  `onset_ambiguous`.
+  cut. Sidecar (user decision 2026-11-23): `alignment_method = brain_trf` with the onset correction (`"subject"` and
+  `"group"`; `onset_only` with `onset="none"`), `trigger_type` "unknown (inferred software ...) +
+  onset_correction_s", plus `onset_correction_s`, `onset_correction_method`, `recording_group` and, only with
+  `onset="subject"`, `onset_match_r`, `onset_parts_mad_ms`, `onset_fallback`, `onset_ambiguous`. Drift:
+  `drift_ppm` = the brain-based pooled estimate (section 7, not applied; recorded in every onset mode, since it does
+  not depend on the onset choice), `drift_source` (its method and CIs, text), `drift_corrected_ppm = 0`.
 - This is an exception to the campaign rule that constant brain/DNN-based offsets are documented, not applied
   (PLAN.md section 8): the delays are large (0.4-0.8 s) and the shipped onset is a software trigger, not the sound.
 - Estimation: section 7; code in `alignment/` (reads the download through the adaptor with `onset="none"`,
   so it reproduces the delays from code alone; see `alignment/README.md`).
-- No drift correction (no clock reference; brain-based estimate in section 7).
+- No drift correction (no clock reference; brain-based estimate in section 7, recorded as `drift_ppm`).
 
 ## 7. Cross-subject duration check and brain-based timing
 - Durations: all baba files 1519.001 s (sub-54 698 s, truncated); audio 1519.235 s. Fixed-length crops, so they
@@ -166,7 +168,7 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
     the main session's match (0.4375 s, r 0.602) and the three-part drift exactly.
   - Earlier estimate from the low-tier segment offsets (6 x 250 s, -0.8 s offset): -9.8 +- 117 ppm (too loose).
   - Conclusion: no correction. Group A's -14 ppm would move the end of the session by ~21 ms.
-  - **Pooled estimate (2026-11-23, v4; current `alignment/drift.py`)**. The per-group averages above mix subjects with
+  - **Pooled estimate (2026-11-23, v4; superseded by v5 below)**. The per-group averages above mix subjects with
     different delays (A/B mixture). Now per subject: the five parts' delays (wide window, same template match as
     `onset.csv`; sub-54 two halves) **relative to the subject's own whole-recording delay**, fallback subjects left
     out (sub-37/40/52/55; n = 26); parts > 150 ms off (another peak; 10 of 127) dropped; pooled OLS slope over the
@@ -184,9 +186,29 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
     Per-subject slopes (noisy, 5 points): mostly -50..+50 ppm; sub-50 -106 and sub-53 -159 ppm are their later early
     parts (section 8 item 1), not a clock drift, and they carry group B's estimate. Circular: the template is group
     A's own corrected TRF; a latency change of the response over the session (adaptation) would look like drift.
-  - **Decision rule (main session): apply only if the 95% CI excludes 0 and |drift| > 20 ppm (> ~30 ms over 1519 s).
-    All subjects: -17 ppm, CI excludes 0 but |drift| < 20 ppm -> documented, not applied** (~-26 ms over the
-    session). Group B alone meets the rule only because of sub-50/53; without them -11 ppm.
+  - **Decision rule (main session): apply only if the 95% CI excludes 0 and |drift| > 20 ppm (> ~30 ms over 1519 s).**
+    v4: all subjects -17 ppm, CI excludes 0 but |drift| < 20 ppm -> documented, not applied (~-26 ms over the
+    session). Group B alone met the rule only because of sub-50/53; without them -11 ppm.
+  - **Pooled estimate v5 (2026-11-23, current `alignment/drift.py`; user decision: the same restricted part matching
+    as `onset.csv`)**. Each part's delay is now matched only within +-0.3 s of the subject's whole-recording delay
+    (`common.PART_WINDOW`), which replaces the ad-hoc "> 150 ms off" drop; OLS and Theil-Sen use the same points (no
+    part on the window edge). sub-52/55 are no longer fallbacks, so n = 28 (137 parts). Figure
+    `tmp/review/li2025/alignment_v5/drift/drift.png`, numbers `alignment_v5/drift/drift.json`.
+
+    | set | n | OLS (ppm) | 95% CI | Theil-Sen (ppm) | 95% CI |
+    |---|---|---|---|---|---|
+    | all | 28 | **-28.7** | -49.9..-8.0 | -16.7 | -27.4..-9.5 |
+    | A (sub-31..47) | 15 | -9.3 | -30.6..+12.6 | -11.0 | -19.3..-0.9 |
+    | B (sub-48..60) | 13 | -51.6 | -90.4..-20.0 | -27.9 | -52.2..-13.6 |
+    | all without sub-50/52/53 | 25 | -16.3 | -34.1..+1.5 | -12.5 | -19.4..-5.8 |
+
+    On v4's 26 subjects the restricted matching alone moves OLS from -17 to -27.5 ppm (Theil-Sen -16.3 both times):
+    the window now admits parts 150-300 ms off that the old drop removed (sub-50/52/53's later first parts, +121 /
+    +145 / +152 ms; sub-59's last part -192 ms, sub-47's -156 ms, sub-38's +160 ms), and OLS follows them. Theil-Sen is
+    stable (-12..-17 ppm in every variant). **Formally the OLS estimate now meets the rule (CI excludes 0, |-28.7| >
+    20 ppm); Theil-Sen (-16.7) and OLS without sub-50/52/53 (-16.3, CI includes 0) do not. Not applied: a drift
+    correction changes the data and needs the user's sign-off (open, section 8 item 2).** Recorded as `drift_ppm =
+    -28.7` (OLS, the headline estimator so far) with both estimators in `drift_source`.
 - **Per-subject delays (adopted 2026-11-23, `alignment/subject_delays.py`; figures and tables in
   `tmp/review/li2025/alignment_v3/`)**. The per-part view (`alignment_v2/per_subject/`) showed that the delay
   varies per subject, not per spectral group: sub-48/49/60 (group B) sit at ~0.80 s and sub-43 (group A) at ~0.49 s,
@@ -196,7 +218,8 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
     whole-recording uncorrected TRF (refitted over lags **-1.5..+2.5 s**, `common.match_trfs`) that best matches group
     A's corrected TRF (space-time r over lags -0.2..0.6 s, 58 common channels); cross-checked with the median and MAD
     of the five parts' delays (same fits). Fallback to the group delay (flagged) if the peak r < 0.15 or the parts'
-    MAD > 50 ms. **`onset_ambiguous`** (adopted delays only): another local maximum of the match curve (search edges
+    MAD > 50 ms (since v5 each part is matched only within +-0.3 s of the whole-recording delay, see below).
+    **`onset_ambiguous`** (adopted delays only): another local maximum of the match curve (search edges
     included) > 100 ms away comes within 0.15 of the best r; the delay is kept. sub-54 (truncated) fitted on its
     698 s, two halves as parts. Group A also against a leave-one-subject-out template (circularity).
   - **Wide lag window (user "do it", 2026-11-23; v4, `tmp/review/li2025/alignment_v4/`)**. The first version fitted
@@ -214,8 +237,18 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
     peak 0.94 s (r 0.25 vs 0.29) is the one LOSO prefers; sub-33's at 0.72 s (0.50 vs 0.57, LOSO 0.70); sub-47's
     shoulder 0.83 s (0.57 vs 0.68; the old value); sub-53's 0.53 s (0.31 vs 0.34). sub-53's parts MAD is 50.0 ms, at
     the limit.
-  - Result (`onset.csv`; figure `alignment_v4/subject_delays/subject_delays.png`; the narrow-window version is
-    `alignment_v3/subject_delays/`):
+  - **Restricted part matching (user decision 2026-11-23, v5, `tmp/review/li2025/alignment_v5/`)**: sub-52 and sub-55
+    keep their own delays. Their fallback came from the reliability check, not from their whole-recording match: with
+    the wide search, 2 of their 5 weak parts locked onto far peaks (1.2-1.7 s). Fix in the check, not the threshold:
+    each part is matched only within +-0.3 s of the subject's whole-recording delay (`common.PART_WINDOW`; MAD rule
+    50 ms and r rule 0.15 unchanged). Result: **sub-52 0.553 s (parts MAD 21 ms), sub-55 0.433 s (25 ms; now
+    `onset_ambiguous`: second peak 1.72 s, r 0.36 vs 0.45)**, no longer fallbacks. sub-37 (MAD 62 ms, unchanged) and
+    sub-40 (MAD 760 -> 118 ms, r 0.16) stay fallbacks. All other delays unchanged; parts MAD changes only for sub-44
+    (16 -> 5 ms), sub-46 (6 -> 5) and sub-56 (9 -> 7), whose single far parts are now matched near their delay.
+    Caveat (review): the MAD check now detects scatter within +-0.3 s only; a part whose own best peak is farther away
+    is no longer counted against the subject.
+  - Result (`onset.csv`; figure `alignment_v5/subject_delays/subject_delays.png`; v4 (unrestricted parts) in
+    `alignment_v4/subject_delays/`, the narrow-window version in `alignment_v3/subject_delays/`):
 
     | sub | grp | delay (s) | r | parts MAD (ms) | LOSO (s) | note |
     |---|---|---|---|---|---|---|
@@ -228,23 +261,23 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
     | 37 | A | 0.80 | 0.26 | 62 | 0.614 | fallback (parts disagree; own peak 0.621 s, r 0.26) |
     | 38 | A | 0.791 | 0.51 | 10 | 0.786 |  |
     | 39 | A | 0.805 | 0.29 | 8 | 0.938 | ambiguous: second peak 0.94 s (r 0.25); LOSO picks it |
-    | 40 | A | 0.80 | 0.16 | 760 | 1.378 | fallback (no match; best 1.38 s, r 0.16, parts MAD 760 ms) |
+    | 40 | A | 0.80 | 0.16 | 118 | 1.378 | fallback (no match; best 1.38 s, r 0.16, parts MAD 118 ms; 760 ms unrestricted) |
     | 41 | A | 0.761 | 0.41 | 14 | 0.742 |  |
     | 42 | A | 0.813 | 0.54 | 6 | 0.834 |  |
     | 43 | A | 0.493 | 0.45 | 27 | 0.488 | 0.31 s earlier than group A |
-    | 44 | A | 0.812 | 0.49 | 16 | 0.822 |  |
+    | 44 | A | 0.812 | 0.49 | 5 | 0.822 |  |
     | 45 | A | 0.791 | 0.68 | 7 | 0.788 |  |
-    | 46 | A | 0.765 | 0.68 | 6 | 0.752 |  |
+    | 46 | A | 0.765 | 0.68 | 5 | 0.752 |  |
     | 47 | A | 0.977 | 0.68 | 13 | 0.991 | was 0.834 s (a shoulder, at the old window edge); ambiguous: shoulder 0.83 s (r 0.57) |
     | 48 | B | 0.840 | 0.60 | 4 |  | 0.42 s later than group B |
     | 49 | B | 0.798 | 0.70 | 8 |  | 0.38 s later |
     | 50 | B | 0.438 | 0.54 | 26 |  | early parts later |
     | 51 | B | 0.518 | 0.56 | 12 |  |  |
-    | 52 | B | 0.42 | 0.36 | 149 |  | now fallback (was 0.553 s): parts 1 and 5 lock onto far peaks (1.25 / 1.40 s), MAD 149 ms; whole-recording peak 0.553 s |
+    | 52 | B | 0.553 | 0.36 | 21 |  | own delay (user, v5); early parts later; v4 fallback (unrestricted parts 1/5 at 1.25 / 1.40 s, MAD 149 ms) |
     | 53 | B | 0.429 | 0.34 | 50 |  | early parts later; ambiguous: second peak 0.53 s (r 0.31); parts MAD 50.0 ms (at the limit) |
     | 54 | B | 0.505 | 0.50 | 3 |  | truncated, 698 s; 2 halves |
-    | 55 | B | 0.42 | 0.45 | 101 |  | now fallback (was 0.429 s): parts 1 and 4 at 1.60 / 1.73 s, MAD 101 ms; whole-recording 0.433 s |
-    | 56 | B | 0.392 | 0.53 | 9 |  |  |
+    | 55 | B | 0.433 | 0.45 | 25 |  | own delay (user, v5); ambiguous: second peak 1.72 s (r 0.36); v4 fallback (unrestricted parts 1/4 at 1.60 / 1.73 s, MAD 101 ms) |
+    | 56 | B | 0.392 | 0.53 | 7 |  |  |
     | 57 | B | 0.403 | 0.55 | 13 |  |  |
     | 58 | B | 0.442 | 0.41 | 26 |  |  |
     | 59 | B | 0.410 | 0.34 | 25 |  |  |
@@ -293,11 +326,16 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
    three recordings should treat it as uncertain by ~0.15 s. **Wide window (user "do it", 2026-11-23)**: search
    0..1.9 s; sub-35 1.256 s and sub-47 0.977 s adopted, sub-52/55 now fall back to 0.42 s by the unchanged MAD rule
    (their whole-recording peaks stay at 0.553 / 0.433 s; validation r unchanged or slightly higher, section 9);
-   sub-33/39/47/53 flagged `onset_ambiguous` (section 7). Open for the user: keep sub-52/55 as fallbacks, and
-   whether the ambiguity flag should be stricter (only sub-39 was expected).
-2. Drift: **not corrected** (brain-based, pooled relative to each subject's own delay, 26 subjects: -17 ppm, 95% CI
-   -31..-4; below the 20 ppm threshold of the decision rule, section 7; earlier per-group estimate: group A -14 ppm,
-   group B a ~0.12 s step). Group B's "step" is resolved: it was mostly the mixture of subjects at ~0.8 and ~0.4 s (now per-subject),
+   sub-33/39/47/53 flagged `onset_ambiguous` (section 7). **sub-52/55 keep their own delays (user, 2026-11-23)**:
+   parts matched within +-0.3 s of the whole-recording delay (section 7, v5) -> sub-52 0.553 s, sub-55 0.433 s
+   (now also `onset_ambiguous`); fallbacks are sub-37/40. Open for the user: whether the ambiguity flag should be
+   stricter (sub-33/39/47/53/55 flagged; only sub-39 was expected).
+2. Drift: **not corrected; recorded as `drift_ppm` (user, 2026-11-23)**. Brain-based, pooled relative to each
+   subject's own delay with the restricted part matching (v5, 28 subjects): OLS -28.7 ppm (95% CI -49.9..-8.0),
+   Theil-Sen -16.7 (-27.4..-9.5); without sub-50/52/53 OLS -16.3 (-34.1..+1.5). **Open for the user**: OLS now
+   formally meets the decision rule (CI excludes 0, |drift| > 20 ppm), Theil-Sen and the variant without
+   sub-50/52/53 do not; the OLS rise comes from parts 150-300 ms off (section 7). v4 (parts > 150 ms dropped, 26
+   subjects): -17 ppm (-31..-4). Earlier per-group estimate: group A -14 ppm, group B a ~0.12 s step. Group B's "step" is resolved: it was mostly the mixture of subjects at ~0.8 and ~0.4 s (now per-subject),
    plus sub-50/52/53's later early parts (documented in item 1).
 3. Bads: **paper's MEG019/MEG048 for sub-32..47 + the 10x rule**.
 4. sub-54: **include the 698 s readable part** (flagged `truncated_upload` in the sidecar).
@@ -319,7 +357,8 @@ shipped onset). Results in `tmp/review/li2025/validation_offset{0,-0.8,5_control
 | control, +5 s (wrong) | -0.0020 | 1.0 / 1.0 | 0 % | - | - |
 | onset-corrected standardisation, per group (previous default) | 0.0236 | 0.020 / 0.048 | 90 % | 234 ms (109 / 219 per group) | 13 ms |
 | onset-corrected standardisation, per subject, narrow window (0..0.906 s) | 0.0238 | 0.020 / 0.048 | 87 % | 78 ms (78 in both groups) | 13 ms |
-| **onset-corrected standardisation, per subject, wide window (adaptor default)** | 0.0242 | 0.020 / 0.048 | 87 % | 94 ms (A 94, B 78) | 13 ms |
+| onset-corrected standardisation, per subject, wide window, unrestricted parts (v4) | 0.0242 | 0.020 / 0.048 | 87 % | 94 ms (A 94, B 78) | 13 ms |
+| **onset-corrected standardisation, per subject, wide window, parts within 0.3 s (v5, adaptor default)** | 0.0241 | 0.020 / 0.048 | 87 % | 94 ms (A 94, B 78) | 13 ms |
 
 Per recording group (`validation_corrected/groups_before_after.png`; GFP / null median, lags -0.15..0.5 s):
 
@@ -333,6 +372,8 @@ Per recording group (`validation_corrected/groups_before_after.png`; GFP / null 
 | B | per subject (onset.csv) | 0.0243 | 92 % | 78 ms | 2.75 | 19 ms |
 | A | per subject, wide window | 0.0240 | 82 % | 94 ms | 2.97 | 12 ms |
 | B | per subject, wide window | 0.0244 | 92 % | 78 ms | 2.72 | 16 ms |
+| A | per subject, v5 (unchanged delays) | 0.0240 | 82 % | 94 ms | 2.96 | |
+| B | per subject, v5 (sub-52/55 own delays) | 0.0242 | 92 % | 78 ms | 2.73 | |
 
 Per subject vs per group (re-standardised 2026-11-23, all 30; `validation_subject/`, comparison
 `alignment_v3/validation/before_after.png` via `scripts/li2025_compare_runs.py`): mean r unchanged (0.0238 vs 0.0236;
@@ -348,6 +389,13 @@ Wide window vs narrow (re-standardised 2026-11-23, all 30; `alignment_v4/validat
 noise below); sub-52 0.0212 -> 0.0225 and sub-55 0.0275 -> 0.0280 (now fallbacks at 0.42 s). Subjects whose delay moved by only
 1-2 ms change by up to +-0.003 (e.g. sub-31 +0.0019, sub-34 -0.0022, sub-36 +0.0017, sub-50 -0.0028, sub-58
 -0.0020), so that is the noise floor of this comparison.
+
+Restricted part matching (v5; re-standardised 2026-11-23, all 30; `alignment_v5/validation_subject/`, same settings
+as `alignment_v4/validation_subject/`): only sub-52 and sub-55 change. **sub-52 0.0225 -> 0.0212** (0.42 -> 0.553 s;
+its TRF peak moves from 125 ms to 0 ms) and **sub-55 0.0280 -> 0.0275** (0.42 -> 0.433 s), both back to their
+narrow-window values and within the +-0.003 noise floor above, both still p 0.02. Mean r 0.0242 -> 0.0241; everything
+else identical. The validation does not favour the own delays over the group delay for these two (nor clearly
+against); the user's decision rests on their whole-recording matches.
 
 The corrected standardisations give the low tier with TRF peaks at plausible
 latencies in both groups; the HF tiers again "pass" nominally (p 0.01) but are the lag-0 artefact (see above).

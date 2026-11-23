@@ -33,19 +33,29 @@ ONSET_METHOD = {
     "B": "brain-based: group B's multichannel TRF matched to group A's corrected TRF (best 0.44 s, bootstrap 95% CI "
          "0.41-0.80 s, skewed; user's reading 0.41 s) -> 0.42 s; a component at ~-40 ms remains unexplained "
          "(alignment/match_groups.py)"}
-# keep the thresholds in sync with alignment/subject_delays.py (MIN_R, MAX_MAD, AMBIG_R, AMBIG_S)
+# keep the thresholds in sync with alignment/subject_delays.py (MIN_R, MAX_MAD, AMBIG_R, AMBIG_S, PART_WINDOW)
 SUBJECT_METHOD = ("brain-based, per subject (alignment/subject_delays.py, onset.csv): shift (0..1.9 s) at which the "
                   "subject's uncorrected 0.5-8 Hz envelope TRF (lags -1.5..2.5 s) best matches group A's corrected "
                   "TRF (space-time r, lags -0.2..0.6 s); group delay if the match r < 0.15 or the 5 parts' delays "
-                  "scatter (MAD > 50 ms); onset_ambiguous if a second match peak > 100 ms away comes within 0.15 of "
-                  "the best r. Circular (template from the same data); held-out test in notes.md section 7.")
+                  "(each matched within +-0.3 s of the whole-recording delay) scatter (MAD > 50 ms); "
+                  "onset_ambiguous if a second match peak > 100 ms away comes within 0.15 of the best r. "
+                  "Circular (template from the same data); held-out test in notes.md section 7.")
+# Brain-based clock drift, pooled over subjects (notes.md section 7): documented, not applied. Keep in sync with
+# alignment/drift.py's drift.json ("all" and "all_without_50_52_53")
+DRIFT_PPM = -28.7
+DRIFT_SOURCE = ("brain-based, not applied (alignment/drift.py): pooled OLS slope of the 5 parts' onset delays "
+                "relative to each subject's own delay, 28 non-fallback subjects, 95% CI -49.9..-8.0 ppm (bootstrap "
+                "over subjects); Theil-Sen -16.7 ppm (CI -27.4..-9.5); without sub-50/52/53 (later early parts) "
+                "OLS -16.3 ppm (CI -34.1..+1.5). OLS as in the earlier estimates; it is more sensitive than "
+                "Theil-Sen to parts far from the subject's delay. Circular (template from the same data).")
 NOTES = ("Raw OPM-MEG as shipped (Quanmag, 64 radial magnetometers, 1000 Hz, no HFC/SSS or other processing). The "
          "authors cut each recording at the video's start trigger (STI1 code 6 on the first sample; sub-49 code 1, "
          "sub-40 none) and to 1519.001 s. The sound starts later than that trigger (software trigger before "
          "playback, inferred): by default the trial starts a per-subject delay (0.39-1.26 s) into the file, "
          "estimated from the MEG itself (circular; onset_correction_s, onset_correction_method). "
-         "No end trigger or audio copy: drift not corrected. The audio (2 channels, 44.1 kHz) is decoded from the "
-         "shipped video and runs past the recording (cut at the point of use). Audiovisual stimulus: the "
+         "No end trigger or audio copy: drift not corrected (brain-based estimate in drift_ppm, not applied). The "
+         "audio (2 channels, 44.1 kHz) is decoded from the shipped video and runs past the recording (cut at the "
+         "point of use). Audiovisual stimulus: the "
          "participants also watched the video (not stored). Sensor positions from the helmet geometry; dev_head_t "
          "identity, fiducials are placeholders.")
 VALIDATION_NOTE = ("low tier (0.5-8 Hz, HFC in the validation only; per-subject onset-corrected data, "
@@ -75,6 +85,7 @@ class Li2025Adaptor:
 
     def parse(self) -> Iterable[TrialRecord]:
         video = os.path.join(self.root, VIDEO)
+        alignment = "onset_only" if self.onset == "none" else "brain_trf"
         stimuli = [StimulusRecord("audio", NAME, _audio_loader(video), True, "audio")]
         stimuli += [StimulusRecord("audio", NAME, _text_loader(os.path.join(self.root, "sourcedata", "annotation", f)),
                                    True, feature) for feature, f in ANNOTATIONS.items()]
@@ -84,7 +95,7 @@ class Li2025Adaptor:
             bads = (PAPER_BADS if 32 <= subject <= 47 else []) + EXTRA_BADS.get(sub, [])
             yield TrialRecord(subject=subject, session=1, trial=1, condition="audiovisual", ns_type="meg",
                               stimulus=stimuli, neural_data_fn=_meg_loader(fif, bads, group(subject),
-                                                                           self.onset_info(subject)))
+                                                                           alignment, self.onset_info(subject)))
 
     def onset_info(self, subject: int) -> dict:
         """Delay (s) of the sound after the first sample, and its provenance, for the chosen onset mode."""
@@ -126,7 +137,7 @@ def onset_table() -> pd.DataFrame:
     return pd.read_csv(ONSET_CSV, index_col="subject", keep_default_na=False)
 
 
-def _meg_loader(fif: str, bads: list[str], group: str, onset: dict) -> Callable[[], mne.io.BaseRaw]:
+def _meg_loader(fif: str, bads: list[str], group: str, alignment: str, onset: dict) -> Callable[[], mne.io.BaseRaw]:
     def _loader():
         raw = readable(fif)
         trigger = raw.get_data(picks="STI1", stop=1)[0, 0]
@@ -134,11 +145,12 @@ def _meg_loader(fif: str, bads: list[str], group: str, onset: dict) -> Callable[
         raw.pick("mag").crop(tmin=onset["onset_correction_s"]).load_data(verbose="ERROR")
         raw.info["bads"] = bads
         raw.info["description"] = provenance(
-            "onset_only", "unknown (not documented; inferred software: the sound starts after it). Onset = the STI1 "
-            "code on the first sample of the authors' crop + onset_correction_s", NOTES,
+            alignment, "unknown (not documented; inferred software: the sound starts after it). Onset = the STI1 "
+            "code on the first sample of the authors' crop + onset_correction_s", NOTES, drift_ppm=DRIFT_PPM,
             first_sample_trigger=int(trigger), crop_first_samp=int(first),
             recording_group=group, **onset, truncated_upload=bool(truncated), bads=bads,
-            reference="not applicable (MEG)", sss="none (raw as shipped)", drift_corrected_ppm=0.0,
+            reference="not applicable (MEG)", sss="none (raw as shipped)",
+            drift_source=DRIFT_SOURCE, drift_corrected_ppm=0.0,
             validation_tier="low", validation_note=VALIDATION_NOTE)
         return raw
 
