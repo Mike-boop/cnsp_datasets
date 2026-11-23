@@ -2,6 +2,7 @@ import asyncio
 import gzip
 import json
 import os
+import shutil
 import tarfile
 import tempfile
 import zipfile
@@ -69,6 +70,68 @@ class TestExtractArchives:
         download_helpers.extract_archives(str(tmp_path))
 
         assert mat.exists()
+
+
+    def test_refuses_tar_member_outside_directory(self, tmp_path):
+        inner = tmp_path / "x.txt"
+        inner.write_text("x")
+        tpath = tmp_path / "evil.tar"
+        with tarfile.open(tpath, "w") as tf:
+            tf.add(inner, arcname="../escaped.txt")
+        inner.unlink()
+
+        with pytest.raises(tarfile.FilterError):
+            download_helpers.extract_archives(str(tmp_path))
+        assert not (tmp_path.parent / "escaped.txt").exists()
+
+
+def _rar4(files):
+    """A RAR 4 archive with stored (uncompressed) entries; bsdtar can read RAR but not write it."""
+    import struct
+    import zlib
+
+    def block(head_type, flags, body):
+        rest = struct.pack("<BHH", head_type, flags, 7 + len(body)) + body
+        return struct.pack("<H", zlib.crc32(rest) & 0xFFFF) + rest
+
+    out = b"Rar!\x1a\x07\x00" + block(0x73, 0, bytes(6))
+    for name, data in files.items():
+        header = struct.pack("<IIBIIBBHI", len(data), len(data), 3, zlib.crc32(data), 0x5A210000, 20, 0x30,
+                             len(name.encode()), 0o100644) + name.encode()
+        out += block(0x74, 0x8000, header) + data
+    return out + block(0x7B, 0x4000, b"")
+
+
+@pytest.mark.skipif(shutil.which("bsdtar") is None, reason="needs bsdtar (libarchive)")
+class TestExtractRar:
+    def test_extracts_rar(self, tmp_path):
+        rpath = tmp_path / "stimuli.rar"
+        rpath.write_bytes(_rar4({"stimuli/story_1.wav": b"RIFF", "readme.txt": b"hello"}))
+
+        download_helpers.extract_archives(str(tmp_path))
+
+        assert (tmp_path / "stimuli" / "story_1.wav").read_bytes() == b"RIFF"
+        assert (tmp_path / "readme.txt").read_bytes() == b"hello"
+        assert not rpath.exists()
+
+    @pytest.mark.parametrize("name", ["../escaped.txt", "a/../../escaped.txt", "/abs.txt"])
+    def test_refuses_entries_outside_directory(self, tmp_path, name):
+        target = tmp_path / "download"
+        target.mkdir()
+        rpath = target / "evil.rar"
+        rpath.write_bytes(_rar4({"fine.txt": b"ok", name: b"pwn"}))
+
+        with pytest.raises(ValueError, match="Refusing"):
+            download_helpers.extract_archives(str(target))
+        assert sorted(p.name for p in tmp_path.rglob("*")) == ["download", "evil.rar"]   # nothing written
+
+
+def test_rar_without_bsdtar_explains(tmp_path, monkeypatch):
+    (tmp_path / "a.rar").write_bytes(_rar4({"x.txt": b"x"}))
+    monkeypatch.setattr(download_helpers.shutil, "which", lambda name: None)
+    with pytest.raises(RuntimeError, match="bsdtar"):
+        download_helpers.extract_archives(str(tmp_path))
+    assert (tmp_path / "a.rar").exists()
 
 
 # ── mutable default argument guard ───────────────────────────────────────────

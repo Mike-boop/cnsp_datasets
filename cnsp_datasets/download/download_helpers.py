@@ -5,22 +5,41 @@ import json
 import re
 import gzip
 import shutil
+import subprocess
 import zipfile
 import tarfile
 import requests
 import httpx
 
 from fnmatch import fnmatch
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from urllib.parse import quote
 
 
 ## general utilities
 
+def _extract_rar(file_path, target_dir):
+    """
+    Unpack a RAR archive into target_dir with bsdtar (libarchive; Python has no RAR reader). Downloads are untrusted:
+    the archive is refused before anything is written if an entry is absolute or contains "..".
+    """
+    bsdtar = shutil.which("bsdtar")
+    if bsdtar is None:
+        raise RuntimeError(f"Cannot extract {file_path}: RAR archives need bsdtar from libarchive "
+                           "(e.g. `apt install libarchive-tools` or `conda install -c conda-forge libarchive`)")
+    listing = subprocess.run([bsdtar, "-tf", file_path], capture_output=True, text=True, check=True).stdout
+    for name in listing.splitlines():
+        path = PurePosixPath(name.replace("\\", "/"))
+        if path.is_absolute() or ".." in path.parts or re.match(r"^[A-Za-z]:", name):
+            raise ValueError(f"Refusing to extract {file_path}: entry '{name}' would land outside {target_dir}")
+    subprocess.run([bsdtar, "-xf", file_path, "-C", target_dir], check=True)
+
+
 def extract_archives(download_dir, recursive=False):
     """
     Extract all archives in the specified directory.
-    Supports .zip, .tar, .tar.gz, and .gz (single file).
+    Supports .zip, .tar, .tar.gz, .rar (needs bsdtar) and .gz (single file). Tar and RAR entries that would land
+    outside the directory are refused (zipfile strips them itself).
     If `recursive` is True, also extracts archives found within extracted archives.
 
     Notes:
@@ -40,14 +59,20 @@ def extract_archives(download_dir, recursive=False):
 
             elif filename.endswith('.tar.gz'):
                 with tarfile.open(file_path, 'r:*') as tar_ref:
-                    tar_ref.extractall(dirpath)
+                    tar_ref.extractall(dirpath, filter="data")
                 print(f"Extracted {filename} to {dirpath}")
                 os.remove(file_path)
                 extracted_dir = os.path.join(dirpath, filename.replace('.tar.gz', ''))
 
             elif filename.endswith('.tar'):
                 with tarfile.open(file_path, 'r:*') as tar_ref:
-                    tar_ref.extractall(dirpath)
+                    tar_ref.extractall(dirpath, filter="data")
+                print(f"Extracted {filename} to {dirpath}")
+                os.remove(file_path)
+                extracted_dir = os.path.join(dirpath, os.path.splitext(filename)[0])
+
+            elif filename.endswith('.rar'):
+                _extract_rar(file_path, dirpath)
                 print(f"Extracted {filename} to {dirpath}")
                 os.remove(file_path)
                 extracted_dir = os.path.join(dirpath, os.path.splitext(filename)[0])
