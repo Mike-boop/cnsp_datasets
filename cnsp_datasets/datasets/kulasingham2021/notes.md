@@ -140,6 +140,8 @@ single speaker 12 min (6 min equations, 6 min sentences), cocktail party 14.4 mi
 min attend sentences). The stored neural epochs are 20 s (29.3 min per participant).
 
 ## 9. Adaptor (implemented 2026-11-23)
+- Shared code with the lab's other KIT datasets (R-number subjects, wav loaders, epoch/continuous-raw helpers,
+  bad-channel rules) in `datasets/simon_base/common.py` (2026-11-23; output unchanged).
 - Reads `**/R####/` epoch folders and `**/stimuli/` under the root (the extracted zips, `tmp/review/kulasingham2021/x/`).
 - Subject = **R-number mod 1000** (R2522 -> 522; unique), as in brodbeck2018 / karunathilake2023; R-number in the
   sidecar (`participant`). Session 1. Trials 1-40 = single-speaker file, 41-88 = cocktail file, each in epoch order
@@ -160,8 +162,8 @@ min attend sentences). The stored neural epochs are 20 s (29.3 min per participa
   after the stimulus: yes/no/None), `response_time_after_end_s`, `preprocessing` (with the file's filter band).
 - Run 2026-11-23 (after the review fixes): all 22 subjects, 1936 trials, 184 audio files, **5.0 GB**, ~5 min, no
   errors (`tmp/review/kulasingham2021/standardised/`, `standardise.log`). Reviewer findings applied (filter band
-  per file, epoch count/order check, all button presses kept, end-pulse field name, code simplifications); not
-  applied: shared helpers for `_one`/`_read_wav`/epoch-to-Raw (an infrastructure change for `main`).
+  per file, epoch count/order check, all button presses kept, end-pulse field name, code simplifications); the
+  shared helpers for `_one`/`_read_wav`/epoch-to-Raw later moved to `datasets/simon_base/common.py`.
 
 ## 10. Decoder check and validation (2026-11-23; `tmp/review/kulasingham2021/`)
 Basis: standardised data as stored (all 22 subjects, 1936 trials), gradiometers (`--picks mag`, bads excluded), no
