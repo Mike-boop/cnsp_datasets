@@ -48,6 +48,7 @@ Last updated: 2026-11-23.
 | deoisres2023 | deoisres2023 | dev | mlr (pilot 5/22; brainstem only via S03 stimulus artefact) | user's manual download (read-only) + 13 GB extracted + 5.2 GB pilot in tmp | ePrints blocks scripts (Anubis); drift -24 ppm corrected by default; decisions pending |
 | chen2023 | chen2023 | dev | low as standardised; brainstem with +485-510 ppm drift (validation only) | 183 GB in tmp (download 102 + pilot 80) | drift_ppm default 0 until user approves +510; 16 ms delay applied; ANC DUA: no redistribution |
 | piazza2025_l1l / _l2l | piazza2025 | dev | low (data shared preprocessed 1-8 Hz, 100 Hz) | ~15 GB in tmp (download, standardised, v1) | all 50 standardised; L2L 6-25 channel order unknown; L1L 13-15 stimulus files remapped by trial length; licence unknown |
+| calderondepalma2023 | calderondepalma2023 | dev | low (all 13; all 5 conditions; ceiling at 64 Hz) | 2.4 GB download + 1.0 GB standardised in tmp | CND; channel order inferred (biosemi64); degraded-audio envelopes only; DNN +2.5 ms; BSD-3 |
 
 Not in the campaign sheet: mai2023 (dev, iEEG, not reviewed), jehn2024 (dev), karengal2025 / koelbl2021 /
 schuller2022full (internal).
