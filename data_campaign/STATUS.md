@@ -5,7 +5,7 @@ Tier = highest validation tier passed overall (`low` 0.5-8 Hz, `mlr` 30-60 Hz, `
 brainstem means a high-frequency cortical response). Details live in each dataset's `notes.md` / `README.md`.
 "Data" says what is still on disk under `/data_storage/gu08wuvu/datasets/tmp/review/<d>/` (results are always kept).
 
-Last updated: 2026-11-22.
+Last updated: 2026-11-23.
 
 ## Done
 | repo name | sheet id | branch | tier | data | notes |
@@ -49,7 +49,7 @@ schuller2022full (internal).
 ## In progress
 | repo name | sheet id | branch | state | next |
 |---|---|---|---|---|
-| chen2026 | chen2026 | dev (notes only, no adaptor) | download of sub-06..08 running; vault backup armed | per-chapter latency + drift with the DNN (`HANDOVER.md`) |
+| chen2026 | chen2026 | dev (notes only, no adaptor) | downloaded (49 GB) + NHR vault backup verified (md5 13/13 local, 178/178 sizes on vault); 281 chapters trigger-verified (24.8 h; sub-05 LP 14/27, sub-06 GD 4 absent) | user decisions on per-chapter latency (option B proposed) and +16 ppm drift; then adaptor reading `timing_table_proposal.csv` |
 | presacco2016 | presacco2016 | dev (registry only) | 7/46 subject zips; DRUM timeouts | resume with 1 worker, read_timeout 120 s; then explore |
 
 ## Open items across datasets
