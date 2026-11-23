@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import os
 import json
 import re
@@ -9,9 +10,9 @@ import tarfile
 import requests
 import httpx
 
-from bs4 import BeautifulSoup
+from fnmatch import fnmatch
 from pathlib import Path
-from urllib.parse import quote, urlparse
+from urllib.parse import quote
 
 
 ## general utilities
@@ -94,14 +95,13 @@ def _dryad_token():
     """
     Bearer token for Dryad file downloads, which require one (metadata does not), or None if not configured.
 
-    Set DRYAD_TOKEN, or DRYAD_CLIENT_ID and DRYAD_CLIENT_SECRET from a Dryad API account (https://datadryad.org/api),
-    which are exchanged for a short-lived token here.
+    Set DRYAD_CLIENT_ID and DRYAD_CLIENT_SECRET from a Dryad API account (https://datadryad.org/api; preferred: each
+    call exchanges them for a fresh short-lived token, so a resumed download never runs on an expired one), or
+    DRYAD_TOKEN, a token minted beforehand.
     """
-    if os.environ.get("DRYAD_TOKEN"):
-        return os.environ["DRYAD_TOKEN"]
     client_id, secret = os.environ.get("DRYAD_CLIENT_ID"), os.environ.get("DRYAD_CLIENT_SECRET")
     if not (client_id and secret):
-        return None
+        return os.environ.get("DRYAD_TOKEN") or None
     response = requests.post("https://datadryad.org/oauth/token", timeout=60, data={
         "grant_type": "client_credentials", "client_id": client_id, "client_secret": secret,
     })
@@ -188,65 +188,55 @@ def doi_to_downloadables_dataverse(doi, dataverse_server="https://rdr.kuleuven.b
 
     return file_data
 
-def doi_to_downloadables_drum(doi):
-
+def id_to_downloadables_drum(item_uuid, api="https://api.drum.lib.umd.edu/server/api"):
     """
-    Get a list of downloadable files from a DSpace DOI.
-
-    Example doi string format: "10.13016/M2599Z52H"
-
-    Note:
-    This function scrapes the HTML page for the DOI to find file links, then queries the Drum API for metadata including checksums.
-    This approach may break if the Drum website structure changes; we should at a minimum add informative error-handling to indicate
-    if this has happened (prompting an update to our code).
-
-    DSpace has an API but the UMD Drum requires an access token for it, which we typically do not have. My best guess at how the API could
-    be used (with an access token) is provided in a separate function in this file.
+    Files of a UMD DRUM (DSpace 7) item from its public REST API, e.g. "79afc7aa-560d-442d-b201-ab63e7f1e69f" (the id
+    in https://drum.lib.umd.edu/items/<id>). Only the ORIGINAL bundle (not thumbnails or extracted text).
     """
+    response = requests.get(f"{api}/core/items/{item_uuid}/bundles", timeout=60)
+    response.raise_for_status()
+    original = next(b for b in response.json()["_embedded"]["bundles"] if b["name"] == "ORIGINAL")
 
-    dataset_url = f"https://doi.org/{doi.strip('/')}"
-    response = requests.get(dataset_url, allow_redirects=True)
+    bitstreams = []
+    url = original["_links"]["bitstreams"]["href"] + "?size=100"
+    while url:  # the bitstream listing is paginated
+        response = requests.get(url, timeout=60)
+        response.raise_for_status()
+        page = response.json()
+        bitstreams += page["_embedded"]["bitstreams"]
+        url = page["_links"].get("next", {}).get("href")
+    return [
+        {
+            "name": b["name"],
+            "url": b["_links"]["content"]["href"],
+            "size": b["sizeBytes"],
+            "checksum": f"{b['checkSum']['checkSumAlgorithm'].lower()}:{b['checkSum']['value']}",
+        }
+        for b in bitstreams
+    ]
 
-    if response.status_code != 200:
-        raise Exception(f"Failed to retrieve metadata for DOI {doi}: {response.status_code}")
-    
-    file_data = []
-    
-    soup = BeautifulSoup(response.text, 'html.parser')
-    for link in soup.find_all("link", rel="item"):
 
-        url = link.get("href")
+def id_to_downloadables_eprints(eprint_id, server="https://eprints.soton.ac.uk"):
+    """
+    Public files of an EPrints record (e.g. the University of Southampton repository) from its JSON export, e.g.
+    "438737" (the id in https://eprints.soton.ac.uk/id/eprint/<id>).
 
-        if "/bitstreams/" not in url:
-            continue
-
-        file_uuid = url.split("/")[-2]
-
-        drum_api_url = f"https://api.drum.lib.umd.edu/server/api/core/bitstreams/{file_uuid}"
-
-        response = requests.get(drum_api_url)
-        if response.status_code != 200:
-            raise Exception(f"Failed to retrieve metadata for URL {drum_api_url}: {response.status_code}")
-        
-        metadata = response.json()
-
-        name = metadata["metadata"]["dc.title"][0]["value"]
-
-        if "checkSum" in metadata["metadata"]:
-            checksum = ":".join([
-                metadata["metadata"]["checkSum"]["checkSumAlgorithm"],
-                metadata["metadata"]["checkSum"]["value"]
-            ])
-        else:
-            checksum = None
-
-        file_data.append({
-            "name": name,
-            "url": url,
-            "checksum": checksum
-        })
-
-    return file_data
+    Southampton serves the files behind an Anubis proof-of-work page (HTTP 401 to scripts, 2026-11): download them in
+    a browser into the download directory and run with skip_existing=True, which checks them against the listed sizes
+    and md5s.
+    """
+    response = requests.get(f"{server}/cgi/export/eprint/{eprint_id}/JSON/eprint-{eprint_id}.js", timeout=60)
+    response.raise_for_status()
+    return [
+        {
+            "name": f["filename"],
+            "url": f["uri"],
+            "size": int(f["filesize"]),
+            "checksum": f"{f['hash_type'].lower()}:{f['hash']}" if f.get("hash") else None,
+        }
+        for doc in response.json().get("documents", []) if doc.get("security") == "public"
+        for f in doc.get("files", [])
+    ]
 
 def id_to_downloadables_deepblue(id):
     """
@@ -364,19 +354,29 @@ def walk_osf_directory_fetch_files(osf_dir_url, file_metadata=None):
 
 
 async def _fetch_osf_dir_async(client, url):
-    """Async version of fetch_osf_leaves_branches."""
-    response = await client.get(url)
-    response.raise_for_status()
+    """Async version of fetch_osf_leaves_branches; follows the listing's pages (OSF returns 10 items per page by
+    default) and backs off when rate-limited (HTTP 429)."""
     leaves, branches = [], []
-    for item in response.json()["data"]:
-        if item["attributes"]["kind"] == "file":
-            leaves.append({
-                "name": item["attributes"]["materialized_path"].strip("/"),
-                "url": item["links"]["download"],
-                "checksum": "md5:" + item["attributes"]["extra"]["hashes"]["md5"],
-            })
-        elif item["attributes"]["kind"] == "folder":
-            branches.append(item["relationships"]["files"]["links"]["related"]["href"])
+    url = url + ("&" if "?" in url else "?") + "page[size]=100"
+    while url:
+        for attempt in range(8):
+            response = await client.get(url)
+            if response.status_code != 429:
+                break
+            await asyncio.sleep(2 ** attempt)
+        response.raise_for_status()
+        page = response.json()
+        for item in page["data"]:
+            if item["attributes"]["kind"] == "file":
+                leaves.append({
+                    "name": item["attributes"]["materialized_path"].strip("/"),
+                    "url": item["links"]["download"],
+                    "size": item["attributes"]["size"],
+                    "checksum": "md5:" + item["attributes"]["extra"]["hashes"]["md5"],
+                })
+            elif item["attributes"]["kind"] == "folder":
+                branches.append(item["relationships"]["files"]["links"]["related"]["href"])
+        url = page["links"].get("next")
     return leaves, branches
 
 
@@ -466,6 +466,9 @@ def doi_to_downloadables_openneuro(doi, endpoint="https://openneuro.org/crn/grap
     return asyncio.run(_walk_openneuro_async(openneuro_id, tag, endpoint))
 
 
+OPENNEURO_RETRIES = 6
+
+
 async def _fetch_openneuro_dir_async(client, endpoint, dataset_id, tag, branch):
     """
     Fetch one OpenNeuro directory node and return (leaves, sub_branches).
@@ -473,11 +476,20 @@ async def _fetch_openneuro_dir_async(client, endpoint, dataset_id, tag, branch):
     Pass branch=None for the root level (no tree_id in the query).
     """
     query, variables = get_snapshot_files(dataset_id, tag, tree_id=branch["id"] if branch else None)
-    response = await client.post(
-        endpoint,
-        json={"query": query, "variables": variables},
-        headers={"Content-Type": "application/json"},
-    )
+    for attempt in range(OPENNEURO_RETRIES):  # the GraphQL endpoint returns transient 502s under load
+        try:
+            async with OPENNEURO_LIMIT:
+                response = await client.post(
+                    endpoint,
+                    json={"query": query, "variables": variables},
+                    headers={"Content-Type": "application/json"},
+                )
+            if response.status_code < 500:
+                break
+        except httpx.TransportError:
+            if attempt == OPENNEURO_RETRIES - 1:
+                raise
+        await asyncio.sleep(2 ** attempt)
     response.raise_for_status()
 
     leaves, sub_branches = [], []
@@ -513,6 +525,8 @@ async def _walk_openneuro_async(dataset_id, tag, endpoint):
     Starts with the root listing, then fans out across all subdirectories
     in parallel at each level until no directories remain.
     """
+    global OPENNEURO_LIMIT
+    OPENNEURO_LIMIT = asyncio.Semaphore(8)  # bounded fan-out; created inside the running event loop
     all_leaves = []
 
     async with httpx.AsyncClient(timeout=30) as client:
@@ -534,69 +548,6 @@ async def _walk_openneuro_async(dataset_id, tag, endpoint):
 
     return all_leaves
 
-### DSpace helpers
-### UMD Drum is a DSpace repository, and we could use the corresponding API to get download links to the dataset files.
-### At present, an access token is required to use the API, which we do not have. Therefore, we are web-scraping the HTML
-### page for the DOI (see above).
-
-def drum_doi_to_uuid(doi):
-    """
-    Resolve a DOI and extract the DRUM UUID from the redirected URL.
-
-    Args:
-        doi (str): A DOI string (e.g., '10.13016/M2599Z52H')
-
-    Returns:
-        str: The UUID of the DRUM item.
-    """
-    doi_url = f"https://doi.org/{doi}"
-    try:
-        response = requests.get(doi_url, allow_redirects=True)
-        final_url = response.url
-        parsed = urlparse(final_url)
-        if "items" in parsed.path:
-            uuid = parsed.path.split("/")[-1]
-            return uuid
-        else:
-            raise ValueError("UUID not found in the redirected URL.")
-    except Exception as e:
-        raise RuntimeError(f"Failed to resolve DOI: {e}")
-    
-def doi_to_downloadables_dspace_api(doi, dspace_server="https://api.drum.lib.umd.edu"):
-    """
-    Get a list of downloadable files from a DSpace DOI.
-
-    Example doi string format: "10.13016/M2599Z52H"
-
-    NOTE drum requires authentication to access the API... we can just scrape the html instead I guess.
-    """
-
-    # Resolve the DOI to get the UUID
-    uuid = drum_doi_to_uuid(doi)
-
-    # Construct the URL for the DSpace item
-    dspace_api_url = f"{dspace_server}/server/api/"
-
-    bitstreams_url = f"https://api.drum.lib.umd.edu/server/api/core/bitstreams/{uuid}"
-
-    response = requests.get(bitstreams_url)
-    if response.status_code != 200:
-        raise Exception(f"Failed to retrieve bitstreams: {response.status_code}")
-    
-    bitstreams = response.json()['_embedded']['bitstreams']
-
-    # Step 3: Extract file names and download URLs
-    file_data = []
-    for bitstream in bitstreams:
-        file_info = {
-            "name": bitstream['name'],
-            "url": f"{dspace_api_url}/core/bitstreams/{bitstream['uuid']}/content"
-        }
-        file_data.append(file_info)
-
-    return file_data
-
-
 def resolve_doi(doi):
     url = f"https://doi.org/{doi}"
     resp = requests.head(url, allow_redirects=True, timeout=10)
@@ -604,22 +555,117 @@ def resolve_doi(doi):
 
 
 def id_to_downloadables_radboud_rdr(id, rdr_server="https://webdav.data.ru.nl"):
-
     """
-    id e.g. dutch_eeg_speech_register_corpus_dsc_807_v1
-    """
+    Files of a Radboud Data Repository collection, from its MANIFEST.txt (sha256 per file).
 
-    data_root     = f"{rdr_server}/cls/{id}"
-    manifest_url  = f"{data_root}/MANIFEST.txt"
-    response = requests.get(manifest_url, timeout=30)
+    id: a public "cls" collection, e.g. "dutch_eeg_speech_register_corpus_dsc_807_v1", or a path with the
+    collection type, e.g. "dccn/DSC_3011085.05_995_v1". Collections under a data use agreement (most "dccn" ones)
+    need the downloading user's WebDAV credentials in RADBOUD_USERNAME and RADBOUD_PASSWORD (data.ru.nl account
+    with the agreement accepted); the manifest itself is public.
+    """
+    data_root = f"{rdr_server}/{id if '/' in id else 'cls/' + id}"
+    response = requests.get(f"{data_root}/MANIFEST.txt", timeout=30)
     response.raise_for_status()
-    manifest_text = response.text
 
-    # each line is "<md5> <path>"; split once so paths containing spaces survive
-    manifest_lines = manifest_text.strip().splitlines()
-    manifest_entries = [line.split(maxsplit=1) for line in manifest_lines if line.strip()]
-    checksums, names = zip(*manifest_entries)
-    urls = [f"{data_root}/{name}" for name in names]
+    headers = None
+    if os.environ.get("RADBOUD_USERNAME"):
+        token = base64.b64encode(f"{os.environ['RADBOUD_USERNAME']}:{os.environ['RADBOUD_PASSWORD']}".encode())
+        headers = {"Authorization": f"Basic {token.decode()}"}
 
-    urls = [{"name": name, "url": url, "checksum": f"sha256:{checksum}"} for name, url, checksum in zip(names, urls, checksums)]
-    return urls
+    # each line is "<sha256> <path>"; split once so paths containing spaces survive
+    entries = [line.split(maxsplit=1) for line in response.text.strip().splitlines() if line.strip()]
+    return [{"name": name, "url": f"{data_root}/{quote(name)}", "checksum": f"sha256:{checksum}", "headers": headers}
+            for checksum, name in entries]
+
+
+def id_to_downloadables_huggingface(repo):
+    """
+    Files of a Hugging Face dataset repo, e.g. "pnpl/LibriBrain" ("<repo>@<revision>" pins a revision), named
+    "<repo name>/<path>" so that several repos can share one download directory.
+
+    LFS files carry sha256 checksums; small git-tracked files only git blob hashes, so they get none.
+    Gated repos need HF_TOKEN, a token of an account that has accepted the repo's terms on the website.
+    """
+    repo, _, revision = repo.partition("@")
+    revision = revision or "main"
+    token = os.environ.get("HF_TOKEN")
+    headers = {"Authorization": f"Bearer {token}"} if token else None
+    url = f"https://huggingface.co/api/datasets/{repo}/tree/{revision}?recursive=true"
+    files = []
+    while url:  # the tree listing is paginated through Link headers
+        response = requests.get(url, timeout=60, headers=headers)
+        if response.status_code != 200:
+            raise Exception(f"Failed to list Hugging Face dataset {repo}: {response.status_code}")
+        files += [f for f in response.json() if f["type"] == "file"]
+        url = response.links.get("next", {}).get("url")
+    return [
+        {
+            "name": f"{repo.split('/')[-1]}/{f['path']}",
+            "url": f"https://huggingface.co/datasets/{repo}/resolve/{revision}/{quote(f['path'])}",
+            "size": f["size"],
+            "checksum": f"sha256:{f['lfs']['oid']}" if f.get("lfs") else None,
+            "headers": headers,
+        }
+        for f in files
+    ]
+
+
+def listing_to_downloadables_scidb(listing):
+    """
+    Files of a Science Data Bank (scidb.cn) dataset, from a listing shipped with the adaptor, e.g.
+    "chen2026/scidb_files.json" (relative to cnsp_datasets/datasets): the site lists files only to a browser.
+    """
+    path = Path(__file__).parents[1] / "datasets" / listing
+    files = json.loads(path.read_text(encoding="utf-8"))["files"]
+    return [{"name": f["path"], "url": f["download_url"], "size": f["size_bytes"], "checksum": f"md5:{f['md5']}"}
+            for f in files]
+
+
+def id_to_downloadables_gitlab_lfs(project):
+    """
+    Files of a public GitLab repository whose data are in Git LFS, given as "<host>/<group>/.../<project>", e.g.
+    "data.anc.plus.ac.at/bids-datasets/auditory/yc_audiobook_vocoding" ("<project>@<ref>" pins a branch, tag or
+    commit; default: the default branch).
+
+    LFS files (matched by the repository's .gitattributes) carry the sha256 and size from their pointer files;
+    small git-tracked files get none. Files are served by the raw-file API, which resolves LFS objects.
+    """
+    project, _, ref = project.partition("@")
+    host, path = project.split("/", 1)
+    api = f"https://{host}/api/v4/projects/{quote(path, safe='')}"
+    session = requests.Session()
+
+    def get(url):
+        response = session.get(url, timeout=60)
+        if response.status_code != 200:
+            raise Exception(f"Failed to list GitLab project {project}: {response.status_code} for {url}")
+        return response
+
+    ref = ref or get(api).json()["default_branch"]
+    raw = f"{api}/repository/files/{{}}/raw?ref={quote(ref)}"
+    blobs, url = [], f"{api}/repository/tree?recursive=true&per_page=100&ref={quote(ref)}"
+    while url:  # the tree listing is paginated through Link headers
+        response = get(url)
+        blobs += [e for e in response.json() if e["type"] == "blob"]
+        url = response.links.get("next", {}).get("url")
+
+    attributes = session.get(raw.format(".gitattributes"), timeout=60)
+    lfs_patterns = [line.split()[0] for line in (attributes.text if attributes.status_code == 200 else "").splitlines()
+                    if "filter=lfs" in line]
+
+    def is_lfs(file_path):
+        # a gitattributes pattern without a slash matches the basename, with one the path from the root
+        return any(fnmatch(file_path if "/" in pat else file_path.rsplit("/", 1)[-1], pat.lstrip("/"))
+                   for pat in lfs_patterns)
+
+    files = []
+    for blob in blobs:
+        entry = {"name": blob["path"], "url": raw.format(quote(blob["path"], safe="")) + "&lfs=true",
+                 "checksum": None}
+        if is_lfs(blob["path"]):
+            pointer = get(f"{api}/repository/blobs/{blob['id']}/raw").text
+            if pointer.startswith("version https://git-lfs"):
+                fields = dict(line.split(" ", 1) for line in pointer.strip().splitlines())
+                entry.update(size=int(fields["size"]), checksum=fields["oid"])
+        files.append(entry)
+    return files

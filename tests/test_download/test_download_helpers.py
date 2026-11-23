@@ -166,6 +166,7 @@ class TestAsyncOSFWalk:
                 "attributes": {
                     "kind": "file",
                     "materialized_path": f"/{name}",
+                    "size": 1,
                     "extra": {"hashes": {"md5": md5}},
                 },
                 "links": {"download": url},
@@ -175,7 +176,7 @@ class TestAsyncOSFWalk:
                 "attributes": {"kind": "folder"},
                 "relationships": {"files": {"links": {"related": {"href": folder_url}}}},
             })
-        return {"data": data}
+        return {"data": data, "links": {"next": None}}
 
     def test_single_level_no_subdirs(self):
         page = self._osf_page(files=[("data.mat", "http://osf.io/dl/data", "abc123")])
@@ -207,7 +208,7 @@ class TestAsyncOSFWalk:
 
         async def fake_get(url, **kwargs):
             r = MagicMock()
-            r.json.return_value = pages[url]
+            r.json.return_value = pages[url.split("?")[0]]
             r.raise_for_status = MagicMock()
             return r
 
@@ -227,9 +228,9 @@ class TestAsyncOSFWalk:
         pages = {"http://osf.io/root/": root_page, "http://osf.io/dir/": dir_page}
 
         async def fake_get(url, **kwargs):
-            visited.append(url)
+            visited.append(url.split("?")[0])
             r = MagicMock()
-            r.json.return_value = pages[url]
+            r.json.return_value = pages[url.split("?")[0]]
             r.raise_for_status = MagicMock()
             return r
 
@@ -290,6 +291,8 @@ class TestDryadAuth:
 
     @patch("cnsp_datasets.download.download_helpers.requests.get")
     def test_files_carry_size_checksum_and_token(self, mock_get, monkeypatch):
+        for var in ("DRYAD_CLIENT_ID", "DRYAD_CLIENT_SECRET"):
+            monkeypatch.delenv(var, raising=False)
         monkeypatch.setenv("DRYAD_TOKEN", "tok")
         mock_get.side_effect = self._responses()
         [f] = download_helpers.doi_to_downloadables_dryad("10.5061/dryad.x")
@@ -314,3 +317,147 @@ class TestDryadAuth:
         mock_post.return_value = MagicMock(status_code=200, json=MagicMock(return_value={"access_token": "t2"}))
         assert download_helpers._dryad_token() == "t2"
         assert mock_post.call_args.kwargs["data"]["grant_type"] == "client_credentials"
+
+    @patch("cnsp_datasets.download.download_helpers.requests.post")
+    def test_client_credentials_preferred_and_fresh_per_call(self, mock_post, monkeypatch):
+        monkeypatch.setenv("DRYAD_TOKEN", "stale")
+        monkeypatch.setenv("DRYAD_CLIENT_ID", "id")
+        monkeypatch.setenv("DRYAD_CLIENT_SECRET", "secret")
+        mock_post.side_effect = [MagicMock(status_code=200, json=MagicMock(return_value={"access_token": t}))
+                                 for t in ("t1", "t2")]
+        assert [download_helpers._dryad_token(), download_helpers._dryad_token()] == ["t1", "t2"]
+
+    @patch("cnsp_datasets.download.download_helpers.requests.post")
+    def test_failed_token_request_raises(self, mock_post, monkeypatch):
+        monkeypatch.setenv("DRYAD_CLIENT_ID", "id")
+        monkeypatch.setenv("DRYAD_CLIENT_SECRET", "bad")
+        mock_post.return_value = MagicMock(status_code=401, text="invalid_client")
+        with pytest.raises(Exception, match="401"):
+            download_helpers._dryad_token()
+
+
+class TestScidbListing:
+    def test_listing_file(self, tmp_path):
+        listing = tmp_path / "scidb_files.json"  # an absolute path overrides the datasets directory
+        listing.write_text(json.dumps({"files": [{"path": "PassiveListening/sub-01.zip", "size_bytes": 3,
+                                                   "md5": "abc", "download_url": "https://scidb/x"}]}))
+        assert download_helpers.listing_to_downloadables_scidb(str(listing)) == [
+            {"name": "PassiveListening/sub-01.zip", "url": "https://scidb/x", "size": 3, "checksum": "md5:abc"}]
+
+
+class TestDrum:
+    def _json(self, payload):
+        return MagicMock(status_code=200, json=MagicMock(return_value=payload))
+
+    @staticmethod
+    def _bitstream(name, uuid):
+        return {"name": name, "sizeBytes": 5, "checkSum": {"checkSumAlgorithm": "MD5", "value": "abc"},
+                "_links": {"content": {"href": f"https://api/core/bitstreams/{uuid}/content"}}}
+
+    @patch("cnsp_datasets.download.download_helpers.requests.get")
+    def test_original_bundle_all_pages(self, mock_get):
+        bundles = {"_embedded": {"bundles": [
+            {"name": "THUMBNAIL", "_links": {"bitstreams": {"href": "https://api/thumbs"}}},
+            {"name": "ORIGINAL", "_links": {"bitstreams": {"href": "https://api/orig"}}},
+        ]}}
+        page1 = {"_embedded": {"bitstreams": [self._bitstream("S01.zip", "u1")]},
+                 "_links": {"next": {"href": "https://api/orig?page=1&size=100"}}}
+        page2 = {"_embedded": {"bitstreams": [self._bitstream("S02.zip", "u2")]}, "_links": {}}
+        mock_get.side_effect = [self._json(bundles), self._json(page1), self._json(page2)]
+
+        files = download_helpers.id_to_downloadables_drum("item-uuid")
+
+        assert [f["name"] for f in files] == ["S01.zip", "S02.zip"]
+        assert files[0] == {"name": "S01.zip", "url": "https://api/core/bitstreams/u1/content", "size": 5,
+                            "checksum": "md5:abc"}
+        assert "items/item-uuid/bundles" in mock_get.call_args_list[0].args[0]
+        assert mock_get.call_args_list[1].args[0] == "https://api/orig?size=100"
+
+
+class TestEprints:
+    @patch("cnsp_datasets.download.download_helpers.requests.get")
+    def test_public_files_with_md5(self, mock_get):
+        mock_get.return_value = MagicMock(status_code=200, json=MagicMock(return_value={"documents": [
+            {"security": "public", "files": [{"filename": "a.bdf", "filesize": "12", "hash_type": "MD5",
+                                              "hash": "abc", "uri": "https://e/id/file/1"}]},
+            {"security": "staffonly", "files": [{"filename": "b.zip", "filesize": "3", "uri": "https://e/id/file/2"}]},
+        ]}))
+
+        files = download_helpers.id_to_downloadables_eprints("438737")
+
+        assert files == [{"name": "a.bdf", "url": "https://e/id/file/1", "size": 12, "checksum": "md5:abc"}]
+        assert "/cgi/export/eprint/438737/JSON/" in mock_get.call_args.args[0]
+
+
+class TestGitlabLfs:
+    @patch("cnsp_datasets.download.download_helpers.requests.Session")
+    def test_lfs_pointers_give_size_and_sha256(self, mock_session):
+        api = "https://lab.org/api/v4/projects/grp%2Fproj"
+        tree = [{"type": "tree", "path": "sub-01", "id": "t"},
+                {"type": "blob", "path": "README.md", "id": "b1"},
+                {"type": "blob", "path": "sub-01/a_meg.fif", "id": "b2"}]
+        responses = {
+            f"{api}/repository/tree?recursive=true&per_page=100&ref=v1": MagicMock(
+                status_code=200, json=MagicMock(return_value=tree), links={}),
+            f"{api}/repository/files/.gitattributes/raw?ref=v1": MagicMock(
+                status_code=200, text="*.fif filter=lfs diff=lfs merge=lfs -text\n"),
+            f"{api}/repository/blobs/b2/raw": MagicMock(
+                status_code=200, text="version https://git-lfs.github.com/spec/v1\noid sha256:abc\nsize 42\n"),
+        }
+        mock_session.return_value.get.side_effect = lambda url, timeout: responses[url]
+
+        files = download_helpers.id_to_downloadables_gitlab_lfs("lab.org/grp/proj@v1")
+
+        assert files == [
+            {"name": "README.md", "url": f"{api}/repository/files/README.md/raw?ref=v1&lfs=true", "checksum": None},
+            {"name": "sub-01/a_meg.fif", "url": f"{api}/repository/files/sub-01%2Fa_meg.fif/raw?ref=v1&lfs=true",
+             "checksum": "sha256:abc", "size": 42},
+        ]
+
+
+class TestHuggingface:
+    @patch("cnsp_datasets.download.download_helpers.requests.get")
+    def test_token_sent_with_listing_and_files(self, mock_get, monkeypatch):
+        monkeypatch.setenv("HF_TOKEN", "tok")
+        mock_get.return_value = MagicMock(status_code=200, links={}, json=MagicMock(return_value=[
+            {"type": "directory", "path": "data"},
+            {"type": "file", "path": "data/a b.parquet", "size": 5, "lfs": {"oid": "abc"}},
+        ]))
+
+        [f] = download_helpers.id_to_downloadables_huggingface("org/repo@v1")
+
+        assert f == {"name": "repo/data/a b.parquet",
+                     "url": "https://huggingface.co/datasets/org/repo/resolve/v1/data/a%20b.parquet",
+                     "size": 5, "checksum": "sha256:abc", "headers": {"Authorization": "Bearer tok"}}
+        assert mock_get.call_args.kwargs["headers"] == {"Authorization": "Bearer tok"}
+
+    @patch("cnsp_datasets.download.download_helpers.requests.get")
+    def test_no_token_no_header(self, mock_get, monkeypatch):
+        monkeypatch.delenv("HF_TOKEN", raising=False)
+        mock_get.return_value = MagicMock(status_code=200, links={}, json=MagicMock(return_value=[
+            {"type": "file", "path": "README.md", "size": 1}]))
+
+        [f] = download_helpers.id_to_downloadables_huggingface("org/repo")
+
+        assert f["headers"] is None and f["checksum"] is None
+
+
+class TestRadboudRdr:
+    @patch("cnsp_datasets.download.download_helpers.requests.get")
+    def test_dccn_path_and_credentials(self, mock_get, monkeypatch):
+        monkeypatch.setenv("RADBOUD_USERNAME", "u")
+        monkeypatch.setenv("RADBOUD_PASSWORD", "p")
+        mock_get.return_value = MagicMock(status_code=200, text="abc sub-01/a b.wav\ndef README.txt\n")
+
+        files = download_helpers.id_to_downloadables_radboud_rdr("dccn/DSC_1_v1")
+
+        assert mock_get.call_args.args[0] == "https://webdav.data.ru.nl/dccn/DSC_1_v1/MANIFEST.txt"
+        assert files[0] == {"name": "sub-01/a b.wav", "url": "https://webdav.data.ru.nl/dccn/DSC_1_v1/sub-01/a%20b.wav",
+                            "checksum": "sha256:abc", "headers": {"Authorization": "Basic dTpw"}}
+
+    @patch("cnsp_datasets.download.download_helpers.requests.get")
+    def test_public_collection_without_credentials(self, mock_get, monkeypatch):
+        monkeypatch.delenv("RADBOUD_USERNAME", raising=False)
+        mock_get.return_value = MagicMock(status_code=200, text="abc f.wav\n")
+        [f] = download_helpers.id_to_downloadables_radboud_rdr("corpus_v1")
+        assert f["url"] == "https://webdav.data.ru.nl/cls/corpus_v1/f.wav" and f["headers"] is None

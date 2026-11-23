@@ -1,13 +1,24 @@
-import os
 import json
 import importlib.resources as resources
 
 from typing import Dict,  List, Optional, Iterable, Callable, Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from fnmatch import fnmatch
 from cnsp_datasets.download import download_helpers
 from cnsp_datasets.download.data_downloader import DataDownloader
 
 REGISTRY_PATH = resources.files("cnsp_datasets.download").joinpath("dataset_registry.json")
+DEFAULT_MAX_WORKERS = 4  # parallel downloads per dataset; be polite to the repositories
+SOURCE_MAX_WORKERS = {
+    "zenodo": 3,  # promised to the Zenodo moderators (2026-11-21); see PLAN.md section 7
+    "drum": 2,
+    "eprints": 1,
+    "gitlab_lfs": 3,  # self-hosted lab servers
+}
+SOURCE_READ_TIMEOUT = {  # seconds a stalled transfer may wait for data (default 15)
+    "scidb": 300,  # Science Data Bank often takes > 15 s to start or resume a stream
+    "drum": 120,  # DRUM stalls > 15 s under load (LESSONS.md)
+}
 
 ### First define a structure for the entries in dataset_registry.json
 
@@ -18,8 +29,17 @@ class Dataset:
     identifiers: List[str]
     description: str
     url: Optional[str] = None
+    exclude: List[str] = field(default_factory=list)
+    include: List[str] = field(default_factory=list)
 
     def resolve_downloadables(self) -> List[dict]:
+        """Files to download: those matching an `include` glob pattern (all if none), minus `exclude` matches."""
+        files = self._resolve()
+        if self.include:
+            files = [f for f in files if any(fnmatch(f["name"], pat) for pat in self.include)]
+        return [f for f in files if not any(fnmatch(f["name"], pat) for pat in self.exclude)]
+
+    def _resolve(self) -> List[dict]:
         if self.source == "zenodo":
             getter = download_helpers.doi_to_downloadables_zenodo
             return _gather(getter, self.identifiers)
@@ -41,8 +61,23 @@ class Dataset:
         if self.source == "nemar":
             getter = download_helpers.id_to_downloadables_nemar
             return _gather(getter, self.identifiers)
+        if self.source == "huggingface":
+            getter = download_helpers.id_to_downloadables_huggingface
+            return _gather(getter, self.identifiers)
+        if self.source == "scidb":
+            getter = download_helpers.listing_to_downloadables_scidb
+            return _gather(getter, self.identifiers)
+        if self.source == "drum":
+            getter = download_helpers.id_to_downloadables_drum
+            return _gather(getter, self.identifiers)
+        if self.source == "eprints":
+            getter = download_helpers.id_to_downloadables_eprints
+            return _gather(getter, self.identifiers)
         if self.source == "radboud_rdr":
             getter = download_helpers.id_to_downloadables_radboud_rdr
+            return _gather(getter, self.identifiers)
+        if self.source == "gitlab_lfs":
+            getter = download_helpers.id_to_downloadables_gitlab_lfs
             return _gather(getter, self.identifiers)
 
         raise ValueError(f"[{self.key}] Unknown source '{self.source}'")
@@ -81,6 +116,8 @@ def load_registry(path: str) -> Dict[str, Dataset]:
             identifiers=identifiers,
             description=description,
             url=url,
+            exclude=entry.get("exclude", []),
+            include=entry.get("include", []),
         )
     return registry
 
@@ -95,6 +132,9 @@ def download_dataset(
     skip_existing: bool = False,
     extract_archives: bool = True,
     verify_checksum: bool = False,
+    include: Iterable[str] = (),
+    exclude: Iterable[str] = (),
+    read_timeout: Optional[float] = None,
 ) -> None:
     """
     Download a named dataset to a specified directory.
@@ -102,11 +142,15 @@ def download_dataset(
     Parameters:
     - dataset_name (str): Name of the dataset as specified in dataset_registry.json.
     - download_dir (str): Directory to download the dataset into.
-    - max_workers (int): Number of parallel download workers.
+    - max_workers (int): Number of parallel download workers (default and cap: SOURCE_MAX_WORKERS, else
+      DEFAULT_MAX_WORKERS).
     - retries (int): Number of retries for failed downloads.
     - skip_existing (bool): Skip files that already exist and match the expected checksum.
     - extract_archives (bool): Whether to extract archives after download.
     - verify_checksum (bool): Whether to verify checksums if provided in the metadata.
+    - include, exclude (glob patterns): further filters on top of the registry entry's own, e.g. a pilot subset
+      `exclude=["sub-0[7-9]/*", "sub-1*/*"]`; `include` keeps only matching files.
+    - read_timeout (float): seconds a stalled transfer may wait for data (default 15, longer for slow sources).
     """
     registry: Dict[str, Dataset] = load_registry(REGISTRY_PATH)
 
@@ -114,12 +158,13 @@ def download_dataset(
         available = ", ".join(sorted(registry.keys()))
         raise ValueError(f"Dataset '{dataset_name}' is not available. Available datasets are: {available}")
     
-    # if max_workers is not specified, set it to the number of CPUs
-    if max_workers is None:
-        max_workers = os.cpu_count() or 4
-
     ds = registry[dataset_name]
+    cap = SOURCE_MAX_WORKERS.get(ds.source, DEFAULT_MAX_WORKERS)
+    max_workers = min(max_workers or cap, cap)
     downloadables = ds.resolve_downloadables()
+    if include:
+        downloadables = [f for f in downloadables if any(fnmatch(f["name"], pat) for pat in include)]
+    downloadables = [f for f in downloadables if not any(fnmatch(f["name"], pat) for pat in exclude)]
 
     download_manager = DataDownloader(
         download_dir,
@@ -127,6 +172,7 @@ def download_dataset(
         retries=retries,
         skip_existing=skip_existing,
         verify_checksum=verify_checksum,
+        read_timeout=read_timeout or SOURCE_READ_TIMEOUT.get(ds.source, 15),
     )
     download_manager.download_batch(downloadables)
 

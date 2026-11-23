@@ -94,6 +94,9 @@ class TestResolveDownloadables:
             "dataverse": "cnsp_datasets.download.download_helpers.doi_to_downloadables_dataverse",
             "openneuro": "cnsp_datasets.download.download_helpers.doi_to_downloadables_openneuro",
             "deepblue": "cnsp_datasets.download.download_helpers.id_to_downloadables_deepblue",
+            "drum": "cnsp_datasets.download.download_helpers.id_to_downloadables_drum",
+            "eprints": "cnsp_datasets.download.download_helpers.id_to_downloadables_eprints",
+            "gitlab_lfs": "cnsp_datasets.download.download_helpers.id_to_downloadables_gitlab_lfs",
         }
         dummy_file = [{"url": "http://x.com/f", "name": "f.mat", "checksum": None}]
 
@@ -152,3 +155,56 @@ class TestDownloadDataset:
             dd_mod.download_dataset("fuglsang2018", str(tmp_path), extract_archives=True)
 
         mock_helpers.extract_archives.assert_called_once()
+
+
+def test_download_dataset_extra_filters(tmp_path, monkeypatch):
+    """include/exclude given to download_dataset filter on top of the registry entry."""
+    import importlib
+    dd = importlib.import_module("cnsp_datasets.download.download_dataset")  # the package exports a same-named function
+    files = [{"name": n, "url": "u", "checksum": None} for n in
+             ("README", "sub-01/meg/a.fif", "sub-07/meg/b.fif", "sub-12/meg/c.fif")]
+    monkeypatch.setattr(dd.Dataset, "resolve_downloadables", lambda self: files)
+    got = []
+    monkeypatch.setattr(dd.DataDownloader, "download_batch", lambda self, f: got.extend(x["name"] for x in f))
+    dd.download_dataset("fuglsang2018", str(tmp_path), max_workers=1, extract_archives=False,
+                        exclude=["sub-0[7-9]/*", "sub-1*/*"])
+    assert got == ["README", "sub-01/meg/a.fif"]
+
+
+@pytest.mark.parametrize("source, requested, expected", [
+    ("zenodo", None, 3), ("zenodo", 8, 3), ("eprints", None, 1), ("openneuro", None, 4), ("openneuro", 2, 2),
+])
+def test_max_workers_capped_per_source(tmp_path, monkeypatch, source, requested, expected):
+    import importlib
+    dd = importlib.import_module("cnsp_datasets.download.download_dataset")
+    monkeypatch.setattr(dd, "load_registry", lambda path: {"x": dd.Dataset("x", source, ["id"], "")})
+    monkeypatch.setattr(dd.Dataset, "resolve_downloadables", lambda self: [])
+    workers = []
+    monkeypatch.setattr(dd.DataDownloader, "__init__", lambda self, *a, **k: workers.append(k["max_workers"]))
+    monkeypatch.setattr(dd.DataDownloader, "download_batch", lambda self, f: None)
+    dd.download_dataset("x", str(tmp_path), max_workers=requested, extract_archives=False)
+    assert workers == [expected]
+
+
+@pytest.mark.parametrize("source, requested, expected", [
+    ("drum", None, 120), ("scidb", None, 300), ("openneuro", None, 15), ("drum", 30, 30),
+])
+def test_read_timeout_per_source(tmp_path, monkeypatch, source, requested, expected):
+    import importlib
+    dd = importlib.import_module("cnsp_datasets.download.download_dataset")
+    monkeypatch.setattr(dd, "load_registry", lambda path: {"x": dd.Dataset("x", source, ["id"], "")})
+    monkeypatch.setattr(dd.Dataset, "resolve_downloadables", lambda self: [])
+    timeouts = []
+    monkeypatch.setattr(dd.DataDownloader, "__init__", lambda self, *a, **k: timeouts.append(k["read_timeout"]))
+    monkeypatch.setattr(dd.DataDownloader, "download_batch", lambda self, f: None)
+    dd.download_dataset("x", str(tmp_path), read_timeout=requested, extract_archives=False)
+    assert timeouts == [expected]
+
+
+def test_registry_include_exclude(monkeypatch):
+    import importlib
+    dd = importlib.import_module("cnsp_datasets.download.download_dataset")
+    files = [{"name": n, "url": "u", "checksum": None} for n in ("a/x.wav", "a/y.txt", "b/z.wav")]
+    monkeypatch.setattr(dd.Dataset, "_resolve", lambda self: files)
+    ds = dd.Dataset("x", "radboud_rdr", ["id"], "", include=["*.wav"], exclude=["b/*"])
+    assert [f["name"] for f in ds.resolve_downloadables()] == ["a/x.wav"]
