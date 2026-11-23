@@ -19,16 +19,19 @@ from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 TRIGGERS_CSV = os.path.join(os.path.dirname(__file__), "triggers.csv")  # from triggers.py (STI101 codes)
 SFREQ = 1000.0
 SOUND_DELAY_MS = 16.0  # trigger-to-sound delay measured by the authors (Black Box Toolkit v2; paper section 2.2)
+DATA_DRIFT_PPM = 510.0  # audio clock vs MEG clock estimated from the MEG itself (notes.md, section 7); not applied
+# by default: no hardware reference (no audio copy)
 # EOG001, EOG002, ECG003, EEG010; sub-5551a7b45438 and sub-400fb1b90f57: EOG002, EOG004, ECG003, EEG010, EEG060
 OTHER_SETUP = {"sub-5551a7b45438", "sub-400fb1b90f57"}
 LICENCE = ("ANC Data Use Agreement 1.0.2: use for scientific or educational purposes; no redistribution of the "
            "dataset in whole or in part, in any form (section 2.2); cite with the commit hash")
 NOTES = ("MEGIN TRIUX, MaxFilter 2.2.15 SSS applied by the authors (as shipped). Trial = one stimulus trigger on "
          "STI101 (code = condition base + stimulus number, authors' code); events.tsv misses some trials. Onset = "
-         "trigger + 16 ms trigger-to-sound delay measured by the authors. No audio copy in the recording; no drift "
-         "correction. EOG channels: direction unknown; EEG010 (and EEG060): EEG electrodes of unknown placement, kept "
-         "as misc. Vocoded trials: the vocoded sounds are not shipped; the stimulus is the clean source wav or "
-         "(option 'rebuild') a rebuild with fresh noise. " + LICENCE)
+         "trigger + 16 ms trigger-to-sound delay measured by the authors. No audio copy in the recording; drift "
+         "corrected only on request (drift_ppm; MEG-derived estimate ~+510 ppm). EOG channels: direction unknown; "
+         "EEG010 (and EEG060): EEG electrodes of unknown placement, kept as misc. Vocoded trials: the vocoded sounds "
+         "are not shipped; the stimulus is the clean source wav or (option 'rebuild') a rebuild with fresh noise. "
+         + LICENCE)
 
 
 class Chen2023Adaptor:
@@ -44,14 +47,18 @@ class Chen2023Adaptor:
       "rebuild": an n-channel vocoded rebuild (vocoder.py, fixed seed per stimulus and n). Only the band envelopes
                  match the presented sound, not the noise fine structure (notes.md, section 4).
       None: vocoded trials are skipped.
+    drift_ppm: MEG samples per audio sample - 1, in ppm, corrected in the crop (default 0: none). The MEG-derived
+      estimate is DATA_DRIFT_PPM (notes.md, section 7); applying it is a user decision.
     """
 
-    def __init__(self, download_dir: str, vocoded: str | None = "clean", sound_delay_ms: float = SOUND_DELAY_MS):
+    def __init__(self, download_dir: str, vocoded: str | None = "clean", sound_delay_ms: float = SOUND_DELAY_MS,
+                 drift_ppm: float = 0.0):
         if vocoded not in ("clean", "rebuild", None):
             raise ValueError(f"vocoded must be 'clean', 'rebuild' or None, not {vocoded!r}")
         self.download_dir = download_dir
         self.vocoded = vocoded
         self.sound_delay_ms = sound_delay_ms
+        self.drift_ppm = drift_ppm
         self.table = pd.read_csv(TRIGGERS_CSV)
 
     def parse(self) -> Iterable[TrialRecord]:
@@ -69,7 +76,8 @@ class Chen2023Adaptor:
             eeg = ["EEG010", "EEG060"] if t.subject in OTHER_SETUP else ["EEG010"]
             description = provenance(
                 "hw_trigger", "unknown (VPixx presentation; trigger-to-sound delay measured by the authors)", NOTES,
-                validation_tier=None, original_subject=t.subject, run=int(t.run), position=int(t.position),
+                drift_ppm=DATA_DRIFT_PPM, drift_corrected_ppm=self.drift_ppm, validation_tier=None,
+                original_subject=t.subject, run=int(t.run), position=int(t.position),
                 trigger_code=int(t.code), stim_file=f"stimuli/{t.stim:02d}.wav", trigger_sample=int(t.sample),
                 sound_delay_ms=self.sound_delay_ms, vocoder_channels=n,
                 stimulus=("rebuilt vocoded (envelopes only)" if rebuilt else
@@ -81,7 +89,7 @@ class Chen2023Adaptor:
                 ns_type="meg",
                 stimulus=StimulusRecord("audio", name, _audio_loader(wav, n if rebuilt else None, t.stim),
                                         is_attended=True),
-                neural_data_fn=_meg_loader(fif, onset, wav, description),
+                neural_data_fn=_meg_loader(fif, onset, wav, self.drift_ppm * 1e-6, description),
             )
 
 
@@ -105,12 +113,12 @@ def _wav(path: str) -> tuple[int, np.ndarray]:
     return fs, x[:, 0]
 
 
-def _meg_loader(fif: str, onset: float, wav: str, description: str):
+def _meg_loader(fif: str, onset: float, wav: str, drift: float, description: str):
     """The trial: as many samples as the wav lasts, from the sound onset."""
     def _loader():
         fs, x = _wav(wav)
         n_out = math.ceil(len(x) * SFREQ / fs)
-        out = crop_on_audio_clock(_read(fif), onset, n_out)
+        out = crop_on_audio_clock(_read(fif), onset, n_out, drift)
         if out.n_times != n_out:
             raise ValueError(f"{fif}: recording ends {n_out - out.n_times} samples before the stimulus")
         out.info["description"] = description
