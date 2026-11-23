@@ -52,6 +52,7 @@ Last updated: 2026-11-23.
 | brodbeck2018 | brodbeck2018 | dev | low (all 26; ceiling at 100 Hz); attended > ignored 26/26 | download, x/ and standardised (2.5 GB) in tmp; vault backup verified | 100 Hz tSSS epochs only; no overlap with brodbeck2022; no licence stated |
 | straetmans2021 | straetmans2021 | dev | none (no stimulus shipped; sanity only) | download 1.2 GB + standardised in tmp | kept as EEG-only (user, 2026-11-23); ask the authors for the wavs |
 | winchester2026 | winchester2026 | dev | low (all 31; 3 conditions; ceiling at 125 Hz envelopes) | download 5.4 GB + standardised 4.4 GB in tmp | music (piano); envelopes only, no audio; 9 subj at 250 Hz, 22 at 500 Hz; subject 5 looks broken; licence not stated |
+| li2025 | li2025 | dev | low (offset-corrected in validation only; higher tiers not credible) | 18.9 GB MEG download + 12 GB standardised in tmp | OPM-MEG; sound ~0.80 s (sub-31..47) / ~0.55 s (sub-48..60) after the file start: documented, user to decide; sub-54 truncated upstream |
 
 Not in the campaign sheet: mai2023 (dev, iEEG, not reviewed), jehn2024 (dev), karengal2025 / koelbl2021 /
 schuller2022full (internal).
