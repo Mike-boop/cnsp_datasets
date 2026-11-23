@@ -1,7 +1,8 @@
 # chen2026: ChineseEEG-2, 128-ch EGI EEG, Passive Listening (8) and Reading Aloud (4), two Mandarin novels
 
-Explorer notes, 2026-11-22 (written while the download ran: sub-01/02 checked from partially downloaded zips; group m1
-= 05-08 still pending). Scratch scripts, tables and figures:
+Explorer notes, 2026-11-22 (written while the download ran: sub-01/02 checked from partially downloaded zips);
+all 8 listeners checked and the per-chapter latency/drift campaign done on 2026-11-23 (section 6b). Scratch scripts,
+tables and figures:
 `/data_storage/gu08wuvu/datasets/tmp/review/chen2026/` (`scripts/*.py`, `triggers*.csv`, `decode*/`, `xcorr_*.txt`,
 `code/` = clone of the authors' repository). That folder is temporary; every number that explains a choice is copied
 here.
@@ -18,10 +19,12 @@ here.
    **software** (PsychoPy/sounddevice -> zmq -> egi-pynetstation over TCP), although the paper says "hardware-level".
 4. **CH markers in PL are unreliable** (missing at the start of runs 14, 21, ...; relative numbering in places):
    map chapters by run name + ROWS timeline fit, not by CH labels.
-5. **The sound starts ~0.5 s after the trigger-implied onset, and this latency varies by chapter** (sub-01, 14
-   chapters with good tracking: 471-617 ms, median 498 ms; section 6). The triggers are scheduled on the presentation
-   PC clock from the moment `sd.play()` was *requested*, so they cannot see the audio output latency; it differs
-   between listeners for the same wav, so it is playback-side and cannot be pooled across listeners.
+5. **The sound starts ~0.5 s after the trigger-implied onset, and this latency varies by chapter** (all 8 listeners,
+   section 6b: listener medians 504-581 ms, most chapters within +-30 ms of their listener's median, 8 chapters
+   0.1-1.0 s later). The triggers are scheduled on the presentation PC clock from the moment `sd.play()` was
+   *requested*, so they cannot see the audio output latency; it differs between listeners for the same wav, so it is
+   playback-side. Proposed per-chapter timing table: section 6b (not applied; user decision pending). Drift ~+16 ppm
+   (EEG-derived, small).
 6. ReadingAloud is **skipped** (decided by the user, 2026-11-22; section 9).
 
 ## 1. Source
@@ -219,28 +222,151 @@ ROWS markers slide by up to ~0.1 s per chapter relative to the speech; do not us
 **Proposed alignment (PL):**
 1. Reader by listener (01-04 f1, 05-08 m1); chapter -> wav by the ROWS timeline match (section 3).
 2. t0 = intercept of the per-chapter fit of ROWS+ROWE to the json timeline (precise to < 1 ms for the playback
-   request time; jitter averages out over 28-500 events). CH markers are not used.
-3. Onset = t0 + L, with **L = 0.50 s** (dataset-wide constant from sub-01's 14 good chapters, median 498 ms; to be re-estimated over
-   all listeners and checked with the DNN offset before standardising; the forward cross-correlation, compared with
-   the usual ~0.15-0.2 s peak, suggests 0.40-0.46 s, so the final value should come from the DNN offset). Residual per-chapter error about +-50 ms
-   (range -30..+115 ms in sub-01), which cannot be removed from the triggers. Option for the human checkpoint: a
-   per-chapter EEG estimate for chapters with strong tracking (circular with validation; not recommended by default).
-4. No drift correction (section above). Native rate 1000 Hz kept.
+   request time; jitter averages out over 28-500 events). CH markers are not used. Use the robust matcher
+   (`triggers2.py`, section 6b): dropped events and multi-chapter files are common.
+3. Onset = t0 + L. **Superseded by section 6b** (2026-11-23): L from a per-chapter timing table (listener median,
+   with per-chapter values where the EEG shows a significant deviation; 8 chapters start 0.1-1.0 s late, so a
+   dataset-wide 0.50 s is not adequate). The adaptor would read the table (precedent `yang2026_base/drift.py` ->
+   `drift.csv`). Pending the user's decision.
+4. Drift: ~+16 ppm from the EEG (section 6b); proposed: document, not apply. Native rate 1000 Hz kept.
 5. Trial = one chapter (27 LP + 9 or 8 GD per listener); prefaces excluded (practice). Each wav is used whole; the
    chapter file contains the full wav in every case checked (10-96 s spare at the end).
+
+### 6b. Per-chapter latency and drift campaign (2026-11-23, all listeners; nothing applied)
+Scratch: `tmp/review/chen2026/` (`scripts/triggers2.py`, `make_t0.py`, `prep_cache.py`, `dnn_scan.py`,
+`decoder_scan.py`, `joint_fit_synth*.py`; tables `triggers2.csv`, `t0_table.csv`; figures under `align/`).
+
+**Robust trigger matching (`triggers2.py`).** `triggers.py` needs the exact ROWS count per CH-delimited segment and
+fails on dropped events, runs without any CH and multi-chapter files. `triggers2.py` instead takes, per file and json
+chapter, the mode of all (EEG ROWS - json ROWS) differences (5 ms bins), keeps json events with an EEG event of the
+same type within 30 ms, accepts the chapter if >= 50% of its ROWS are found, and fits t0 + (1 + d) a on the inliers
+(two refits, tolerance max(15 ms, 4 SD)). CH markers are not used. `make_t0.py` keeps per listener x chapter the best
+covered match (>= 80% of the json ROWS; json chapters < 10 rows, i.e. RA-only entries, and prefaces dropped).
+- Result (01-05, 07; 06 and 08 pending): **every heard chapter matched** except sub-05 LP 14 and LP 27. f1 group 9 GD
+  + 27 LP, m1 group 8 GD + 27 LP. Residual SD 1.9-4.4 ms, wav inside the file with >= 10.3 s spare in every chapter.
+- **Group m1 confirmed**: 05 and 07 follow m1's json timeline in every chapter; Garnett Dream runs 1 = ch 1-4,
+  2 = ch 5-8.
+- Dropped/extra events are common: up to 4 ROWS missing per chapter (e.g. sub-07 LP 15 146/150, sub-04 LP 25
+  138/145); the old ROWS+ROWE fit broke on mis-paired ROWE (sub-02 LP 14: 1 s SD; ROWS-only fine).
+- CH markers missing at the start of GD 4/6/8 (f1 group), GD 4/5/7 (m1 group) and LP 8, 15, 25 in several
+  listeners; sub-04 LP 25 (run-211) has no CH marker at all.
+- **sub-05**: LP run-114 is 5.8 s with no ROWS, run-213 is 12.9 s with 1 ROWS: the EEG of **LP 14 and LP 27 is not in
+  the release** (paper: "triggers missing for 10 min" of ch 27; ch 14 not mentioned). LP run-17 is a 1.6 k-s file
+  holding ch 7-13 back to back (ch 8-13 also shipped as their own files, identical fits): use the single-chapter
+  files. sub-05 also ships stray `*_bad_channels.json` (empty lists) and `*_ica_components.json` (40 x 3229 matrix,
+  `exclude` indices) next to every run: preprocessing leftovers, ignore.
+
+**`align/scan.py:joint_fit` on synthetic data (first use; `joint_fit_synth.py`, `joint_fit_synth2.py`).** Score
+matrices with a known onset and drift (Gaussian peak, sigma 60 ms, white or lag/window-correlated noise), 5-s windows
+at 1-s hop, 128 Hz. Onset: unbiased (median |bias| <= 20 ms), RMSE 20-35 ms for per-window SNR >= 0.2 and >= 300 s;
+breaks down (RMSE > 300 ms) at SNR 0.05-0.1 in short chapters. **Drift: biased towards 0 and imprecise**: RMSE 50-130
+ppm for single chapters of 300-600 s even at SNR 0.5, 43 ppm at 1200 s / SNR 0.2, and the median estimate sits
+exactly at 0 for many settings (the linear lag interpolation smooths the noise at every drift except multiples of a
+sample, so the argmax favours b = 0; smoothing the scores along lags helps only partly). Jackknife SEs are not
+calibrated in the breakdown regime. Consequence: per-chapter DNN drift is not usable here; drift has to be pooled
+and estimated from smooth (decoder) curves.
+
+**DNN lag scan (`dnn_scan.py`, fs128_1020-64 broadband, lags -1.5..+0.5 s around t0).** chen2026 is weak for the
+accou2023 classifier: per-window score noise SD ~0.45 vs a peak of ~0.1 above the curve's baseline, curves jagged
+sample-to-sample, and a mismatched-envelope null reaches the same prominence in most short LP chapters. sub-01: clear
+peaks only in GD 4, 5, 7, 8 (latency 0.53, 0.52, 0.59, 0.73 s after t0); figure `align/dnn_curves_sub-01.png`.
+The listener-specific backward decoder (crossdec) is far more sensitive, so it is the primary per-chapter estimator
+below; the DNN is a second, independent estimator for chapters where the decoder is weak.
+
+**Analysis cache (`prep_cache.py`).** Per chapter, from the as-shipped zip: VREF (Cz) added as zeros, HydroCel-129
+montage, bad channels for the analysis = SD (1-40 Hz) > 5x or < 1/5 of the median (0-2 per chapter; a z-score rule on
+log SD flagged ~30 posterior channels and was dropped). DNN input = the classifier's own steps (0.5 Hz high-pass,
+128 Hz, 64-ch 10-20 interpolation, average reference); decoder input = 129 ch with bads interpolated, average
+reference, 1-8 Hz, 50 Hz. Both start at floor(t0 * fs); the sub-sample remainder is added back to every latency.
+
+**Decoder estimator (`decoder_scan.py`).** Ridge backward decoder, EEG lags 0-240 ms, trained leave-one-chapter-out
+on all other chapters of the same listener; target = envelope at shift s after t0, s on 0-4 s (a 1.5-s range clipped
+real latencies). Pass 1, unanchored: the training shift S0 is chosen on 0.2-1.0 s by the mean held-out r at S0
+(sub-01: flat maximum 0.44-0.52 s, S0 = 0.52 s). Pass 2: training chapters placed at their own pass-1 latency.
+Per held-out chapter: r vs shift (20 ms grid, parabolic peak), jackknife SE over 10 contiguous chunks, z of the peak
+against 10 mismatched envelopes (other chapters), 30-s window curves (drift) and odd/even 30-s block halves
+(validation). Strong = z >= 5 and SE <= 25 ms. What the decoder measures is relative to its training shift: the
+absolute level assumes the response sits inside the 0-240 ms lag window (envelope responses ~100-150 ms), so the
+absolute latency is good to roughly +-50 ms per listener, the relative latencies to the jackknife SE.
+
+**DNN estimator.** Mean lag-scan curve smoothed along lags (Gaussian, 23 ms), global peak over 0-4 s, z of its
+prominence against 5 mismatched envelopes, jackknife SE over 10 window chunks; strong = z >= 4 and SE <= 40 ms. The
+DNN is on its own (accou2023) scale: per listener, offset = median(DNN - decoder) over chapters strong in both.
+Caveat found on the way: an earlier version picked the DNN peak within +-0.3 s of the decoder latency, which made the
+two "agree" by construction (it seemed to confirm sub-01 GD 9 at 1.19 s; unrestricted, the DNN finds no significant
+peak there). Only unrestricted DNN peaks are used.
+
+**Proposed per-chapter latency (`analyse_timing.py`)** = decoder if strong; else DNN - listener offset if the DNN is
+strong; else the listener median (fallback for weak chapters).
+
+**Results, all 8 listeners, 281 chapters** (`align/summary/sub-XX.json`, `sub-XX_chapters.csv`, figures
+`align/summary/sub-XX_timing.png`, `sub-XX_decoder_curves.png`, `overview.png`; proposal
+`tmp/review/chen2026/timing_table_proposal.csv`):
+| listener | decoder strong / DNN / fallback | S0 (s) | median L (ms) | IQR (ms) | late outliers (> median + 100 ms) | halves: median abs(A - B) (ms), r without outliers | held-out r: own / median / 500 ms | drift Theil-Sen ppm [95% CI] |
+|---|---|---|---|---|---|---|---|---|
+| 01 | 32 / 0 / 4 | 0.52 | 511 | 493-534 | GD 8 612, GD 9 **1194**, LP 7 661, LP 8 762 | 7, 0.93 | .212 / .187 / .187 | +15 [-7, +52] |
+| 02 | 5 / 5 / 26 | 0.60 | 581 | 566-610 | LP 21 752 (DNN) | 50, -0.23 | .060 / .076 / .024 | (+144, uninformative) |
+| 03 | 18 / 0 / 18 | 0.56 | 544 | 533-557 | LP 9 **1565** | 12, 0.13 | .136 / .124 / .100 | +16 [-4, +36] |
+| 04 | 20 / 0 / 16 | 0.56 | 545 | 528-553 | - | 8, 0.92 | .125 / .111 / .086 | -4 [-39, +25] |
+| 05 | 26 / 1 / 6 | 0.52 | 510 | 502-520 | - | 5, 0.03 | .138 / .135 / .130 | +1 [-8, +12] |
+| 06 | 15 / 0 / 19 | 0.52 | 506 | 496-515 | - | 7, 0.87 | .133 / .126 / .125 | +19 [-3, +42] |
+| 07 | 22 / 0 / 13 | 0.52 | 504 | 493-520 | GD 1 **917**, GD 3 732 | 7, 0.60 | .125 / .118 / .117 | +22 [-1, +43] |
+| 08 | 19 / 0 / 16 | 0.52 | 505 | 495-515 | - | 12, 0.41 | .131 / .130 / .129 | -3 [-15, +15] |
+- **Latency is ~0.5 s and listener-specific**: m1 group 504-510 ms, f1 group 511-581 ms. Within a listener most
+  chapters sit within +-30 ms of the median; **8 chapters start 0.1-1.0 s later** (single clean decoder peak, no peak
+  near the median: e.g. sub-01 GD 9, sub-03 LP 9, sub-07 GD 1 in `sub-XX_decoder_curves.png`). A constant 0.5 s would
+  misplace those by up to 1 s. The same wav does not give the same latency in different listeners, so this is the
+  playback side (`sd.play()`), per call.
+- **Absolute level**: where both estimators are strong, DNN (accou2023 scale) - decoder = -7 ms (sub-05, 19 chapters,
+  MAD 5 ms), +6 ms (sub-07, 3), -39 ms (sub-03, 3), -71 ms (sub-02, 3): the decoder's absolute latency agrees with the
+  DNN reference for the good listeners. Weak listeners' absolute level is anchored by their training shift S0 (sub-02:
+  flat S0 curve 0.52-0.64 s), so +-50 ms.
+- **Held-out validation (step 7)**: latency from one half of the chapter, r on the other half (decoder trained on other
+  chapters). Per-chapter latency beats the listener median in 7 of 8 listeners and a constant 500 ms in all 8, but
+  part of the gain comes from the outliers. Without them (chapters within 150 ms of the median), per-chapter values
+  help in sub-01 (.220 vs .202), sub-04 (.125 vs .111) and sub-06 (.133 vs .126), the three listeners whose
+  half-estimates reproduce (r 0.87-0.93); they are neutral in 03, 05, 07, 08 (within +-0.003) and worse in sub-02
+  (weak). Hence option B in the proposal table: listener median, except chapters whose estimate deviates by more than
+  max(40 ms, 3 SE) (11 chapters in sub-01, 1-4 elsewhere).
+- **Drift**: the decoder window method recovers injected drifts of +-50 ppm to within 0-6 ppm with the right sign
+  (`scripts/inject_drift.py`, sub-01 GD 1/2/4/5). Single chapters scatter by +-25-40 ppm, so drift is pooled: per
+  listener Theil-Sen -4..+22 ppm (sub-02 uninformative), median over listeners **+16 ppm**; inverse-variance pool of the
+  per-listener joint_fit values (lag axis upsampled x10; sub-05 excluded, where joint_fit stuck at 0 +- 0 again)
+  +16.5 +- 3.2 ppm (Garnett Dream +16 +- 3, Little Prince +13 +- 10). Sign: the sound slides later through the
+  chapter, i.e. the audio is stretched by ~16 ppm in EEG time. Effect at the end of the longest chapter (1212 s):
+  19 ms; median chapter (~250 s): 4 ms.
+- **Circularity**: the per-chapter latencies and the drift come from the same EEG that the validation tiers will model;
+  any validation score after applying them is optimistic. The held-out halves above are the honest check; the
+  validator should report results with the trigger-only timing (t0 + listener median) next to them.
+- Not used: `joint_fit` per chapter (bias to 0, grid-edge hits on short chapters), DNN drift.
+
+**Open decisions for the user (nothing applied):**
+1. Onsets: (A) per-chapter latency for every strong chapter (`latency_s`), (B) listener median except
+   significantly deviating chapters (`latency_optionB_s`), or (C) one constant per listener. Recommended: B, which
+   keeps the 8 large outliers right and adds no per-chapter noise where the held-out test shows no gain; A differs from
+   B by < 75 ms (mostly < 40 ms) and gains held-out r only in 01, 04, 06 (+0.007..+0.018). (A per-listener choice, A for 01/04/06
+   and B elsewhere, is also defensible.)
+2. Fallback for the 118 weak chapters: listener median (proposed) vs dataset median (~510 ms).
+3. Drift: document +16 ppm (recommended; <= 19 ms, below the per-chapter latency uncertainty) or apply it
+   dataset-wide in the single resample.
+4. sub-02 (weak, 26 of 36 chapters on the fallback) and sub-01 GD 6 (no tracking in either estimator): keep with
+   fallback timing (recommended) or exclude.
+5. Missing EEG: sub-05 LP 14 and LP 27, sub-06 GD 4 (no file / 1 ROWS): record as absent.
 
 ## 7. Cross-subject duration check
 - Trigger-derived duration: the ROWS/ROWE span equals the json span to within the 3 ms jitter in every chapter (|d| <=
   6 ppm for chapters > 2 min). End-of-audio markers do not exist in PL. Because the triggers and their timestamps share
   the presentation-PC clock, this check is a consistency check of the trigger path, not a drift measurement.
-- Stimulus vs file: every wav fits inside its chapter file with 10-96 s to spare at the end (sub-01/02, all 27 chapter files checked).
-- Same wav, two listeners: the latency differs per chapter by up to 0.11 s (above), i.e. jitter of the playback start,
-  not drift. Drift (EEG windows) ~0 +- 50 ppm. Group m1 (05-08) not yet checked (downloads pending).
+- Stimulus vs file: every wav fits inside its chapter file with >= 10.3 s to spare at the end (all 8 listeners, 281
+  chapters; `t0_table.csv` `margin_end_s`).
+- Same wav, different listeners: the latency differs per chapter (up to 1 s for the late outliers, section 6b), i.e.
+  jitter of the playback start, not drift. Drift from the EEG windows: ~+16 ppm pooled (section 6b).
 
 ## 8. Data size (from the wavs; listener totals exclude the prefaces)
 - PL: f1 group 5561.6 s (LP 1-27) + 5363.1 s (GD 1-9) = **3.035 h** per listener; m1 group 5561.6 + 6170.6 s =
-  **3.259 h**. 8 listeners: **25.2 h** (LP 12.4 h, GD 12.8 h). The paper's 21.6 h is "~3 h x 8" rounded down. Minus
-  sub-05 LP ch 27 (513 s) if it cannot be aligned.
+  **3.259 h**. 8 listeners: **25.2 h** (LP 12.4 h, GD 12.8 h). The paper's 21.6 h is "~3 h x 8" rounded down. Minus the
+  chapters whose EEG is not in the release: sub-05 LP 14 (240.0 s) and LP 27 (169.7 s), sub-06 GD 4 (1225.7 s), 0.454 h
+  in total -> **24.8 h** (281 chapters).
 - RA (skipped; for the record): f1 3.228 h (GD 1-11; 3.035 h with GD 1-9), f2 3.035 h, m1 3.259 h, m2 3.033 h; total 12.5 h.
 - Prefaces (practice, excluded by the authors): 57-171 s each.
 
@@ -257,27 +383,21 @@ mapping above stays.
   the registry was not edited.
 
 ## 10. Open questions (recommended default in brackets)
-1. Playback latency ~0.5 s after the trigger-implied onset, varying by chapter (471-617 ms in sub-01): add a constant
-   L to every onset? [yes, L = 0.50 s, re-estimated over all listeners and confirmed by the DNN offset before the full
-   run; residual +-50 ms per chapter documented as a caveat]
-   Deferred by the user (2026-11-22): no decision until more data are in. Before deciding: re-run the coarse
-   (unanchored, -3..+3 s) decoder scan and the forward cross-correlation on all 8 listeners, and the DNN offset vs
-   accou2023. The per-chapter refinement (`crossdec.py`) trains at a fixed +0.5 s and is anchored to it.
-2. Per-chapter EEG-estimated onsets instead of a constant? [no: circular with validation and impossible for weak
-   listeners such as sub-02]
-3. Drift: correct? [no; EEG slopes ~0 +- 50 ppm, triggers cannot measure it]
+1-3. Latency, per-chapter onsets and drift: done for all 8 listeners on 2026-11-23 (unanchored, 0-4 s, decoder + DNN);
+   the decisions are listed at the end of section 6b [option B timing table; document the +16 ppm drift].
+   (Earlier default "constant L = 0.50 s" is superseded: 8 chapters start 0.1-1.0 s late.)
 4. sub-01 Garnett Dream 6 (run-21) shows no envelope tracking (z 2.0; nothing within +-30 s or with any other wav)
-   although its triggers are normal and the EEG looks clean: keep, or drop? [keep; record as a caveat, recheck once all
-   listeners are in]
-5. sub-02 tracks weakly overall (r <= 0.09; no peak in 7 of 12 chapters checked): keep? [keep; it is the data]
+   although its triggers are normal and the EEG looks clean: keep, or drop? [keep with fallback timing; still no
+   tracking with the 0-4 s decoder or the DNN (2026-11-23)]
+5. sub-02 tracks weakly overall (decoder strong in 5 of 36 chapters, DNN in 8): keep? [keep; it is the data; 26
+   chapters on the listener-median fallback]
 6. Include the prefaces (practice, 57-80 s, same reader)? [no; the authors exclude them]
 7. ~~Include Reading Aloud?~~ Decided by the user (2026-11-22): skipped (section 9). Registry: add `"ReadingAloud/*"`
    to the `chen2026` exclude list? [yes, saves 7.7 GB]
 8. Reference: add VREF (Cz) back as zeros before average reference? [yes]
-9. sub-05 LP ch 27 (paper: triggers missing for 10 min of run-213): skip, or align from its CH marker + L? [skip if
-   fewer than ~20 ROWS remain to fit t0; pending inspection]
-10. Group m1 (05-08): reader mapping, Garnett Dream run split (1-4 / 5-8) and latency not yet verified (downloads
-    pending). [verify with `scripts/triggers.py` before the adaptor pilot]
+9. sub-05 LP 27 and LP 14, sub-06 GD 4: the EEG is not in the release (12.9-s / 5.8-s files, no run-14 file).
+   [record as absent]
+10. ~~Group m1 (05-08)~~ verified 2026-11-23 (section 6b): reader m1, Garnett Dream runs 1-4 / 5-8.
 11. Licence: data CC0 (scidb V5); the audio repo says only "cc". [treat the audio as part of the CC0 record; ask the
     authors if it matters]
 
