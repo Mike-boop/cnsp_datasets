@@ -198,6 +198,12 @@
       "description": "Polonenko & Eisenreich (2026) multiband peaky speech ABRs (3 experiments)",
       "url": "https://openneuro.org/datasets/ds008065/versions/1.0.1"
     },
+    "straetmans2021": {
+      "source": "openneuro",
+      "identifiers": ["10.18112/openneuro.ds003801.v1.0.0"],
+      "description": "Straetmans et al. (2021) mobile EEG (walking vs sitting), two competing speakers, attend one; 20 participants",
+      "url": "https://openneuro.org/datasets/ds003801/versions/1.0.0"
+    },
     "schueller2024": {
       "source": "zenodo",
       "identifiers": ["10.5281/zenodo.12793944", "10.5281/zenodo.12794769", "10.5281/zenodo.12794808"],
