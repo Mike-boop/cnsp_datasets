@@ -69,7 +69,7 @@ schuller2022full (internal).
 |---|---|---|---|---|
 | peng2026 | peng2026 | dev (registry fe3393d) | 2026-11-24: copying from woody (slowpull, md5 ok); worker incorporating | sub-01..09 E-Prime trigger re-alignment to check |
 | zhang2025 | zhang2025 | dev (registry fe3393d) | 2026-11-24: copying from woody; worker incorporating | file list / exclude |
-| jaeger2025 | jaeger2025 | dev (registry 79cd601) | 2026-11-24: copying from woody; worker incorporating | audio shipped? overlap with holtze2021 stories |
+| jaeger2025 | jaeger2025 | dev (notes 373ebc2) | not incorporable: the Zenodo release has only TRF weights / prediction r (Data.zip), no EEG or stimuli; grade none; download 15 GB in tmp (delete pending sign-off; woody keeps the copy) | ask the authors for the raw XDF + regressors/audio (draft in upstream_issues.md); recordings = Jaeger 2020, probably holtze2021's narratives |
 | wang2026 | wang2026 | dev (registry 79cd601) | 2026-11-24: copying from woody; worker incorporating | from the original EEG |
 | thornton2025 | thornton2025 | dev (registry 79cd601) | 2026-11-24: copying from woody; worker incorporating (after zhang2025) | |
 | geirnaert2025 | geirnaert2025 | dev (registry 79cd601) | 2026-11-24: copying from woody; worker incorporating | audio shipped? cEEGrid layout |
