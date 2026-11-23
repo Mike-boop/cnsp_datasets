@@ -148,3 +148,33 @@ narrative 4.03 h). Unique audio 16.2 min (the spreadsheet's 0.53 h assumed 32 di
 4. Word/phoneme onsets from `predictors.zip` (no labels): not carried. [not carried; transcripts are in the
    download, and a forced alignment of the wavs would give proper TextGrids]
 5. Keep the three participants with concatenated recordings (no trial spans a boundary). [yes]
+
+## 9. Validation (pilot, 2026-11-23)
+Pilot: 3 participants (R2383, R2682, R2693; chosen for the overlap with karunathilake2023, the FIF split + broken
+MEG 086, and the concatenated recording), 96 trials, standardised from `extracted/` (`scripts/pilot.sh`; 3.5 GB).
+No full run (storage). Repo validator through `validate_cond.py` (picks `mag` = good axial gradiometers, no
+re-referencing, tiers low/mlr/brainstem); results and four-panel figures in
+`tmp/review/karunathilake2025/validation/<set>/` (`all` copied to `validation.json` here). With 3 participants the
+smallest attainable p is 0.020 (circular shift) / 0.048 (mismatch).
+
+| set | low median r | subjects sig | TRF peak | mlr SNR (p, subj) | brainstem SNR (p, subj) | tier |
+|---|---|---|---|---|---|---|
+| all (pooled) | 0.054 | 3/3 | 47 ms | 1.16 (0.010, 1/3) | 1.28 (0.010, 3/3) | brainstem |
+| noise | 0.029 | 3/3 | 172 ms | 0.91 (0.69, 0/3) | 0.99 (0.64, 0/3) | low |
+| nonwords | 0.064 | 3/3 | 63 ms | 1.06 (0.069, 1/3) | 1.18 (0.010, 1/3) | low |
+| scrambled | 0.070 | 3/3 | 47 ms | 0.99 (0.28, 0/3) | 1.12 (0.010, 1/3) | low |
+| narrative | 0.049 | 3/3 | 31 ms | 1.08 (0.020, 1/3) | 1.14 (0.010, 1/3) | brainstem |
+
+- Pooled 30-250 Hz TRF: sharp peak at ~38 ms (within the MEG 28-45 ms window), second at ~52 ms, nothing above
+  the null at negative lags; 30-60 Hz peaks at ~38, 50 and 62 ms (as karunathilake2023 and brodbeck2022, same
+  lab/system). No sign of a trigger-to-sound latency problem.
+- Speech-modulated noise has no harmonic structure, so its HF tiers fail by construction (as the vocoded trials in
+  karunathilake2023). Its 0.5-8 Hz TRF is broad (envelope low-passed at 5 Hz) with a bump at -20 ms barely above
+  the null (8 trials x 3 participants); not read as a timing error, to recheck on more participants.
+- Validator per-trial offsets/drift are not informative for 1-min MEG trials (jitter MAD 21-42 ms, drift SE
+  700-2200 ppm).
+- **Trial -> stimulus check** (`map_check.py`, figure `figures/map_check.png`, `map_check.json`): backward model per
+  participant (good gradiometers, 1-8 Hz, 100 Hz, 40 PCA components, lags 0-500 ms, ridge), trained without both
+  presentations of the test passage; the test trial's reconstruction correlates best with its labelled passage among
+  all 16 in **96/96 trials** (rank 1 each). The mean matched-r lag scan (+-1 s) peaks at 0 ms in all three; this is
+  relative (training trials share the trigger alignment) and only shows that no trial is off on its own.
