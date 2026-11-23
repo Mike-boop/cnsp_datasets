@@ -122,6 +122,8 @@ Explorer notes (2026-11-23). Review scripts: `tmp/review/brodbeck2018/scripts/` 
 (x 2 attention versions, identical after 1 s).
 
 ## 9. Adaptor (implemented 2026-11-23)
+- Shared code with the lab's other KIT datasets (R-number subjects, wav loaders, epoch/continuous-raw helpers,
+  bad-channel rules) in `datasets/simon_base/common.py` (2026-11-23; output unchanged).
 - Reads `R####/` folders and `stimuli/` under the root (the extracted zips, `tmp/review/brodbeck2018/x/`).
 - Subject = **R-number mod 1000** (R2262 -> 262; unique), as in karunathilake2023/2025; R-number in the sidecar
   (`participant`). Session 1. Trials 1-24 in presentation order (raw onset sample). Conditions `two_speakers`,

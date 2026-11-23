@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import glob
 import os
-from functools import lru_cache
 from typing import Callable, Iterable
 
 import mne
 import numpy as np
-from scipy.io import wavfile
 
+from cnsp_datasets.datasets.simon_base.common import (REFERENCE, audio_loader, check_unique_subjects, epoch_raw,
+                                                      find_one, read_epochs, subject_number)
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -48,10 +48,9 @@ class Brodbeck2018Adaptor:
         self.root = download_dir
 
     def parse(self) -> Iterable[TrialRecord]:
-        stim_dir = os.path.dirname(_one(os.path.join(self.root, "**", "stimuli", "male_1.wav")))
+        stim_dir = os.path.dirname(find_one(os.path.join(self.root, "**", "stimuli", "male_1.wav")))
         sdirs = sorted(glob.glob(os.path.join(self.root, "**", "R[0-9][0-9][0-9][0-9]"), recursive=True))
-        if len({int(os.path.basename(d)[1:]) % 1000 for d in sdirs}) != len(sdirs):
-            raise ValueError("subject numbers (R-number mod 1000) are not unique")
+        check_unique_subjects(os.path.basename(d) for d in sdirs)
         for sdir in sdirs:
             pid = os.path.basename(sdir)
             for trial, (sample, cond, fname, idx, code) in enumerate(_trial_order(sdir, pid), 1):
@@ -59,19 +58,11 @@ class Brodbeck2018Adaptor:
                 description = provenance(
                     "sw_trigger", TRIGGER_TYPE, NOTES, participant=pid, trigger_code=code,
                     onset_sample_raw_1khz=sample, epoch_file=os.path.basename(fname), epoch_index=idx,
-                    attended=fg, ignored=bg, attended_talker=fg.split("_")[0], units_as_shipped="T", reference="not applicable (MEG)",
-                    preprocessing="tSSS, FIR 1-40 Hz, decimated to 100 Hz (authors)")
+                    attended=fg, ignored=bg, attended_talker=fg.split("_")[0], units_as_shipped="T",
+                    reference=REFERENCE, preprocessing="tSSS, FIR 1-40 Hz, decimated to 100 Hz (authors)")
                 yield TrialRecord(
-                    subject=int(pid[1:]) % 1000, session=1, trial=trial, condition=cond, ns_type="meg",
+                    subject=subject_number(pid), session=1, trial=trial, condition=cond, ns_type="meg",
                     stimulus=_stimuli(stim_dir, fg, bg), neural_data_fn=_meg_loader(fname, idx, code, description))
-
-
-def _one(pattern: str) -> str:
-    """The single match of a recursive glob."""
-    hits = glob.glob(pattern, recursive=True)
-    if len(hits) != 1:
-        raise FileNotFoundError(f"expected one match for {pattern}, found {hits}")
-    return hits[0]
 
 
 def _trial_order(sdir: str, pid: str) -> list[tuple[int, str, str, int, int]]:
@@ -91,39 +82,20 @@ def _trial_order(sdir: str, pid: str) -> list[tuple[int, str, str, int, int]]:
 
 def _stimuli(stim_dir: str, fg: str, bg: str | None) -> list[StimulusRecord]:
     """Single talker; or attended talker, played mixture, ignored talker as played (in that order)."""
-    attended = StimulusRecord("audio", fg, _audio(stim_dir, fg), is_attended=True)
+    def audio(name: str, mute: int = 0) -> Callable[[], dict]:
+        return audio_loader(os.path.join(stim_dir, f"{name}.wav"), AUDIO_FS, mute)
+
+    attended = StimulusRecord("audio", fg, audio(fg), is_attended=True)
     if bg is None:
         return [attended]
-    return [attended, StimulusRecord("audio", f"{fg}_mix", _audio(stim_dir, f"{fg}_mix")),
-            StimulusRecord("audio", f"{bg}_from1s", _audio(stim_dir, bg, mute=BG_START), is_attended=False)]
-
-
-def _audio(stim_dir: str, name: str, mute: int = 0) -> Callable[[], dict]:
-    """Loader of a 22.05 kHz int16 wav as float32 in [-1, 1), samples before `mute` set to 0."""
-    def _load() -> dict:
-        fs, x = wavfile.read(os.path.join(stim_dir, f"{name}.wav"))
-        if fs != AUDIO_FS or x.dtype != np.int16 or x.ndim != 1:
-            raise ValueError(f"{name}.wav: expected {AUDIO_FS} Hz mono int16")
-        x = (x / 32768.0).astype(np.float32)
-        x[:mute] = 0
-        return {"fs": AUDIO_FS, "data": x[None, :]}
-
-    return _load
-
-
-@lru_cache(maxsize=2)
-def _read(fname: str) -> mne.Epochs:
-    """Shipped epochs, checked for 100 Hz, 6001 samples from t = 0."""
-    epochs = mne.read_epochs(fname, preload=True, verbose="ERROR")
-    if epochs.info["sfreq"] != FS or len(epochs.times) != N_TIMES or epochs.tmin != 0:
-        raise ValueError(f"{fname}: unexpected rate or epoch length")
-    return epochs
+    return [attended, StimulusRecord("audio", f"{fg}_mix", audio(f"{fg}_mix")),
+            StimulusRecord("audio", f"{bg}_from1s", audio(bg, mute=BG_START), is_attended=False)]
 
 
 def _meg_loader(fname: str, idx: int, code: int, description: str) -> Callable[[], mne.io.BaseRaw]:
     """One epoch as Raw: gradiometers and reference magnetometers, shipped bads plus any zero-variance channel."""
     def _loader() -> mne.io.BaseRaw:
-        epochs = _read(fname)
+        epochs = read_epochs(fname, FS, N_TIMES)
         if epochs.events[idx, 2] != code:
             raise ValueError(f"{fname}[{idx}]: code {epochs.events[idx, 2]}, expected {code}")
         lines = epochs.get_data(picks=[f"MISC {code - 159:03d}", OFFSET_LINE], item=idx)[0]
@@ -132,12 +104,7 @@ def _meg_loader(fname: str, idx: int, code: int, description: str) -> Callable[[
         expected[0, 0] = expected[1, -1] = True
         if not (active == expected).all():  # onset line only at t = 0, offset line only at 60.00 s
             raise ValueError(f"{fname}[{idx}]: onset/offset trigger lines not at the epoch edges")
-        picks = mne.pick_types(epochs.info, meg=True, ref_meg=True, exclude=[])
-        info = mne.pick_info(epochs.info, picks)
-        data = epochs.get_data(picks=picks, item=idx)[0]
-        raw = mne.io.RawArray(data, info, verbose="ERROR")
-        flat = [raw.ch_names[i] for i in np.flatnonzero(data.std(axis=1) == 0)]
-        raw.info["bads"] = sorted(set(info["bads"]) | set(flat))
+        raw = epoch_raw(epochs, idx)
         raw.info["description"] = description
         return raw
 
