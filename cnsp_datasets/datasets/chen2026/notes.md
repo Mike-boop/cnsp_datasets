@@ -388,6 +388,36 @@ extended search for the rest. Scripts `reclassify_z2.py`, `ext_scan.py`, `timing
   LP 4 545 -> 976); the other new admissions are within tens of ms of the listener median. Listener medians now over
   the z >= 2 passes (e.g. sub-01 506 ms, sub-02 583 ms). Option B is recomputed the same way (`latency_optionB_s`).
 
+### 6d. Adaptor (2026-11-23; the user's z >= 2 rule)
+- `timing.csv` (repo; built from the v2 table by `tmp/review/chen2026/scripts/make_timing_csv.py`): one row per
+  listener x chapter (281): file, `t0_s` and trigger-fit details, `latency_s` (z >= 2 rule; default),
+  `latency_optionB_s` + `optionB_per_chapter`, `listener_median_s` (one value per listener, identical to the fallback
+  values; an earlier double rounding gave sub-03 0.5458 vs 0.5457), `listener_latency_rsd_ms` (robust SD of the
+  per-chapter latencies about the median, 14-33 ms; used as `jitter_ms` for median-based trials), `rule`, `rule_z`,
+  `latency_se_ms`, odd/even `halves_*`, `peak_ratio`, decoder values.
+- `timing.py` recomputes the t0 part from events.tsv + the reader json and checks it against `timing.csv` (file,
+  t0 within 0.01 ms, ROWS found, event count, residual SD; exit 1 on a mismatch): all 281 match (max difference
+  0.005 ms). Trigger slope max |d| 28.9 ppm over files > 2 min (meaningless for drift, same clock). The latency
+  columns come from the EEG analysis scripts in `tmp/review/chen2026/scripts/` (decoder_scan, dnn_scan, ext_scan,
+  reclassify_z2, timing_v2), which are not in the repo.
+- Adaptor options: `latency` = `chapter` (default) | `option_b` | `listener_median`; `drift_ppm` (default 0; the
+  +16 ppm estimate is in the provenance as `drift_ppm`, applied only if passed); `audio_dir` (default
+  `<download>/ChineseEEG-2_audio`, the holtze2021_audio layout: download or link the chen2026_audio entry there).
+  With drift 0 the onset is rounded to the nearest sample (<= 0.5 ms, below the latency SEs), so the native 1000 Hz
+  samples are kept without interpolation; with drift, onset and drift go into one quintic-spline interpolation
+  (`crop_on_audio_clock`).
+- Trials: condition = story, session = BIDS session (1 garnettdream, 2 littleprince; the listening order is not
+  recoverable from the files), trial = chapter, stimulus `<story>_<reader>_chNN` (12 kHz wav, left channel). 129 EEG
+  channels: E1-E128 + VREF (zeros; Cz position of the HydroCel-129 template), original reference, V. Bads per participant
+  (`bads.json`, written by `bads.py`): flagged (SD 1-40 Hz > 5x or < 1/5 of the median) in >= 20% of the chapters.
+  Per-trial flags (first version) were unstable (9-25 distinct channels per listener, flags come and go with the
+  impedances) and broke the validator, which needs one channel set per subject. `alignment_method` = `dnn` when a
+  per-chapter EEG latency is used, else `sw_trigger` (t0 + listener median of the EEG estimates); `jitter_ms` = the
+  latency SE, or the listener spread for median-based trials.
+- Size: one 387-s trial = 200 MB (float32 fif) + audio; ~5.7 GB EEG per listener, ~48 GB for all 8.
+- Review (agent `reviewer`): applied: latency source taken from `rule` / `optionB_per_chapter` instead of comparing
+  values; jitter for median trials; wav format check; NaN-safe provenance floats; line lengths; stronger timing check.
+
 ## 7. Cross-subject duration check
 - Trigger-derived duration: the ROWS/ROWE span equals the json span to within the 3 ms jitter in every chapter (|d| <=
   6 ppm for chapters > 2 min). End-of-audio markers do not exist in PL. Because the triggers and their timestamps share

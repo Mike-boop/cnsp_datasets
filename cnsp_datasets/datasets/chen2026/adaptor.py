@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import math
 import os
 from functools import lru_cache
@@ -9,8 +10,8 @@ import mne
 import numpy as np
 import pandas as pd
 from scipy.io import wavfile
-from scipy.signal import butter, sosfiltfilt
 
+from cnsp_datasets.datasets.chen2026.bads import BADS_JSON
 from cnsp_datasets.datasets.chen2026.timing import TIMING_CSV, reader_of
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
 from cnsp_datasets.standardise.provenance import provenance
@@ -21,7 +22,6 @@ AUDIO_FS = 12000
 SESSIONS = {"garnettdream": 1, "littleprince": 2}  # BIDS sessions (one story each); listening order not recoverable
 LATENCY = {"chapter": "latency_s", "option_b": "latency_optionB_s", "listener_median": "listener_median_s"}
 DRIFT_ESTIMATE_PPM = 16.0  # pooled EEG estimate (decoder windows), documented, not applied by default (notes 6b)
-BAD_RATIO = 5.0  # a channel is bad if its 1-40 Hz SD is > 5x or < 1/5 of the median SD
 ABSENT = "sub-05 littleprince 14 and 27, sub-06 garnettdream 4"  # EEG not in the release (notes 6b), not in timing.csv
 TRIGGER = ("software (code: PsychoPy/sounddevice -> zmq -> egi-pynetstation; the paper says hardware). ROWS/ROWE "
            "replay the reader's line timeline from the sd.play() request, so they give the request time t0, not "
@@ -33,8 +33,9 @@ NOTES = ("PassiveListening only (ReadingAloud and the practice prefaces excluded
          "this EEG (listener-specific leave-one-chapter-out backward decoder, z >= 2 against mismatched envelopes, "
          "else the accou2023 DNN, else the listener median; timing.csv `rule`), so validation scores on these onsets "
          "are optimistic (circular); `latency_option` says which column was used. Drift: ~+16 ppm EEG estimate, "
-         "applied only if drift_corrected_ppm != 0. Bad channels: SD (1-40 Hz) > 5x or < 1/5 of the median, per "
-         "trial. Positions: GSN-HydroCel-129 template (the shipped CapTrak files are the same template).")
+         "applied only if drift_corrected_ppm != 0. Bad channels per participant (bads.json): SD (1-40 Hz) > "
+         "5x or < 1/5 of the median in >= 20% of the chapters. Positions: GSN-HydroCel-129 template (the shipped "
+         "CapTrak files are the same template).")
 
 
 class Chen2026Adaptor:
@@ -60,6 +61,8 @@ class Chen2026Adaptor:
         self.latency = latency
         self.drift = float(drift_ppm)
         self.table = pd.read_csv(TIMING_CSV, dtype={"sub": str})
+        with open(BADS_JSON) as f:
+            self.bads = json.load(f)
 
     def parse(self) -> Iterable[TrialRecord]:
         print(f"chen2026: absent from the release: {ABSENT}")
@@ -96,7 +99,7 @@ class Chen2026Adaptor:
                 subject=int(r.sub), session=SESSIONS[r.story], trial=int(r.chapter), condition=r.story, ns_type="eeg",
                 stimulus=[StimulusRecord("audio", name, _audio_loader(wav), True, "audio")],
                 neural_data_fn=_eeg_loader(vhdr, onset, math.ceil(_wav_length(wav) * FS / AUDIO_FS),
-                                           self.drift * 1e-6, description))
+                                           self.drift * 1e-6, self.bads[r.sub], description))
 
 
 def _num(x) -> float | None:
@@ -133,16 +136,8 @@ def _montage() -> mne.channels.DigMontage:
     return montage
 
 
-def _bad_channels(raw: mne.io.BaseRaw) -> list[str]:
-    """EEG channels (not VREF) whose 1-40 Hz SD is > BAD_RATIO times or < 1/BAD_RATIO of the median SD."""
-    sos = butter(4, [1, 40], "bandpass", fs=raw.info["sfreq"], output="sos")
-    names = [c for c in raw.ch_names if c != "VREF"]
-    sd = sosfiltfilt(sos, raw.get_data(picks=names), axis=1).std(axis=1)
-    ratio = sd / np.median(sd)
-    return [c for c, q in zip(names, ratio) if q > BAD_RATIO or q < 1 / BAD_RATIO]
-
-
-def _eeg_loader(vhdr: str, onset: float, n_out: int, drift: float, description: str) -> Callable[[], mne.io.BaseRaw]:
+def _eeg_loader(vhdr: str, onset: float, n_out: int, drift: float, bads: list[str],
+                description: str) -> Callable[[], mne.io.BaseRaw]:
     def _loader() -> mne.io.BaseRaw:
         raw = _read(vhdr)
         if raw.info["sfreq"] != FS or len(raw.ch_names) != 128:
@@ -153,7 +148,7 @@ def _eeg_loader(vhdr: str, onset: float, n_out: int, drift: float, description: 
         out = mne.add_reference_channels(out, "VREF", copy=False)
         out.set_montage(_montage(), verbose="ERROR")
         out.set_meas_date(None)
-        out.info["bads"] = _bad_channels(out)
+        out.info["bads"] = list(bads)
         out.info["description"] = description
         return out
 
