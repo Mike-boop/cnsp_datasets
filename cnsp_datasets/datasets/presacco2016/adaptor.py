@@ -10,8 +10,8 @@ import h5py
 import mne
 import numpy as np
 from mne.io.constants import FIFF
-from scipy.io import wavfile
 
+from cnsp_datasets.datasets.simon_base.common import REFERENCE, audio_loader, find_one
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -63,7 +63,7 @@ class Presacco2016Adaptor:
         self.download_dir = download_dir
 
     def parse(self) -> Iterable[TrialRecord]:
-        stim_dir = os.path.dirname(_one(os.path.join(self.download_dir, "**", "High Context")))
+        stim_dir = os.path.dirname(find_one(os.path.join(self.download_dir, "**", "High Context")))
         for sdir in sorted(glob.glob(os.path.join(self.download_dir, "**", "S[0-9][0-9]_*_MEG"), recursive=True)):
             name = os.path.basename(sdir)
             m = re.fullmatch(r"S(\d\d)_(.+)_MEG", name)
@@ -79,18 +79,18 @@ class Presacco2016Adaptor:
                         foreground=fg, background=bg, snr_db=snr, onset_trigger_line=line,
                         offset_trigger_line=OFFSET_LINE, onset_sample_in_epoch=ONSET, presentation_order="unknown",
                         identical_stimulus=IDENTICAL.get(fg), units_as_shipped="fT (MEG and reference sensors)",
-                        reference="not applicable (MEG)",
-                        preprocessing="none (raw; online filters of the KIT system only)")
+                        reference=REFERENCE, preprocessing="none (raw; online filters of the KIT system only)")
                     yield TrialRecord(
                         subject=subject, session=1, trial=N_REP * i + rep + 1, condition=cond, ns_type="meg",
                         stimulus=stimuli,
                         neural_data_fn=_meg_loader(mat, rep, line, description))
 
+
 def _stimuli(stim_dir: str, fg: str, bg: str | None) -> list[StimulusRecord]:
     """Foreground (attended), then the background talker (unattended) in noise."""
-    out = [StimulusRecord("audio", fg, _audio(_wav(stim_dir, fg)), is_attended=True)]
+    out = [StimulusRecord("audio", fg, audio_loader(_wav(stim_dir, fg), AUDIO_FS), is_attended=True)]
     if bg:
-        out.append(StimulusRecord("audio", bg, _audio(_wav(stim_dir, bg)), is_attended=False))
+        out.append(StimulusRecord("audio", bg, audio_loader(_wav(stim_dir, bg), AUDIO_FS), is_attended=False))
     return out
 
 
@@ -106,28 +106,10 @@ def _find_mat(sdir: str, tag: str) -> str:
     return hits[0]
 
 
-def _one(pattern: str) -> str:
-    """The single match of a recursive glob."""
-    hits = glob.glob(pattern, recursive=True)
-    if len(hits) != 1:
-        raise FileNotFoundError(f"expected one match for {pattern}, found {hits}")
-    return hits[0]
-
-
 def _wav(stim_dir: str, name: str) -> str:
     """English background and `_H` wavs are in High Context, the rest in Low Context."""
     folder = "High Context" if name.endswith("_H") or name == "English_F" else "Low Context"
     return os.path.join(stim_dir, folder, f"{name}.wav")
-
-
-def _audio(path: str) -> Callable[[], dict]:
-    def _load() -> dict:
-        fs, x = wavfile.read(path)
-        if fs != AUDIO_FS or x.dtype != np.int16 or x.ndim != 1:
-            raise ValueError(f"{path}: expected {AUDIO_FS} Hz mono int16")
-        return {"fs": AUDIO_FS, "data": (x / 32768.0).astype(np.float32)[None, :]}
-
-    return _load
 
 
 @lru_cache(maxsize=1)

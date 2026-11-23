@@ -174,6 +174,8 @@ adapted** (and not downloaded beyond the 7 zips fetched earlier: S01-03, S06, S0
     the md5 check, done) or the 7 EEG zips can go. [user decides]
 
 ## 9. Adaptor and pilot (2026-11-23)
+- Shared code with the lab's other KIT datasets (R-number subjects, wav loaders, epoch/continuous-raw helpers,
+  bad-channel rules) in `datasets/simon_base/common.py` (2026-11-23; output unchanged).
 - `adaptor.py` as described in sections 3-7: subjects younger 1-17, older NH 21-35, older HI 101-117; trials
   1-30 = conditions Q_H, Q_L, P3_H, Zero_H, M3_H, M6_H, P3_L, Zero_L, M3_L, M6_L x 3 repetitions; conditions
   `quiet`, `english_snr{+3,0,-3,-6}dB`, `dutch_snr{+3,0,-3,-6}dB`; channels MEG 001-157 (`mag`, KIT_GRAD) and
