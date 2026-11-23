@@ -73,7 +73,7 @@ schuller2022full (internal).
 | wang2026 | wang2026 | dev (registry 79cd601) | 2026-11-24: copying from woody; worker incorporating | from the original EEG |
 | thornton2025 | thornton2025 | dev (registry 79cd601) | 2026-11-24: copying from woody; worker incorporating (after zhang2025) | |
 | geirnaert2025 | geirnaert2025 | dev (registry 79cd601) | 2026-11-24: copying from woody; worker incorporating | audio shipped? cEEGrid layout |
-| schueller2024 Sets 2/3 | schuller2023 | main | Set2 downloading on woody (38.5 GB), Set3 queued | extend the adaptor once copied |
+| schueller2024 Sets 2/3 | schuller2023 | main | Set2 on woody (38.5 GB, md5 ok), Set3 downloading there | not this pass (user 2026-11-24: Set1 adaptor robust enough); second pass |
 
 ## Open items across datasets
 - **Push `dev`**: many commits are ahead of `origin/dev`; needs the user's approval.
