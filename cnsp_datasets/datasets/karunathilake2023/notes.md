@@ -12,8 +12,9 @@ checkpoint are in section 8.
 - Code (`Codes.zip`): Eelbrain pipeline `exp.py` (trigger codes, epochs, subject groups), `make_gammatone*.py`,
   `results1.ipynb`. Read, not run.
 - Download (registry `karunathilake2023`, Dryad API with `DRYAD_TOKEN`; 2026-11-23, 1 h 42 min): 8 files, 83.5 GB,
-  every file's sha-256 verified against Dryad by the downloader (`download_log.tsv`), zips kept (`unzip -t`:
-  pending). Skipped by `exclude`: `mri.zip` (11.0 GB, fsaverage coregistration) and `TRFs.zip` (1.2 GB, authors'
+  every file's sha-256 verified against Dryad by the downloader (`download_log.tsv`); zips kept, and `unzip -t` of
+  the three MEG zips reports no errors. Skipped by `exclude`: `mri.zip` (11.0 GB, fsaverage coregistration) and
+  `TRFs.zip` (1.2 GB, authors'
   boosting results). The README lists a `predictors.zip` that is **not on Dryad** (no TextGrids, transcripts or word
   predictors are shared).
 
@@ -50,9 +51,10 @@ checkpoint are in section 8.
   predictors; there is no separate POST file: the paper says POST is acoustically identical).
 - Order in the data: main study 164, 165, 166 per passage; **control study 164, 166, 165** (PRE1, PRE2, CLEAN, as in
   the paper), so in the control study 166 is the second vocoded presentation and CLEAN comes last.
-- All participants: 36 x 3 = 108 triggers, passages 1-36 in story order (same stimuli for everyone). Check: for
-  every trial the time to the next trigger exceeds the passage duration (by >= 3.7 s in the control study;
-  `survey.py`, `survey.json`).
+- All 39 participants: 36 x 3 = 108 triggers, no other codes, passages 1-36 in story order (same stimuli for
+  everyone). Check: for every trial the time to the next trigger exceeds the passage duration (by >= 0.38 s in the
+  main study, where POST follows CLEAN directly, and >= 3.6 s in the control study; `survey.py`, `survey.json`).
+  Recordings 54-68 min.
 - Ratings: sheet row `Trial` k = passage k (clarity 0-5 after each vocoded presentation; `Q2` 0/1, meaning not
   documented; presumably the comprehension question after POST/PRE2).
 - Participants (39 shipped): main 27 = the 25 in exp.py `ALL` + **R2383 and R2806** (in no list in the code;
@@ -73,15 +75,18 @@ checkpoint are in section 8.
   low-pass, 60 Hz notch (paper); `info` highpass 0, lowpass 200. Units T (median gradiometer rms ~2e-13 T).
   Head-shape digitisation in `info['dig']` (2238 points in R2963). No projectors, no software compensation, no
   bads marked, no annotations.
-- One continuous recording per participant, 56-61 min.
+- One continuous recording per participant, 54-68 min.
 - MISC lines (R2963; `misc_survey.py`, `misc_clip.py`; figures `misc_psd_R2963.png`, `misc_time_R2963.png`):
   MISC 005-007 = TTL trigger lines (5 V idle, pulses to 0; STI 014 is built from them); the other lines are 5 V
   constant (unused), or MISC 018 (broadband noise + mains harmonics), MISC 030-032 (flat noise floor). **No audio
   copy**: cross-correlation of MISC 018/030/031/032 with each played wav (< 190 Hz) and its envelope over -0.5..+2 s
   gives |r| <= 0.13 at random lags in every trial tested (`audio_channel.py`). No peripheral (EOG/ECG) is recorded.
   All MISC lines and STI 014 are dropped.
-- Flat channels (rms < median / 20 in 10 x 10 s windows): MEG 056 in every participant so far, MEG 086 in all
-  control participants except R2963 (`survey.json`). Marked in `info['bads']` per participant.
+- Flat channels (rms < median / 20 in 10 x 10 s windows; all 39 participants, `survey.json`): **MEG 086** in every
+  participant except R2963; **MEG 056** in every participant except R2865-R2891 (main2, recorded in sequence).
+  Marked in `info['bads']` per participant by the adaptor. One noisy channel: **R2851 MEG 062** (~6x the rms of its
+  neighbours, but a normal spectrum: no line-noise dominance, 43% of power in 1-20 Hz like MEG 061/063); not
+  electrical noise only, so left unmarked (open question 6).
 - Reference: not applicable (MEG). Empty-room recordings are shipped but not standardised (not continuous speech).
 
 ## 6. Alignment
@@ -129,6 +134,12 @@ checkpoint are in section 8.
 3. Include R2383, R2806 (not in the authors' lists) and R3015. [yes, flagged in the sidecar]
 4. Drop all MISC lines and STI 014 (no peripherals, no audio copy). [yes]
 5. Condition names (`pre`/`clean`/`post`, `control-pre1`/`control-pre2`/`control-clean`). [yes]
+6. R2851 MEG 062 (noisy, not flat): leave unmarked or add to bads? [leave unmarked; mention in the README]
+7. Full standardisation (39 participants, ~59 GB, i.e. ~35 GB more than the 24 GB pilot of 16) once tmp has
+   room. [run it after the zips or the extracted copies are deleted]
+8. Storage: the zips (78 GB) and the extracted copies (102 GB) duplicate each other. [delete the extracted MEG of
+   non-pilot participants now, re-extract per participant for the full run; or delete the zips, since sha-256 and
+   `unzip -t` both passed]
 
 ## 9. Validation
 Repo validator (`validate_cond.py`, standardised data as stored, picks `mag` = good axial gradiometers, no
@@ -142,3 +153,30 @@ re-referencing, tiers low/mlr/brainstem; results and four-panel figures in
   p 0.010, 9/12 subjects, sharp peak at ~38 ms, flat at negative lags. Per-trial offset estimates are not
   informative for 20 s MEG trials (MAD 60 ms, 52 at the search edge). No sign of a trigger-to-sound latency beyond
   what brodbeck2022 shows.
+- **Control study per condition** (36 trials per participant each; `validation/control_{pre1,pre2,clean}/`):
+
+  | condition | low median r | subjects sig | TRF peak | mlr SNR (p, subj) | brainstem SNR (p, subj) | tier |
+  |---|---|---|---|---|---|---|
+  | control-pre1 | 0.042 | 12/12 | 125 ms | 0.97 (0.24, 1/12) | 1.09 (0.010, 5/12) | low |
+  | control-pre2 | 0.051 | 12/12 | 78 ms | 0.99 (0.14, 1/12) | 1.03 (0.10, 2/12) | low |
+  | control-clean | 0.040 | 11/12 | 94 ms | 1.03 (0.010, 1/12) | 1.45 (0.010, 10/12) | brainstem |
+
+  The high-frequency response comes from the clean speech; noise-vocoded speech has no F0/harmonic structure for
+  the 30-250 Hz response to follow, so its weak HF tiers are acoustic, not a timing problem. Clean 30-250 Hz TRF:
+  onset ~18-20 ms, peaks ~33 and ~38 ms, nothing at negative lags. R3009 (sub 9) is at its null in control-clean
+  (r 0.007).
+- **Main study pilot (4 participants: R2684, R2813, R2851, R2883; R2813 is one of the two the authors excluded;
+  432 trials; `validation/main_{all,pre,clean,post}/`)**. Only a pilot was standardised because of the tmp storage
+  limit (2026-11-23); the full run (27 main participants, ~40 GB) is pending.
+
+  | set | low median r | subjects sig | TRF peak | mlr SNR (p, subj) | brainstem SNR (p, subj) | tier |
+  |---|---|---|---|---|---|---|
+  | pooled | 0.032 | 4/4 | 94 ms | 1.08 (0.010, 1/4) | 1.70 (0.010, 4/4) | brainstem |
+  | pre | 0.031 | 4/4 | 94 ms | 0.96 (0.32, 0/4) | 1.13 (0.010, 1/4) | low |
+  | clean | 0.031 | 4/4 | 94 ms | 1.05 (0.030, 1/4) | 2.11 (0.010, 4/4) | brainstem |
+  | post | 0.035 | 3/4 | 109 ms | 0.90 (0.66, 0/4) | 1.11 (0.010, 2/4) | low |
+
+  Same picture as the control study: pooled 30-250 Hz peak at ~40 ms, nothing at negative lags; the HF tiers come
+  from the clean speech.
+- Sizes: standardised output ~1.5 GB per participant (108 trials, 160 channels, float32); control 12 = 18 GB, main
+  pilot 4 = 6 GB. Full dataset would be ~59 GB.
