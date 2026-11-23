@@ -13,19 +13,18 @@ python -m $M.poptrf      <download> <out>/poptrf 0,0          # group A GFP peak
 python -m $M.trf_weights <download> <out>/trf_weights         # per-subject TRFs, uncorrected and corrected
 python -m $M.match_groups <out>/trf_weights <out>/match       # group B matched to group A: 0.44 s (CI 0.41-0.80)
 python -m $M.butterfly   <out>/trf_weights <out>/butterfly_topo.png
-python -m $M.drift       <download> <out>/trf_weights <out>/drift    # drift per group, not applied
-python -m $M.drift       <download> <out>/trf_weights <out>/drift5 5  # five parts per subject (cached TRFs)
-python -m $M.subject_delays <download> <out>/trf_weights <out>/drift5/parts_5 <out>/subject_delays
+python -m $M.subject_delays <download> <out>/trf_weights <out>/subject_delays
                                                               # per-subject delays -> ../onset.csv (adaptor default)
+python -m $M.drift       <out>/subject_delays/part_delays.json <out>/drift   # pooled drift, not applied
 python -m $M.heldout     <download> <out>/subject_delays/heldout_delays.json <out>/heldout   # per subject vs group
 python -m $M.poptrf      <download> <out>/poptrf 0.80,0.42    # check: both groups peak near +0.1 s
 ```
 
 `common.py` holds the shared preprocessing (HFC, 0.1 Hz high-pass, 0.5-8 Hz envelope and MEG at 64 Hz, ridge TRF over
--1.5..+1.5 s). All of it is analysis only; the standardised data stay raw apart from the onset crop.
+-1.5..+1.5 s for the template, -1.5..+2.5 s for the TRFs whose delay is searched over 0..1.9 s). All of it is analysis only; the standardised data stay raw apart from the onset crop.
 
 | group | subjects | delay | how |
 |---|---|---|---|
 | A | sub-31..47 | 0.80 s | population TRF peak +0.92 s minus ~0.1 s latency; corrected TRF peaks +94 / +250 ms (+-~50 ms) |
 | B | sub-48..60 | 0.42 s | B's multichannel TRF matched to A's corrected TRF: best 0.44 s (r 0.60, bootstrap CI 0.41-0.80 s, skewed); user's reading 0.41 s; a component at ~-40 ms remains |
-| per subject (default) | all | 0.39-0.89 s | each subject's whole-recording TRF matched to A's corrected TRF; group delay if match r < 0.15 or the five parts' MAD > 50 ms (sub-35/37/40); held-out test in `../notes.md` section 7 |
+| per subject (default) | all | 0.39-1.26 s | each subject's whole-recording TRF matched to A's corrected TRF (search 0..1.9 s); group delay if match r < 0.15 or the five parts' MAD > 50 ms (sub-37/40/52/55); held-out test in `../notes.md` section 7 |

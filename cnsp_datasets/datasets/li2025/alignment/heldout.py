@@ -5,12 +5,12 @@ usage: python -m cnsp_datasets.datasets.li2025.alignment.heldout <download dir> 
        [n_jobs] [subjects, e.g. 43,48]
 heldout_delays.json comes from subject_delays.py. Each shipped recording (onset="none") is preprocessed once (HFC
 order 1 without MEG062, 0.1 Hz high-pass of the whole recording, 50/125 Hz harmonic notches; as the dataset
-validation) and cut into the five parts of drift.py. Delays estimated on parts 1,3,5 are scored on parts 2,4 and vice
-versa; each scored part is cut in halves so the low tier can cross-validate. Runs per direction: shipped (0), group
-(adaptor ONSET_DELAY_S), subject and subject_loso (group A matched to its leave-one-out template). The audio heard at
-shipped time t is audio time t - delay. sub-54 is left out (no part caches). Per-subject results are cached in
-<out>/cache; each run is saved as <out>/est<parts>_<run>/validation.json (+ plots), the r per run in
-<out>/heldout_summary.json.
+validation) and cut into the N_PARTS parts of common.match_trfs. Delays estimated on parts 1,3,5 are scored on parts
+2,4 and vice versa; each scored part is cut in halves so the low tier can cross-validate. Runs per direction: shipped
+(0), group (adaptor ONSET_DELAY_S), subject and subject_loso (group A matched to its leave-one-out template). The
+audio heard at shipped time t is audio time t - delay. sub-54 is left out (two halves only; not in
+heldout_delays.json). Per-subject results are cached in <out>/cache; each run is saved as
+<out>/est<parts>_<run>/validation.json (+ plots), the r per run in <out>/heldout_summary.json.
 """
 import json
 import os
@@ -22,13 +22,13 @@ import mne
 import numpy as np
 
 from cnsp_datasets.datasets.li2025.adaptor import ONSET_DELAY_S, Li2025Adaptor, group
-from cnsp_datasets.datasets.li2025.alignment.common import FS, N
+from cnsp_datasets.datasets.li2025.alignment.common import FS, N, N_PARTS
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 from cnsp_datasets.validate import report
 from cnsp_datasets.validate.checks import HF, LOW, TIERS, UNIT_RANGES, group_summary, validate_subject
 
 NOTCH = sorted(set(np.arange(50, 500, 50)) | set(np.arange(125, 500, 125)))
-PARTS = [(i[0] / FS, (i[-1] + 1) / FS) for i in np.array_split(np.arange(N), 5)]  # s, as drift.py
+PARTS = [(i[0] / FS, (i[-1] + 1) / FS) for i in np.array_split(np.arange(N), N_PARTS)]  # s, as common.match_trfs
 SCORE_ON = {"135": [1, 3], "24": [0, 2, 4]}  # delays estimated on parts 1,3,5 -> scored on 2,4 (0-based) and back
 RUNS = ("shipped", "group", "subject", "subject_loso")
 

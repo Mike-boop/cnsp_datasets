@@ -3,7 +3,7 @@ li2025: per-subject multichannel envelope TRFs (lags x channels), uncorrected an
 
 usage: python -m cnsp_datasets.datasets.li2025.alignment.trf_weights <download dir> <out dir> [delay_A,delay_B s]
 Writes <out>/sub-XX.npz: w_uncorrected, w_corrected (lags x channels, z units), lags_s, ch_names, ch_locs (MNE loc),
-delay_s, group. Input of match_groups.py, butterfly.py and drift.py. Default delays: the adaptor's.
+delay_s, group. Input of match_groups.py, butterfly.py and subject_delays.py. Default delays: the adaptor's.
 """
 import os
 import sys

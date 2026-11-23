@@ -89,13 +89,14 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
   variable amount (LESSONS: 40-500 ms).
 - **Adopted: brain-based onset correction per subject, on by default** (user decisions 2026-11-23: group delays
   first, then "try it out" for per-subject delays, adopted after the held-out test in section 7). The trial starts
-  the subject's delay into the shipped file (`onset.csv`, written by `alignment/subject_delays.py`; 0.39-0.89 s, whole
+  the subject's delay into the shipped file (`onset.csv`, written by `alignment/subject_delays.py`; 0.39-1.26 s, whole
   ms at 1000 Hz, so the correction is a crop, no resampling). `Li2025Adaptor(onset=...)`: `"subject"` (default),
   `"group"` (`ONSET_DELAY_S`: 0.80 s sub-31..47, 0.42 s sub-48..60; the previous default) or `"none"` (shipped
   first sample). Native 1000 Hz kept; the audio (1519.235 s) is longer than the remaining recording and is not
   cut. Sidecar: `alignment_method = onset_only` (the provenance vocabulary has no brain-based value), `trigger_type`
   "unknown (inferred software ...) + onset_correction_s", plus `onset_correction_s`, `onset_correction_method`,
-  `recording_group` and, only with `onset="subject"`, `onset_match_r`, `onset_parts_mad_ms`, `onset_fallback`.
+  `recording_group` and, only with `onset="subject"`, `onset_match_r`, `onset_parts_mad_ms`, `onset_fallback`,
+  `onset_ambiguous`.
 - This is an exception to the campaign rule that constant brain/DNN-based offsets are documented, not applied
   (PLAN.md section 8): the delays are large (0.4-0.8 s) and the shipped onset is a software trigger, not the sound.
 - Estimation: section 7; code in `alignment/` (reads the download through the adaptor with `onset="none"`,
@@ -144,7 +145,8 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
   30-60 Hz (notched; raw or HFC; `scripts/li2025_artefact.py`, `artefact_test*/`) and the 45-55 Hz band (the
   soundtrack's 50 Hz hum is only 1.8x its neighbours) give nothing above the noise maximum in single subjects. No
   stimtrack-like leakage, so the onset cannot be measured precisely.
-- **Drift** (not measurable from triggers; brain-based, **not applied**). `alignment/drift.py`: per subject, ridge
+- **Drift** (not measurable from triggers; brain-based, **not applied**). First estimate, per group (the earlier
+  `alignment/drift.py`, commit b90915c; superseded by the pooled estimate below): per subject, ridge
   TRFs on the three thirds of the uncorrected recording (~506 s each, centres 4.2 / 12.7 / 21.1 min); delay of each
   third = shift of best space-time match to group A's corrected template (-0.2..0.6 s, 58 channels, parabolic
   refinement); slope over the thirds (> 0: MEG clock fast vs audio); bootstrap over subjects (1000). Figure
@@ -164,54 +166,93 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
     the main session's match (0.4375 s, r 0.602) and the three-part drift exactly.
   - Earlier estimate from the low-tier segment offsets (6 x 250 s, -0.8 s offset): -9.8 +- 117 ppm (too loose).
   - Conclusion: no correction. Group A's -14 ppm would move the end of the session by ~21 ms.
+  - **Pooled estimate (2026-11-23, v4; current `alignment/drift.py`)**. The per-group averages above mix subjects with
+    different delays (A/B mixture). Now per subject: the five parts' delays (wide window, same template match as
+    `onset.csv`; sub-54 two halves) **relative to the subject's own whole-recording delay**, fallback subjects left
+    out (sub-37/40/52/55; n = 26); parts > 150 ms off (another peak; 10 of 127) dropped; pooled OLS slope over the
+    part centres, bootstrap over subjects (1000) for the 95% CI; Theil-Sen over all parts as a check. Figure
+    `tmp/review/li2025/alignment_v4/drift/drift.png`, numbers `drift/drift.json`.
+
+    | set | n | OLS (ppm) | 95% CI | Theil-Sen (ppm) | 95% CI |
+    |---|---|---|---|---|---|
+    | all | 26 | **-17.2** | -30.9..-4.3 | -16.3 | -28.8..-8.2 |
+    | A (sub-31..47) | 15 | -9.0 | -22.0..+5.3 | -11.2 | -19.6..-0.5 |
+    | B (sub-48..60) | 11 | -30.1 | -59.7..-8.7 | -28.4 | -60.3..-11.5 |
+    | B without sub-50/53 | 9 | -11.3 | -19.7..-2.0 | -16.4 | -32.6..-7.0 |
+    | all without sub-50/53 | 24 | -10.0 | -20.4..+0.0 | -12.8 | -20.2..-5.3 |
+
+    Per-subject slopes (noisy, 5 points): mostly -50..+50 ppm; sub-50 -106 and sub-53 -159 ppm are their later early
+    parts (section 8 item 1), not a clock drift, and they carry group B's estimate. Circular: the template is group
+    A's own corrected TRF; a latency change of the response over the session (adaptation) would look like drift.
+  - **Decision rule (main session): apply only if the 95% CI excludes 0 and |drift| > 20 ppm (> ~30 ms over 1519 s).
+    All subjects: -17 ppm, CI excludes 0 but |drift| < 20 ppm -> documented, not applied** (~-26 ms over the
+    session). Group B alone meets the rule only because of sub-50/53; without them -11 ppm.
 - **Per-subject delays (adopted 2026-11-23, `alignment/subject_delays.py`; figures and tables in
   `tmp/review/li2025/alignment_v3/`)**. The per-part view (`alignment_v2/per_subject/`) showed that the delay
   varies per subject, not per spectral group: sub-48/49/60 (group B) sit at ~0.80 s and sub-43 (group A) at ~0.49 s,
   i.e. ~0.4 / ~0.3 s off with the group delays. Group B's "step" above is largely this mixture (and sub-50/52/53,
   whose weak early parts sit later) rather than a change during playback.
-  - Method: per subject, shift (0..0.906 s, parabolic refinement) of the whole-recording uncorrected TRF that best
-    matches group A's corrected TRF (space-time r over lags -0.2..0.6 s, 58 common channels; as `drift.py`); cross-
-    checked with the median and MAD of the five parts' delays (`drift ... 5` cache). Fallback to the group delay
-    (flagged) if the peak r < 0.15 or the parts' MAD > 50 ms. sub-54 (truncated, not in the caches) fitted on its
+  - Method: per subject, shift (**0..1.9 s** since 2026-11-23 v4, see below; parabolic refinement) of the
+    whole-recording uncorrected TRF (refitted over lags **-1.5..+2.5 s**, `common.match_trfs`) that best matches group
+    A's corrected TRF (space-time r over lags -0.2..0.6 s, 58 common channels); cross-checked with the median and MAD
+    of the five parts' delays (same fits). Fallback to the group delay (flagged) if the peak r < 0.15 or the parts'
+    MAD > 50 ms. **`onset_ambiguous`** (adopted delays only): another local maximum of the match curve (search edges
+    included) > 100 ms away comes within 0.15 of the best r; the delay is kept. sub-54 (truncated) fitted on its
     698 s, two halves as parts. Group A also against a leave-one-subject-out template (circularity).
-  - Result (`onset.csv`; figure `alignment_v3/subject_delays/subject_delays.png`):
+  - **Wide lag window (user "do it", 2026-11-23; v4, `tmp/review/li2025/alignment_v4/`)**. The first version fitted
+    lags -1.5..+1.5 s, so the search stopped at 0.906 s, and sub-36/39/47's LOSO matches sat at that edge. The main
+    session's refit with lags -1.5..+2.5 s (`scripts/li2025_wide_lag_refit.py`, `alignment_v3/wide_lag/`) is now the
+    repo method; the repo code reproduces its delays, r, part delays and LOSO delays within 0.5 ms (rounding).
+    The template (trf_weights, lags -1.5..+1.5 s) and thresholds are unchanged. Changes against the narrow window:
+    sub-35 0.80 (fallback, "no match") -> **1.256 s** (r 0.62, parts MAD 24 ms, LOSO 1.257: its peak lay beyond the
+    old window); sub-47 0.834 -> **0.977 s** (the old value was a shoulder at the window edge; LOSO 0.991); **sub-52
+    0.553 -> fallback 0.42 s and sub-55 0.429 -> fallback 0.42 s**: with the wider search some of their weak parts lock
+    onto far peaks (sub-52 parts 1.246 / 0.566 / 0.417 / 0.527 / 1.399 s, MAD 149 ms; sub-55 1.597 / 0.518 / 0.417 /
+    1.734 / 0.443 s, MAD 101 ms), so the unchanged MAD rule now rejects them, although their whole-recording peaks did
+    not move (0.553 / 0.433 s). All others within 2 ms. sub-37 (own peak 0.621 s, r 0.26, MAD 62 ms) and sub-40
+    (r 0.16, MAD 760 ms) stay fallbacks. **Ambiguous: sub-33, 39, 47, 53** (expected only sub-39): sub-39's second
+    peak 0.94 s (r 0.25 vs 0.29) is the one LOSO prefers; sub-33's at 0.72 s (0.50 vs 0.57, LOSO 0.70); sub-47's
+    shoulder 0.83 s (0.57 vs 0.68; the old value); sub-53's 0.53 s (0.31 vs 0.34). sub-53's parts MAD is 50.0 ms, at
+    the limit.
+  - Result (`onset.csv`; figure `alignment_v4/subject_delays/subject_delays.png`; the narrow-window version is
+    `alignment_v3/subject_delays/`):
 
     | sub | grp | delay (s) | r | parts MAD (ms) | LOSO (s) | note |
     |---|---|---|---|---|---|---|
-    | 31 | A | 0.771 | 0.31 | 15 | 0.720 | weak |
-    | 32 | A | 0.753 | 0.59 | 4 | 0.733 | |
-    | 33 | A | 0.822 | 0.61 | 13 | 0.696 | two peaks (~0.69 / 0.82 s); LOSO picks the other |
-    | 34 | A | 0.797 | 0.71 | 3 | 0.796 | |
-    | 35 | A | 0.80 | -0.06 | 130 | - | fallback (no match) |
-    | 36 | A | 0.887 | 0.65 | 27 | 0.906 | peak near the 0.906 s search edge (LOSO at the edge) |
-    | 37 | A | 0.80 | 0.22 | 99 | 0.615 | fallback (parts disagree; own peak ~0.62 s) |
-    | 38 | A | 0.791 | 0.50 | 6 | 0.785 | |
-    | 39 | A | 0.806 | 0.30 | 7 | 0.906 | LOSO at the search edge |
-    | 40 | A | 0.80 | 0.08 | 11 | - | fallback (no match) |
-    | 41 | A | 0.762 | 0.40 | 14 | 0.742 | |
-    | 42 | A | 0.814 | 0.58 | 5 | 0.835 | |
-    | 43 | A | 0.493 | 0.47 | 28 | 0.487 | 0.31 s earlier than group A |
-    | 44 | A | 0.811 | 0.46 | 18 | 0.820 | |
-    | 45 | A | 0.792 | 0.70 | 5 | 0.789 | |
-    | 46 | A | 0.765 | 0.65 | 5 | 0.752 | |
-    | 47 | A | 0.834 | 0.56 | 3 | 0.906 | LOSO at the search edge |
-    | 48 | B | 0.840 | 0.60 | 6 | | 0.42 s later than group B |
-    | 49 | B | 0.798 | 0.69 | 7 | | 0.38 s later |
-    | 50 | B | 0.437 | 0.56 | 28 | | early parts later |
-    | 51 | B | 0.519 | 0.57 | 10 | | |
-    | 52 | B | 0.553 | 0.38 | 26 | | early parts later |
-    | 53 | B | 0.428 | 0.34 | 44 | | early parts later |
-    | 54 | B | 0.505 | 0.51 | 3 (2 halves) | | truncated, 698 s |
-    | 55 | B | 0.429 | 0.45 | 30 | | |
-    | 56 | B | 0.392 | 0.54 | 8 | | |
-    | 57 | B | 0.401 | 0.57 | 15 | | |
-    | 58 | B | 0.440 | 0.44 | 24 | | |
-    | 59 | B | 0.410 | 0.35 | 26 | | |
-    | 60 | B | 0.774 | 0.45 | 11 | | 0.35 s later |
+    | 31 | A | 0.770 | 0.32 | 18 | 0.720 | weak |
+    | 32 | A | 0.753 | 0.59 | 4 | 0.733 |  |
+    | 33 | A | 0.821 | 0.57 | 9 | 0.696 | ambiguous: second peak 0.72 s (r 0.50); LOSO picks it |
+    | 34 | A | 0.796 | 0.69 | 2 | 0.796 |  |
+    | 35 | A | 1.256 | 0.62 | 24 | 1.257 | was fallback (peak beyond the old 0.906 s window); now clean, 1.256 s (LOSO 1.257) |
+    | 36 | A | 0.888 | 0.65 | 32 | 0.905 | was near the old search edge; LOSO 0.905 now inside |
+    | 37 | A | 0.80 | 0.26 | 62 | 0.614 | fallback (parts disagree; own peak 0.621 s, r 0.26) |
+    | 38 | A | 0.791 | 0.51 | 10 | 0.786 |  |
+    | 39 | A | 0.805 | 0.29 | 8 | 0.938 | ambiguous: second peak 0.94 s (r 0.25); LOSO picks it |
+    | 40 | A | 0.80 | 0.16 | 760 | 1.378 | fallback (no match; best 1.38 s, r 0.16, parts MAD 760 ms) |
+    | 41 | A | 0.761 | 0.41 | 14 | 0.742 |  |
+    | 42 | A | 0.813 | 0.54 | 6 | 0.834 |  |
+    | 43 | A | 0.493 | 0.45 | 27 | 0.488 | 0.31 s earlier than group A |
+    | 44 | A | 0.812 | 0.49 | 16 | 0.822 |  |
+    | 45 | A | 0.791 | 0.68 | 7 | 0.788 |  |
+    | 46 | A | 0.765 | 0.68 | 6 | 0.752 |  |
+    | 47 | A | 0.977 | 0.68 | 13 | 0.991 | was 0.834 s (a shoulder, at the old window edge); ambiguous: shoulder 0.83 s (r 0.57) |
+    | 48 | B | 0.840 | 0.60 | 4 |  | 0.42 s later than group B |
+    | 49 | B | 0.798 | 0.70 | 8 |  | 0.38 s later |
+    | 50 | B | 0.438 | 0.54 | 26 |  | early parts later |
+    | 51 | B | 0.518 | 0.56 | 12 |  |  |
+    | 52 | B | 0.42 | 0.36 | 149 |  | now fallback (was 0.553 s): parts 1 and 5 lock onto far peaks (1.25 / 1.40 s), MAD 149 ms; whole-recording peak 0.553 s |
+    | 53 | B | 0.429 | 0.34 | 50 |  | early parts later; ambiguous: second peak 0.53 s (r 0.31); parts MAD 50.0 ms (at the limit) |
+    | 54 | B | 0.505 | 0.50 | 3 |  | truncated, 698 s; 2 halves |
+    | 55 | B | 0.42 | 0.45 | 101 |  | now fallback (was 0.429 s): parts 1 and 4 at 1.60 / 1.73 s, MAD 101 ms; whole-recording 0.433 s |
+    | 56 | B | 0.392 | 0.53 | 9 |  |  |
+    | 57 | B | 0.403 | 0.55 | 13 |  |  |
+    | 58 | B | 0.442 | 0.41 | 26 |  |  |
+    | 59 | B | 0.410 | 0.34 | 25 |  |  |
+    | 60 | B | 0.774 | 0.44 | 11 |  | 0.35 s later |
 
-    LOSO vs full template (group A, non-fallback): within 25 ms for 10 of 14; sub-31 -51 ms, sub-33 -126 ms (second
-    peak), sub-39 +100 ms and sub-47 +72 ms (LOSO at the 0.906 s search edge, so the search range, limited by the
-    fitted lags -1.5..+1.5 s, is too short for them). Group B's delays do not depend on its own data's template.
+    LOSO vs full template (group A, non-fallback, wide window): within 25 ms for 12 of 15; sub-31 -50 ms, sub-33
+    -125 ms and sub-39 +133 ms (both at their second peaks). None at the search edge any more. Group B's delays do not
+    depend on its own data's template. (Narrow window: sub-39/47's LOSO sat at the 0.906 s edge.)
   - **Held-out test** (`alignment/heldout.py`; run as `tmp/review/scripts/li2025_heldout_validate.py`, the same
     code before it moved into the repo; results `alignment_v3/heldout_test/`): delays
     estimated on parts 1,3,5 (same rule; group A against the leave-one-out template in a second variant) and scored
@@ -236,7 +277,8 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
     delays move by < 50 ms and the low tier's -0.2..0.6 s window partly absorbs delay errors. LOSO gives the same
     picture, so the circularity in group A does not drive the result. **Decision (by the instruction "if per-subject
     beats per-group held-out ... make it the default"): per-subject delays by default** with the full template
-    (LOSO reported only; it differs mainly where it hits the search edge).
+    (LOSO reported only; it differs mainly where it hits the search edge). The held-out test ran with the narrow
+    window (0..0.906 s) and was not repeated for the wide one.
 
 ## 8. Open questions (defaults in bold)
 1. Onset: **decided 2026-11-23: brain-based per-subject delays applied by default** (`onset.csv`, section 7;
@@ -248,11 +290,14 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
    0.428 s; `tmp/review/li2025/alignment_v2/per_subject/parts_per_subject.json`). Their early parts are the weakest
    fits (match r 0.12-0.14 in part 1), so a real latency change during playback cannot be told apart from noise; the
    adopted single delay fits the remaining ~60 % of their sessions. Users who need sub-second timing early in these
-   three recordings should treat it as uncertain by ~0.15 s. Still open: sub-36 near the search edge, and the LOSO
-   matches of sub-36/39/47 at it (the 0..0.9 s range is limited by the fitted lags -1.5..+1.5 s).
-2. Drift: **not corrected** (brain-based: group A -14 ppm, CI -22..-6 (5 parts: -11, CI -20..-2); group B shows a
-   ~0.12 s step at ~8-13 min instead of a drift). Open: whether group A's ~-12 ppm (~20 ms over the session) is worth
-   applying. Group B's "step" is resolved: it was mostly the mixture of subjects at ~0.8 and ~0.4 s (now per-subject),
+   three recordings should treat it as uncertain by ~0.15 s. **Wide window (user "do it", 2026-11-23)**: search
+   0..1.9 s; sub-35 1.256 s and sub-47 0.977 s adopted, sub-52/55 now fall back to 0.42 s by the unchanged MAD rule
+   (their whole-recording peaks stay at 0.553 / 0.433 s; validation r unchanged or slightly higher, section 9);
+   sub-33/39/47/53 flagged `onset_ambiguous` (section 7). Open for the user: keep sub-52/55 as fallbacks, and
+   whether the ambiguity flag should be stricter (only sub-39 was expected).
+2. Drift: **not corrected** (brain-based, pooled relative to each subject's own delay, 26 subjects: -17 ppm, 95% CI
+   -31..-4; below the 20 ppm threshold of the decision rule, section 7; earlier per-group estimate: group A -14 ppm,
+   group B a ~0.12 s step). Group B's "step" is resolved: it was mostly the mixture of subjects at ~0.8 and ~0.4 s (now per-subject),
    plus sub-50/52/53's later early parts (documented in item 1).
 3. Bads: **paper's MEG019/MEG048 for sub-32..47 + the 10x rule**.
 4. sub-54: **include the 698 s readable part** (flagged `truncated_upload` in the sidecar).
@@ -273,7 +318,8 @@ shipped onset). Results in `tmp/review/li2025/validation_offset{0,-0.8,5_control
 | group B, delayed 0.55 s | 0.0247 | 0.020 / - | 100 % | 94 ms | 16 ms |
 | control, +5 s (wrong) | -0.0020 | 1.0 / 1.0 | 0 % | - | - |
 | onset-corrected standardisation, per group (previous default) | 0.0236 | 0.020 / 0.048 | 90 % | 234 ms (109 / 219 per group) | 13 ms |
-| **onset-corrected standardisation, per subject (adaptor default)** | 0.0238 | 0.020 / 0.048 | 87 % | 78 ms (78 in both groups) | 13 ms |
+| onset-corrected standardisation, per subject, narrow window (0..0.906 s) | 0.0238 | 0.020 / 0.048 | 87 % | 78 ms (78 in both groups) | 13 ms |
+| **onset-corrected standardisation, per subject, wide window (adaptor default)** | 0.0242 | 0.020 / 0.048 | 87 % | 94 ms (A 94, B 78) | 13 ms |
 
 Per recording group (`validation_corrected/groups_before_after.png`; GFP / null median, lags -0.15..0.5 s):
 
@@ -285,6 +331,8 @@ Per recording group (`validation_corrected/groups_before_after.png`; GFP / null 
 | B | corrected 0.42 s | 0.0245 | 100 % | 219 ms (also ~65 ms, bump ~-30 ms) | 2.21 | 15 ms |
 | A | per subject (onset.csv) | 0.0234 | 82 % | 78 ms | 2.75 | 12 ms |
 | B | per subject (onset.csv) | 0.0243 | 92 % | 78 ms | 2.75 | 19 ms |
+| A | per subject, wide window | 0.0240 | 82 % | 94 ms | 2.97 | 12 ms |
+| B | per subject, wide window | 0.0244 | 92 % | 78 ms | 2.72 | 16 ms |
 
 Per subject vs per group (re-standardised 2026-11-23, all 30; `validation_subject/`, comparison
 `alignment_v3/validation/before_after.png` via `scripts/li2025_compare_runs.py`): mean r unchanged (0.0238 vs 0.0236;
@@ -293,6 +341,13 @@ same in both groups (max GFP / null 2.75 vs 2.16; peak 78 ms in both groups inst
 subjects gain: sub-43 0.0167 -> 0.0215, sub-48 0.0242 -> 0.0288, sub-49 0.0278 -> 0.0303; sub-60 0.0227 -> 0.0209.
 sub-54 (truncated, 3 segments; 0.42 -> 0.505 s) drops from p 0.02 to 0.08 (r 0.0205 -> 0.0177), hence B 92 %
 significant. These segments are not held out from the delay estimate; the held-out test is in section 7.
+
+Wide window vs narrow (re-standardised 2026-11-23, all 30; `alignment_v4/validation_subject/`, comparison
+`alignment_v4/validation/before_after.png` + `.md`): mean r 0.0238 -> 0.0242 (11/30 higher), group A max GFP ratio
+2.75 -> 2.97. **sub-35 0.0276 -> 0.0386** (0.80 -> 1.256 s); sub-47 0.0494 -> 0.0465 (0.834 -> 0.977 s; within the
+noise below); sub-52 0.0212 -> 0.0225 and sub-55 0.0275 -> 0.0280 (now fallbacks at 0.42 s). Subjects whose delay moved by only
+1-2 ms change by up to +-0.003 (e.g. sub-31 +0.0019, sub-34 -0.0022, sub-36 +0.0017, sub-50 -0.0028, sub-58
+-0.0020), so that is the noise floor of this comparison.
 
 The corrected standardisations give the low tier with TRF peaks at plausible
 latencies in both groups; the HF tiers again "pass" nominally (p 0.01) but are the lag-0 artefact (see above).

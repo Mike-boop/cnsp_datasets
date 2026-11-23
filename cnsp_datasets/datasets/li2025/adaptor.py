@@ -33,15 +33,16 @@ ONSET_METHOD = {
     "B": "brain-based: group B's multichannel TRF matched to group A's corrected TRF (best 0.44 s, bootstrap 95% CI "
          "0.41-0.80 s, skewed; user's reading 0.41 s) -> 0.42 s; a component at ~-40 ms remains unexplained "
          "(alignment/match_groups.py)"}
-# keep the thresholds in sync with alignment/subject_delays.py (MIN_R, MAX_MAD)
-SUBJECT_METHOD = ("brain-based, per subject (alignment/subject_delays.py, onset.csv): shift (0..0.9 s) at which the "
-                  "subject's uncorrected 0.5-8 Hz envelope TRF best matches group A's corrected TRF (space-time r, "
-                  "lags -0.2..0.6 s); group delay if the match r < 0.15 or the 5 parts' delays scatter (MAD > 50 ms). "
-                  "Circular (template from the same data); held-out test in notes.md section 7.")
+# keep the thresholds in sync with alignment/subject_delays.py (MIN_R, MAX_MAD, AMBIG_R, AMBIG_S)
+SUBJECT_METHOD = ("brain-based, per subject (alignment/subject_delays.py, onset.csv): shift (0..1.9 s) at which the "
+                  "subject's uncorrected 0.5-8 Hz envelope TRF (lags -1.5..2.5 s) best matches group A's corrected "
+                  "TRF (space-time r, lags -0.2..0.6 s); group delay if the match r < 0.15 or the 5 parts' delays "
+                  "scatter (MAD > 50 ms); onset_ambiguous if a second match peak > 100 ms away comes within 0.15 of "
+                  "the best r. Circular (template from the same data); held-out test in notes.md section 7.")
 NOTES = ("Raw OPM-MEG as shipped (Quanmag, 64 radial magnetometers, 1000 Hz, no HFC/SSS or other processing). The "
          "authors cut each recording at the video's start trigger (STI1 code 6 on the first sample; sub-49 code 1, "
          "sub-40 none) and to 1519.001 s. The sound starts later than that trigger (software trigger before "
-         "playback, inferred): by default the trial starts a per-subject delay (0.39-0.89 s) into the file, "
+         "playback, inferred): by default the trial starts a per-subject delay (0.39-1.26 s) into the file, "
          "estimated from the MEG itself (circular; onset_correction_s, onset_correction_method). "
          "No end trigger or audio copy: drift not corrected. The audio (2 channels, 44.1 kHz) is decoded from the "
          "shipped video and runs past the recording (cut at the point of use). Audiovisual stimulus: the "
@@ -96,7 +97,7 @@ class Li2025Adaptor:
         method = f"{SUBJECT_METHOD} {row.method}: {ONSET_METHOD[g]}" if row.fallback else SUBJECT_METHOD
         return dict(onset_correction_s=float(row.delay_s), onset_correction_method=method,
                     onset_match_r=float(row.match_r), onset_parts_mad_ms=float(row.parts_mad_ms),
-                    onset_fallback=bool(row.fallback))
+                    onset_fallback=bool(row.fallback), onset_ambiguous=bool(row.onset_ambiguous))
 
 
 def group(subject: int) -> str:
