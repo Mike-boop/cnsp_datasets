@@ -43,6 +43,7 @@ Last updated: 2026-11-23.
 | brodbeck2022 | brodbeck2022 | dev | low (mlr population only) | deleted | no audio (copyright) |
 | vanheusden2020 | vanheusden2020 | dev | mlr | deleted; user's manual download kept | |
 | presacco2016 | presacco2016 | dev | brainstem (30-250 Hz; mlr fails) | 171 GB in tmp (zips + extracted + pilot) | MEG only; pilot 20 subj; licence not stated; drift -37 ppm documented; full run pending storage |
+| karunathilake2023 | karunathilake2023 | dev | brainstem (clear speech; vocoded low only) | 203 GB in tmp (zips + extracted + pilot) | pilot 16/39; separate study from _aging; subject = R-number mod 1000; full run pending storage |
 
 Not in the campaign sheet: mai2023 (dev, iEEG, not reviewed), jehn2024 (dev), karengal2025 / koelbl2021 /
 schuller2022full (internal).
