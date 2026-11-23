@@ -446,6 +446,10 @@ latencies in both groups; the HF tiers again "pass" nominally (p 0.01) but are t
 - Data size: 30 participants, 12.43 h recorded (0.422 h each; sub-54 0.194 h); 12.42 h after the onset crop
   (1518.20 s group A, 1518.58 s group B, sub-54 697.58 s); listening time per participant = the 1519.2 s video.
 
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**poor**: no usable hardware timing (one trigger at sample 0, no audio copy, no end trigger); per-subject brain-based onset delays (template match to group A's TRF, wide search 0-1.9 s; 0.39-1.26 s; fallbacks sub-37/40; ambiguous sub-33/39/47/53/55) and a pooled brain-based Theil-Sen drift of -16.7 ppm, both applied by default (`brain_trf`, user decisions 2026-11-23); low tier only (mean r 0.0245, 90 % of subjects); circular (estimated and validated on the same MEG).
+
 ## Upstream issues
 - sub-54 `task-baba` and `task-replay` fifs are truncated in v1.0.5 (181857342 / 181501853 bytes, last data buffer
   incomplete; ~698 s of 1519 s / 697 s of 900 s). The derivative `sub-54_task-baba_desc-preproc_meg.fif` (39 MB)
