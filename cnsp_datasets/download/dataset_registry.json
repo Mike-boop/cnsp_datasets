@@ -396,6 +396,12 @@
       "url": "https://drum.lib.umd.edu/items/79afc7aa-560d-442d-b201-ab63e7f1e69f",
       "include": ["*_MEG.zip", "Stimuli.zip"]
     },
+    "cervantesconstantino2018": {
+      "source": "drum",
+      "identifiers": ["f3402619-3229-4b27-b4fb-3950f461dfda"],
+      "description": "Cervantes Constantino & Simon (2018) MEG (KIT), missing-speech restoration: short narrated sentences with noise probes, repeated presentations",
+      "url": "https://drum.lib.umd.edu/items/f3402619-3229-4b27-b4fb-3950f461dfda"
+    },
     "vanheusden2020": {
       "source": "eprints",
       "identifiers": ["438737"],
