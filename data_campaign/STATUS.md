@@ -55,6 +55,7 @@ Last updated: 2026-11-23.
 | li2025 | li2025 | dev | low (offset-corrected in validation only; higher tiers not credible) | 18.9 GB MEG download + 12 GB standardised in tmp | OPM-MEG; sound ~0.80 s (sub-31..47) / ~0.55 s (sub-48..60) after the file start: documented, user to decide; sub-54 truncated upstream |
 | diliberto2020 | diliberto2020 | dev | low (all 20; ceiling: 64 Hz envelope, no audio) | 12 GB download+extracted + 13 GB standardised in tmp | music (Bach); ADC counts scaled to V (inferred); presentation order not shipped; CC0 |
 | kern2022 | kern2022 | dev | brainstem (weak; pilot 4/35) | 207 GB download + 13 GB pilot in tmp | music; audio copy: onset +4.1 ms, drift +6.5 ppm implemented but off pending the user; full run ~115 GB |
+| chen2026 | chen2026 | dev | low (pilot 3/8; mlr pass is a ripple artefact) | download 49 GB (vault-backed) + pilots in tmp | t0 from triggers + per-chapter EEG latency (z >= 2 rule, user); drift +16 ppm documented; DNN +14 ms; decisions: latency column, drift, sub-02, deletion |
 
 Not in the campaign sheet: mai2023 (dev, iEEG, not reviewed), jehn2024 (dev), karengal2025 / koelbl2021 /
 schuller2022full (internal).
@@ -62,7 +63,6 @@ schuller2022full (internal).
 ## In progress
 | repo name | sheet id | branch | state | next |
 |---|---|---|---|---|
-| chen2026 | chen2026 | dev (notes only, no adaptor) | downloaded (49 GB) + NHR vault backup verified (md5 13/13 local, 178/178 sizes on vault); 281 chapters trigger-verified (24.8 h; sub-05 LP 14/27, sub-06 GD 4 absent) | user decisions on per-chapter latency (option B proposed) and +16 ppm drift; then adaptor reading `timing_table_proposal.csv` |
 | hassan2026 | hassan2026 | dev (registry + notes, 1273cb2) | blocked: HF repo gated (auto-approve), no token; 5.15 GB without video | user accepts terms + adds HF token (`hf`) to secrets.json; then download, explore, adaptor |
 
 ## Open items across datasets
