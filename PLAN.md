@@ -20,8 +20,12 @@ objective validation before anything counts as done.
 **Out (for now)**
 - Anatomy and source localisation (`AnatRecord` stays, unused).
 - CND output: `cnd_sink.py` is deprecated and will be removed; third parties can convert.
-- Applying DNN-based alignment in adaptors by default: `cnsp_datasets/align/` is used to check timing and, for
-  poorly aligned data, to estimate onsets/drift that are documented (json/csv in the dataset folder), not applied.
+- Applying brain-based alignment (DNN, TRF, decoders) in adaptors by default: `cnsp_datasets/align/` is used to
+  check timing and, for poorly aligned data, to estimate onsets/drift that are documented (json/csv in the dataset
+  folder), not applied. The user may approve an exception per dataset. Approved exceptions:
+  - li2025: onset correction on by default, 0.80 s for sub-31..47 and 0.42 s for sub-48..60, from population TRFs;
+    group B aligned to group A's TRF by multichannel template matching (`alignment_method` `brain_trf`; user,
+    2026-11-23).
 
 ## 2. Standard format
 
@@ -64,18 +68,31 @@ Users need this most when deciding whether a dataset supports high-frequency ana
 
 | field | example |
 |---|---|
-| `alignment_method` | `hw_trigger`, `sw_trigger`, `stimtrack_xcorr`, `onset_only`, `dnn`, `none` |
+| `alignment_method` | `hw_trigger`, `sw_trigger`, `stimtrack_xcorr`, `onset_only`, `dnn`, `brain_trf`, `none` |
 | `trigger_type` | `hardware`, `software`, `unknown`, with the source (paper/README/inferred) |
 | `drift_ppm` | estimated clock drift; `null` if not estimated |
 | `jitter_ms` | estimated onset jitter; `null` if not estimated |
 | `validation_tier` | highest tier passed: `none`, `low`, `mlr`, `brainstem` (section 5) |
 | `notes` | anything a user should know |
 
+`alignment_method` values (checked by `standardise/provenance.py`):
+- `hw_trigger` / `sw_trigger`: onsets (and drift, if estimated) from hardware / software triggers.
+- `stimtrack_xcorr`: onsets and drift from cross-correlating a recorded audio copy (stimtrack, aux) with the stimulus.
+- `onset_only`: one onset per trial (a start marker, or the authors' epochs cut at stimulus onset); no drift
+  estimate.
+- `dnn`: onsets or drift applied from a match-mismatch DNN (`align/`).
+- `brain_trf`: onsets or drift applied from the neural response itself (TRFs, decoders, template matching), only
+  as an approved exception (section 1).
+- `none`: not aligned.
+
 Dataset-level metadata: licence, citation(s), DOI, units as shipped, original reference, channel list and
 external sensors, stimulus availability.
 
 ## 3. Alignment
 
+- **Hardware-derived corrections are applied by default** (user): onsets and drift measured from an audio copy
+  (stimtrack, aux), hardware triggers or other acquisition hardware are on by default unless validation casts doubt
+  on them. Brain-based estimates are documented, not applied, unless the user approves an exception (section 1).
 - **Triggers:** use start/end triggers where available. Whether triggers are hardware or software is often
   undocumented; record what is known and how.
 - **Drift vs jitter:** when several participants heard the same stimulus, compare trigger-derived durations with the
@@ -250,4 +267,4 @@ other hosts).
   sound card's.
 - **Constant onset offsets documented, not applied** (user, 2026-11-22): pkueeg2025 (~-75 ms NeuroScan, ~-42 ms
   Neuracle, DNN vs accou2023) and wang2025 (~-0.19 s, DNN + TRF), alongside das2019 / bentum2023 /
-  broderick2019_cocktail (section 8).
+  broderick2019_cocktail (section 8). Applied as an approved exception: li2025 (section 1).
