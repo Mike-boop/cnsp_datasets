@@ -103,6 +103,8 @@ checkpoint are in section 8.
 - Not possible (onset triggers only). `drift_ppm = null`, `jitter_ms = null`.
 
 ## 8. Adaptor (implemented, 2026-11-23)
+- Shared code with the lab's other KIT datasets (R-number subjects, wav loaders, epoch/continuous-raw helpers,
+  bad-channel rules) in `datasets/simon_base/common.py` (2026-11-23; output unchanged).
 - Reads `**/meg_*/R*/R*_voc-raw.fif`, `**/split1.wav` (stimulus folder) and `**/Ratings_{main,control}.xlsx` under
   the download root (extracted zips).
 - Subject = **R-number mod 1000** (R2383 -> 383, R2963 -> 963, R3009 -> 9, R3015 -> 15; checked unique): the

@@ -2,15 +2,13 @@ from __future__ import annotations
 
 import glob
 import os
-from functools import lru_cache
 from typing import Callable, Iterable
 
 import mne
-import numpy as np
 import openpyxl
-from scipy.io import wavfile
 
-from cnsp_datasets.standardise.clock import crop_on_audio_clock
+from cnsp_datasets.datasets.simon_base.common import (audio_loader, check_unique_subjects, crop_meg, find_one,
+                                                      read_raw, rms_bads, stim_events, subject_number, wav_samples)
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -52,17 +50,16 @@ class Karunathilake2023Adaptor:
         self.root = download_dir
 
     def parse(self) -> Iterable[TrialRecord]:
-        stim_dir = os.path.dirname(_find(self.root, "**/split1.wav"))
-        ratings = {study: _ratings(_find(self.root, f"**/Ratings_{study}.xlsx")) for study in CONDITIONS}
+        stim_dir = os.path.dirname(find_one(os.path.join(self.root, "**/split1.wav")))
+        ratings = {study: _ratings(find_one(os.path.join(self.root, f"**/Ratings_{study}.xlsx")))
+                   for study in CONDITIONS}
         paths = sorted(glob.glob(os.path.join(self.root, "**", "meg_*", "R*", "R*_voc-raw.fif"), recursive=True))
         pids = [os.path.basename(p).split("_")[0] for p in paths]
-        if len({int(pid[1:]) % 1000 for pid in pids}) != len(pids):
-            raise ValueError("subject numbers (R-number mod 1000) are not unique")
+        check_unique_subjects(pids)
         for path, pid in zip(paths, pids):
             study = "control" if os.sep + "meg_control" + os.sep in path else "main"  # meg_main1, meg_main2
-            raw = _read(path)
-            events = mne.find_events(raw, stim_channel="STI 014", shortest_event=1, verbose="ERROR")
-            events = events[np.isin(events[:, 2], list(CONDITIONS[study]))]
+            raw = read_raw(path, FS)
+            events = stim_events(raw, CONDITIONS[study])
             if len(events) != 3 * N_PASSAGES:
                 raise ValueError(f"{path}: {len(events)} stimulus triggers, expected {3 * N_PASSAGES}")
             count = dict.fromkeys(CONDITIONS[study], 0)
@@ -83,18 +80,11 @@ class Karunathilake2023Adaptor:
                     in_authors_main_analysis=pid in AUTHORS_MAIN_ANALYSED if study == "main" else None)
                 wav = os.path.join(stim_dir, f"{name}.wav")
                 yield TrialRecord(
-                    subject=int(pid[1:]) % 1000, session=1, trial=trial, condition=CONDITIONS[study][code],
+                    subject=subject_number(pid), session=1, trial=trial, condition=CONDITIONS[study][code],
                     ns_type="meg",
-                    stimulus=[StimulusRecord("audio", name, _audio(wav), is_attended=True)],
-                    neural_data_fn=_meg_loader(path, onset, _n_samples(wav), description),
+                    stimulus=[StimulusRecord("audio", name, audio_loader(wav, AUDIO_FS), is_attended=True)],
+                    neural_data_fn=_meg_loader(path, onset, wav_samples(wav, AUDIO_FS, FS), description),
                 )
-
-
-def _find(root: str, pattern: str) -> str:
-    hits = sorted(glob.glob(os.path.join(root, pattern), recursive=True))
-    if len(hits) != 1:
-        raise FileNotFoundError(f"{pattern}: {len(hits)} matches under {root}, expected 1")
-    return hits[0]
 
 
 def _ratings(path: str) -> dict:
@@ -106,54 +96,12 @@ def _ratings(path: str) -> dict:
     return out
 
 
-def _audio(path: str) -> Callable[[], dict]:
-    def _load():
-        fs, x = wavfile.read(path)
-        if fs != AUDIO_FS or x.dtype != np.int16 or x.ndim != 1:
-            raise ValueError(f"{path}: expected {AUDIO_FS} Hz mono int16")
-        return {"fs": AUDIO_FS, "data": (x / 32768.0).astype(np.float32)[None, :]}
-
-    return _load
-
-
-def _n_samples(wav: str) -> int:
-    """Played wav length in samples at FS."""
-    fs, x = wavfile.read(wav, mmap=True)
-    if fs != AUDIO_FS:
-        raise ValueError(f"{wav}: expected {AUDIO_FS} Hz")
-    return round(len(x) * FS / AUDIO_FS)
-
-
 def _meg_loader(path: str, onset: int, n_out: int, description: str) -> Callable[[], mne.io.BaseRaw]:
+    """Trial from the onset trigger (opening R####_voc-raw.fif joins the -1 split); flat gradiometers as bads."""
     def _loader():
-        raw = _read(path)
-        picks = mne.pick_types(raw.info, meg=True, ref_meg=True, exclude=[])
-        out = crop_on_audio_clock(raw, onset, n_out, picks=picks)
-        out.info["bads"] = list(_flat_channels(path))
-        out.info["description"] = description
-        return out
+        return crop_meg(read_raw(path, FS), onset, n_out, description, rms_bads(path, FS, FLAT_RATIO))
 
     return _loader
-
-
-@lru_cache(maxsize=1)
-def _read(path: str) -> mne.io.BaseRaw:
-    """Continuous recording (opening R####_voc-raw.fif joins the -1 split)."""
-    raw = mne.io.read_raw_fif(path, preload=False, verbose="ERROR")
-    if raw.info["sfreq"] != FS:
-        raise ValueError(f"{path}: sfreq {raw.info['sfreq']}, expected {FS}")
-    return raw
-
-
-@lru_cache(maxsize=4)
-def _flat_channels(path: str) -> tuple:
-    """Gradiometers whose median rms over 10 x 10 s windows is below the across-channel median / FLAT_RATIO."""
-    raw = _read(path)
-    meg = mne.pick_types(raw.info, meg=True, ref_meg=False, exclude=[])
-    starts = np.linspace(60, raw.n_times / FS - 70, 10)
-    rms = np.median([raw.get_data(picks=meg, start=int(t * FS), stop=int((t + 10) * FS)).std(axis=1)
-                     for t in starts], axis=0)
-    return tuple(raw.ch_names[meg[j]] for j in np.where(rms < np.median(rms) / FLAT_RATIO)[0])
 
 
 ADAPTOR = Karunathilake2023Adaptor
