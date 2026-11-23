@@ -10,6 +10,7 @@ import mne
 import numpy as np
 import pandas as pd
 
+from cnsp_datasets.standardise.clock import crop_on_audio_clock
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -40,20 +41,23 @@ SUBJECT_METHOD = ("brain-based, per subject (alignment/subject_delays.py, onset.
                   "(each matched within +-0.3 s of the whole-recording delay) scatter (MAD > 50 ms); "
                   "onset_ambiguous if a second match peak > 100 ms away comes within 0.15 of the best r. "
                   "Circular (template from the same data); held-out test in notes.md section 7.")
-# Brain-based clock drift, pooled over subjects (notes.md section 7): documented, not applied. Keep in sync with
-# alignment/drift.py's drift.json ("all" and "all_without_50_52_53")
-DRIFT_PPM = -28.7
-DRIFT_SOURCE = ("brain-based, not applied (alignment/drift.py): pooled OLS slope of the 5 parts' onset delays "
-                "relative to each subject's own delay, 28 non-fallback subjects, 95% CI -49.9..-8.0 ppm (bootstrap "
-                "over subjects); Theil-Sen -16.7 ppm (CI -27.4..-9.5); without sub-50/52/53 (later early parts) "
-                "OLS -16.3 ppm (CI -34.1..+1.5). OLS as in the earlier estimates; it is more sensitive than "
-                "Theil-Sen to parts far from the subject's delay. Circular (template from the same data).")
+# Brain-based clock drift, pooled over subjects (notes.md section 7), corrected by default (user decision 2026-11-23).
+# MEG samples per audio sample - 1 (ppm): < 0, the MEG clock is slow, the sound delay shrinks over the session. Keep in
+# sync with alignment/drift.py's drift.json ("all", theil_sen; DRIFT_SOURCE quotes the rest).
+DRIFT_PPM = -16.7
+DRIFT_SOURCE = ("brain-based (alignment/drift.py), applied by default per user decision 2026-11-23: pooled Theil-Sen "
+                "slope of the 5 parts' onset delays (template match) relative to each subject's own delay, 28 "
+                "non-fallback subjects, 95% CI -27.4..-9.5 ppm (bootstrap over subjects). For reference: OLS -28.7 "
+                "ppm (CI -49.9..-8.0); without sub-50/52/53 (later early parts) OLS -16.3 (CI -34.1..+1.5), "
+                "Theil-Sen -12.5 (CI -19.4..-5.8). Circular (template from the same data).")
 NOTES = ("Raw OPM-MEG as shipped (Quanmag, 64 radial magnetometers, 1000 Hz, no HFC/SSS or other processing). The "
          "authors cut each recording at the video's start trigger (STI1 code 6 on the first sample; sub-49 code 1, "
          "sub-40 none) and to 1519.001 s. The sound starts later than that trigger (software trigger before "
          "playback, inferred): by default the trial starts a per-subject delay (0.39-1.26 s) into the file, "
          "estimated from the MEG itself (circular; onset_correction_s, onset_correction_method). "
-         "No end trigger or audio copy: drift not corrected (brain-based estimate in drift_ppm, not applied). The "
+         "No end trigger or audio copy: the clock drift is brain-based too (drift_ppm, drift_source), corrected by "
+         "default in the crop (one quintic-spline resampling; drift_corrected_ppm). The delays are session-midpoint "
+         "estimates (onset_estimate_s), so with drift the crop starts at onset_estimate_s - drift x the midpoint. The "
          "audio (2 channels, 44.1 kHz) is decoded from the shipped video and runs past the recording (cut at the "
          "point of use). Audiovisual stimulus: the "
          "participants also watched the video (not stored). Sensor positions from the helmet geometry; dev_head_t "
@@ -72,20 +76,24 @@ class Li2025Adaptor:
 
     Neural data: the shipped baba file (the authors' crop from the video trigger), from the brain-based sound onset
     (onset="subject", default: per-subject delay from onset.csv; "group": 0.80 s for sub-31..47, 0.42 s for
-    sub-48..60; "none": from the first sample), magnetometers only, bads per participant. Stimuli: the video's audio
-    track (ffmpeg decode, both channels), and the shipped word annotation (Whisper + manual review; speaker, timing,
-    linguistic features) and transcript as CSV text. See notes.md.
+    sub-48..60; "none": from the first sample), on the audio clock: the brain-based drift (drift_ppm, default
+    DRIFT_PPM = -16.7, MEG samples per audio sample - 1; 0 = off) is corrected in the crop, which then starts at the
+    delay minus the drift accumulated by the session midpoint (the delays are whole-recording estimates).
+    Magnetometers only, bads per participant. Stimuli: the video's audio track (ffmpeg decode, both channels), and the
+    shipped word annotation (Whisper + manual review; speaker, timing, linguistic features) and transcript as CSV text.
+    See notes.md.
     """
 
-    def __init__(self, download_dir: str, onset: str = "subject"):
+    def __init__(self, download_dir: str, onset: str = "subject", drift_ppm: float = DRIFT_PPM):
         if onset not in ("subject", "group", "none"):
             raise ValueError(f"onset must be 'subject', 'group' or 'none', not {onset!r}")
         self.root = download_dir
         self.onset = onset
+        self.drift_ppm = float(drift_ppm)
 
     def parse(self) -> Iterable[TrialRecord]:
         video = os.path.join(self.root, VIDEO)
-        alignment = "onset_only" if self.onset == "none" else "brain_trf"
+        alignment = "onset_only" if self.onset == "none" and not self.drift_ppm else "brain_trf"
         stimuli = [StimulusRecord("audio", NAME, _audio_loader(video), True, "audio")]
         stimuli += [StimulusRecord("audio", NAME, _text_loader(os.path.join(self.root, "sourcedata", "annotation", f)),
                                    True, feature) for feature, f in ANNOTATIONS.items()]
@@ -95,7 +103,8 @@ class Li2025Adaptor:
             bads = (PAPER_BADS if 32 <= subject <= 47 else []) + EXTRA_BADS.get(sub, [])
             yield TrialRecord(subject=subject, session=1, trial=1, condition="audiovisual", ns_type="meg",
                               stimulus=stimuli, neural_data_fn=_meg_loader(fif, bads, group(subject),
-                                                                           alignment, self.onset_info(subject)))
+                                                                           alignment, self.onset_info(subject),
+                                                                           self.drift_ppm, self.onset != "none"))
 
     def onset_info(self, subject: int) -> dict:
         """Delay (s) of the sound after the first sample, and its provenance, for the chosen onset mode."""
@@ -137,20 +146,25 @@ def onset_table() -> pd.DataFrame:
     return pd.read_csv(ONSET_CSV, index_col="subject", keep_default_na=False)
 
 
-def _meg_loader(fif: str, bads: list[str], group: str, alignment: str, onset: dict) -> Callable[[], mne.io.BaseRaw]:
+def _meg_loader(fif: str, bads: list[str], group: str, alignment: str, onset: dict, drift_ppm: float,
+                midpoint: bool) -> Callable[[], mne.io.BaseRaw]:
+    """midpoint: onset_correction_s is a whole-recording (session-midpoint) delay; the crop starts drift earlier."""
     def _loader():
         raw = readable(fif)
         trigger = raw.get_data(picks="STI1", stop=1)[0, 0]
-        truncated, first = raw.n_times < N_TIMES, raw.first_samp
-        raw.pick("mag").crop(tmin=onset["onset_correction_s"]).load_data(verbose="ERROR")
+        truncated, first, sfreq = raw.n_times < N_TIMES, raw.first_samp, raw.info["sfreq"]
+        drift, estimate = drift_ppm * 1e-6, onset["onset_correction_s"]
+        start = estimate - drift * raw.n_times / 2 / sfreq if midpoint else estimate
+        info = {**onset, "onset_correction_s": round(start, 6), "onset_estimate_s": estimate}
+        raw = crop_on_audio_clock(raw, start * sfreq, int(np.ceil(raw.n_times / (1 + drift))), drift, picks="mag")
         raw.info["bads"] = bads
         raw.info["description"] = provenance(
             alignment, "unknown (not documented; inferred software: the sound starts after it). Onset = the STI1 "
             "code on the first sample of the authors' crop + onset_correction_s", NOTES, drift_ppm=DRIFT_PPM,
             first_sample_trigger=int(trigger), crop_first_samp=int(first),
-            recording_group=group, **onset, truncated_upload=bool(truncated), bads=bads,
+            recording_group=group, **info, truncated_upload=bool(truncated), bads=bads,
             reference="not applicable (MEG)", sss="none (raw as shipped)",
-            drift_source=DRIFT_SOURCE, drift_corrected_ppm=0.0,
+            drift_source=DRIFT_SOURCE, drift_corrected_ppm=drift_ppm,
             validation_tier="low", validation_note=VALIDATION_NOTE)
         return raw
 

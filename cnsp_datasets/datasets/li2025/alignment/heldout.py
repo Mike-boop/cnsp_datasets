@@ -83,7 +83,7 @@ def main(argv):
     runs = [(e, r) for e in SCORE_ON for r in RUNS]
     results = {r: [] for r in runs}
     cache, audio = {}, None
-    for rec in Li2025Adaptor(src, onset="none").parse():
+    for rec in Li2025Adaptor(src, onset="none", drift_ppm=0).parse():
         if rec.subject == 54 or (only and rec.subject not in only):
             continue
         f = os.path.join(out, "cache", f"sub-{rec.subject}.pkl")

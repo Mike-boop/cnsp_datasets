@@ -97,13 +97,24 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
   `"group"`; `onset_only` with `onset="none"`), `trigger_type` "unknown (inferred software ...) +
   onset_correction_s", plus `onset_correction_s`, `onset_correction_method`, `recording_group` and, only with
   `onset="subject"`, `onset_match_r`, `onset_parts_mad_ms`, `onset_fallback`, `onset_ambiguous`. Drift:
-  `drift_ppm` = the brain-based pooled estimate (section 7, not applied; recorded in every onset mode, since it does
-  not depend on the onset choice), `drift_source` (its method and CIs, text), `drift_corrected_ppm = 0`.
+  `drift_ppm` = the brain-based pooled Theil-Sen estimate (-16.7 ppm, section 7), `drift_source` (method, CIs, OLS
+  and sensitivity values for reference), `drift_corrected_ppm` = the applied value (-16.7 by default, 0 with
+  `drift_ppm=0`). `onset_correction_s` is the actual start of the crop and `onset_estimate_s` the table/group delay
+  (see the drift bullet below). `alignment_method = onset_only` only with `onset="none"` and the drift off.
 - This is an exception to the campaign rule that constant brain/DNN-based offsets are documented, not applied
   (PLAN.md section 8): the delays are large (0.4-0.8 s) and the shipped onset is a software trigger, not the sound.
 - Estimation: section 7; code in `alignment/` (reads the download through the adaptor with `onset="none"`,
-  so it reproduces the delays from code alone; see `alignment/README.md`).
-- No drift correction (no clock reference; brain-based estimate in section 7, recorded as `drift_ppm`).
+  `drift_ppm=0`, so it reproduces the delays from code alone; see `alignment/README.md`).
+- **Drift correction on by default (user decision 2026-11-23: "apply Theil-Sen")**: no clock reference exists, so the
+  brain-based pooled Theil-Sen estimate (**-16.7 ppm**, 95% CI -27.4..-9.5; section 7) is corrected in the single crop
+  (`standardise.clock.crop_on_audio_clock`, one quintic-spline resampling, as chen2023); `Li2025Adaptor(drift_ppm=0)`
+  turns it off and reproduces the previous output bit-exactly. **Sign**: `alignment/drift.py`'s slope is d(delay)/dt (>
+  0: the sound delay grows, MEG clock fast); `clock.py`'s drift is MEG samples per audio sample - 1 (> 0: neural clock
+  fast; the delay grows by drift x t). Same convention, so the estimate is passed unchanged: -16.7 ppm = MEG clock slow,
+  the delay shrinks by ~25 ms over 1519 s. **Anchor**: the delays (onset.csv, group delays) are whole-recording
+  estimates, i.e. the delay at the session midpoint, so the crop starts at delay - drift x midpoint (+12.7 ms for a full
+  recording, +5.8 ms for sub-54's 698 s); `onset="none"` starts at the first sample. The output is ~12 samples longer
+  than before (1518460 for sub-52 vs 1518448).
 
 ## 7. Cross-subject duration check and brain-based timing
 - Durations: all baba files 1519.001 s (sub-54 698 s, truncated); audio 1519.235 s. Fixed-length crops, so they
@@ -147,8 +158,9 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
   30-60 Hz (notched; raw or HFC; `scripts/li2025_artefact.py`, `artefact_test*/`) and the 45-55 Hz band (the
   soundtrack's 50 Hz hum is only 1.8x its neighbours) give nothing above the noise maximum in single subjects. No
   stimtrack-like leakage, so the onset cannot be measured precisely.
-- **Drift** (not measurable from triggers; brain-based, **not applied**). First estimate, per group (the earlier
-  `alignment/drift.py`, commit b90915c; superseded by the pooled estimate below): per subject, ridge
+- **Drift** (not measurable from triggers; brain-based; **applied since 2026-11-23, see "Applied" below**). First
+  estimate, per group (the earlier `alignment/drift.py`, commit b90915c; superseded by the pooled estimate below): per
+  subject, ridge
   TRFs on the three thirds of the uncorrected recording (~506 s each, centres 4.2 / 12.7 / 21.1 min); delay of each
   third = shift of best space-time match to group A's corrected template (-0.2..0.6 s, 58 channels, parabolic
   refinement); slope over the thirds (> 0: MEG clock fast vs audio); bootstrap over subjects (1000). Figure
@@ -209,6 +221,16 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
     20 ppm); Theil-Sen (-16.7) and OLS without sub-50/52/53 (-16.3, CI includes 0) do not. Not applied: a drift
     correction changes the data and needs the user's sign-off (open, section 8 item 2).** Recorded as `drift_ppm =
     -28.7` (OLS, the headline estimator so far) with both estimators in `drift_source`.
+  - **Applied (user decision 2026-11-23: "apply Theil-Sen")**: the pooled Theil-Sen estimate, **-16.7 ppm** (95% CI
+    -27.4..-9.5), is corrected by default (section 6; `drift_ppm` / `drift_corrected_ppm` -16.7; OLS and the
+    without-sub-50/52/53 values kept in `drift_source` for reference). **Check on the corrected data**
+    (`tmp/review/scripts/li2025_drift_check.py`, `tmp/review/li2025/alignment_v6/drift_check.json`): the same per-part
+    template match on the drift-corrected recordings (shipped onset, 28 non-fallback subjects) gives a pooled
+    Theil-Sen slope of **-0.9 ppm** (before -16.7) and OLS -10.5 (before -28.7; the rest is the far parts that drive
+    OLS). Per subject the slope rises by a median 16.9 ppm (sub-46: -17.9 -> 0.0 ppm), confirming the sign. The
+    whole-recording delays move by the expected +12.7 ms (median 13.5; sub-54 +5.8 ms), except sub-50/55/58 (+20-26
+    ms) and **sub-53 (0.429 -> 0.553 s: it switches to its second peak, already flagged `onset_ambiguous`)**. The
+    adopted delays stay those of `onset.csv` (estimated on the uncorrected data, anchored at the midpoint).
 - **Per-subject delays (adopted 2026-11-23, `alignment/subject_delays.py`; figures and tables in
   `tmp/review/li2025/alignment_v3/`)**. The per-part view (`alignment_v2/per_subject/`) showed that the delay
   varies per subject, not per spectral group: sub-48/49/60 (group B) sit at ~0.80 s and sub-43 (group A) at ~0.49 s,
@@ -330,13 +352,13 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
    parts matched within +-0.3 s of the whole-recording delay (section 7, v5) -> sub-52 0.553 s, sub-55 0.433 s
    (now also `onset_ambiguous`); fallbacks are sub-37/40. Open for the user: whether the ambiguity flag should be
    stricter (sub-33/39/47/53/55 flagged; only sub-39 was expected).
-2. Drift: **not corrected; recorded as `drift_ppm` (user, 2026-11-23)**. Brain-based, pooled relative to each
-   subject's own delay with the restricted part matching (v5, 28 subjects): OLS -28.7 ppm (95% CI -49.9..-8.0),
-   Theil-Sen -16.7 (-27.4..-9.5); without sub-50/52/53 OLS -16.3 (-34.1..+1.5). **Open for the user**: OLS now
-   formally meets the decision rule (CI excludes 0, |drift| > 20 ppm), Theil-Sen and the variant without
-   sub-50/52/53 do not; the OLS rise comes from parts 150-300 ms off (section 7). v4 (parts > 150 ms dropped, 26
-   subjects): -17 ppm (-31..-4). Earlier per-group estimate: group A -14 ppm, group B a ~0.12 s step. Group B's "step" is resolved: it was mostly the mixture of subjects at ~0.8 and ~0.4 s (now per-subject),
-   plus sub-50/52/53's later early parts (documented in item 1).
+2. Drift: **decided 2026-11-23 (user: "apply Theil-Sen"): corrected by default, -16.7 ppm** (pooled Theil-Sen, 95% CI
+   -27.4..-9.5; `drift_ppm=0` turns it off; sections 6-7). Brain-based, pooled relative to each subject's own delay with
+   the restricted part matching (v5, 28 subjects); for reference OLS -28.7 ppm (-49.9..-8.0), without sub-50/52/53 OLS
+   -16.3 (-34.1..+1.5). OLS had formally met the decision rule, Theil-Sen not; the user chose Theil-Sen and to apply it.
+   v4 (parts > 150 ms dropped, 26 subjects): -17 ppm (-31..-4). Earlier per-group estimate: group A -14 ppm, group B a
+   ~0.12 s step. Group B's "step" is resolved: it was mostly the mixture of subjects at ~0.8 and ~0.4 s (now
+   per-subject), plus sub-50/52/53's later early parts (documented in item 1).
 3. Bads: **paper's MEG019/MEG048 for sub-32..47 + the 10x rule**.
 4. sub-54: **include the 698 s readable part** (flagged `truncated_upload` in the sidecar).
 5. quiz/replay runs: **not standardised** (no auditory stimulus).
@@ -358,7 +380,8 @@ shipped onset). Results in `tmp/review/li2025/validation_offset{0,-0.8,5_control
 | onset-corrected standardisation, per group (previous default) | 0.0236 | 0.020 / 0.048 | 90 % | 234 ms (109 / 219 per group) | 13 ms |
 | onset-corrected standardisation, per subject, narrow window (0..0.906 s) | 0.0238 | 0.020 / 0.048 | 87 % | 78 ms (78 in both groups) | 13 ms |
 | onset-corrected standardisation, per subject, wide window, unrestricted parts (v4) | 0.0242 | 0.020 / 0.048 | 87 % | 94 ms (A 94, B 78) | 13 ms |
-| **onset-corrected standardisation, per subject, wide window, parts within 0.3 s (v5, adaptor default)** | 0.0241 | 0.020 / 0.048 | 87 % | 94 ms (A 94, B 78) | 13 ms |
+| onset-corrected standardisation, per subject, wide window, parts within 0.3 s (v5) | 0.0241 | 0.020 / 0.048 | 87 % | 94 ms (A 94, B 78) | 13 ms |
+| **v5 + drift correction -16.7 ppm (v6, adaptor default)** | 0.0245 | 0.020 / 0.048 | 90 % | 94 ms (A 94, B 78) | 13 ms |
 
 Per recording group (`validation_corrected/groups_before_after.png`; GFP / null median, lags -0.15..0.5 s):
 
@@ -374,6 +397,8 @@ Per recording group (`validation_corrected/groups_before_after.png`; GFP / null 
 | B | per subject, wide window | 0.0244 | 92 % | 78 ms | 2.72 | 16 ms |
 | A | per subject, v5 (unchanged delays) | 0.0240 | 82 % | 94 ms | 2.96 | |
 | B | per subject, v5 (sub-52/55 own delays) | 0.0242 | 92 % | 78 ms | 2.73 | |
+| A | v6 (drift corrected) | 0.0238 | 82 % | 94 ms | 2.97 | |
+| B | v6 (drift corrected) | 0.0253 | 100 % | 78 ms | 2.85 | |
 
 Per subject vs per group (re-standardised 2026-11-23, all 30; `validation_subject/`, comparison
 `alignment_v3/validation/before_after.png` via `scripts/li2025_compare_runs.py`): mean r unchanged (0.0238 vs 0.0236;
@@ -396,6 +421,14 @@ its TRF peak moves from 125 ms to 0 ms) and **sub-55 0.0280 -> 0.0275** (0.42 ->
 narrow-window values and within the +-0.003 noise floor above, both still p 0.02. Mean r 0.0242 -> 0.0241; everything
 else identical. The validation does not favour the own delays over the group delay for these two (nor clearly
 against); the user's decision rests on their whole-recording matches.
+
+Drift correction (v6; re-standardised 2026-11-24, all 30; `alignment_v6/validation_subject/`, same settings as
+`alignment_v5/validation_subject/`): mean r 0.0241 -> 0.0245 (16/30 higher, changes -0.0026..+0.0036), 90 % of
+subjects significant (sub-54 0.0177 -> 0.0207, p 0.08 -> 0.02); group B 0.0242 -> 0.0253 (13/13 significant, max GFP
+ratio 2.73 -> 2.85), group A unchanged (0.0240 -> 0.0238). Largest gains sub-50 +0.0036, sub-47 +0.0034, sub-60
++0.0032; sub-36 -0.0026. The validator's segment-offset drift (median over subjects, SE ~90 ppm) moves from -29.6 to
++8.7 ppm. Not independent of the estimate (same data, circular), and the changes are mostly within the +-0.003 noise
+floor; the pooled check in section 7 is the direct test.
 
 The corrected standardisations give the low tier with TRF peaks at plausible
 latencies in both groups; the HF tiers again "pass" nominally (p 0.01) but are the lag-0 artefact (see above).

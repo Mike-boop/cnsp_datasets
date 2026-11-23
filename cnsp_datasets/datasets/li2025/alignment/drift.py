@@ -7,8 +7,9 @@ common.PART_WINDOW = 0.3 s of the subject's whole-recording delay; sub-54: two h
 left out), the part delays are taken relative to the subject's own whole-recording delay, which removes the spread of
 delays between subjects. Pooled OLS slope over the part centres (ppm; > 0: the delay grows, i.e. the MEG clock is
 fast relative to the audio, as cnsp_datasets.standardise.clock), for all subjects and per group, with a bootstrap
-over subjects (1000) for its 95% CI; Theil-Sen over the same points as a robustness check, and all subjects without
-LATE_EARLY as a sensitivity check. Per-subject slopes are noisy and shown for reference. Circular: the template is group A's own corrected TRF.
+over subjects (1000) for its 95% CI; Theil-Sen over the same points (the adaptor's DRIFT_PPM, applied by default:
+user decision 2026-11-23), and all subjects without LATE_EARLY as a sensitivity check. Per-subject slopes are noisy
+and shown for reference. Circular: the template is group A's own corrected TRF.
 """
 import json
 import os

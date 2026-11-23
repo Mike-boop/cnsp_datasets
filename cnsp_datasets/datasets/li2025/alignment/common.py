@@ -1,7 +1,7 @@
 """
 Shared pieces of the li2025 onset/drift scripts: the speech envelope and the preprocessed MEG, read from the download
-through the adaptor without onset correction, the lagged design of a ridge forward TRF, the saved TRF weights, the
-cached wide-lag TRFs whose delays are estimated and the template match that turns a TRF into a delay.
+through the adaptor without onset or drift correction, the lagged design of a ridge forward TRF, the saved TRF
+weights, the cached wide-lag TRFs whose delays are estimated and the template match that turns a TRF into a delay.
 
 Preprocessing (analysis only; the standardised data stay raw): magnetometers without bads and MEG062 (on the z-axis,
 undefined HFC basis), homogeneous field correction (order 1), 0.1 Hz high-pass of the whole recording; envelope
@@ -41,7 +41,7 @@ def envelope(download_dir: str) -> np.ndarray:
 
 def meg(download_dir: str, skip=(54,)):
     """Yield (subject, raw info, Y (samples x channels)) per participant; sub-54 (truncated) skipped by default."""
-    for rec in Li2025Adaptor(download_dir, onset="none").parse():
+    for rec in Li2025Adaptor(download_dir, onset="none", drift_ppm=0).parse():
         if rec.subject in skip:
             continue
         raw = rec.neural_data_fn()
