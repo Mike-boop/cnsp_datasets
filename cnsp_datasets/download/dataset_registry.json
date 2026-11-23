@@ -337,7 +337,8 @@
       "source": "drum",
       "identifiers": ["79afc7aa-560d-442d-b201-ab63e7f1e69f"],
       "description": "Presacco et al. (2016) MEG (KIT) and EEG, younger and older adults, speech in quiet and noise",
-      "url": "https://drum.lib.umd.edu/items/79afc7aa-560d-442d-b201-ab63e7f1e69f"
+      "url": "https://drum.lib.umd.edu/items/79afc7aa-560d-442d-b201-ab63e7f1e69f",
+      "include": ["*_MEG.zip", "Stimuli.zip"]
     },
     "vanheusden2020": {
       "source": "eprints",
