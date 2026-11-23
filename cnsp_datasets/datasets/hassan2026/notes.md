@@ -238,3 +238,7 @@ Data size: 16 participants x 100 evaluation trials x 30 s = 13.3 h (0.83 h each)
 - Card: "raw ADC units"; the values are volts.
 - `comprehension_correct` is False for all 1,600 evaluation trials.
 - Demographics in `subjects.csv` are empty.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**poor**: DNN-derived onset +0.718 s applied by default (unusable without it; option off); software unix-clock anchors; devices 1/2 agree within 0.5 ms; low tier.

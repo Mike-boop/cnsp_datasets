@@ -179,3 +179,8 @@ mismatched-trial null), plot `tmp/review/coherence_peaky/stoll2025_attention.png
 A swapped attention label would flip both bands, so a labelling error is unlikely; the lowest bins are the weakest
 estimates (5 cycles per window at 1 Hz, small noisy null), and attended/ignored come from different trials and
 blocks. Not investigated further (per-subject ratios or 10 s windows would tell).
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+- stoll2025: **good**: Sound-card / TDT triggers (tube delay included); ER-2 artefact at -0.8 ms (exp1, exp2 all subj, exp3 per trial); drift from S 2 markers or, in exp2, -5 ppm from the artefact; brainstem tier.
+- stoll2025_cortex: **good**: Same recordings and markers as stoll2025 (artefact-verified); low TRF 109 ms; 'brainstem' tier from a weak 8 ms peak.

@@ -17,3 +17,7 @@ latency difference. Unverified: the release has no stimtrack or triggers to chec
 
 Users who need absolute timing can shift the EEG ~80 ms earlier relative to the stimulus. A future adaptor option
 may estimate and apply such offsets (PLAN.md section 8). Evidence: `tmp/review/timing.md`, `tmp/review/dnn_offsets/`.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**poor**: Authors' 128 Hz preprocessed EEG, no triggers/stimtrack; DNN -81.5 ms in all 16 subj documented, not applied, read as an alignment offset in the release (timing error).

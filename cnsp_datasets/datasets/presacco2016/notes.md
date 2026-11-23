@@ -228,3 +228,7 @@ foreground minutes + 2 background minutes. Not yet in `tmp/review/data_size.md` 
   younger / older NH files while some channels are zeroed, and 0-based in the HI files.
 - Three file-naming schemes in the HI group; S04 HI `S04HL_M6L_II.mat`.
 - S15 HI `S15_HL_M6H.mat` repetition 2: no offset trigger inside the epoch.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Onset-trigger edge (type unknown), no stimtrack; decoder lag 0 +- 10 ms; -37 ppm drift-or-end-trigger documented, not applied; 30-250 Hz passes, flat at negative lags.

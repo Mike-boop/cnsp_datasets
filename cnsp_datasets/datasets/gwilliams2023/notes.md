@@ -80,3 +80,7 @@ onsets, -46 ppm drift). Results and figure: `tmp/review/gwilliams2023/validation
 ## 9. Data size
 27 participants (22 with two sessions), 1.90 h per participant, 51.4 h in total (sum of the wav durations of each
 recording's sounds; `tmp/review/scripts/meg/meg_data_size.py`).
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**good**: Onset measured per sound on the audio copy MISC 009 (shipped triggers 44 ms early); drift -46 ppm from the audio copy corrected; brainstem tier, 30-250 Hz peak 35 ms, flat at negative lags.

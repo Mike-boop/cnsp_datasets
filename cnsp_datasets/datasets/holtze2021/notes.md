@@ -243,3 +243,7 @@ Evidence in `/data_storage/gu08wuvu/datasets/tmp/review/holtze2021/{validation,d
   native, 128 Hz within 0.05): ratio to surrogate attended / ignored 0.2-1 Hz 9.2 / 5.7, 1-4 Hz 3.3 / 3.6,
   4-8 Hz 4.7 / 3.7, 8-15 Hz 2.2 / 1.6 (8-10 Hz 3.9 / 2.3, 10-12 Hz 2.2 / 1.7, 12-14 Hz 1.25 / 1.36),
   15-30 Hz 1.1 / 1.2, 30-250 Hz 1.0-1.1. Above the surrogate to ~10-12 Hz; attended > ignored at 0.2-1 and 4-8 Hz.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Software LSL markers with the authors' 102 ms delay (paper; confirmed by splices); ~7 ms jitter; DNN -7.9 ms 'no correction'; drift brain-based -5.6 ppm not applied; low tier.

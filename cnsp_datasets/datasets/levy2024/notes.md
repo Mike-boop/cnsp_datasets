@@ -358,3 +358,7 @@ and within the refit-sweep bound (+29 ms [-13, +58]). Plausibly a small constant
 Unity/VR setup (Unity audio buffering; not measured, unverified); a population difference cannot be excluded.
 Per-subject offsets are noisy (2-3 trials per subject). **User decision (2026-11-22, project-wide): constant DNN
 offsets are documented, not applied**; the adaptor is unchanged and the README states the offset.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Authors' trials at the Unity speech-onset marker, no stimtrack; DNN -9.2/-7.1 ms (vs weissbart +3.4) documented, possibly Unity output latency, unverified; low tier.

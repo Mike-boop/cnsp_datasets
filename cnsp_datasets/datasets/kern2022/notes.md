@@ -163,3 +163,7 @@ the trigger, no drift; `tmp/review/kern2022/validation_uncorrected/`) and with t
 4. Carry the MIDI note annotations (`MidiDataMEG.csv`) as a TextGrid `notes` tier? Recommended: later, after
    checking pieces 111/112.
 5. Drop EEG057-064 and UADC001/003/004/008-013 (armeni2022 decision)? Recommended: yes.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**good**: Software trigger + 4.1 ms measured on audio copy UADC002 (6/19 pieces fit, 210 fits; others get the constant); test snippets measured per trial; drift +6.5 ppm from the audio copy (logs +6.0) corrected; brainstem (pilot 4).

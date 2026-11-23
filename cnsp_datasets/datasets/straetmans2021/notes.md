@@ -169,3 +169,7 @@ narrative start/stop markers only. Neural data are raw (DC, unfiltered, original
 - Timing evidence: marker-duration jitter and LSL drift (section 7, `explore/drift_check.png`); narrative-onset ERP
   inconclusive (section 6, `explore/onset_erp.png`, `explore/onset_erp_sit.png`).
 - Not run (need a stimulus): coherence, DNN offsets, per-condition validation, attention contrast.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**none**: No stimulus shipped (software LSL markers, Android latency uncorrected); sanity checks only.

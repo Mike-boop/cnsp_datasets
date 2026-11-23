@@ -442,3 +442,7 @@ subject's live channels (64, or 33 for the 10 dead-channel subjects).
   | single-male | 25 | 2.54 | 2.09 | 1.28 | 1.10 | 0.98 | 1.03 | 1.03 | 1.00 |
 
   Native and 128 Hz agree within 0.01 below 60 Hz; the two highest bands are native only.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**poor**: Software triggers for section 1, the rest from a timeline; drift +164 ppm brain-derived applied; DNN ~-200 ms documented, 'mostly timing'; low tier.

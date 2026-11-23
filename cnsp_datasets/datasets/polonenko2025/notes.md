@@ -100,3 +100,7 @@ The validator scores the first stimulus by name, i.e. one of the talkers in mixt
 Responses to one talker fall with the number of talkers, as in the paper; -6 dB (one talker of five) passes the
 low tier only. The ER-2 artefact near 0 ms is smaller than in polonenko2024: half the trials of sub-07 on are
 inverted, which cancels part of it in the pooled TRF.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**good**: Sound-card triggers + 0.81 ms; polarity-following ER-2 artefact exactly at -0.81 ms confirms the onset to one 10 kHz sample; drift 24-26 ppm corrected; brainstem tier.

@@ -193,3 +193,7 @@ pulse pairing.
   depends on S03 (fails without it, p 0.069). **Tier: mlr** (pooled and quiet).
 - The validator's brain-based per-trial lag (jitter SD 210 ms, 12 offsets at the edge) is noise at r ~ 0.01, not a
   timing measurement; the hardware pulses give sub-ms jitter (section 7).
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**good**: Triggers locked to the sound card (pulses match the wav trigger track < 0.35 ms); S03 electrical audio copy puts them ~2 ms late (hardware, documented); drift -24 ppm from pulses corrected; mlr tier.

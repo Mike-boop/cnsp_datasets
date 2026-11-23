@@ -254,3 +254,7 @@ Flat above ~10 Hz; dip at 10.5 Hz = the authors' filter edge. The noise floor of
 trial count, so conditions with different trial counts are not directly comparable: the ignored-stream curve (408
 trials) being as high as the attended ones is not evidence against attention effects; the backward model
 (attended > unattended, section 10) is.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Authors' DSS epochs; 1.5 s causal-FIR delay removed (from the authors' code and envelope match, not a TRF fit); trigger type unknown; low tier, no subject peaks at a negative lag.

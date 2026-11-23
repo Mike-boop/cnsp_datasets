@@ -67,3 +67,7 @@ podcasts), one BIDS run per stimulus. Authors' code: github.com/exporl/auditory-
   envelope-following response): the alignment holds to a few ms across the dataset.
 - Coherence, other conditions (envelope, ratio to null, 1-4 / 4-8 Hz): sin5dB 2.2 / 2.4 (41 trials), av 1.9 / 1.5 (9), sin2.5dB
   1.3 / 1.3 (5), sin-4dB 1.2 / 1.1 (5); the small conditions are close to the null for want of data.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**good**: Trigger track played on a 2nd sound-card channel and recorded in Status (an audio-locked pulse every 1 s); first-to-last pulse resampling removes -34.5 ppm; jitter 0.28 ms; brainstem tier, coherence to 63 Hz.

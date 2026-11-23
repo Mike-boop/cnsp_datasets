@@ -189,3 +189,7 @@ the data are 100 Hz and 1-40 Hz filtered, so mlr (30-60 Hz) and brainstem (30-25
 5. MISC trigger lines dropped (facts in the sidecar/notes). [yes]
 6. Onset: shipped epoch start (onset trigger), no shift; no drift correction (not measurable). [yes]
 7. Delete `x/` (extracted, 2.8 GB) or the zips after the work? The zips are on the vault. [user decides at clean-up]
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Authors' 100 Hz epochs at the (software) onset trigger, no audio copy; decoder lag 0 ms in 25/26; drift < ~80 ppm not corrected; low tier.

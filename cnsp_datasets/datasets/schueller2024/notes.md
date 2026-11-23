@@ -95,3 +95,7 @@ All tiers pass (p <= 0.02); **validation tier: brainstem** (for MEG: the 30-250 
 - Set2/Set3: Zenodo returned HTTP 403 ("unusual traffic") to this server on 2026-11-21; only Set1 is checked. The
   user recalls no differences in Sets 2 and 3, so the adaptor assumes the same layout, run lengths and pairing; check
   run lengths and the meas_date matching (drift.csv) when they are downloaded.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**good**: Authors' cut by xcorr with the MEG audio channel; release onset within 0.2-1.1 ms of the raw stimtrack (participant 1); drift +8.46 ppm from the stimtrack, per participant; +6 ms tube delay (Zenodo text) applied; brainstem tier (Set1).

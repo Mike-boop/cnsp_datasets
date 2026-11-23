@@ -361,3 +361,7 @@ Average reference (62 scalp channels), regressor = the placed-sentence track. **
 - `validation_tier: "low"` is set in every sidecar by the adaptor. Only HK050 has been re-standardised since;
   the other 190 trials in `tmp/review/momenian2024/standardised` still carry `validation_tier: null` and lack
   `bad_channels`/`quality` until the full run.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**poor**: Software sentence triggers (~7 ms jitter), no stimtrack; DNN -21 ms and TRF +23/+26 ms later documented, not applied; trigger latency vs older listeners 'not separable'; low tier.

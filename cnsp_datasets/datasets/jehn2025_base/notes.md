@@ -39,3 +39,9 @@ Effect, all subjects, with vs without correction (2026-11-19; `tmp/review/jehn20
 
 ## Data size
 nh 28, hi 29, ci 24 participants, 0.74 h each (20 trials), 60 h in total. Per condition per participant: natural fL 0.14, natural fR 0.17, competing fL 0.21, competing fR 0.22 h. Estimated from the stimuli (tmp/review/data_size.md).
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+- jehn2025_nh: **good**: Authors' cut at onset, verified by aux loudspeaker recordings (within ~2 ms); drift 26.7 ppm measured on aux, correction optional and off by default (3-5 ms per trial); mlr tier.
+- jehn2025_hi: **good**: As jehn2025_nh (aux check within ~2 ms; hi 201 ~18 ppm); drift correction off by default; mlr tier.
+- jehn2025_ci: **good**: As jehn2025_nh; ci 127 aux has no stimulus (unverified), ci 121 side unverified; ci 118-122 ~18 ppm; drift off by default; 'brainstem' is the CI artefact.

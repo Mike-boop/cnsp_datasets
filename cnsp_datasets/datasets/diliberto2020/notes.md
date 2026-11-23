@@ -155,3 +155,7 @@ stimulus, ~1 s after). Presentation order not shipped.
   p 0.030, 4/20 subjects significant; the GFP in 4-9 ms (~1.1) stays inside the null band and no wave V is
   visible; the 30-250 Hz TRF is dominated by the ~35 ms MLR peak. Recorded tier: **`mlr`** (TIERS in the adaptor),
   pending the user's view. An ABR is not expected to be resolvable here (512 Hz sampling, sparse piano onsets).
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Authors' epochs, onset at sample 513 per the readme (trigger unknown); wavs match the shipped envelope at lag 0; 30-60 Hz TRF 22-47 ms, nothing at negative lags; mlr tier.

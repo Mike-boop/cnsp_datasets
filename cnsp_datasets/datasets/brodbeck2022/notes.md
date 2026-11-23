@@ -332,3 +332,7 @@ excess at 30-60 Hz, nothing above 120 Hz.
   12/12, unaffected in practice).
 - Fixes (user, 2026-11-22): `load_neural` now excludes `info['bads']` when picking by type, and the 'hf' feature
   uses a shipped envelope when it is sampled at the hf rate or above. The numbers above predate the fixes.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Trigger 162 (software inferred, ~10 ms quantised jitter), no stimtrack; drift 3.4 ppm not established; feature leads audio ~5 ms (documented); low tier (mlr population only).

@@ -123,3 +123,7 @@ as played and of each voice, MIDI note onsets, model surprisal/entropy). No audi
   validator's high-frequency feature needs a stimulus at least at the EEG rate), and 9 subjects are at 250 Hz.
   The 30-250 Hz tier would in any case be impossible at 250 Hz (Nyquist 125 Hz).
 - DNN timing check (accou2023 match-mismatch) not run: the model is trained on speech; this is piano music.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Authors' epochs at a software trigger (Presentation to Smarting); no audio; per-trial best lag +1 ms, nothing at negative lags; low tier.

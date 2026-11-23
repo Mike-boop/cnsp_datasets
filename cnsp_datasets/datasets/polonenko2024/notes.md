@@ -105,3 +105,7 @@ reference would leave (A1 - A2) / 2 and remove the common FCz response.
   alternation here, so it cannot be averaged out.
 - The low tier's per-trial jitter/drift estimates (SD ~0.5 s) are noise: 10 s trials with two channels are too
   short for them. Drift is measured from the markers instead (25 ppm).
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**good**: Sound-card triggers + 0.81 ms; ER-2 electrical artefact at about -3..+1 ms in the 30-250 Hz TRF; drift 25.2 ppm from triggers corrected; brainstem tier.

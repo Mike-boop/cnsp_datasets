@@ -182,3 +182,7 @@ smallest attainable p is 0.020 (circular shift) / 0.048 (mismatch).
   presentations of the test passage; the test trial's reconstruction correlates best with its labelled passage among
   all 16 in **96/96 trials** (rank 1 each). The mean matched-r lag scan (+-1 s) peaks at 0 ms in all three; this is
   relative (training trials share the trigger alignment) and only shows that no trial is off on its own.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Software trigger, no audio copy, no shift; drift not measurable; brainstem (pilot 3), nothing at negative lags (noise condition bump at -20 ms to recheck).

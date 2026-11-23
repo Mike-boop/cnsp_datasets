@@ -98,3 +98,7 @@ Onset = S 1 + tube delay; drift correction (default on); 1000 Hz by default. Sti
 - **Decision (2026-11-21): the adaptor ships audio only** (the ANM regressors are not in the dataset and need the
   external model). Users who want brainstem responses to these clips generate them with `anm_regressors.py`.
   Validation tier stays `mlr` for the audio feature; the response itself is confirmed above.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Sound-card triggers (expyfun) + 0.81 ms tube delay; no ER-2 artefact visible, so only the brain check (ANM wave V 7.3 ms) confirms it; drift 25-31 ppm from triggers corrected; mlr tier.

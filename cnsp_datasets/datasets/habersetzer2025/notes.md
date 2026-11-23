@@ -264,3 +264,7 @@ Results: `validation.json` (this folder). Scripts (tmp, will be deleted):
 - DNN offset: not applicable (EEG-trained match-mismatch classifier).
 - Provenance: `validation_tier="brainstem"` and `validation_note` ("brainstem tier with tSSS ...; raw data reach
   mlr") in `adaptor.py`; checked that the adaptor parses (94 records).
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**good**: Hardware trigger box on the sound card's S/PDIF + MISC001 audio copy per run (+2.61 ms); drift +485 ppm from the audio copy corrected; +0.4 ms acoustic delay assumed; brainstem (tSSS).

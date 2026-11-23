@@ -193,3 +193,7 @@ the annotation TRF test, the artefact at 0 ms and the low tier.
   recovered by per-segment alignment).
 - Raw FIF: plain `_meg.fif` files that are the first part of an MNE split without its continuation, next to the
   BIDS splits (section 7).
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Authors' events from software segment triggers (PsychoPy), no audio channel; segment starts within 3 ms; raw sub-0 shows a stimulus artefact at 0 ms; drift not measurable; low tier.

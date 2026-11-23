@@ -107,3 +107,7 @@ Broadband > multiband at the brainstem tier, as in the paper (multiband spreads 
 validator uses the audio). Coherence (`tmp/review/coherence_peaky/polonenko2021_*`): f0-band peak for the male
 narrator (80-150 Hz: 4.8x the null in exp1-broadband, 2.8x exp2-male-broadband), at 150-300 Hz for the female
 (1.5x); 1-8 Hz 2.4-9x.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Sound-card triggers (README: tube delay already included); ER-2 artefact not confirmable; only the wave V latency (7.35 ms) supports onset = S 1; start-start drift corrected; brainstem tier.

@@ -37,3 +37,7 @@ offsets (PLAN.md section 8). Evidence: `tmp/review/timing.md`, `tmp/review/dnn_o
 
 ## Data size
 33 participants, 0.33 h each (competing-fL 17, competing-fR 16 participants), 11 h in total. Estimated from the stimuli (tmp/review/data_size.md).
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**poor**: Same CND pipeline as natural; DNN -45 ms (CI -57..-40) documented, not applied; notes: maybe attention latency, 'unresolved'; low tier.

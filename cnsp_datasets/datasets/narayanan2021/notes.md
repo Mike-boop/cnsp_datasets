@@ -54,3 +54,7 @@ participant `S<n>/S<n>_AAD_<P>`, P = story part (1, 2) + attended side (L, R); ~
   versions, so the half-wave-rectified dry wav is a poor regressor above ~30 Hz (the envelope is barely affected).
 - The previous adaptor took the first Trigger edge as the onset (the same sample except S8_AAD_1R, 16.18 s early),
   ran ~5 s past the audio and had no drift correction.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Onset = first pulse of the 1 s trigger train (coincidence with sound onset undocumented, no stimtrack); pulse-clock drift (-10/-16.8 ppm) corrected; DNN -5/-9 ms plausible for two talkers; low tier.

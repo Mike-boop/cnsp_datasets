@@ -93,3 +93,7 @@ defaults: 1000 Hz, +5.7 ppm drift); results and figure `tmp/review/armeni2022/va
 
 ## 9. Data size
 3 participants: story parts 8.76 h each (26.3 h), noise-ceiling repeats 1.06 h each (3.2 h); 29.5 h in total.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**good**: Shipped wav_onset = trigger + authors' per-part UADC003 delay; re-check vs UADC003 -0.1 +- 0.8 ms (196 parts); drift +5.73 ppm from the audio copy corrected; brainstem tier (stimulus artefact near 0 ms).

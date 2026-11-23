@@ -182,3 +182,7 @@ re-referencing, tiers low/mlr/brainstem; results and four-panel figures in
   from the clean speech.
 - Sizes: standardised output ~1.5 GB per participant (108 trials, 160 channels, float32); control 12 = 18 GB, main
   pilot 4 = 6 GB. Full dataset would be ~59 GB.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Software TTL trigger, no audio copy, no shift; drift not measurable; brainstem tier (clear speech), flat at negative lags.

@@ -503,3 +503,7 @@ excluded because they do not track (backward r ~0). Scripts, caches and figures:
     significant.
 - **Decided by the user (2026-11-22): keep 76.8 ppm; alternatives logged for the second pass.** Adaptor default
   unchanged: 76.8 ppm NeuroScan, none Neuracle.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**poor**: Markers (not sample-locked, ~2 ms jitter) + 23 ms inferred shift; 2 sessions get decoder-measured offsets; drift 76.8 ppm from markers kept (DNN says 47); DNN -74/-42 ms documented as timing error; low tier.

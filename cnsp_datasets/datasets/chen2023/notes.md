@@ -200,3 +200,7 @@ Validation tier: **brainstem** with the default `drift_ppm=510` (`low` without d
 6. Subject numbering 1-24 (sink needs ints; PLAN says keep original names): original ids are in the provenance.
 7. Storage: the first 80 GB pilot was deleted (user approval, 2026-11-23); `R/chen2023/standardised_drift/` (16 GB,
    4 subjects) remains. A full run would be ~85 GB (19.4 h x 1.24 MB/s).
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**poor**: STI101 trigger + 16 ms (authors' Black Box Toolkit); drift +510 ppm is brain-derived (30-60 Hz TRF-SNR scan), user-approved; no audio copy; brainstem with drift.

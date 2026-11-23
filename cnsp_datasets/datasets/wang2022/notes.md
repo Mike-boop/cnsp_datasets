@@ -359,3 +359,7 @@ Beg + 39.5 ms, so the adaptor now uses Beg + 18.5 ms (`SOUND_DELAY_MS`; the pape
 30-250 Hz peak +0 ms (7.6x; largest pre-stimulus value 1.9x at -20 ms), SNR 1.71 p 0.01 (was 0.61); 30-60 Hz peak
 +36 ms (3.8x), SNR 2.59 p 0.01. The stored standardised data and the validation above use the old onset; not
 re-run (user: close the dataset). `validation_tier` stays mlr (validated); brainstem may pass after a re-run.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**poor**: Software trigger + 39.5 ms (paper, sound sensor) - 21 ms read from the 30-250 Hz TRF; drift 500 ppm = MEG-derived (trigger estimate 486, CI 420-535); no audio copy; mlr tier (validated with the old onset).

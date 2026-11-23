@@ -228,3 +228,7 @@ re-referencing (MEG), attended stream as the stimulus (`--first-attended`). Only
 7. MISC lines dropped; button response ("yes"/"no"/none) and end-pulse time go to the sidecar. [yes]
 8. Conditions `single_equations`, `single_sentences`, `cocktail_attend_equations`, `cocktail_attend_sentences`;
    voice in the sidecar. [yes]
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Authors' 200 Hz epochs cut 18 s before the end pulse; t=0 supported by evoked onset responses; TRF rise from -40 ms attributed to stimulus periodicity; low tier.

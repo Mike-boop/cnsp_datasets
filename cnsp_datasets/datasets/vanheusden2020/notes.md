@@ -311,3 +311,7 @@ results `tmp/review/vanheusden2020/dnn_offsets/offsets.json`):
   a few ms after the actual sound onset (unverified). The 1.2 m loudspeaker path (3.5 ms) would make the EEG late,
   so it does not explain this.
 - Documented, not applied (project rule for constant DNN offsets). No aided-unaided difference beyond the CIs.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Status-bit trigger (type unknown), no stimtrack; shift peaks within ~10-20 ms; DNN +4.4/+5.1 ms documented (within band); drift not measurable; segment order partly EEG-inferred; mlr tier.

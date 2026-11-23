@@ -174,3 +174,7 @@ one 64 Hz sample and plausibly response-latency effects; documented, not applied
 
 ## 14. Review (2026-11-23)
 Reviewer findings applied (envelopes from memory, one name helper, fs checks once per subject, permutation check, channel-type list from the montage, provenance `channel_names`). Re-standardised all 13 subjects to `tmp/review/calderondepalma2023/standardised_v2/`: all 445 files identical to the pilot (EEG data, channels, bads, provenance apart from the new field; envelopes byte-equal). Not changed here (main-branch infrastructure): `base_sink` calls a stimulus `data_fn` before checking whether the file already exists.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Authors' 64 Hz cut at a software (Presentation) trigger; xcorr peaks +16..+219 ms; DNN +2.5 ms; low tier (GFP above null from -140 ms, likely 64 Hz smoothing).

@@ -102,3 +102,7 @@ the exp2/exp3 file offset (section 3) end to end.
 | f0s2-wizard / wonderland / drdolittle | 0.072 / 0.069 / 0.066 | 2.95 / 2.86 / 3.26 | 2.11 / 2.40 / 2.86 | brainstem |
 
 Chirp > zero phase and shifted (lower f0) > original, as in the paper.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**good**: Sound-card triggers + 0.81 ms; replicating ER-2 artefact ('markers at the transducer', polonenko2021 notes sect. 9); drift 9.6 ppm corrected; brainstem tier.

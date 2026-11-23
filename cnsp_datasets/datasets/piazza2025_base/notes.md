@@ -190,3 +190,8 @@ with `scripts/piazza2025_run.sh`. Results in `R/piazza2025/validation_<group>[_<
   coherence.
 - A first pilot (moved to `R/piazza2025/v1/`) had standardised only L2L 1, 6, 18-25: L2L files embed different
   `chanlocs` structures and the old in-loader label check failed; fixed. L1L results were identical.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+- piazza2025_l1l: **medium**: Authors' 100 Hz epochs at the PsychoPy (software) start trigger; per-subject TRFs peak 0-270 ms, flat at negative lags; drift not estimable; low tier.
+- piazza2025_l2l: **medium**: As piazza2025_l1l; low tier (21/25).

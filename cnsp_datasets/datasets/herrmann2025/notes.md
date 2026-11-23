@@ -225,3 +225,7 @@ folder) unless marked otherwise.
   6.4 min per participant (1.7-7.8); babble 13.3 h, 23.4 min (1.8-28.2).
 - Decisions (user, 2026-11-22): keep na17/na60 (not excluded; they have no logs, so no trials); skip the 114
   unlogged blocks (18 participants).
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Status marker (software inferred), no stimtrack; P1/N1 match weissbart2019 to ~1 ms; DNN +5 ms, no correction; drift not measurable; mlr tier.

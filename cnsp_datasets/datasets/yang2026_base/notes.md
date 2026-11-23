@@ -341,3 +341,8 @@ The adaptor now adds MEG channels whose std is below 1e-6 x the median std of th
 and lists them in the sidecar (`bads_added_flat`); the drift interpolation leaves ~1e-22 numerical ripple on a
 constant channel, so an exact-zero test misses them. Found because the raw Russian coherence was NaN (the repo
 validator then kept bad channels in its picks; fixed in `cnsp_datasets/validate/load.py`, 75b48d4).
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+- yang2026_en: **good**: Onset fitted per presentation on the audio copy (MISC006/007; 18.7 ms after software code 3); drift +538 ppm from the audio copy corrected; +7.3 ms tube delay assumed; brainstem (tSSS).
+- yang2026_ru: **good**: Onset fitted on the audio copy MISC005 (9.1 ms after code 3); drift -0.73 ppm corrected; +7.3 ms tube delay assumed; brainstem (tSSS); EEG not validated.
