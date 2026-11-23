@@ -11,7 +11,8 @@ strong in both, >= 3 of them, else the dataset median offset passed via OFFSETS 
 Drift delta (ppm, > 0 = the sound slides later through the chapter, i.e. audio stretched in EEG time), over chapters
 with a strong decoder: (a) Theil-Sen through 30-s window peaks (within L +- 0.25 s), demeaned per chapter, pooled;
 95% CI by bootstrapping chapters; (b) joint_fit per chapter on the window curves upsampled x10 along lags (cubic; the
-linear interpolation inside joint_fit otherwise biases towards 0), pooled_drift per listener and per story.
+linear interpolation in the old joint_fit biased drift towards 0; joint_fit is called with upsample=1 since the curves
+are already upsampled here), pooled_drift per listener and per story.
 Held-out check: latency from one half (odd/even 30-s blocks) vs r on the other half (decoder trained on other chapters).
 usage: analyse_timing.py <sub> ...   -> align/summary/sub-<sub>{.json,_chapters.csv,_timing.png}"""
 import os, sys  # noqa: E401
@@ -98,7 +99,7 @@ for sub in sys.argv[1:]:
         pts.append((t - t.mean(), pk - np.median(pk)))
         Wu = CubicSpline(np.arange(len(sh)), W, axis=0)(np.arange((len(sh) - 1) * UP + 1) / UP)
         try:
-            f = joint_fit(Wu, st * UP, np.arange(Wu.shape[0]), FS * UP, WIN * UP, drift_grid_ppm=GRID, n_chunks=min(10, W.shape[1]))
+            f = joint_fit(Wu, st * UP, np.arange(Wu.shape[0]), FS * UP, WIN * UP, drift_grid_ppm=GRID, n_chunks=min(10, W.shape[1]), upsample=1)
             fits.append(f); fkeys.append(k); per[k] = (f['drift_ppm'], f['drift_se'])
         except ValueError:
             pass
