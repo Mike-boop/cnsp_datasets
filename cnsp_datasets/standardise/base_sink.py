@@ -91,21 +91,19 @@ class BaseSink(ABC):
             save_dir.mkdir(parents=True, exist_ok=True)
             fname = self.fname_separator.join([stim.name, stim.feature_name])
 
-            data = stim.data_fn()
-
+            # the extension depends on the data (text or arrays): check every candidate before loading it
             if stim.feature_name == "textgrid":
-                full_path = save_dir / f"{fname}.TextGrid"
-                save_fn = save_textfile
-            elif isinstance(data, str):
-                full_path = save_dir / f"{fname}.txt"
-                save_fn = save_textfile
+                candidates = [save_dir / f"{fname}.TextGrid"]
             else:
-                full_path = save_dir / f"{fname}.npz"
-                save_fn = lambda path, d: np.savez(path, **d)
-
-            if full_path.exists():
+                candidates = [save_dir / f"{fname}.txt", save_dir / f"{fname}.npz"]
+            if any(path.exists() for path in candidates):
                 continue
-            save_fn(full_path, data)
+
+            data = stim.data_fn()
+            if stim.feature_name == "textgrid" or isinstance(data, str):
+                save_textfile(candidates[0], data)
+            else:
+                np.savez(candidates[1], **data)
 
 
 class BaseSource(ABC):
@@ -119,9 +117,10 @@ class BaseSource(ABC):
         self.sep = fname_separator
         self.assume_first_attended = assume_first_attended
 
-        self.re_sub = re.compile(r"^sub-(\d{3})$")
-        self.re_ses = re.compile(r"^ses-(\d{3})$")
-        self.re_trial = re.compile(r"^trial-(\d{3})$")
+        # written zero-padded to 3 digits (`:03d`), so larger numbers have more
+        self.re_sub = re.compile(r"^sub-(\d{3,})$")
+        self.re_ses = re.compile(r"^ses-(\d{3,})$")
+        self.re_trial = re.compile(r"^trial-(\d{3,})$")
         self.re_cond = re.compile(r"^cond-(.+)$")
         self.re_stim = re.compile(r"^([A-Za-z]+)(\d{2})-(.+)$")
 

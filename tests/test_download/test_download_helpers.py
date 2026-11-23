@@ -2,6 +2,7 @@ import asyncio
 import gzip
 import json
 import os
+import shutil
 import tarfile
 import tempfile
 import zipfile
@@ -69,6 +70,84 @@ class TestExtractArchives:
         download_helpers.extract_archives(str(tmp_path))
 
         assert mat.exists()
+
+    def test_refuses_tar_member_outside_directory(self, tmp_path):
+        inner = tmp_path / "x.txt"
+        inner.write_text("x")
+        tpath = tmp_path / "evil.tar"
+        with tarfile.open(tpath, "w") as tf:
+            tf.add(inner, arcname="../escaped.txt")
+        inner.unlink()
+
+        with pytest.raises(tarfile.FilterError):
+            download_helpers.extract_archives(str(tmp_path))
+        assert not (tmp_path.parent / "escaped.txt").exists()
+
+
+def _rar4(files):
+    """
+    A RAR 4 archive with stored (uncompressed) entries; bsdtar can read RAR but not write it. files: name -> data, or
+    name -> (data, unix mode), e.g. a symlink (b"/etc/passwd", 0o120777).
+    """
+    import struct
+    import zlib
+
+    def block(head_type, flags, body):
+        rest = struct.pack("<BHH", head_type, flags, 7 + len(body)) + body
+        return struct.pack("<H", zlib.crc32(rest) & 0xFFFF) + rest
+
+    out = b"Rar!\x1a\x07\x00" + block(0x73, 0, bytes(6))
+    for name, entry in files.items():
+        data, mode = entry if isinstance(entry, tuple) else (entry, 0o100644)
+        header = struct.pack("<IIBIIBBHI", len(data), len(data), 3, zlib.crc32(data), 0x5A210000, 20, 0x30,
+                             len(name.encode()), mode) + name.encode()
+        out += block(0x74, 0x8000, header) + data
+    return out + block(0x7B, 0x4000, b"")
+
+
+@pytest.mark.skipif(shutil.which("bsdtar") is None, reason="needs bsdtar (libarchive)")
+class TestExtractRar:
+    def test_extracts_rar(self, tmp_path):
+        rpath = tmp_path / "stimuli.rar"
+        rpath.write_bytes(_rar4({"stimuli/story_1.wav": b"RIFF", "readme.txt": b"hello"}))
+
+        download_helpers.extract_archives(str(tmp_path))
+
+        assert (tmp_path / "stimuli" / "story_1.wav").read_bytes() == b"RIFF"
+        assert (tmp_path / "readme.txt").read_bytes() == b"hello"
+        assert not rpath.exists()
+
+    @pytest.mark.parametrize("name", ["../escaped.txt", "a/../../escaped.txt", "/abs.txt"])
+    def test_refuses_entries_outside_directory(self, tmp_path, name):
+        target = tmp_path / "download"
+        target.mkdir()
+        rpath = target / "evil.rar"
+        rpath.write_bytes(_rar4({"fine.txt": b"ok", name: b"pwn"}))
+
+        with pytest.raises(ValueError, match="Refusing"):
+            download_helpers.extract_archives(str(target))
+        assert sorted(p.name for p in tmp_path.rglob("*")) == ["download", "evil.rar"]   # nothing written
+
+    def test_refuses_symlink_entries(self, tmp_path):
+        rpath = tmp_path / "evil.rar"
+        rpath.write_bytes(_rar4({"fine.txt": b"ok", "x": (b"/etc/passwd", 0o120777)}))
+
+        with pytest.raises(ValueError, match="link"):
+            download_helpers.extract_archives(str(tmp_path))
+        assert sorted(p.name for p in tmp_path.iterdir()) == ["evil.rar"]
+
+    def test_corrupt_archive_reports_bsdtar_error(self, tmp_path):
+        (tmp_path / "bad.rar").write_bytes(b"Rar!\x1a\x07\x00garbage")
+        with pytest.raises(RuntimeError, match="bsdtar -tf"):
+            download_helpers.extract_archives(str(tmp_path))
+
+
+def test_rar_without_bsdtar_explains(tmp_path, monkeypatch):
+    (tmp_path / "a.rar").write_bytes(_rar4({"x.txt": b"x"}))
+    monkeypatch.setattr(download_helpers.shutil, "which", lambda name: None)
+    with pytest.raises(RuntimeError, match="bsdtar"):
+        download_helpers.extract_archives(str(tmp_path))
+    assert (tmp_path / "a.rar").exists()
 
 
 # ── mutable default argument guard ───────────────────────────────────────────
@@ -291,6 +370,8 @@ class TestDryadAuth:
 
     @patch("cnsp_datasets.download.download_helpers.requests.get")
     def test_files_carry_size_checksum_and_token(self, mock_get, monkeypatch):
+        for var in ("DRYAD_CLIENT_ID", "DRYAD_CLIENT_SECRET"):
+            monkeypatch.delenv(var, raising=False)
         monkeypatch.setenv("DRYAD_TOKEN", "tok")
         mock_get.side_effect = self._responses()
         [f] = download_helpers.doi_to_downloadables_dryad("10.5061/dryad.x")
@@ -316,13 +397,31 @@ class TestDryadAuth:
         assert download_helpers._dryad_token() == "t2"
         assert mock_post.call_args.kwargs["data"]["grant_type"] == "client_credentials"
 
+    @patch("cnsp_datasets.download.download_helpers.requests.post")
+    def test_client_credentials_preferred_and_fresh_per_call(self, mock_post, monkeypatch):
+        monkeypatch.setenv("DRYAD_TOKEN", "stale")
+        monkeypatch.setenv("DRYAD_CLIENT_ID", "id")
+        monkeypatch.setenv("DRYAD_CLIENT_SECRET", "secret")
+        mock_post.side_effect = [MagicMock(status_code=200, json=MagicMock(return_value={"access_token": t}))
+                                 for t in ("t1", "t2")]
+        assert [download_helpers._dryad_token(), download_helpers._dryad_token()] == ["t1", "t2"]
+
+    @patch("cnsp_datasets.download.download_helpers.requests.post")
+    def test_failed_token_request_raises(self, mock_post, monkeypatch):
+        monkeypatch.setenv("DRYAD_CLIENT_ID", "id")
+        monkeypatch.setenv("DRYAD_CLIENT_SECRET", "bad")
+        mock_post.return_value = MagicMock(status_code=401, text="invalid_client")
+        with pytest.raises(Exception, match="401"):
+            download_helpers._dryad_token()
+
 
 class TestScidbListing:
-    def test_shipped_chen2026_listing(self):
-        files = download_helpers.listing_to_downloadables_scidb("chen2026/scidb_files.json")
-        assert len(files) == 46
-        assert all(f["checksum"].startswith("md5:") and f["url"].startswith("https://") for f in files)
-        assert "PassiveListening/sub-01.zip" in {f["name"] for f in files}
+    def test_listing_file(self, tmp_path):
+        listing = tmp_path / "scidb_files.json"  # an absolute path overrides the datasets directory
+        listing.write_text(json.dumps({"files": [{"path": "PassiveListening/sub-01.zip", "size_bytes": 3,
+                                                   "md5": "abc", "download_url": "https://scidb/x"}]}))
+        assert download_helpers.listing_to_downloadables_scidb(str(listing)) == [
+            {"name": "PassiveListening/sub-01.zip", "url": "https://scidb/x", "size": 3, "checksum": "md5:abc"}]
 
 
 class TestDrum:
@@ -420,3 +519,33 @@ class TestHuggingface:
         [f] = download_helpers.id_to_downloadables_huggingface("org/repo")
 
         assert f["headers"] is None and f["checksum"] is None
+
+
+class TestRadboudRdr:
+    @patch("cnsp_datasets.download.download_helpers.requests.get")
+    def test_dccn_path_and_credentials(self, mock_get, monkeypatch):
+        monkeypatch.setenv("RADBOUD_USERNAME", "u")
+        monkeypatch.setenv("RADBOUD_PASSWORD", "p")
+        mock_get.return_value = MagicMock(status_code=200, text="abc sub-01/a b.wav\ndef README.txt\n")
+
+        files = download_helpers.id_to_downloadables_radboud_rdr("dccn/DSC_1_v1")
+
+        assert mock_get.call_args.args[0] == "https://webdav.data.ru.nl/dccn/DSC_1_v1/MANIFEST.txt"
+        assert files[0] == {"name": "sub-01/a b.wav",
+                            "url": "https://webdav.data.ru.nl/dccn/DSC_1_v1/sub-01/a%20b.wav",
+                            "checksum": "sha256:abc", "headers": {"Authorization": "Basic dTpw"}}
+
+    @patch("cnsp_datasets.download.download_helpers.requests.get")
+    def test_username_without_password_explains(self, mock_get, monkeypatch):
+        monkeypatch.setenv("RADBOUD_USERNAME", "u")
+        monkeypatch.delenv("RADBOUD_PASSWORD", raising=False)
+        mock_get.return_value = MagicMock(status_code=200, text="abc f.wav\n")
+        with pytest.raises(ValueError, match="RADBOUD_PASSWORD"):
+            download_helpers.id_to_downloadables_radboud_rdr("dccn/DSC_1_v1")
+
+    @patch("cnsp_datasets.download.download_helpers.requests.get")
+    def test_public_collection_without_credentials(self, mock_get, monkeypatch):
+        monkeypatch.delenv("RADBOUD_USERNAME", raising=False)
+        mock_get.return_value = MagicMock(status_code=200, text="abc f.wav\n")
+        [f] = download_helpers.id_to_downloadables_radboud_rdr("corpus_v1")
+        assert f["url"] == "https://webdav.data.ru.nl/cls/corpus_v1/f.wav" and f["headers"] is None

@@ -166,7 +166,7 @@ def test_download_dataset_extra_filters(tmp_path, monkeypatch):
     monkeypatch.setattr(dd.Dataset, "resolve_downloadables", lambda self: files)
     got = []
     monkeypatch.setattr(dd.DataDownloader, "download_batch", lambda self, f: got.extend(x["name"] for x in f))
-    dd.download_dataset("wang2022", str(tmp_path), max_workers=1, extract_archives=False,
+    dd.download_dataset("fuglsang2018", str(tmp_path), max_workers=1, extract_archives=False,
                         exclude=["sub-0[7-9]/*", "sub-1*/*"])
     assert got == ["README", "sub-01/meg/a.fif"]
 
@@ -184,3 +184,27 @@ def test_max_workers_capped_per_source(tmp_path, monkeypatch, source, requested,
     monkeypatch.setattr(dd.DataDownloader, "download_batch", lambda self, f: None)
     dd.download_dataset("x", str(tmp_path), max_workers=requested, extract_archives=False)
     assert workers == [expected]
+
+
+@pytest.mark.parametrize("source, requested, expected", [
+    ("drum", None, 120), ("scidb", None, 300), ("openneuro", None, 15), ("drum", 30, 30),
+])
+def test_read_timeout_per_source(tmp_path, monkeypatch, source, requested, expected):
+    import importlib
+    dd = importlib.import_module("cnsp_datasets.download.download_dataset")
+    monkeypatch.setattr(dd, "load_registry", lambda path: {"x": dd.Dataset("x", source, ["id"], "")})
+    monkeypatch.setattr(dd.Dataset, "resolve_downloadables", lambda self: [])
+    timeouts = []
+    monkeypatch.setattr(dd.DataDownloader, "__init__", lambda self, *a, **k: timeouts.append(k["read_timeout"]))
+    monkeypatch.setattr(dd.DataDownloader, "download_batch", lambda self, f: None)
+    dd.download_dataset("x", str(tmp_path), read_timeout=requested, extract_archives=False)
+    assert timeouts == [expected]
+
+
+def test_registry_include_exclude(monkeypatch):
+    import importlib
+    dd = importlib.import_module("cnsp_datasets.download.download_dataset")
+    files = [{"name": n, "url": "u", "checksum": None} for n in ("a/x.wav", "a/y.txt", "b/z.wav")]
+    monkeypatch.setattr(dd.Dataset, "_resolve", lambda self: files)
+    ds = dd.Dataset("x", "radboud_rdr", ["id"], "", include=["*.wav"], exclude=["b/*"])
+    assert [f["name"] for f in ds.resolve_downloadables()] == ["a/x.wav"]

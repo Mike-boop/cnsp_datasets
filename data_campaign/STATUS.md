@@ -5,7 +5,7 @@ Tier = highest validation tier passed overall (`low` 0.5-8 Hz, `mlr` 30-60 Hz, `
 brainstem means a high-frequency cortical response). Details live in each dataset's `notes.md` / `README.md`.
 "Data" says what is still on disk under `/data_storage/gu08wuvu/datasets/tmp/review/<d>/` (results are always kept).
 
-Last updated: 2026-11-22.
+Last updated: 2026-11-23.
 
 ## Done
 | repo name | sheet id | branch | tier | data | notes |
@@ -42,6 +42,21 @@ Last updated: 2026-11-22.
 | levy2024 | levy2024 | dev | low | deleted | |
 | brodbeck2022 | brodbeck2022 | dev | low (mlr population only) | deleted | no audio (copyright) |
 | vanheusden2020 | vanheusden2020 | dev | mlr | deleted; user's manual download kept | |
+| presacco2016 | presacco2016 | dev | brainstem (30-250 Hz; mlr fails) | deleted (results kept; raw on the NHR vault) | MEG only; pilot 20 subj; licence not stated; drift -37 ppm documented; full run pending storage |
+| karunathilake2023 | karunathilake2023 | dev | brainstem (clear speech; vocoded low only) | deleted (results kept; Dryad) | pilot 16/39; separate study from _aging; subject = R-number mod 1000; full run pending storage |
+| karunathilake2025 | karunathilake2025 | dev | brainstem (pooled, 3 subj; noise condition low only) | deleted (results kept; Dryad) | pilot 3/30; full run (~35 GB) pending storage |
+| deoisres2023 | deoisres2023 | dev | mlr (pilot 5/22; brainstem only via S03 stimulus artefact) | user's manual download (read-only) + 13 GB extracted + 5.2 GB pilot in tmp | ePrints blocks scripts (Anubis); drift -24 ppm corrected by default; decisions pending |
+| chen2023 | chen2023 | dev | brainstem (drift +510 ppm default, data-derived, user-approved; 4/4 subj) | deleted (results kept; GitLab re-download) | 16 ms delay applied; vocoded trials carry the clean wav by default; ANC DUA: no redistribution; full run ~85 GB |
+| piazza2025_l1l / _l2l | piazza2025 | dev | low (data shared preprocessed 1-8 Hz, 100 Hz) | ~15 GB in tmp (download, standardised, v1) | all 50 standardised; L2L 6-25 channel order unknown; L1L 13-15 stimulus files remapped by trial length; licence unknown |
+| calderondepalma2023 | calderondepalma2023 | dev | low (all 13; all 5 conditions; ceiling at 64 Hz) | 2.4 GB download + 1.0 GB standardised in tmp | CND; channel order inferred (biosemi64); degraded-audio envelopes only; DNN +2.5 ms; BSD-3 |
+| brodbeck2018 | brodbeck2018 | dev | low (all 26; ceiling at 100 Hz); attended > ignored 26/26 | download, x/ and standardised (2.5 GB) in tmp; vault backup verified | 100 Hz tSSS epochs only; no overlap with brodbeck2022; no licence stated |
+| straetmans2021 | straetmans2021 | dev | none (no stimulus shipped; sanity only) | download 1.2 GB + standardised in tmp | kept as EEG-only (user, 2026-11-23); ask the authors for the wavs |
+| winchester2026 | winchester2026 | dev | low (all 31; 3 conditions; ceiling at 125 Hz envelopes) | download 5.4 GB + standardised 4.4 GB in tmp | music (piano); envelopes only, no audio; 9 subj at 250 Hz, 22 at 500 Hz; subject 5 looks broken; licence not stated |
+| li2025 | li2025 | dev | low (per-subject onset: r 0.024, TRF peak 78 ms both groups) | 18.9 GB download + 12 GB standardised in tmp | OPM-MEG; brain-based per-subject onset delays by default (onset.csv; 0.39-0.89 s; 3 fallbacks), per-group as option; held-out gain small overall, clear for sub-43/48/49/60; user to confirm |
+| diliberto2020 | diliberto2020 | dev | mlr (all 20; 30-60 Hz 13/20; brainstem nominal only) | 12 GB download+extracted + 0.3 GB wavs + 13 GB standardised in tmp | music (Bach); wavs from the kern2022 Donders collection are the default stimulus (match the shipped envelope at lag 0, r >= 0.9995); ADC counts scaled to V |
+| kern2022 | kern2022 | dev | brainstem (pilot 4/35; 30-250 Hz 3/4 subj) | 207 GB download + 13 GB pilot in tmp | music; audio copy: onset +4.1 ms and drift +6.5 ppm on by default (user, hardware-derived; validation no worse); full run ~115 GB |
+| chen2026 | chen2026 | dev | low (pilot 3/8, old per-chapter default; mlr pass is a ripple artefact) | deleted by the user (results kept; raw on the NHR vault) | onset = t0 (trigger fit) + option-B latency (listener median unless the chapter deviates > max(40 ms, 3 SE); 39/281 chapters own value; user 2026-11-23; onsets_optionB.csv); drift +16 ppm logged in drift.csv, not applied (unreliable); dev 6324961; next: full run of 8 listeners (~48 GB), sub-02 (kept), deletion |
+| kulasingham2021 | kulasingham2021 | dev | low (all 22; ceiling at 200 Hz); attended > ignored 20/22 | 4.9 GB zips + 11 GB extracted + 5 GB standardised in tmp; vault backup verified | preprocessed epochs only; R2522 block order corrected from the data (readme wrong); no licence stated |
 
 Not in the campaign sheet: mai2023 (dev, iEEG, not reviewed), jehn2024 (dev), karengal2025 / koelbl2021 /
 schuller2022full (internal).
@@ -49,8 +64,9 @@ schuller2022full (internal).
 ## In progress
 | repo name | sheet id | branch | state | next |
 |---|---|---|---|---|
-| chen2026 | chen2026 | dev (notes only, no adaptor) | download of sub-06..08 running; vault backup armed | per-chapter latency + drift with the DNN (`HANDOVER.md`) |
-| presacco2016 | presacco2016 | dev (registry only) | 7/46 subject zips; DRUM timeouts | resume with 1 worker, read_timeout 120 s; then explore |
+| hassan2026 | hassan2026 | dev (adaptor e24fecd, not run) | downloaded 5.15 GB, verified; EEG in volts; ~0.8 s latency after the playback timestamp (lag sweep, all 16 subj; documented); per-device timestamps not acoustic | user: allow pyarrow + soundfile in the venv; decide the 0.8 s offset; then pilot + validation |
+| peng2026 | peng2026 | dev (registry fe3393d) | Zenodo 403 (unusual traffic) at 21:09 on 2026-11-23; not downloaded; 21.6 GB single zip; sub-01..09 E-Prime trigger bug (authors re-aligned) | user: Zenodo support?; then download |
+| zhang2025 | zhang2025 | dev (registry fe3393d) | Zenodo 403; not downloaded; file list unverified (may need an exclude) | after peng2026 |
 
 ## Open items across datasets
 - **Push `dev`**: many commits are ahead of `origin/dev`; needs the user's approval.

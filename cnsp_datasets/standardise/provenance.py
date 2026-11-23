@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import json
 
-ALIGNMENT_METHODS = {"hw_trigger", "sw_trigger", "stimtrack_xcorr", "onset_only", "dnn", "none"}
+ALIGNMENT_METHODS = {"hw_trigger", "sw_trigger", "stimtrack_xcorr", "onset_only", "dnn", "brain_trf", "none"}
 TRIGGER_TYPES = {"hardware", "software", "unknown"}
 VALIDATION_TIERS = {"none", "low", "mlr", "brainstem", None}
 

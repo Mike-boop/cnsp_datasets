@@ -5,7 +5,7 @@ from typing import Dict,  List, Optional, Iterable, Callable, Any
 from dataclasses import dataclass, field
 from fnmatch import fnmatch
 from cnsp_datasets.download import download_helpers
-from cnsp_datasets.download.data_downloader import DataDownloader
+from cnsp_datasets.download.data_downloader import DEFAULT_READ_TIMEOUT, DataDownloader
 
 REGISTRY_PATH = resources.files("cnsp_datasets.download").joinpath("dataset_registry.json")
 DEFAULT_MAX_WORKERS = 4  # parallel downloads per dataset; be polite to the repositories
@@ -15,7 +15,17 @@ SOURCE_MAX_WORKERS = {
     "eprints": 1,
     "gitlab_lfs": 3,  # self-hosted lab servers
 }
-SOURCE_READ_TIMEOUT = {"scidb": 300}  # seconds; Science Data Bank often takes > 15 s to start or resume a stream
+SOURCE_READ_TIMEOUT = {  # seconds a stalled transfer may wait for data (else DEFAULT_READ_TIMEOUT)
+    "scidb": 300,  # Science Data Bank often takes > 15 s to start or resume a stream
+    "drum": 120,  # DRUM stalls > 15 s under load (LESSONS.md)
+}
+
+def _filter(files, include=(), exclude=()):
+    """Files whose name matches an `include` glob pattern (all if none), minus those matching an `exclude` one."""
+    if include:
+        files = [f for f in files if any(fnmatch(f["name"], pat) for pat in include)]
+    return [f for f in files if not any(fnmatch(f["name"], pat) for pat in exclude)]
+
 
 ### First define a structure for the entries in dataset_registry.json
 
@@ -31,10 +41,7 @@ class Dataset:
 
     def resolve_downloadables(self) -> List[dict]:
         """Files to download: those matching an `include` glob pattern (all if none), minus `exclude` matches."""
-        files = self._resolve()
-        if self.include:
-            files = [f for f in files if any(fnmatch(f["name"], pat) for pat in self.include)]
-        return [f for f in files if not any(fnmatch(f["name"], pat) for pat in self.exclude)]
+        return _filter(self._resolve(), self.include, self.exclude)
 
     def _resolve(self) -> List[dict]:
         if self.source == "zenodo":
@@ -147,7 +154,8 @@ def download_dataset(
     - verify_checksum (bool): Whether to verify checksums if provided in the metadata.
     - include, exclude (glob patterns): further filters on top of the registry entry's own, e.g. a pilot subset
       `exclude=["sub-0[7-9]/*", "sub-1*/*"]`; `include` keeps only matching files.
-    - read_timeout (float): seconds a stalled transfer may wait for data (default 15, longer for slow sources).
+    - read_timeout (float): seconds a stalled transfer may wait for data (default SOURCE_READ_TIMEOUT, else
+      DEFAULT_READ_TIMEOUT).
     """
     registry: Dict[str, Dataset] = load_registry(REGISTRY_PATH)
 
@@ -158,10 +166,7 @@ def download_dataset(
     ds = registry[dataset_name]
     cap = SOURCE_MAX_WORKERS.get(ds.source, DEFAULT_MAX_WORKERS)
     max_workers = min(max_workers or cap, cap)
-    downloadables = ds.resolve_downloadables()
-    if include:
-        downloadables = [f for f in downloadables if any(fnmatch(f["name"], pat) for pat in include)]
-    downloadables = [f for f in downloadables if not any(fnmatch(f["name"], pat) for pat in exclude)]
+    downloadables = _filter(ds.resolve_downloadables(), include, exclude)
 
     download_manager = DataDownloader(
         download_dir,
@@ -169,7 +174,7 @@ def download_dataset(
         retries=retries,
         skip_existing=skip_existing,
         verify_checksum=verify_checksum,
-        read_timeout=read_timeout or SOURCE_READ_TIMEOUT.get(ds.source, 15),
+        read_timeout=read_timeout or SOURCE_READ_TIMEOUT.get(ds.source, DEFAULT_READ_TIMEOUT),
     )
     download_manager.download_batch(downloadables)
 

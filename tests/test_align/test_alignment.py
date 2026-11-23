@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from cnsp_datasets.align.scan import correct_drift, joint_fit, peak_offset, pooled_drift
+from cnsp_datasets.align.scan import correct_drift, joint_fit, peak_offset, pooled_drift, upsample_lags
 
 FS, SEG = 256, 5 * 256
 
@@ -58,3 +58,54 @@ def test_correct_drift_makes_lag_constant():
     corrected = correct_drift(eeg, ppm)[0]
     u = np.arange(len(corrected)) / fs
     assert np.abs(corrected - f(u + onset))[fs:-fs].max() < 1e-3
+
+
+def _white_noise_scores(rng, dur_s, onset_s, ppm, snr, lags):
+    """Gaussian ridge (sigma 60 ms) along lag(t) = onset + ppm t, plus noise white along lags and windows (DNN scores
+    of 5-s windows at 1-s hop are jagged sample-to-sample along lags; chen2026)."""
+    fs, hop = 128, 128
+    starts = np.arange(-lags.min(), round(dur_s * fs) - lags.max() - 5 * fs, hop)
+    t = (starts + 5 * fs / 2) / fs
+    d = lags[:, None] - (onset_s + ppm * 1e-6 * t)[None, :] * fs
+    return snr * np.exp(-d ** 2 / (2 * 7.7 ** 2)) + rng.standard_normal(d.shape), starts
+
+
+def test_upsample_lags_keeps_samples_and_noise_variance():
+    x = np.random.default_rng(0).standard_normal((121, 2000))
+    fine = upsample_lags(x, 8)
+    assert fine.shape == (961, 2000)
+    np.testing.assert_allclose(fine[::8], x, atol=1e-10)
+    variance = [fine[80 + p:-80:8].var() for p in range(8)]   # linear interpolation: 0.5 half-way
+    np.testing.assert_allclose(variance, 1, atol=0.03)
+
+
+def test_joint_fit_noise_has_no_pull_to_zero_drift():
+    """On pure noise the drift argmax lands anywhere; linear lag interpolation put it at exactly 0 in half the cases."""
+    rng = np.random.default_rng(0)
+    lags, grid = np.arange(-80, 41), np.arange(-100, 101.0)
+    drifts = [joint_fit(*_white_noise_scores(rng, 300, -0.3, 0, 0, lags), lags, 128, 640,
+                        drift_grid_ppm=grid)["drift_ppm"] for _ in range(16)]
+    assert np.sum(np.abs(drifts) < 2) <= 2
+
+
+@pytest.mark.parametrize("ppm", [-50, 50])
+def test_joint_fit_recovers_drift_and_shift_in_white_noise(ppm):
+    """Known shift (-0.3 s) and drift over 16 noisy 10-min blocks: (almost) no block stuck at 0 ppm, median within
+    15 ppm (linear lag interpolation: 4 and 6 of 16 blocks at 0 +- 1 ppm, median error -4 and -18 ppm)."""
+    rng = np.random.default_rng(0)
+    lags, grid = np.arange(-80, 41), np.arange(-100, 101.0)
+    fits = [joint_fit(*_white_noise_scores(rng, 600, -0.3, ppm, 1.5, lags), lags, 128, 640, drift_grid_ppm=grid)
+            for _ in range(16)]
+    drifts = np.array([f["drift_ppm"] for f in fits])
+    assert np.sum(np.abs(drifts) < 1) <= 1
+    assert abs(np.median(drifts) - ppm) < 15
+    assert np.median([f["onset"] / 128 for f in fits]) == pytest.approx(-0.3, abs=0.01)
+
+
+def test_joint_fit_exact_without_noise():
+    lags = np.arange(-80, 41)
+    scores, starts = _white_noise_scores(np.random.default_rng(0), 1200, -0.3, 20, 1, lags)
+    scores -= _white_noise_scores(np.random.default_rng(0), 1200, -0.3, 20, 0, lags)[0]   # the noise
+    fit = joint_fit(scores, starts, lags, 128, 640, drift_grid_ppm=np.arange(-100, 101.0))
+    assert fit["drift_ppm"] == pytest.approx(20, abs=0.1)        # linear lag interpolation: 18.9
+    assert fit["onset"] / 128 == pytest.approx(-0.3, abs=0.002)
