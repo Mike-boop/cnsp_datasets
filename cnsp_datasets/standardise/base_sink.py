@@ -117,9 +117,10 @@ class BaseSource(ABC):
         self.sep = fname_separator
         self.assume_first_attended = assume_first_attended
 
-        self.re_sub = re.compile(r"^sub-(\d{3})$")
-        self.re_ses = re.compile(r"^ses-(\d{3})$")
-        self.re_trial = re.compile(r"^trial-(\d{3})$")
+        # written zero-padded to 3 digits (`:03d`), so larger numbers have more
+        self.re_sub = re.compile(r"^sub-(\d{3,})$")
+        self.re_ses = re.compile(r"^ses-(\d{3,})$")
+        self.re_trial = re.compile(r"^trial-(\d{3,})$")
         self.re_cond = re.compile(r"^cond-(.+)$")
         self.re_stim = re.compile(r"^([A-Za-z]+)(\d{2})-(.+)$")
 
