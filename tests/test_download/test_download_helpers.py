@@ -393,3 +393,30 @@ class TestGitlabLfs:
             {"name": "sub-01/a_meg.fif", "url": f"{api}/repository/files/sub-01%2Fa_meg.fif/raw?ref=v1&lfs=true",
              "checksum": "sha256:abc", "size": 42},
         ]
+
+
+class TestHuggingface:
+    @patch("cnsp_datasets.download.download_helpers.requests.get")
+    def test_token_sent_with_listing_and_files(self, mock_get, monkeypatch):
+        monkeypatch.setenv("HF_TOKEN", "tok")
+        mock_get.return_value = MagicMock(status_code=200, links={}, json=MagicMock(return_value=[
+            {"type": "directory", "path": "data"},
+            {"type": "file", "path": "data/a b.parquet", "size": 5, "lfs": {"oid": "abc"}},
+        ]))
+
+        [f] = download_helpers.id_to_downloadables_huggingface("org/repo@v1")
+
+        assert f == {"name": "repo/data/a b.parquet",
+                     "url": "https://huggingface.co/datasets/org/repo/resolve/v1/data/a%20b.parquet",
+                     "size": 5, "checksum": "sha256:abc", "headers": {"Authorization": "Bearer tok"}}
+        assert mock_get.call_args.kwargs["headers"] == {"Authorization": "Bearer tok"}
+
+    @patch("cnsp_datasets.download.download_helpers.requests.get")
+    def test_no_token_no_header(self, mock_get, monkeypatch):
+        monkeypatch.delenv("HF_TOKEN", raising=False)
+        mock_get.return_value = MagicMock(status_code=200, links={}, json=MagicMock(return_value=[
+            {"type": "file", "path": "README.md", "size": 1}]))
+
+        [f] = download_helpers.id_to_downloadables_huggingface("org/repo")
+
+        assert f["headers"] is None and f["checksum"] is None

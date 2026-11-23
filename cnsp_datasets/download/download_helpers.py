@@ -585,13 +585,16 @@ def id_to_downloadables_huggingface(repo):
     "<repo name>/<path>" so that several repos can share one download directory.
 
     LFS files carry sha256 checksums; small git-tracked files only git blob hashes, so they get none.
+    Gated repos need HF_TOKEN, a token of an account that has accepted the repo's terms on the website.
     """
     repo, _, revision = repo.partition("@")
     revision = revision or "main"
+    token = os.environ.get("HF_TOKEN")
+    headers = {"Authorization": f"Bearer {token}"} if token else None
     url = f"https://huggingface.co/api/datasets/{repo}/tree/{revision}?recursive=true"
     files = []
     while url:  # the tree listing is paginated through Link headers
-        response = requests.get(url, timeout=60)
+        response = requests.get(url, timeout=60, headers=headers)
         if response.status_code != 200:
             raise Exception(f"Failed to list Hugging Face dataset {repo}: {response.status_code}")
         files += [f for f in response.json() if f["type"] == "file"]
@@ -602,6 +605,7 @@ def id_to_downloadables_huggingface(repo):
             "url": f"https://huggingface.co/datasets/{repo}/resolve/{revision}/{quote(f['path'])}",
             "size": f["size"],
             "checksum": f"sha256:{f['lfs']['oid']}" if f.get("lfs") else None,
+            "headers": headers,
         }
         for f in files
     ]

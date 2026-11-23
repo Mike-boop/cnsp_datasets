@@ -269,6 +269,13 @@
       "description": "Har-Shai Yahav et al. (2025) dataset",
       "url": "https://osf.io/bzean/"
     },
+    "hassan2026": {
+      "source": "huggingface",
+      "identifiers": ["aspire-osu/maestro-eeg-dataset@534710be3a1132a83774bb6a80b7bf3f69a6d511"],
+      "description": "Hassan et al. (2026) MAESTRO: 32-ch ANT eego EEG at 500 Hz, 16 listeners, 105 x ~35 s trials of 4 talkers + 2 noise loudspeakers (per-speaker 16 kHz FLAC), with Tobii gaze/IMU. Gated (auto-approved): needs HF_TOKEN. Egocentric video (36.7 GB) skipped",
+      "url": "https://huggingface.co/datasets/aspire-osu/maestro-eeg-dataset",
+      "exclude": ["maestro-eeg-dataset/media/video/*"]
+    },
     "momenian2024": {
       "source": "openneuro",
       "identifiers": ["10.18112/openneuro.ds004718.v1.1.2"],
