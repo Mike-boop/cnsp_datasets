@@ -492,18 +492,21 @@ mapping above stays.
   f1 GD 1-3), decoder r ~0.3 at a negative lag (EEG leads the sound: production/EMG), +177..+221 ppm drift between the
   reading PC's sound card and the EGI clock.
 - Registry: to stop downloading the RA zips (7.7 GB: f1 2.22, f2 2.20, m1 1.62, m2 1.66 GB), add `"ReadingAloud/*"`
-  to the `chen2026` `exclude` list (fnmatch on the listing path, e.g. `ReadingAloud/sub-f1.zip`). Recommendation only;
-  the registry was not edited.
+  to the `chen2026` `exclude` list (fnmatch on the listing path, e.g. `ReadingAloud/sub-f1.zip`). Done: the registry
+  `exclude` has it.
 
 ## 10. Open questions (recommended default in brackets)
 1-3. Latency, per-chapter onsets and drift: **decided 2026-11-23 (section 6e): option B onsets by default, drift
    documented (drift.csv) and not applied.**
    (Earlier default "constant L = 0.50 s" is superseded: 8 chapters start 0.1-1.0 s late.)
-4. sub-01 Garnett Dream 6 (run-21) shows no envelope tracking (z 2.0; nothing within +-30 s or with any other wav)
-   although its triggers are normal and the EEG looks clean: keep, or drop? [keep with fallback timing; still no
-   tracking with the 0-4 s decoder or the DNN (2026-11-23)]
-5. sub-02 tracks weakly overall (decoder strong in 5 of 36 chapters, DNN in 8): keep? [keep; it is the data; 26
-   chapters on the listener-median fallback]
+4-5. **Decided 2026-11-24 (user: "follow the data"): keep both with the listener-median fallback timing.**
+   sub-01 Garnett Dream 6 (run-21) shows no envelope tracking (z 2.0; nothing within +-30 s or with any other wav,
+   nor with the 0-4 s decoder or the DNN) although its triggers are normal and the EEG looks clean. sub-02 tracks
+   weakly overall (decoder strong in 5 of 36 chapters, DNN in 8; 26 chapters on the fallback). Neither is evidence of
+   a timing or data fault, so nothing is dropped; users who want only tracked chapters can filter on the onset
+   `chapter_rule` column of `onsets_optionB.csv`.
+   Alignment grade: **poor** (software playback-request triggers + brain-derived per-listener/per-chapter latency,
+   ~0.5 s; drift +16 ppm brain-based, not applied; low tier).
 6. Include the prefaces (practice, 57-80 s, same reader)? [no; the authors exclude them]
 7. ~~Include Reading Aloud?~~ Decided by the user (2026-11-22): skipped (section 9). Registry: add `"ReadingAloud/*"`
    to the `chen2026` exclude list? [yes, saves 7.7 GB]
