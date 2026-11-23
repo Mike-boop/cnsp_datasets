@@ -453,6 +453,30 @@
       "identifiers": ["10.5281/zenodo.17393865"],
       "description": "Zhang et al. (2025) ear-EEG (cEEGrid + OpenBCI, 125 Hz), attention switching between talkers; version 17393865 pinned",
       "url": "https://zenodo.org/records/17393865"
+    },
+    "jaeger2025": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.15518573"],
+      "description": "Jaeger et al. (2025) EEG, German fairy tales; 23 files (Data.zip 15.3 GB, analysis code, toolboxes.zip); version 15518573 pinned",
+      "url": "https://zenodo.org/records/15518573"
+    },
+    "wang2026": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.17413336"],
+      "description": "Wang et al. (2026) AASD EEG, spontaneous attention switching between two Mandarin talkers; Stimuli Audio.zip, Processed EEG.zip, Original EEG.zip (12.9 GB); version 17413336 pinned",
+      "url": "https://zenodo.org/records/17413336"
+    },
+    "thornton2025": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.10260082"],
+      "description": "Thornton et al. (2025) ear-EEG, attended stories; one zip (icl_earEEG_dataset.zip, 0.56 GB); version 10260082 pinned",
+      "url": "https://zenodo.org/records/10260082"
+    },
+    "geirnaert2025": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.16536441"],
+      "description": "Geirnaert et al. (2025) EEG + cEEGrid, Danish talks; bids_dataset.zip (12.2 GB), preprocessedData.zip, experiment manual; version 16536441 pinned",
+      "url": "https://zenodo.org/records/16536441"
     }
   }
 }
