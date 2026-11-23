@@ -54,6 +54,7 @@ Last updated: 2026-11-23.
 | winchester2026 | winchester2026 | dev | low (all 31; 3 conditions; ceiling at 125 Hz envelopes) | download 5.4 GB + standardised 4.4 GB in tmp | music (piano); envelopes only, no audio; 9 subj at 250 Hz, 22 at 500 Hz; subject 5 looks broken; licence not stated |
 | li2025 | li2025 | dev | low (offset-corrected in validation only; higher tiers not credible) | 18.9 GB MEG download + 12 GB standardised in tmp | OPM-MEG; sound ~0.80 s (sub-31..47) / ~0.55 s (sub-48..60) after the file start: documented, user to decide; sub-54 truncated upstream |
 | diliberto2020 | diliberto2020 | dev | low (all 20; ceiling: 64 Hz envelope, no audio) | 12 GB download+extracted + 13 GB standardised in tmp | music (Bach); ADC counts scaled to V (inferred); presentation order not shipped; CC0 |
+| kern2022 | kern2022 | dev | brainstem (weak; pilot 4/35) | 207 GB download + 13 GB pilot in tmp | music; audio copy: onset +4.1 ms, drift +6.5 ppm implemented but off pending the user; full run ~115 GB |
 
 Not in the campaign sheet: mai2023 (dev, iEEG, not reviewed), jehn2024 (dev), karengal2025 / koelbl2021 /
 schuller2022full (internal).
