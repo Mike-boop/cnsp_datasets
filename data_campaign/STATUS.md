@@ -58,6 +58,7 @@ schuller2022full (internal).
 |---|---|---|---|---|
 | chen2026 | chen2026 | dev (notes only, no adaptor) | downloaded (49 GB) + NHR vault backup verified (md5 13/13 local, 178/178 sizes on vault); 281 chapters trigger-verified (24.8 h; sub-05 LP 14/27, sub-06 GD 4 absent) | user decisions on per-chapter latency (option B proposed) and +16 ppm drift; then adaptor reading `timing_table_proposal.csv` |
 | hassan2026 | hassan2026 | dev (registry + notes, 1273cb2) | blocked: HF repo gated (auto-approve), no token; 5.15 GB without video | user accepts terms + adds HF token (`hf`) to secrets.json; then download, explore, adaptor |
+| straetmans2021 | straetmans2021 | dev (adaptor a0bce7b, 95007d6) | no stimulus in the release (commercial audiobook); EEG standardised for all 20, sanity checks only | user: keep EEG-only dataset? ask authors for the wavs, side condition, event times |
 
 ## Open items across datasets
 - **Push `dev`**: many commits are ahead of `origin/dev`; needs the user's approval.
