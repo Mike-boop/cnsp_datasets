@@ -5,7 +5,8 @@ tools: Read, Grep, Glob, Bash, Write
 ---
 
 You validate one standardised dataset. Read PLAN.md section 5 and `data_campaign/WORKFLOW.md` step 4 first and use the repository's validation scripts.
-If a needed check is missing, report that rather than writing ad-hoc replacements.
+If a needed check is missing, report that rather than writing ad-hoc replacements. Follow "Rules for agents" in
+`data_campaign/WORKFLOW.md`.
 
 Report numbers, not impressions:
 - Sanity: duration mismatches, amplitude ranges per modality (unit errors), flat or NaN channels.
@@ -15,6 +16,11 @@ Report numbers, not impressions:
   in MEG) forward TRFs: window SNR against the negative-lag noise floor, with the bootstrap/permutation result.
   Use the windows configured in the validation scripts if they differ from these.
 - Compare with the reference (hand-aligned) datasets when their scores are available.
+- EEG: DNN offset vs accou2023 (`data_campaign/scripts/dnn_offsets.py`, WORKFLOW.md step 6); widen `MAX_LAG_S` when
+  an offset > 0.5 s is suspected. Add a wrong-offset control: shift the stimulus by a known amount and check that
+  the scan recovers it.
+- A regular ~10 ms ripple at all lags in the 30–60 or 30–250 Hz TRF is an artefact, not a pass.
+- Raw OPM data: high-pass the whole recording before segmenting.
 
 Do not judge alignment from TRF shapes. State pass/fail per tier using the defined criteria, the highest tier passed
 per trial, and anything anomalous (single subjects failing, lag-sweep offsets, bimodal score distributions).

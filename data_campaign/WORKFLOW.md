@@ -7,12 +7,43 @@ mistakes already made is `LESSONS.md`. Scratch for a dataset `<d>` lives in `R/<
 Work through the `candidates` tab of the spreadsheet in batches of about 3, in `priority_rank` order unless the user
 says otherwise. Do the heavy processing one dataset at a time within a batch.
 
+## Rules for agents
+Every agent in `.claude/agents/` follows these, on top of `../CLAUDE.md`:
+- **Commits.** Commit through a temporary index with explicit paths ("Parallel agents" below); never stage others'
+  edits.
+- **Records.** Never edit `STATUS.md`, `HANDOVER.md` or the spreadsheet: report what changed, and the main session
+  writes it.
+- **Size.** Estimate the output size from one written trial before any run, keep `tmp` lean, and run nothing in
+  full without approval.
+- **Alignment.** Hardware-derived corrections are on by default; brain-based ones only under the CLAUDE.md rule.
+  Propose an alignment grade (PLAN.md section 3).
+- **Access blocks.** On any block (HTTP 403, "unusual traffic", a proof-of-work gate) stop and report. Never retry
+  from another machine or work around it.
+- **Backups.** DRUM/Zenodo downloads get a vault backup (step 1).
+- **Review.** Run the `reviewer` agent on your Python changes before committing and apply its findings; don't hand
+  back while it is still running.
+
+## Parallel agents
+Several agents (and the main session) can share one worktree and its git index.
+- **Commit through a temporary index** with explicit paths, then reset the shared index for your own paths only:
+  ```
+  I=$(git rev-parse --git-path index.<agent>)   # one file per agent; read-tree resets it each time
+  GIT_INDEX_FILE=$I git read-tree HEAD
+  GIT_INDEX_FILE=$I git add -- <paths>
+  GIT_INDEX_FILE=$I git commit -m "..."
+  git reset -q -- <paths>
+  ```
+- **One writer for the records.** Only the main session edits `STATUS.md`, `HANDOVER.md` and the spreadsheet.
+- **Merge main → dev only when no agent is committing**, and afterwards check that the branch-only datasets survived.
+
 ## 1. Download
 - **Registry entry.** Add `<d>` to the dataset registry on `dev` and check that the downloader supports its source.
   - Add a missing source to `cnsp_datasets/download/`, with a test: all downloading code lives in the repo.
   - If the source needs a key, ask the user to put it in `secrets.json`. Manual downloading is the worst case.
-- **Check the size first** (API metadata) and `du -s --block-size=1G /data_storage/gu08wuvu/datasets/tmp`. Use the
-  registry's `exclude`/`include` patterns to skip MRI and anything not needed.
+- **Check the listing first** (API metadata), before downloading anything:
+  - stimuli: are the audio (or at least envelopes) in the release? Some releases ship none (straetmans2021);
+  - total size, against `du -s --block-size=1G /data_storage/gu08wuvu/datasets/tmp`;
+  - the registry's `exclude`/`include` patterns, to skip MRI and anything not needed.
 - **Run it in the background.** Use `scripts/download_retry.sh <d>` (resumable, `WORKERS` env, default 2), or
   `download_dataset(..., skip_existing=True, read_timeout=...)` under `nohup`. The output goes to `R/<d>/download/`.
 - **Respect the limits.** Zenodo: ≤ 3 workers, ≤ 1-2 datasets per day, logged in `HANDOVER.md`. DRUM/SciDB are
@@ -20,6 +51,10 @@ says otherwise. Do the heavy processing one dataset at a time within a batch.
 - **Watch out for extraction.** `extract_archives=True` deletes each zip after extracting it. Keep the zips if they
   are needed for md5 checks or a backup.
 - **Check every file afterwards** (size, md5, `unzip -t`): truncated uploads have happened.
+- **Vault backup (DRUM/Zenodo only).** Once verified, back the raw download up to the NHR vault
+  (`csnhr:/home/vault/iwpm/iwpm104h/<d>`): write a manifest (path, size, md5), rsync, then check every file's size
+  with `stat` (readdir on the vault is unreliable). Keep the zips for this (see extraction above). Other sources are
+  re-downloaded when needed.
 
 ## 2. Explore (agent `data-explorer`)
 Read the paper (`papers/<id>.pdf`), the authors' code and the README first. The explorer then writes
@@ -34,15 +69,17 @@ Read the paper (`papers/<id>.pdf`), the authors' code and the README first. The 
 - any audio or stimtrack channel;
 - a proposed alignment and drift method.
 
-It ends with **open questions, each with a recommended default**.
+It ends with **open questions, each with a recommended default**, and a proposed alignment grade.
 
 **Human checkpoint:** the user approves the alignment plan and answers the open questions.
 
 ## 3. Standardise (agent `data-standardiser`)
 - **Adaptor.** Write `cnsp_datasets/datasets/<d>/adaptor.py` following the approved plan and the conventions in
   `../CLAUDE.md`.
-- **Pilot.** Run it on about 20 subjects into `R/<d>/standardised/` (`scripts/standardise_validate.sh <d>` runs
-  standardisation and validation in one go).
+- **Pilot.** First write one trial and estimate the total output size from it. Then run a pilot sized from that
+  estimate (about 20 subjects if it fits) into `R/<d>/standardised/` (`scripts/standardise_validate.sh <d>` runs
+  standardisation and validation in one go; leading `--adaptor-opt key=value` pairs are passed to the adaptor).
+- **Adaptor options** (e.g. turning off a brain-based onset) are documented in `notes.md` and the README.
 - **Drift.** Always measure it, and record the estimate in `notes.md`:
   - With an audio copy in the recording, use a positive-peak windowed fit (`yang2026_base/drift.py:window_fit`).
   - Otherwise use the trigger durations across subjects (drift·length + jitter).
@@ -91,6 +128,9 @@ For residual drift, run `scripts/dnn_drift_check.py`, which compares early and l
   - The values are circular: they come from the same EEG they would correct, so say so.
 
 ## 7. Document (agent `data-documenter`) and record
+- **Alignment grade.** Settle the grade (`good`/`medium`/`poor`/`none`, PLAN.md section 3; the weakest part
+  decides) with one line of evidence, and record it in `notes.md`, the README, `STATUS.md` (`alignment`) and the
+  spreadsheet (`alignment_quality`).
 - **Documentation.**
   - Write the user-facing `cnsp_datasets/datasets/<d>/README.md`.
   - `notes.md` keeps the findings that explain the code, with validation numbers and figure paths.

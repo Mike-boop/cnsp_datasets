@@ -1,11 +1,14 @@
 """PreToolUse guard for the dataset storage area (see PLAN.md section 7).
 
 - Downloaded datasets under ROOT are read-only; only ROOT/tmp may be written.
-- Download/standardise commands are blocked while ROOT/tmp exceeds TMP_LIMIT_GB.
+- Download/standardise commands are blocked while ROOT/tmp exceeds the limit: 1000 GB by default; a user-approved
+  temporary window is set with the env var CNSP_TMP_LIMIT_GB or a file ROOT/tmp/TMP_LIMIT_GB holding the number
+  (delete the file when the window ends).
 
 Exit code 2 blocks the tool call and shows stderr to Claude. The Bash checks are heuristic.
 """
 import json
+import os
 import re
 import shlex
 import subprocess
@@ -14,6 +17,24 @@ import sys
 ROOT = "/data_storage/gu08wuvu/datasets"
 TMP = f"{ROOT}/tmp"
 TMP_LIMIT_GB = 1000
+
+
+def tmp_limit_gb():
+    """Env var CNSP_TMP_LIMIT_GB, else TMP/TMP_LIMIT_GB (a user-approved window), else TMP_LIMIT_GB."""
+    for source in (os.environ.get("CNSP_TMP_LIMIT_GB"), read_limit_file()):
+        try:
+            return float(source)
+        except (TypeError, ValueError):
+            continue
+    return TMP_LIMIT_GB
+
+
+def read_limit_file():
+    try:
+        with open(f"{TMP}/TMP_LIMIT_GB") as fh:
+            return fh.read().strip()
+    except OSError:
+        return None
 
 WRITE_VERBS = {"rm", "mv", "touch", "chmod", "chown", "truncate", "mkdir", "rmdir", "unlink"}
 COPY_VERBS = {"cp", "rsync", "ln"}
@@ -51,8 +72,9 @@ def check_bash(cmd):
     if HEAVY.search(cmd):
         out = subprocess.run(["du", "-s", "--block-size=1G", TMP], capture_output=True, text=True)
         used = int(out.stdout.split()[0]) if out.returncode == 0 and out.stdout else 0
-        if used > TMP_LIMIT_GB:
-            block(f"Blocked: {TMP} uses {used} GB (> {TMP_LIMIT_GB} GB). Clean up before downloading/standardising.")
+        limit = tmp_limit_gb()
+        if used > limit:
+            block(f"Blocked: {TMP} uses {used} GB (> {limit:g} GB). Clean up before downloading/standardising.")
 
 
 def main():

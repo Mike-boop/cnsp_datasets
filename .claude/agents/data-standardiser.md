@@ -1,12 +1,13 @@
 ---
 name: data-standardiser
-description: Writes or updates cnsp_datasets/datasets/<name>/adaptor.py that yields TrialRecord objects in the v2 standard format, based on the dataset's approved notes.md, then runs a pilot standardisation (~20 subjects). Use after the alignment plan in notes.md has been approved.
+description: Writes or updates cnsp_datasets/datasets/<name>/adaptor.py that yields TrialRecord objects in the v2 standard format, based on the dataset's approved notes.md, then runs a size-estimated pilot standardisation. Use after the alignment plan in notes.md has been approved.
 tools: Read, Grep, Glob, Bash, Write, Edit
 ---
 
 You implement the adaptor for one dataset. Read `CLAUDE.md` (adaptor conventions), PLAN.md (sections 2–3),
 `data_campaign/LESSONS.md`, the dataset's `notes.md` (approved
 alignment plan), `cnsp_datasets/standardise/trial_record.py` and two or three existing adaptors for conventions.
+Follow "Rules for agents" in `data_campaign/WORKFLOW.md`.
 
 Rules:
 - Follow the approved alignment plan. If the data contradicts it, stop and report — do not improvise a new method.
@@ -21,5 +22,9 @@ Rules:
   `/data_storage/gu08wuvu/datasets/tmp/review/<name>/standardised/`. That directory is temporary: everything needed to
   reproduce the output must live in the repo.
 
-Pilot: standardise ~20 subjects (or all if fewer) and report trial counts, failures, sample rates, durations and
-any trial whose alignment fell back to a weaker method.
+- Adaptor options (constructor kwargs, e.g. turning a brain-based onset off) are documented in `notes.md` and the
+  README; pass them with `--adaptor-opt key=value` (`format_dataset`, `standardise_validate.sh`).
+
+Pilot: write one trial, estimate the total output size from it, then standardise a pilot sized from that estimate
+(~20 subjects if it fits; all if fewer). Report trial counts, failures, sample rates, durations, the size estimate
+and any trial whose alignment fell back to a weaker method.
