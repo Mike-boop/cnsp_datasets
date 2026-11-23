@@ -418,6 +418,30 @@ extended search for the rest. Scripts `reclassify_z2.py`, `ext_scan.py`, `timing
 - Review (agent `reviewer`): applied: latency source taken from `rule` / `optionB_per_chapter` instead of comparing
   values; jitter for median trials; wav format check; NaN-safe provenance floats; line lengths; stronger timing check.
 
+**Pilot and validation (2026-11-23; sub-01, 02, 05 = 105 trials, 9.2 h; average reference; validator `low,mlr,brainstem`).**
+Two standardisations of the same EEG, differing only in the onsets: `latency="chapter"` (per-chapter EEG latency) and
+`latency="listener_median"` (trigger-only timing, t0 + listener median). Scratch: `tmp/review/chen2026/
+standardised_v2`, `standardised_trigger_v2`, `validation_{chapter,trigger}_v2/` (validation.json, validation.png).
+| timing | tier | low: mean / median r | subjects sig. | TRF peaks | validator trial offsets SD / MAD | mlr | brainstem |
+|---|---|---|---|---|---|---|---|
+| per-chapter | low (mlr*) | 0.0156 / 0.0178 | 3/3 | ~120, 234 ms | 173 / 44 ms | SNR 1.07, p 0.02* | SNR 1.01, p 0.30 |
+| trigger-only | low | 0.0116 / 0.0121 | 2/3 | ~140, 250 ms | 192 / 88 ms | SNR 1.04, p 0.34 | SNR 1.03, p 0.34 |
+- Per subject (low r): sub-01 0.019 vs 0.012, sub-02 0.010 vs 0.006, sub-05 0.018 vs 0.016 (per-chapter vs trigger-only).
+- **Circularity effect**: per-chapter timing raises the mean r by ~35% and halves the validator's per-trial offset MAD.
+  The latencies were estimated from this EEG (decoder, held out per chapter), so part of the gain is circular; the
+  held-out-halves test (section 6b) is the non-circular evidence that the per-chapter values are real.
+- *The mlr "pass" is an artefact: the 30-60 Hz and 30-250 Hz TRFs are a regular ~10-ms ripple at all lags (-75..+75 ms),
+  in both timings, i.e. a stimulus-locked periodicity (mains-related hum in the recordings and the EEG, inferred) and
+  no response. **Validation tier: low** (cortical tracking only; no evidence for usable high-frequency responses).
+- DNN offset vs accou2023 (`data_campaign/scripts/dnn_offsets.py` via `tmp/review/chen2026/scripts/dnn_offsets_chen2026.py`,
+  +-500 ms): per-chapter +13.6 ms (95% CI over 3 subjects -169..+77), trigger-only +7.9 ms (-133..+85); per subject
+  (01, 02, 05) -169/+77/+13 and -133/+84/+7 ms. The pooled curves are clean and peak near 0, so the absolute onset level
+  matches the accou2023 convention to ~10 ms; single subjects are unreliable (weak tracking of this dataset by the
+  classifier; sub-05, the only listener with many DNN-strong chapters, gives +13 / +7 ms). Figure
+  `tmp/review/chen2026/dnn_offsets/offsets.png`. Documented, not applied.
+- First pilot (`standardised`, `standardised_trigger`) used per-trial bads and broke the validator (subjects with
+  different channel sets); superseded by the `_v2` folders (same EEG samples, per-participant bads).
+
 ## 7. Cross-subject duration check
 - Trigger-derived duration: the ROWS/ROWE span equals the json span to within the 3 ms jitter in every chapter (|d| <=
   6 ppm for chapters > 2 min). End-of-audio markers do not exist in PL. Because the triggers and their timestamps share
@@ -431,7 +455,8 @@ extended search for the rest. Scripts `reclassify_z2.py`, `ext_scan.py`, `timing
 - PL: f1 group 5561.6 s (LP 1-27) + 5363.1 s (GD 1-9) = **3.035 h** per listener; m1 group 5561.6 + 6170.6 s =
   **3.259 h**. 8 listeners: **25.2 h** (LP 12.4 h, GD 12.8 h). The paper's 21.6 h is "~3 h x 8" rounded down. Minus the
   chapters whose EEG is not in the release: sub-05 LP 14 (240.0 s) and LP 27 (169.7 s), sub-06 GD 4 (1225.7 s), 0.454 h
-  in total -> **24.8 h** (281 chapters).
+  in total -> **24.72 h** (281 chapters; from timing.csv: per listener 2.92-3.26 h, mean 3.09 h; Garnett Dream 12.47 h,
+  Little Prince 12.25 h).
 - RA (skipped; for the record): f1 3.228 h (GD 1-11; 3.035 h with GD 1-9), f2 3.035 h, m1 3.259 h, m2 3.033 h; total 12.5 h.
 - Prefaces (practice, excluded by the authors): 57-171 s each.
 
