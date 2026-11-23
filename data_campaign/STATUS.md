@@ -43,7 +43,7 @@ Last updated: 2026-11-23.
 | brodbeck2022 | brodbeck2022 | dev | low (mlr population only) | deleted | no audio (copyright) |
 | vanheusden2020 | vanheusden2020 | dev | mlr | deleted; user's manual download kept | |
 | presacco2016 | presacco2016 | dev | brainstem (30-250 Hz; mlr fails) | deleted (results kept; raw on the NHR vault) | MEG only; pilot 20 subj; licence not stated; drift -37 ppm documented; full run pending storage |
-| karunathilake2023 | karunathilake2023 | dev | brainstem (clear speech; vocoded low only) | deleted (results kept; Dryad) | pilot 16/39; separate study from _aging; subject = R-number mod 1000; full run pending storage |
+| karunathilake2023 | karunathilake2023 | dev | brainstem (clear speech; vocoded low only) | deleted (results kept; Dryad) | pilot 16/39; separate study from _aging; subject = full R-number; full run pending storage |
 | karunathilake2025 | karunathilake2025 | dev | brainstem (pooled, 3 subj; noise condition low only) | deleted (results kept; Dryad) | pilot 3/30; full run (~35 GB) pending storage |
 | deoisres2023 | deoisres2023 | dev | mlr (pilot 5/22; brainstem only via S03 stimulus artefact) | user's manual download (read-only) + 13 GB extracted + 5.2 GB pilot in tmp | ePrints blocks scripts (Anubis); drift -24 ppm corrected by default; decisions pending |
 | chen2023 | chen2023 | dev | brainstem (drift +510 ppm default, data-derived, user-approved; 4/4 subj) | deleted (results kept; GitLab re-download) | 16 ms delay applied; vocoded trials carry the clean wav by default; ANC DUA: no redistribution; full run ~85 GB |
