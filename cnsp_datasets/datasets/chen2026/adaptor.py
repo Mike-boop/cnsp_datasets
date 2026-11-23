@@ -1,0 +1,163 @@
+from __future__ import annotations
+
+import math
+import os
+from functools import lru_cache
+from typing import Callable, Iterable
+
+import mne
+import numpy as np
+import pandas as pd
+from scipy.io import wavfile
+from scipy.signal import butter, sosfiltfilt
+
+from cnsp_datasets.datasets.chen2026.timing import TIMING_CSV, reader_of
+from cnsp_datasets.standardise.clock import crop_on_audio_clock
+from cnsp_datasets.standardise.provenance import provenance
+from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
+
+FS = 1000
+AUDIO_FS = 12000
+SESSIONS = {"garnettdream": 1, "littleprince": 2}  # BIDS sessions (one story each); listening order not recoverable
+LATENCY = {"chapter": "latency_s", "option_b": "latency_optionB_s", "listener_median": "listener_median_s"}
+DRIFT_ESTIMATE_PPM = 16.0  # pooled EEG estimate (decoder windows), documented, not applied by default (notes 6b)
+BAD_RATIO = 5.0  # a channel is bad if its 1-40 Hz SD is > 5x or < 1/5 of the median SD
+ABSENT = "sub-05 littleprince 14 and 27, sub-06 garnettdream 4"  # EEG not in the release (notes 6b), not in timing.csv
+TRIGGER = ("software (code: PsychoPy/sounddevice -> zmq -> egi-pynetstation; the paper says hardware). ROWS/ROWE "
+           "replay the reader's line timeline from the sd.play() request, so they give the request time t0, not "
+           "the sound")
+REFERENCE = "Cz (EGI VREF, the recording reference; dropped by the authors, added back here as a zero channel)"
+NOTES = ("PassiveListening only (ReadingAloud and the practice prefaces excluded). Trial = one chapter wav, played "
+         "whole. t0 = intercept of a fit of the ROWS/ROWE triggers to the reader's json timeline (residual SD ~3 ms; "
+         "timing.py); onset = t0 + sound latency (~0.5 s, varying per sd.play() call). The latency is estimated from "
+         "this EEG (listener-specific leave-one-chapter-out backward decoder, z >= 2 against mismatched envelopes, "
+         "else the accou2023 DNN, else the listener median; timing.csv `rule`), so validation scores on these onsets "
+         "are optimistic (circular); `latency_option` says which column was used. Drift: ~+16 ppm EEG estimate, "
+         "applied only if drift_corrected_ppm != 0. Bad channels: SD (1-40 Hz) > 5x or < 1/5 of the median, per "
+         "trial. Positions: GSN-HydroCel-129 template (the shipped CapTrak files are the same template).")
+
+
+class Chen2026Adaptor:
+    """
+    ChineseEEG-2 (Chen et al. 2026, Science Data Bank 10.57760/sciencedb.CHNNeuro.00001 V5), PassiveListening: 8
+    Mandarin listeners, 128-ch EGI HydroCel at 1000 Hz (BrainVision files cut per chapter by the authors), hearing
+    one reader's recordings of Garnett Dream (01-04: reader f1, 9 sections; 05-08: reader m1, 8) and The Little Prince
+    (27 chapters). 281 trials (sub-05 LP 14/27 and sub-06 GD 4 are absent from the release).
+
+    Condition = story, session = BIDS session (1 garnettdream, 2 littleprince), trial = chapter. Onset = t0 (trigger
+    fit) + latency from timing.csv, where `latency` picks the column: "chapter" (default; per-chapter EEG estimate under
+    the z >= 2 rule, else the listener median), "option_b" (listener median unless the chapter deviates by more than
+    max(40 ms, 3 SE)) or "listener_median" (one latency per listener). drift_ppm: default 0 (see notes.md). Stimulus:
+    the 12 kHz wav. audio_dir: registry entry chen2026_audio, by default <download_dir>/ChineseEEG-2_audio.
+    """
+
+    def __init__(self, download_dir: str, latency: str = "chapter", drift_ppm: float = 0.0,
+                 audio_dir: str | None = None):
+        if latency not in LATENCY:
+            raise ValueError(f"latency must be one of {sorted(LATENCY)}, not {latency!r}")
+        self.root = os.path.join(download_dir, "PassiveListening")
+        self.audio_dir = audio_dir or os.path.join(download_dir, "ChineseEEG-2_audio")
+        self.latency = latency
+        self.drift = float(drift_ppm)
+        self.table = pd.read_csv(TIMING_CSV, dtype={"sub": str})
+
+    def parse(self) -> Iterable[TrialRecord]:
+        print(f"chen2026: absent from the release: {ABSENT}")
+        for r in self.table.itertuples(index=False):
+            reader = reader_of(r.sub)
+            wav = os.path.join(self.audio_dir, f"{r.story}_{reader}", f"audio_{r.chapter}.wav")
+            latency = float(getattr(r, LATENCY[self.latency]))
+            own = {"chapter": r.rule != "listener median", "option_b": bool(r.optionB_per_chapter),
+                   "listener_median": False}[self.latency]  # a per-chapter EEG estimate is used
+            onset = (r.t0_s + latency) * FS
+            if self.drift == 0:
+                onset = round(onset)
+            vhdr = os.path.join(self.root, f"sub-{r.sub}", f"ses-{r.story}", "eeg", r.file)
+            halves = [_num(r.halves_A_ms), _num(r.halves_B_ms)]
+            halves_agree = None if pd.isna(r.halves_agree) else bool(r.halves_agree)
+            description = provenance(
+                "dnn" if own else "sw_trigger", TRIGGER, NOTES, drift_ppm=DRIFT_ESTIMATE_PPM,
+                jitter_ms=_num(r.latency_se_ms) if own else _num(r.listener_latency_rsd_ms),
+                drift_corrected_ppm=self.drift, latency_option=self.latency,
+                latency_source=("per-chapter EEG estimate" if own else
+                                "listener median of the EEG latency estimates (constant per listener)"),
+                t0_s=_num(r.t0_s), latency_s=latency, onset_sample=float(onset),
+                listener_median_s=_num(r.listener_median_s), listener_latency_rsd_ms=_num(r.listener_latency_rsd_ms),
+                rule=r.rule, rule_z=_num(r.rule_z), latency_se_ms=_num(r.latency_se_ms),
+                halves_ms=halves, halves_agree=halves_agree, peak_ratio=_num(r.peak_ratio),
+                decoder_latency_ms=_num(r.decoder_latency_ms), decoder_z=_num(r.decoder_z),
+                decoder_se_ms=_num(r.decoder_se_ms), trigger_events=int(r.trig_n_events),
+                trigger_rows_found=r.trig_rows_found, trigger_residual_sd_ms=_num(r.trig_res_sd_ms),
+                participant=f"sub-{r.sub}", reader=reader, story=r.story, chapter=int(r.chapter), file=r.file,
+                reference=REFERENCE, units_as_shipped="uV (float32 BrainVision written by pybv), read into V",
+                montage="GSN-HydroCel-129 template", validation_tier=None)
+            name = f"{r.story}_{reader}_ch{r.chapter:02d}"
+            yield TrialRecord(
+                subject=int(r.sub), session=SESSIONS[r.story], trial=int(r.chapter), condition=r.story, ns_type="eeg",
+                stimulus=[StimulusRecord("audio", name, _audio_loader(wav), True, "audio")],
+                neural_data_fn=_eeg_loader(vhdr, onset, math.ceil(_wav_length(wav) * FS / AUDIO_FS),
+                                           self.drift * 1e-6, description))
+
+
+def _num(x) -> float | None:
+    """Float, or None for a missing value (JSON has no NaN)."""
+    return None if pd.isna(x) else float(x)
+
+
+@lru_cache(maxsize=None)
+def _wav_length(path: str) -> int:
+    """Samples of a chapter wav, checking the shipped format (12 kHz int16, two identical channels)."""
+    fs, x = wavfile.read(path, mmap=True)
+    if fs != AUDIO_FS or x.dtype != np.int16 or x.ndim != 2:
+        raise ValueError(f"{path}: expected {AUDIO_FS} Hz int16 stereo, got {fs} Hz {x.dtype} {x.shape}")
+    return len(x)
+
+
+def _audio_loader(path: str) -> Callable[[], dict]:
+    def _loader() -> dict:
+        _, x = wavfile.read(path)
+        return {"fs": AUDIO_FS, "data": (x[:, 0] / 32768.0).astype(np.float32)[None, :]}
+
+    return _loader
+
+
+@lru_cache(maxsize=1)
+def _read(vhdr: str) -> mne.io.BaseRaw:
+    return mne.io.read_raw_brainvision(vhdr, preload=False, verbose="ERROR")
+
+
+@lru_cache(maxsize=1)
+def _montage() -> mne.channels.DigMontage:
+    montage = mne.channels.make_standard_montage("GSN-HydroCel-129")
+    montage.rename_channels({"Cz": "VREF"})
+    return montage
+
+
+def _bad_channels(raw: mne.io.BaseRaw) -> list[str]:
+    """EEG channels (not VREF) whose 1-40 Hz SD is > BAD_RATIO times or < 1/BAD_RATIO of the median SD."""
+    sos = butter(4, [1, 40], "bandpass", fs=raw.info["sfreq"], output="sos")
+    names = [c for c in raw.ch_names if c != "VREF"]
+    sd = sosfiltfilt(sos, raw.get_data(picks=names), axis=1).std(axis=1)
+    ratio = sd / np.median(sd)
+    return [c for c, q in zip(names, ratio) if q > BAD_RATIO or q < 1 / BAD_RATIO]
+
+
+def _eeg_loader(vhdr: str, onset: float, n_out: int, drift: float, description: str) -> Callable[[], mne.io.BaseRaw]:
+    def _loader() -> mne.io.BaseRaw:
+        raw = _read(vhdr)
+        if raw.info["sfreq"] != FS or len(raw.ch_names) != 128:
+            raise ValueError(f"{vhdr}: expected 128 channels at {FS} Hz")
+        out = crop_on_audio_clock(raw, onset, n_out, drift)
+        if out.n_times != n_out:
+            raise ValueError(f"{vhdr}: recording ends {n_out - out.n_times} samples before the end of the wav")
+        out = mne.add_reference_channels(out, "VREF", copy=False)
+        out.set_montage(_montage(), verbose="ERROR")
+        out.set_meas_date(None)
+        out.info["bads"] = _bad_channels(out)
+        out.info["description"] = description
+        return out
+
+    return _loader
+
+
+ADAPTOR = Chen2026Adaptor
