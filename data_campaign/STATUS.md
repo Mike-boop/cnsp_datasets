@@ -56,6 +56,7 @@ Last updated: 2026-11-23.
 | diliberto2020 | diliberto2020 | dev | low (all 20; ceiling: 64 Hz envelope, no audio) | 12 GB download+extracted + 13 GB standardised in tmp | music (Bach); ADC counts scaled to V (inferred); presentation order not shipped; CC0 |
 | kern2022 | kern2022 | dev | brainstem (weak; pilot 4/35) | 207 GB download + 13 GB pilot in tmp | music; audio copy: onset +4.1 ms, drift +6.5 ppm implemented but off pending the user; full run ~115 GB |
 | chen2026 | chen2026 | dev | low (pilot 3/8; mlr pass is a ripple artefact) | download 49 GB (vault-backed) + pilots in tmp | t0 from triggers + per-chapter EEG latency (z >= 2 rule, user); drift +16 ppm documented; DNN +14 ms; decisions: latency column, drift, sub-02, deletion |
+| kulasingham2021 | kulasingham2021 | dev | low (all 22; ceiling at 200 Hz); attended > ignored 20/22 | 4.9 GB zips + 11 GB extracted + 5 GB standardised in tmp; vault backup verified | preprocessed epochs only; R2522 block order corrected from the data (readme wrong); no licence stated |
 
 Not in the campaign sheet: mai2023 (dev, iEEG, not reviewed), jehn2024 (dev), karengal2025 / koelbl2021 /
 schuller2022full (internal).
