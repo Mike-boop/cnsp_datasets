@@ -75,11 +75,15 @@ Gaze/IMU/video are missing for S02 eval_077 and eval_078 only.
   -135/+135 deg (noise). The json is self-consistent (hemisphere L for 1-2, R for 3-4; outer = 1 and 4); the card
   lists 1 = -22.5, 2 = +22.5, 3 = -67.5, 4 = +67.5. Upstream issue candidate. The adaptor uses the json.
 - Attended speaker per trial in `metadata/trials.csv` (25 x 4 over the 100 evaluation trials), attended SNR 3-18 dB
-  (mean 11.6, SD 3.1, 105 trials), comprehension correctness per subject x trial.
+  (mean 11.6, SD 3.1, 105 trials). `trials_per_subject.csv` has `comprehension_correct` = **False for all 1,600
+  evaluation trials** (empty for the 80 training trials), which cannot be right (the paper reports behavioural
+  accuracy); the adaptor stores it with a note (upstream issue).
 - Paper II-C says the "naturally mixed audio recording" is released too; it is not in the repo (upstream issue
   candidate).
-- Paper IV: SNR scaling clipped the attended stream's peaks (16-bit PCM). The FLACs are what was played; the README
-  should mention it (it biases envelope statistics of attended vs ignored talkers).
+- Paper IV: SNR scaling clipped the attended stream's peaks (16-bit PCM). That the FLACs are exactly what was
+  played is the paper's claim, not verified sample by sample; the scene microphone matches them (envelope r up to
+  0.6 for the attended talker, section 6b) and the shipped `device*_power` columns carry the SNR scaling. The
+  README should mention the clipping (it biases envelope statistics of attended vs ignored talkers).
 - Size: 16 x 100 x 30 s = 13.3 h of evaluation trials, plus 16 x 5 x 30 s = 0.67 h training.
 
 ## 4. Speech features available
@@ -102,11 +106,14 @@ name is the LibriSpeech (or CHiME) speaker id, but the excerpt boundaries within
 - **Bad channels** (`bads.json`, rule in `bads.py`): the authors' list plus channels at the clip in > 10% of
   samples plus flat channels (median 1-40 Hz SD < 0.1 x the subject's median). Scan over all trials
   (`explore/channel_scan.csv`): the rule adds S02 M1 (clipped) and S14 Pz (flat; probably bridged to the CPz
-  reference). High-variance Fp channels in S10/S16 are blinks, not bad. Per subject:
+  reference). No upper variance threshold: the only channels with SD > 5 x the median (Fp1/Fpz/Fp2 in S10 and
+  S16) carry blinks, which are physiological, not faulty; the authors' list already covers the noisy channels.
+  Per subject:
   S01 M1 M2 | S02 F8 M1 M2 O2 | S03 Fpz Fz M1 M2 | S04 M2 | S05 F7 F8 FC5 FC6 O2 | S06 Fz | S07 FC6 T8 | S08 none |
   S09 F8 FC6 T7 T8 CP5 | S10 F4 F8 FC6 | S11 FC5 M1 T7 M2 P7 | S12 O1 Oz O2 | S13 M1 T8 M2 P7 |
   S14 F8 FC6 M1 M2 Pz | S15 T7 | S16 M1 T8. bads.json was written from the exploration scan (same rule, ba-form
-  filter); `bads.py` reproduces it from the download (not yet run: needs pyarrow in the project venv).
+  filter); `bads.py` (channel names from `eeg_channels.json`, sos filter) reproduces it from the download (not
+  yet run: needs pyarrow in the project venv).
 - With mastoids bad in 8 of 16 subjects, validate with an average reference (30 scalp channels).
 - Gaze, pupil and head IMU (Tobii Pro Glasses 3): another system and clock, not standardised (default agreed
   2026-11-23).
@@ -122,7 +129,8 @@ name is the LibriSpeech (or CHiME) speaker id, but the excerpt boundaries within
 - Playback timestamps: the three devices' `playback_start_unix`, relative to the anchor, depend on
   `device_id_raw`, not on the list position: raw 6 at 0 (median), raw 5 at +81 ms (SD 24), raw 3 at +162 ms
   (SD 19), the same in all 16 subjects (the paper's "80 and 160 ms"). The list order varies from trial to trial,
-  and nothing in the release says which raw id drives device 1/2/3 of the FLAC names.
+  and nothing in the release says which raw id drives device 1/2/3 of the FLAC names, so the adaptor stores the
+  offsets keyed by raw id (`playback_offsets_ms_by_raw_device`), unmapped.
   `end_unix - playback_start_unix` = 30.06-30.35 s (the 30 s FLAC + a call overhead).
 - The loader 0.1.2 never reads the timing json; it slices EEG and audio from their own t = 0, i.e. ~4.4 s off.
 
@@ -140,8 +148,9 @@ The absolute latency of the sound cannot be read from the video (its start in un
 ### 6c. Alignment implemented (default; user to confirm)
 - Onset (all six streams) = `round((anchor_unix - eeg.first_sample_unix) x 500)` samples into the trial parquet;
   the adaptor crops the EEG there and keeps it to the end of the trial (~30.3 s after the onset).
-- `alignment_method = sw_trigger`, `trigger_type = software (paper)`, `drift_ppm = null`, `jitter_ms = null`; the
-  per-device timestamp offsets go into the trial metadata (`playback_offsets_ms`, keyed by raw device id).
+- `alignment_method = sw_trigger`, `trigger_type = software (paper)`, `drift_ppm = 9.0` (amplifier vs host clock,
+  measured, not corrected), `jitter_ms = null`; the per-device timestamp offsets go into the trial metadata
+  (`playback_offsets_ms_by_raw_device`); `units_as_shipped` says raw ADC per the card, volts per section 5.
 - Not applied: the authors' per-device shift by the playback timestamps (contradicted by 6b and 6d), and the
   ~0.8 s latency of 6d (brain-based; user decision).
 
@@ -190,3 +199,5 @@ Open:
 - "Naturally mixed audio recording" announced in the paper, not in the release; `tobii.recording_start_unix` equals
   the audio anchor in every trial.
 - Card: "raw ADC units"; the values are volts.
+- `comprehension_correct` is False for all 1,600 evaluation trials.
+- Demographics in `subjects.csv` are empty.
