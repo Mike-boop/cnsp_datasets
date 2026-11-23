@@ -31,8 +31,8 @@ condition ~8.1 min per participant, ~4.0 h in total. Unique audio: 16 passages, 
   passage) and the authors' predictors are in the download, not in the standardised data.
 - **Trials** 1-32 in presentation order. Conditions: `noise`, `nonwords`, `scrambled`, `narrative`. The order is
   the same for every participant.
-- **Subjects** are numbered by the R-number modulo 1000 (R2383 -> 383, R2682 -> 682) because the format takes
-  three-digit subject numbers; the R-number is in the trial metadata (`participant`).
+- **Subjects** are numbered by the full R-number (R2383 -> 2383, R2682 -> 2682); the R-number is also in the
+  trial metadata (`participant`). Outputs made before 2026-11-23 used the R-number modulo 1000.
 - **Trial metadata** (`raw.info["description"]`, JSON): `participant`, `passage_type`, `passage` (1-4),
   `repetition` (1-2), `block` (1-4), `trigger_code`, `onset_s`, `stimulus_file`.
 - Not exported: empty-room recordings, behavioural answers, the authors' predictors and TRFs.

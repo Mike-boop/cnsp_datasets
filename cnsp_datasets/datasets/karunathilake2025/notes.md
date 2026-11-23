@@ -112,11 +112,11 @@ changed in the data; decisions for the human checkpoint are in "Open questions".
 
 ## 8. Adaptor (implemented, 2026-11-23)
 - Shared code with the lab's other KIT datasets (R-number subjects, wav loaders, epoch/continuous-raw helpers,
-  bad-channel rules) in `datasets/simon_base/common.py` (2026-11-23; output unchanged).
+  bad-channel rules) in `datasets/simon_base/common.py` (2026-11-23; output unchanged except subject numbers).
 - Reads `**/R*/R*_fif-raw.fif` and `**/AS_M01.wav` (stimulus folder) under the root (extracted zips).
-- Subject = **R-number mod 1000** (R2383 -> 383, R2548 -> 548, R2682 -> 682, ...; checked unique), as in
-  karunathilake2023, because the reader accepts only 3-digit `sub-` folders. R-number in the sidecar
-  (`participant`). Session 1.
+- Subject = full R-number (user, 2026-11-23); earlier outputs used R-number mod 1000 (R2383 -> 2383, was 383). Checked
+  unique, as in karunathilake2023; R-number also in the sidecar (`participant`). `validation.json` subject fields
+  relabelled to the full R-number (results unchanged). Session 1.
 - Trials 1-32 in presentation order. Conditions (exp.py epoch names): `noise` (ASN), `nonwords` (PH), `scrambled`
   (ASM), `narrative` (AS).
 - Neural data: gradiometers + reference magnetometers (160 channels), T, 1000 Hz native (no resample), cropped
@@ -146,7 +146,7 @@ narrative 4.03 h). Unique audio 16.2 min (the spreadsheet's 0.53 h assumed 32 di
 1. Onset = trigger with no latency correction (software TTL, tube delay unknown). [yes; document the lag-sweep /
    TRF latency, do not shift]
 2. Subject numbering R-number mod 1000 (as karunathilake2023). [yes; better: allow `\d{3,}` in `base_sink.py` and
-   use the full R-number, for both datasets]
+   use the full R-number, for both datasets. Done 2026-11-23: full R-number]
 3. Bad-channel rule flat (< median / 20) or saturated (> 30 x median): marks R2682 MEG 086 (rails), not MEG 062
    (physiological transients). [yes; implemented, evidence `figures/noisy_channels.png`]
 4. Word/phoneme onsets from `predictors.zip` (no labels): not carried. [not carried; transcripts are in the

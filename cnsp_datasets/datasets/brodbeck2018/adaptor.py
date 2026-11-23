@@ -40,7 +40,7 @@ class Brodbeck2018Adaptor:
     Brodbeck, Hong & Simon 2018 (DRUM 10.13016/M2ZC7RZ0F): 26 listeners, KIT MEG, Dickens audiobook (LibriVox),
     one male and one female talker. Per subject 24 one-minute trials in presentation order: 4 two-talker mixtures
     x 4 repetitions (`two_speakers`, attend one talker, counterbalanced) and the 8 single talkers once
-    (`single_speaker`). Subject = R-number mod 1000 (R2262 -> 262). Shipped neural data are the authors'
+    (`single_speaker`). Subject = full R-number (R2262 -> 2262). Shipped neural data are the authors'
     preprocessed 100 Hz epochs. Stimuli: 22.05 kHz wavs as shipped (see notes.md).
     """
 

@@ -201,7 +201,8 @@ recorded figure is used: 23 trials x 58.5 s per participant.
   geometry that do not exist). 250 Hz, no upsampling. The first 375 samples (1.5 s FIR delay, section 6) are
   dropped: 14,625 samples = 58.5 s per trial, t = 0 = stimulus onset. Components as stored (no sign flips, no
   reordering).
-- Subject = R-number - 2000 (R2509 -> 509): the sink allows 3-digit subject numbers. Session 1.
+- Subject = full R-number (user, 2026-11-23); earlier outputs used R-number - 2000 (R2509 -> 2509, was 509);
+  checked unique. `validation.json` subject fields relabelled to the full R-number (results unchanged). Session 1.
 - Trials 1-23 per subject in shipped array order (presentation order unknown): 1-8 = `dss_solo` rows 1-8
   (`quiet`; M08, M02, F10, F04, F03, F07, M01, M05); 9-20 = `dss_mix` rows 1-12 (`snr0dB` / `snr-6dB`, mapping
   table in section 3); 21-23 = `dss_babble` rows 1-3 (`babble`). The junk 9th solo row is never read.
@@ -215,7 +216,7 @@ recorded figure is used: 23 trials x 58.5 s per participant.
   filter transient, unknown order), plus `participant` (R-number), `age_group`, `array`, `array_row_1based`
   (row in the shipped array, MATLAB numbering), `played`, `attended`, `unattended`, `snr_db` (null / 0 / -6 / 0
   for babble), `attended_talker` (female/male), `derived_stimulus` (babble only: the formula),
-  `auditory_component` (`dss2` for 594, else `dss1`), `onset_shift_samples` (375), `presentation_order`
+  `auditory_component` (`dss2` for R2594, else `dss1`), `onset_shift_samples` (375), `presentation_order`
   ("unknown"), `units_as_shipped`, `reference` (not applicable), `preprocessing`.
 - No drift correction (not estimable, section 7).
 

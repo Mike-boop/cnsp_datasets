@@ -37,8 +37,8 @@ clear and as vocoded (the vocoded file is replayed unchanged).
   times are shared.
 - **Trials** 1-108 in presentation order. Conditions: `pre`, `clean`, `post` (main) and `control-pre1`,
   `control-pre2`, `control-clean` (control).
-- **Subjects** are numbered by the R-number modulo 1000 (R2684 -> 684; R3009 -> 9, R3015 -> 15) because the format
-  takes three-digit subject numbers; the R-number is in the trial metadata (`participant`).
+- **Subjects** are numbered by the full R-number (R2684 -> 2684, R3009 -> 3009); the R-number is also in the
+  trial metadata (`participant`). Outputs made before 2026-11-23 used the R-number modulo 1000.
 - **Trial metadata** (`raw.info["description"]`, JSON): `participant`, `study`, `passage`, `presentation`,
   `trigger_code`, `onset_s`, `stimulus_file`, `vocoded`, `clarity_rating` (vocoded trials), `q2_as_shipped`
   (column Q2 of the rating sheets, undocumented, probably the comprehension question), `in_authors_pool` and

@@ -36,7 +36,7 @@ class Karunathilake2025Adaptor:
     Speech-modulated noise, nonwords, scrambled words and narrative passages (Karunathilake, Brodbeck, Bhattasali,
     Resnik & Simon 2025, J Neurosci; Dryad doi:10.5061/dryad.ht76hdrpf): KIT 157-channel MEG at 1 kHz, one
     recording per participant, 16 synthesised 1-min passages each played twice in a row (32 trials, presentation
-    order). Subject = R-number mod 1000 (R-number in the sidecar). See notes.md.
+    order). Subject = full R-number (R2383 -> 2383; R-number in the sidecar). See notes.md.
     """
 
     def __init__(self, download_dir: str):

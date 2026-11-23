@@ -104,12 +104,11 @@ checkpoint are in section 8.
 
 ## 8. Adaptor (implemented, 2026-11-23)
 - Shared code with the lab's other KIT datasets (R-number subjects, wav loaders, epoch/continuous-raw helpers,
-  bad-channel rules) in `datasets/simon_base/common.py` (2026-11-23; output unchanged).
+  bad-channel rules) in `datasets/simon_base/common.py` (2026-11-23; output unchanged except subject numbers).
 - Reads `**/meg_*/R*/R*_voc-raw.fif`, `**/split1.wav` (stimulus folder) and `**/Ratings_{main,control}.xlsx` under
   the download root (extracted zips).
-- Subject = **R-number mod 1000** (R2383 -> 383, R2963 -> 963, R3009 -> 9, R3015 -> 15; checked unique): the
-  standardised reader only accepts 3-digit `sub-` folders (`base_sink.py` `^sub-(\d{3})$`). The R-number is in the
-  sidecar (`participant`). Session 1.
+- Subject = full R-number (user, 2026-11-23); earlier outputs used R-number mod 1000 (R2383 -> 2383, was 383; R3009 ->
+  3009, was 9). Checked unique; R-number also in the sidecar (`participant`). Session 1.
 - Trials 1-108 in presentation order. Conditions: main `pre`, `clean`, `post`; control `control-pre1`,
   `control-pre2`, `control-clean`.
 - Neural data: gradiometers + reference magnetometers (160 channels), T, 1000 Hz native (no resample), cropped
@@ -133,7 +132,7 @@ checkpoint are in section 8.
 1. Onset = trigger with no latency correction (software TTL, tube delay unknown). [yes; document the lag-sweep /
    TRF latency, do not shift]
 2. Subject numbering R-number mod 1000 until the reader accepts 4-digit subjects. [yes; better: allow `\d{3,}` in
-   `base_sink.py` and use the full R-number]
+   `base_sink.py` and use the full R-number. Done 2026-11-23: full R-number]
 3. Include R2383, R2806 (not in the authors' lists) and R3015. [yes, flagged in the sidecar]
 4. Drop all MISC lines and STI 014 (no peripherals, no audio copy). [yes]
 5. Condition names (`pre`/`clean`/`post`, `control-pre1`/`control-pre2`/`control-clean`). [yes]

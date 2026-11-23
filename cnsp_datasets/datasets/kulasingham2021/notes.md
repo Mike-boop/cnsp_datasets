@@ -141,11 +141,12 @@ min attend sentences). The stored neural epochs are 20 s (29.3 min per participa
 
 ## 9. Adaptor (implemented 2026-11-23)
 - Shared code with the lab's other KIT datasets (R-number subjects, wav loaders, epoch/continuous-raw helpers,
-  bad-channel rules) in `datasets/simon_base/common.py` (2026-11-23; output unchanged).
+  bad-channel rules) in `datasets/simon_base/common.py` (2026-11-23; output unchanged except subject numbers).
 - Reads `**/R####/` epoch folders and `**/stimuli/` under the root (the extracted zips, `tmp/review/kulasingham2021/x/`).
-- Subject = **R-number mod 1000** (R2522 -> 522; unique), as in brodbeck2018 / karunathilake2023; R-number in the
-  sidecar (`participant`). Session 1. Trials 1-40 = single-speaker file, 41-88 = cocktail file, each in epoch order
-  (= presentation order; checked: 40 / 48 epochs, increasing event samples).
+- Subject = full R-number (user, 2026-11-23); earlier outputs used R-number mod 1000 (R2522 -> 2522, was 522). Checked
+  unique, as in brodbeck2018 / karunathilake2023; R-number also in the sidecar (`participant`). `validation.json`
+  subject fields relabelled to the full R-number (results unchanged). Session 1. Trials 1-40 = single-speaker file,
+  41-88 = cocktail file, each in epoch order (= presentation order; checked: 40 / 48 epochs, increasing event samples).
 - Block order per subject from the readme groups, **R2522 female-first** (section 3; `block_order`,
   `block_order_source`). Conditions `single_equations`, `single_sentences`, `cocktail_attend_equations`,
   `cocktail_attend_sentences`.

@@ -4,7 +4,7 @@ karunathilake2025, kulasingham2021).
 
 All were recorded on the lab's KIT 157-channel system: MEG 001-157 axial gradiometers (MNE type `mag`) and
 MEG 158-160 reference magnetometers (`ref_meg`), in T, plus MISC TTL/idle lines and STI 014, which the adaptors
-drop. Participants are R-numbers (R2262); the subject number is the R-number mod 1000. Stimuli are mono int16 wavs.
+drop. Participants are R-numbers (R2262); R2262 -> subject 2262. Stimuli are mono int16 wavs.
 
 - Shipped epochs (brodbeck2018, kulasingham2021): `read_epochs`, `epoch_raw` (one epoch as Raw, shipped bads plus
   zero-variance channels).
@@ -14,6 +14,8 @@ drop. Participants are R-numbers (R2262); the subject number is the R-number mod
 from __future__ import annotations
 
 import glob
+import re
+from collections import Counter
 from functools import lru_cache
 from typing import Callable, Iterable, Sequence
 
@@ -35,15 +37,18 @@ def find_one(pattern: str) -> str:
 
 
 def subject_number(pid: str) -> int:
-    """R-number mod 1000 (R2262 -> 262)."""
-    return int(pid[1:]) % 1000
+    """The full R-number (R2262 -> 2262)."""
+    if not re.fullmatch(r"R\d+", pid):
+        raise ValueError(f"not an R-number: {pid}")
+    return int(pid[1:])
 
 
 def check_unique_subjects(pids: Iterable[str]) -> None:
-    """Raise if two R-numbers map to the same subject number."""
-    pids = list(pids)
-    if len({subject_number(p) for p in pids}) != len(pids):
-        raise ValueError("subject numbers (R-number mod 1000) are not unique")
+    """Raise if a subject number occurs twice (e.g. the same R-number in two folders)."""
+    counts = Counter(map(subject_number, pids))
+    duplicates = sorted(n for n, k in counts.items() if k > 1)
+    if duplicates:
+        raise ValueError(f"subject numbers are not unique: {duplicates}")
 
 
 def read_wav(path: str, fs: int) -> np.ndarray:

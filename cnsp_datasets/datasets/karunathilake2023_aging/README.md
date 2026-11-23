@@ -33,11 +33,11 @@ Each two-talker and babble mixture is played three times (same audio), so the un
   reference channels) and SNS, a **causal 1-10 Hz FIR**, DSS, and downsampled to 250 Hz. Stored at **250 Hz**
   (as shared; not upsampled). The data contain nothing above ~12 Hz (-71 dB at 12-15 Hz) and little below 1 Hz.
   No sensors, reference channels, topographies, head shape, triggers or stimtrack are shared.
-- **Auditory component:** `dss1`, except subject 594 (R2594), where it is `dss2` (paper, authors' code; sidecar
+- **Auditory component:** `dss1`, except subject 2594 (R2594), where it is `dss2` (paper, authors' code; sidecar
   field `auditory_component`). Components are stored as shared: **polarity is not aligned across subjects** and
   the order is not changed.
-- **Subjects:** subject number = R-number - 2000 (R2509 -> 509); the R-number and age group (`younger`/`older`)
-  are in the sidecar. Ages are not shared, only the group.
+- **Subjects:** subject number = full R-number (R2509 -> 2509; outputs before 2026-11-23 used R-number - 2000);
+  the R-number and age group (`younger`/`older`) are in the sidecar. Ages are not shared, only the group.
 - **Stimuli** (`audio`, 22.05 kHz mono, as shipped; wavs are 60.0-69.0 s, longer than the 58.5 s of MEG: cut at
   use):
   - `quiet`: the single talker (`pass_single_<talker>`, attended);
@@ -101,7 +101,7 @@ the shared data have nothing above ~12 Hz.
 
 ## Caveats
 - Components, not sensors (see above); polarity differs across subjects, so average TRFs over subjects with care
-  (e.g. GFP or |TRF|), and use `dss2` for subject 594 as the auditory component.
+  (e.g. GFP or |TRF|), and use `dss2` for subject 2594 as the auditory component.
 - The condition called "6 dB SNR" in the paper is **-6 dB** (attended talker 6 dB softer): an exact decomposition
   of the mixture wavs gives -6.0 dB, and the paper's supplement says -6 dB. Labelled `snr-6dB`.
 - Wav levels are not presentation levels (stimuli were calibrated to 70 dBA; in the female-attended mixtures the

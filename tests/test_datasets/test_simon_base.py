@@ -18,11 +18,13 @@ def test_find_one(tmp_path):
 
 
 def test_subject_numbers():
-    assert common.subject_number("R2262") == 262
+    assert common.subject_number("R2262") == 2262
     assert common.subject_number("R0012") == 12
-    common.check_unique_subjects(["R2262", "R2375"])
-    with pytest.raises(ValueError, match="not unique"):
-        common.check_unique_subjects(["R2262", "R3262"])
+    with pytest.raises(ValueError, match="not an R-number"):
+        common.subject_number("S2262")
+    common.check_unique_subjects(["R2262", "R3262"])
+    with pytest.raises(ValueError, match=r"not unique: \[2262\]"):
+        common.check_unique_subjects(["R2262", "R2375", "R2262"])
 
 
 def test_audio_loader_scales_and_mutes(tmp_path):

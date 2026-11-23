@@ -48,7 +48,7 @@ class Kulasingham2021Adaptor:
     Kulasingham, Joshi, Rezaeizadeh & Simon 2021 (DRUM 10.13016/xd2i-vyke): 22 listeners, KIT MEG, synthesised
     isochronous 4-word sentences and 5-symbol equations (voices "james" and "kate"), 18 s trials. Per subject 40
     single-speaker trials, then 48 two-talker trials (attend sentences or equations), in presentation order.
-    Subject = R-number mod 1000 (R2522 -> 522). Shipped neural data are the authors' preprocessed 200 Hz epochs.
+    Subject = full R-number (R2522 -> 2522). Shipped neural data are the authors' preprocessed 200 Hz epochs.
     """
 
     def __init__(self, download_dir: str):

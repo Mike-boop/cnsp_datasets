@@ -123,12 +123,13 @@ Explorer notes (2026-11-23). Review scripts: `tmp/review/brodbeck2018/scripts/` 
 
 ## 9. Adaptor (implemented 2026-11-23)
 - Shared code with the lab's other KIT datasets (R-number subjects, wav loaders, epoch/continuous-raw helpers,
-  bad-channel rules) in `datasets/simon_base/common.py` (2026-11-23; output unchanged).
+  bad-channel rules) in `datasets/simon_base/common.py` (2026-11-23; output unchanged except subject numbers).
 - Reads `R####/` folders and `stimuli/` under the root (the extracted zips, `tmp/review/brodbeck2018/x/`).
-- Subject = **R-number mod 1000** (R2262 -> 262; unique), as in karunathilake2023/2025; R-number in the sidecar
-  (`participant`). Session 1. Trials 1-24 in presentation order (raw onset sample). Conditions `two_speakers`,
-  `single_speaker` (the authors' file names); attended talker, trigger code, epoch file/index, raw onset sample in
-  the sidecar.
+- Subject = full R-number (user, 2026-11-23); earlier outputs used R-number mod 1000 (R2262 -> 2262, was 262). Checked
+  unique, as in karunathilake2023/2025; R-number also in the sidecar (`participant`). `validation.json` subject fields
+  relabelled to the full R-number (results unchanged). Session 1. Trials 1-24 in presentation order (raw onset sample).
+  Conditions `two_speakers`, `single_speaker` (the authors' file names); attended talker, trigger code, epoch
+  file/index, raw onset sample in the sidecar.
 - Neural data: the shipped epoch as Raw, 157 gradiometers (`mag`) + 3 reference magnetometers (`ref_meg`), T,
   **100 Hz as shipped (native; no resampling)**, 6001 samples, `info` (dig, dev_head_t, highpass/lowpass) kept;
   bads = shipped `info['bads']` + any zero-variance channel. The loader checks the onset line at sample 0 and the

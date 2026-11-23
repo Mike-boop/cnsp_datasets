@@ -44,7 +44,7 @@ class Karunathilake2023Adaptor:
     doi:10.5061/dryad.sbcc2frd6): KIT 157-channel MEG at 1 kHz, one recording per participant. Main study (27
     shipped): 36 passages, each as PRE (vocoded), CLEAN, POST (same vocoded file). Control study (12): PRE1, PRE2
     (both vocoded), CLEAN. Trials 1-108 in presentation order; the k-th trigger of a code is passage k (story
-    order, exp.py). Subject = R-number mod 1000 (R-number in the sidecar). See notes.md.
+    order, exp.py). Subject = full R-number (R2383 -> 2383; R-number in the sidecar). See notes.md.
     """
 
     def __init__(self, download_dir: str):

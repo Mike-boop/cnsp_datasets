@@ -10,6 +10,7 @@ import numpy as np
 from mne.io.constants import FIFF
 from scipy.io import loadmat, wavfile, whosmat
 
+from cnsp_datasets.datasets.simon_base.common import check_unique_subjects, subject_number
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -20,8 +21,8 @@ DELAY = 375         # 1.5 s group delay of the authors' causal FIR (notes.md sec
 N_COMP = 6
 BABBLE_GAIN = 0.714  # babble track gain in the babble mixture (notes.md section 3)
 FOREGROUND = "babb_F08_foreground_derived"
-JUNK_SOLO9 = {509, 629, 654, 660, 665, 666}  # junk 9th dss_solo row (notes.md section 3)
-AUDITORY_COMPONENT = {594: 2}  # paper / TRF.m; component 1 for everyone else
+JUNK_SOLO9 = {2509, 2629, 2654, 2660, 2665, 2666}  # junk 9th dss_solo row (notes.md section 3)
+AUDITORY_COMPONENT = {2594: 2}  # paper / TRF.m; component 1 for everyone else
 SOLO = ["M08", "M02", "F10", "F04", "F03", "F07", "M01", "M05"]  # dss_solo rows 1-8
 # two-talker mixtures, three dss_mix rows each: (condition, played wav, attended, unattended, attended talker)
 MIX = [("snr0dB", "pass_mix_M0_M08_F10", "pass_single_M08", "pass_single_F10", "M"),
@@ -54,7 +55,7 @@ class Karunathilake2023AgingAdaptor:
     Karunathilake et al. 2023 (DRUM 10.13016/4goq-vs0z): 18 younger + 16 older listeners, Sleepy Hollow passages
     in quiet, with a competing talker at 0 / -6 dB SNR (attended talker 6 dB softer; the paper says "6 dB") and in
     three-talker babble. Only 6 DSS components per subject are shared (1-10 Hz, 250 Hz kept): `misc` channels
-    dss1-dss6, arbitrary units. Subject = R-number - 2000 (R2509 -> 509). 23 trials per subject: 1-8 quiet, 9-20
+    dss1-dss6, arbitrary units. Subject = full R-number (R2509 -> 2509). 23 trials per subject: 1-8 quiet, 9-20
     two-talker (`snr0dB`, `snr-6dB`, three repetitions per mixture), 21-23 `babble`. Each trial starts at
     stimulus onset (1.5 s filter delay removed) and lasts 58.5 s. Stimuli (22.05 kHz wavs as shipped): quiet =
     the single talker (attended); two-talker = attended + mixture as played + unattended single talker; babble =
@@ -66,10 +67,13 @@ class Karunathilake2023AgingAdaptor:
         self.root = os.path.join(download_dir, "Data")
 
     def parse(self) -> Iterable[TrialRecord]:
-        for group in ("Younger", "Older"):
-            for mat in sorted(glob.glob(os.path.join(self.root, "MEG", group, "R*_todss_250hz.mat"))):
+        mats = {group: sorted(glob.glob(os.path.join(self.root, "MEG", group, "R*_todss_250hz.mat")))
+                for group in ("Younger", "Older")}
+        check_unique_subjects(os.path.basename(m).split("_")[0] for ms in mats.values() for m in ms)
+        for group, paths in mats.items():
+            for mat in paths:
                 pid = os.path.basename(mat).split("_")[0]
-                subject = int(pid[1:]) - 2000  # R2509 -> 509: the sink allows 3-digit subject numbers
+                subject = subject_number(pid)
                 shapes = {n: s for n, s, _ in whosmat(mat)}
                 n_solo = 9 if subject in JUNK_SOLO9 else 8
                 expected = {"dss_solo": (n_solo, N_ARRAY, N_COMP), "dss_mix": (12, N_ARRAY, N_COMP),

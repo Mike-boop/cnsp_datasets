@@ -1,6 +1,7 @@
 """
 Simon-lab KIT adaptors: registry names of all six; configuration snapshot and parse/load on small synthetic
-downloads of the four whose data are not on disk (presacco2016, brodbeck2022, karunathilake2023/2025).
+downloads of the four whose data are not on disk (presacco2016, brodbeck2022, karunathilake2023/2025), plus the
+subject numbering of karunathilake2023_aging (full R-number).
 """
 import json
 import pickle
@@ -12,9 +13,11 @@ import numpy as np
 import openpyxl
 import pandas as pd
 import pytest
+from scipy.io import savemat
 
 from cnsp_datasets.datasets.brodbeck2022 import adaptor as b22
 from cnsp_datasets.datasets.karunathilake2023 import adaptor as k23
+from cnsp_datasets.datasets.karunathilake2023_aging import adaptor as k23a
 from cnsp_datasets.datasets.karunathilake2025 import adaptor as k25
 from cnsp_datasets.datasets.presacco2016 import adaptor as p16
 from cnsp_datasets.datasets.simon_base.common import meg_picks, read_raw
@@ -198,7 +201,7 @@ def test_karunathilake2025_parse_and_load(tmp_path):
     events = [(1000 + 2000 * i, c) for i, c in enumerate(order)] + [(90_000, 177)]
     _save_recording(tmp_path / "meg" / "R2682" / "R2682_fif-raw.fif", events)
     records = list(k25.ADAPTOR(str(tmp_path)).parse())
-    assert len(records) == 32 and {r.subject for r in records} == {682}
+    assert len(records) == 32 and {r.subject for r in records} == {2682}
     assert [r.trial for r in records] == list(range(1, 33))
     assert [r.condition for r in records[:2]] == ["noise", "noise"] and records[-1].condition == "narrative"
     meta = [json.loads(r.neural_data_fn().info["description"]) for r in records[:3]]
@@ -245,19 +248,36 @@ def test_karunathilake2023_parse_and_load(tmp_path):
     _save_recording(tmp_path / "meg_control" / "R2963" / "R2963_voc-raw.fif", control)
     records = list(k23.ADAPTOR(str(tmp_path)).parse())
     assert len(records) == 216
-    by_subject = {s: [r for r in records if r.subject == s] for s in (684, 963)}
-    assert [r.condition for r in by_subject[684][:3]] == ["pre", "clean", "post"]
-    assert [r.condition for r in by_subject[963][:3]] == ["control-pre1", "control-pre2", "control-clean"]
-    assert [s.name for r in by_subject[684][3:6] for s in r.stimulus] == ["split2_vocoded", "split2",
+    by_subject = {s: [r for r in records if r.subject == s] for s in (2684, 2963)}
+    assert [r.condition for r in by_subject[2684][:3]] == ["pre", "clean", "post"]
+    assert [r.condition for r in by_subject[2963][:3]] == ["control-pre1", "control-pre2", "control-clean"]
+    assert [s.name for r in by_subject[2684][3:6] for s in r.stimulus] == ["split2_vocoded", "split2",
                                                                          "split2_vocoded"]
-    out = by_subject[684][4].neural_data_fn()
+    out = by_subject[2684][4].neural_data_fn()
     meta = json.loads(out.info["description"])
     assert (meta["passage"], meta["presentation"], meta["clarity_rating"], meta["q2_as_shipped"]) == (
         2, "clean", None, "q2")
     assert meta["in_authors_pool"] and meta["in_authors_main_analysis"] and meta["onset_s"] == 3.0
     assert (meta["units_as_shipped"], meta["reference"]) == ("T", "not applicable (MEG)")
     assert out.n_times == 100 and out.info["bads"] == ["MEG 002"]  # flat only: no saturation rule here
-    post = json.loads(by_subject[684][5].neural_data_fn().info["description"])
+    post = json.loads(by_subject[2684][5].neural_data_fn().info["description"])
     assert (post["clarity_rating"], post["vocoded"]) == (21, True)
-    pre2 = json.loads(by_subject[963][1].neural_data_fn().info["description"])
+    pre2 = json.loads(by_subject[2963][1].neural_data_fn().info["description"])
     assert (pre2["study"], pre2["clarity_rating"], pre2["in_authors_main_analysis"]) == ("control", 11, None)
+
+
+def test_karunathilake2023_aging_subjects(tmp_path, monkeypatch):
+    """Full R-numbers; junk-row (R2509) and auditory-component (R2594) tables keyed by them."""
+    monkeypatch.setattr(k23a, "N_ARRAY", k23a.DELAY + 5)
+    for group, pid, n_solo in (("Younger", "R2509", 9), ("Older", "R2594", 8)):
+        arrays = {k: np.zeros((n, k23a.N_ARRAY, k23a.N_COMP)) for k, n in
+                  (("dss_solo", n_solo), ("dss_mix", 12), ("dss_babble", 3))}
+        path = tmp_path / "Data" / "MEG" / group / f"{pid}_todss_250hz.mat"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        savemat(path, arrays)
+    records = list(k23a.ADAPTOR(str(tmp_path)).parse())
+    assert [r.subject for r in records] == [2509] * 23 + [2594] * 23
+    raws = [r.neural_data_fn() for r in (records[0], records[23])]
+    assert [raw.n_times for raw in raws] == [5, 5]
+    meta = [json.loads(raw.info["description"]) for raw in raws]
+    assert [(m["participant"], m["auditory_component"]) for m in meta] == [("R2509", "dss1"), ("R2594", "dss2")]
