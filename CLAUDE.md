@@ -59,7 +59,10 @@ As needed:
   - deleting downloads or standardised data;
   - pushing.
 
-  Constant DNN offsets are documented in the notes, not applied.
+  Brain-based (DNN, TRF, decoder) offsets and drift are documented in the notes, not applied, with one
+  exception: when a dataset is unusable without them (e.g. the shipped onset misses the sound by hundreds of ms),
+  the brain-based alignment is applied by default (an option turns it off) and the dataset is graded `poor`.
+  Examples: li2025, chen2026, chen2023's drift. Hardware-derived corrections are always on by default.
 - **Git.**
   - Pushes need explicit approval.
   - Commit with explicit paths (`git add -- <paths>`), never `git add -A` (`.venv` is an untracked symlink in the
