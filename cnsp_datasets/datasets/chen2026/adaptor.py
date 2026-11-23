@@ -32,8 +32,10 @@ NOTES = ("PassiveListening only (ReadingAloud and the practice prefaces excluded
          "timing.py); onset = t0 + sound latency (~0.5 s, varying per sd.play() call). The latency is estimated from "
          "this EEG (listener-specific leave-one-chapter-out backward decoder, z >= 2 against mismatched envelopes, "
          "else the accou2023 DNN, else the listener median; timing.csv `rule`), so validation scores on these onsets "
-         "are optimistic (circular); `latency_option` says which column was used. Drift: ~+16 ppm EEG estimate, "
-         "applied only if drift_corrected_ppm != 0. Bad channels per participant (bads.json): SD (1-40 Hz) > "
+         "are optimistic (circular); `latency_option` says which column was used (default option B: listener median "
+         "unless the chapter's estimate deviates by > max(40 ms, 3 SE); onsets_optionB.csv). Drift: ~+16 ppm EEG "
+         "estimate (drift.csv), not reliable (every listener's CI includes 0) and not applied (user decision). Bad "
+         "channels per participant (bads.json): SD (1-40 Hz) > "
          "5x or < 1/5 of the median in >= 20% of the chapters. Positions: GSN-HydroCel-129 template (the shipped "
          "CapTrak files are the same template).")
 
@@ -46,13 +48,14 @@ class Chen2026Adaptor:
     (27 chapters). 281 trials (sub-05 LP 14/27 and sub-06 GD 4 are absent from the release).
 
     Condition = story, session = BIDS session (1 garnettdream, 2 littleprince), trial = chapter. Onset = t0 (trigger
-    fit) + latency from timing.csv, where `latency` picks the column: "chapter" (default; per-chapter EEG estimate under
-    the z >= 2 rule, else the listener median), "option_b" (listener median unless the chapter deviates by more than
-    max(40 ms, 3 SE)) or "listener_median" (one latency per listener). drift_ppm: default 0 (see notes.md). Stimulus:
+    fit) + latency from timing.csv, where `latency` picks the column: "option_b" (default, user 2026-11-23; listener
+    median unless the chapter's estimate deviates by more than max(40 ms, 3 SE); logged in onsets_optionB.csv),
+    "chapter" (per-chapter EEG estimate under the z >= 2 rule, else the listener median) or "listener_median" (one
+    latency per listener). drift_ppm: default 0; the ~+16 ppm EEG estimate (drift.csv) is not applied. Stimulus:
     the 12 kHz wav. audio_dir: registry entry chen2026_audio, by default <download_dir>/ChineseEEG-2_audio.
     """
 
-    def __init__(self, download_dir: str, latency: str = "chapter", drift_ppm: float = 0.0,
+    def __init__(self, download_dir: str, latency: str = "option_b", drift_ppm: float = 0.0,
                  audio_dir: str | None = None):
         if latency not in LATENCY:
             raise ValueError(f"latency must be one of {sorted(LATENCY)}, not {latency!r}")

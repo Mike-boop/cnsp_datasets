@@ -1,0 +1,282 @@
+sub,story,chapter,file,t0_s,latency_optionB_s,onset_optionB_s,source,chapter_estimate_s,chapter_rule,chapter_se_ms,listener_median_s,listener_rsd_ms
+01,garnettdream,1,sub-01_ses-garnettdream_task-lis_run-11_eeg.vhdr,147.75601,0.5064,148.2624,listener median,0.5036,decoder z>=5,4.5,0.5064,27.6
+01,garnettdream,2,sub-01_ses-garnettdream_task-lis_run-12_eeg.vhdr,0.13793,0.5064,0.6443,listener median,0.5001,decoder z>=5,3.9,0.5064,27.6
+01,garnettdream,3,sub-01_ses-garnettdream_task-lis_run-13_eeg.vhdr,0.12903,0.5064,0.6354,listener median,0.5209,decoder z>=5,7.5,0.5064,27.6
+01,garnettdream,4,sub-01_ses-garnettdream_task-lis_run-14_eeg.vhdr,25.18242,0.5064,25.6888,listener median,0.5449,decoder z>=5,3.6,0.5064,27.6
+01,garnettdream,5,sub-01_ses-garnettdream_task-lis_run-15_eeg.vhdr,0.14391,0.5064,0.6503,listener median,0.4976,decoder z>=5,2.1,0.5064,27.6
+01,garnettdream,6,sub-01_ses-garnettdream_task-lis_run-21_eeg.vhdr,56.60865,0.5064,57.115,listener median,0.5064,listener median,,0.5064,27.6
+01,garnettdream,7,sub-01_ses-garnettdream_task-lis_run-22_eeg.vhdr,0.04488,0.5646,0.6095,"chapter estimate (deviates > max(40 ms, 3 SE))",0.5646,decoder z>=5,4.1,0.5064,27.6
+01,garnettdream,8,sub-01_ses-garnettdream_task-lis_run-23_eeg.vhdr,35.16908,0.6115,35.7806,"chapter estimate (deviates > max(40 ms, 3 SE))",0.6115,decoder z>=5,8.7,0.5064,27.6
+01,garnettdream,9,sub-01_ses-garnettdream_task-lis_run-24_eeg.vhdr,0.11249,1.1939,1.3064,"chapter estimate (deviates > max(40 ms, 3 SE))",1.1939,decoder z>=5,11.3,0.5064,27.6
+01,littleprince,1,sub-01_ses-littleprince_task-lis_run-11_eeg.vhdr,0.02212,0.5064,0.5285,listener median,0.5155,decoder z>=5,10.6,0.5064,27.6
+01,littleprince,2,sub-01_ses-littleprince_task-lis_run-12_eeg.vhdr,0.13288,0.5064,0.6393,listener median,0.5403,decoder z>=5,7.9,0.5064,27.6
+01,littleprince,3,sub-01_ses-littleprince_task-lis_run-13_eeg.vhdr,0.11785,0.5064,0.6242,listener median,0.5183,decoder z>=5,7.9,0.5064,27.6
+01,littleprince,4,sub-01_ses-littleprince_task-lis_run-14_eeg.vhdr,0.13939,0.5064,0.6458,listener median,0.5091,decoder z>=5,7.7,0.5064,27.6
+01,littleprince,5,sub-01_ses-littleprince_task-lis_run-15_eeg.vhdr,0.12859,0.5064,0.635,listener median,0.5006,decoder z>=5,10.2,0.5064,27.6
+01,littleprince,6,sub-01_ses-littleprince_task-lis_run-16_eeg.vhdr,0.12861,0.5748,0.7034,"chapter estimate (deviates > max(40 ms, 3 SE))",0.5748,rescan decoder z>=2,17.6,0.5064,27.6
+01,littleprince,7,sub-01_ses-littleprince_task-lis_run-17_eeg.vhdr,0.15021,0.661,0.8112,"chapter estimate (deviates > max(40 ms, 3 SE))",0.661,decoder z>=5,18.4,0.5064,27.6
+01,littleprince,8,sub-01_ses-littleprince_task-lis_run-18_eeg.vhdr,2.76502,0.7624,3.5274,"chapter estimate (deviates > max(40 ms, 3 SE))",0.7624,decoder z>=5,18.9,0.5064,27.6
+01,littleprince,9,sub-01_ses-littleprince_task-lis_run-19_eeg.vhdr,0.13167,0.553,0.6847,"chapter estimate (deviates > max(40 ms, 3 SE))",0.553,decoder z>=5,10.9,0.5064,27.6
+01,littleprince,10,sub-01_ses-littleprince_task-lis_run-110_eeg.vhdr,0.13511,0.5064,0.6415,listener median,0.5007,decoder z>=5,5.6,0.5064,27.6
+01,littleprince,11,sub-01_ses-littleprince_task-lis_run-111_eeg.vhdr,0.13281,0.5064,0.6392,listener median,0.5234,decoder z>=5,13.4,0.5064,27.6
+01,littleprince,12,sub-01_ses-littleprince_task-lis_run-112_eeg.vhdr,0.12833,0.5064,0.6347,listener median,0.5277,decoder z>=5,12.6,0.5064,27.6
+01,littleprince,13,sub-01_ses-littleprince_task-lis_run-113_eeg.vhdr,0.12311,0.5064,0.6295,listener median,0.5315,decoder z>=5,11.4,0.5064,27.6
+01,littleprince,14,sub-01_ses-littleprince_task-lis_run-114_eeg.vhdr,0.13658,0.5064,0.643,listener median,0.5225,decoder z>=5,7.4,0.5064,27.6
+01,littleprince,15,sub-01_ses-littleprince_task-lis_run-21_eeg.vhdr,44.50002,0.5064,45.0064,listener median,0.4903,decoder z>=5,7.0,0.5064,27.6
+01,littleprince,16,sub-01_ses-littleprince_task-lis_run-22_eeg.vhdr,0.02519,0.5064,0.5316,listener median,0.4674,decoder z>=5,5.9,0.5064,27.6
+01,littleprince,17,sub-01_ses-littleprince_task-lis_run-23_eeg.vhdr,0.11879,0.4661,0.5849,"chapter estimate (deviates > max(40 ms, 3 SE))",0.4661,decoder z>=5,6.7,0.5064,27.6
+01,littleprince,18,sub-01_ses-littleprince_task-lis_run-24_eeg.vhdr,0.12626,0.5064,0.6327,listener median,0.4899,decoder z>=2,9.3,0.5064,27.6
+01,littleprince,19,sub-01_ses-littleprince_task-lis_run-25_eeg.vhdr,0.12382,0.5064,0.6302,listener median,0.5126,decoder z>=5,13.1,0.5064,27.6
+01,littleprince,20,sub-01_ses-littleprince_task-lis_run-26_eeg.vhdr,0.11162,0.4474,0.559,"chapter estimate (deviates > max(40 ms, 3 SE))",0.4474,decoder z>=5,9.2,0.5064,27.6
+01,littleprince,21,sub-01_ses-littleprince_task-lis_run-27_eeg.vhdr,0.13559,0.4656,0.6012,"chapter estimate (deviates > max(40 ms, 3 SE))",0.4656,decoder z>=5,5.8,0.5064,27.6
+01,littleprince,22,sub-01_ses-littleprince_task-lis_run-28_eeg.vhdr,0.12253,0.5064,0.6289,listener median,0.4878,decoder z>=5,9.1,0.5064,27.6
+01,littleprince,23,sub-01_ses-littleprince_task-lis_run-29_eeg.vhdr,0.1095,0.5064,0.6159,listener median,0.4927,decoder z>=2,9.2,0.5064,27.6
+01,littleprince,24,sub-01_ses-littleprince_task-lis_run-210_eeg.vhdr,0.13027,0.5064,0.6367,listener median,0.4697,decoder z>=5,9.2,0.5064,27.6
+01,littleprince,25,sub-01_ses-littleprince_task-lis_run-211_eeg.vhdr,12.24998,0.5064,12.7564,listener median,0.4826,decoder z>=5,5.8,0.5064,27.6
+01,littleprince,26,sub-01_ses-littleprince_task-lis_run-212_eeg.vhdr,0.12938,0.5064,0.6358,listener median,0.4994,decoder z>=5,3.5,0.5064,27.6
+01,littleprince,27,sub-01_ses-littleprince_task-lis_run-213_eeg.vhdr,0.12211,0.5064,0.6285,listener median,0.4934,decoder z>=5,7.5,0.5064,27.6
+02,garnettdream,1,sub-02_ses-garnettdream_task-lis_run-11_eeg.vhdr,129.28207,0.583,129.8651,listener median,0.583,listener median,,0.583,32.8
+02,garnettdream,2,sub-02_ses-garnettdream_task-lis_run-12_eeg.vhdr,0.1609,0.583,0.7439,listener median,0.5766,dnn z>=2,3.5,0.583,32.8
+02,garnettdream,3,sub-02_ses-garnettdream_task-lis_run-13_eeg.vhdr,0.19071,0.583,0.7737,listener median,0.5885,dnn z>=2,6.5,0.583,32.8
+02,garnettdream,4,sub-02_ses-garnettdream_task-lis_run-14_eeg.vhdr,6.10704,0.583,6.69,listener median,0.583,listener median,,0.583,32.8
+02,garnettdream,5,sub-02_ses-garnettdream_task-lis_run-15_eeg.vhdr,0.17668,0.583,0.7597,listener median,0.583,listener median,,0.583,32.8
+02,garnettdream,6,sub-02_ses-garnettdream_task-lis_run-21_eeg.vhdr,33.93486,0.583,34.5179,listener median,0.5575,decoder z>=5,10.9,0.583,32.8
+02,garnettdream,7,sub-02_ses-garnettdream_task-lis_run-22_eeg.vhdr,0.03629,0.583,0.6193,listener median,0.5602,decoder z>=5,6.9,0.583,32.8
+02,garnettdream,8,sub-02_ses-garnettdream_task-lis_run-23_eeg.vhdr,3.66357,0.583,4.2466,listener median,0.5708,decoder z>=2,7.4,0.583,32.8
+02,garnettdream,9,sub-02_ses-garnettdream_task-lis_run-24_eeg.vhdr,0.12317,0.583,0.7062,listener median,0.5802,decoder z>=2,10.8,0.583,32.8
+02,littleprince,1,sub-02_ses-littleprince_task-lis_run-11_eeg.vhdr,0.01412,0.583,0.5971,listener median,0.583,listener median,,0.583,32.8
+02,littleprince,2,sub-02_ses-littleprince_task-lis_run-12_eeg.vhdr,0.11496,0.583,0.698,listener median,0.6169,decoder z>=5,13.4,0.583,32.8
+02,littleprince,3,sub-02_ses-littleprince_task-lis_run-13_eeg.vhdr,0.15122,0.583,0.7342,listener median,0.583,listener median,,0.583,32.8
+02,littleprince,4,sub-02_ses-littleprince_task-lis_run-14_eeg.vhdr,0.12444,0.864,0.9884,"chapter estimate (deviates > max(40 ms, 3 SE))",0.864,decoder z>=2,13.6,0.583,32.8
+02,littleprince,5,sub-02_ses-littleprince_task-lis_run-15_eeg.vhdr,0.18318,0.583,0.7662,listener median,0.583,listener median,,0.583,32.8
+02,littleprince,6,sub-02_ses-littleprince_task-lis_run-16_eeg.vhdr,0.11522,0.583,0.6982,listener median,0.583,listener median,,0.583,32.8
+02,littleprince,7,sub-02_ses-littleprince_task-lis_run-17_eeg.vhdr,0.14214,0.583,0.7251,listener median,0.583,listener median,,0.583,32.8
+02,littleprince,8,sub-02_ses-littleprince_task-lis_run-18_eeg.vhdr,13.06716,0.583,13.6502,listener median,0.583,listener median,,0.583,32.8
+02,littleprince,9,sub-02_ses-littleprince_task-lis_run-19_eeg.vhdr,0.12099,0.583,0.704,listener median,0.583,listener median,,0.583,32.8
+02,littleprince,10,sub-02_ses-littleprince_task-lis_run-110_eeg.vhdr,0.16679,0.583,0.7498,listener median,0.583,listener median,,0.583,32.8
+02,littleprince,11,sub-02_ses-littleprince_task-lis_run-111_eeg.vhdr,0.13926,0.583,0.7223,listener median,0.583,listener median,,0.583,32.8
+02,littleprince,12,sub-02_ses-littleprince_task-lis_run-112_eeg.vhdr,0.13224,0.7535,0.8857,"chapter estimate (deviates > max(40 ms, 3 SE))",0.7535,dnn z>=2,19.7,0.583,32.8
+02,littleprince,13,sub-02_ses-littleprince_task-lis_run-113_eeg.vhdr,0.10717,0.6334,0.7406,"chapter estimate (deviates > max(40 ms, 3 SE))",0.6334,decoder z>=5,12.6,0.583,32.8
+02,littleprince,14,sub-02_ses-littleprince_task-lis_run-114_eeg.vhdr,0.12144,0.583,0.7044,listener median,0.5609,dnn z>=2,21.4,0.583,32.8
+02,littleprince,15,sub-02_ses-littleprince_task-lis_run-21_eeg.vhdr,44.28697,0.583,44.87,listener median,0.583,listener median,,0.583,32.8
+02,littleprince,16,sub-02_ses-littleprince_task-lis_run-22_eeg.vhdr,0.02501,0.583,0.608,listener median,0.57,dnn z>=2,6.7,0.583,32.8
+02,littleprince,17,sub-02_ses-littleprince_task-lis_run-23_eeg.vhdr,0.12231,0.583,0.7053,listener median,0.574,dnn z>=2,5.7,0.583,32.8
+02,littleprince,18,sub-02_ses-littleprince_task-lis_run-24_eeg.vhdr,0.11794,0.583,0.7009,listener median,0.583,listener median,,0.583,32.8
+02,littleprince,19,sub-02_ses-littleprince_task-lis_run-25_eeg.vhdr,0.12581,0.583,0.7088,listener median,0.583,listener median,,0.583,32.8
+02,littleprince,20,sub-02_ses-littleprince_task-lis_run-26_eeg.vhdr,0.10712,0.583,0.6901,listener median,0.583,listener median,,0.583,32.8
+02,littleprince,21,sub-02_ses-littleprince_task-lis_run-27_eeg.vhdr,0.14022,0.7541,0.8943,"chapter estimate (deviates > max(40 ms, 3 SE))",0.7541,dnn z>=2,13.0,0.583,32.8
+02,littleprince,22,sub-02_ses-littleprince_task-lis_run-28_eeg.vhdr,0.12579,0.583,0.7088,listener median,0.583,listener median,,0.583,32.8
+02,littleprince,23,sub-02_ses-littleprince_task-lis_run-29_eeg.vhdr,0.12924,0.583,0.7122,listener median,0.583,listener median,,0.583,32.8
+02,littleprince,24,sub-02_ses-littleprince_task-lis_run-210_eeg.vhdr,0.1232,0.583,0.7062,listener median,0.583,listener median,,0.583,32.8
+02,littleprince,25,sub-02_ses-littleprince_task-lis_run-211_eeg.vhdr,9.33286,0.583,9.9159,listener median,0.583,listener median,,0.583,32.8
+02,littleprince,26,sub-02_ses-littleprince_task-lis_run-212_eeg.vhdr,0.11718,0.583,0.7002,listener median,0.583,listener median,,0.583,32.8
+02,littleprince,27,sub-02_ses-littleprince_task-lis_run-213_eeg.vhdr,0.11133,0.583,0.6943,listener median,0.5857,decoder z>=5,8.9,0.583,32.8
+03,garnettdream,1,sub-03_ses-garnettdream_task-lis_run-11_eeg.vhdr,116.59414,0.5457,117.1398,listener median,0.5351,decoder z>=5,4.2,0.5457,22.6
+03,garnettdream,2,sub-03_ses-garnettdream_task-lis_run-12_eeg.vhdr,0.13923,0.5457,0.6849,listener median,0.5458,decoder z>=5,5.0,0.5457,22.6
+03,garnettdream,3,sub-03_ses-garnettdream_task-lis_run-13_eeg.vhdr,0.13623,0.5457,0.6819,listener median,0.5462,decoder z>=5,5.8,0.5457,22.6
+03,garnettdream,4,sub-03_ses-garnettdream_task-lis_run-14_eeg.vhdr,6.81839,0.5457,7.3641,listener median,0.5697,decoder z>=5,4.6,0.5457,22.6
+03,garnettdream,5,sub-03_ses-garnettdream_task-lis_run-15_eeg.vhdr,0.12361,0.5457,0.6693,listener median,0.5457,decoder z>=5,6.9,0.5457,22.6
+03,garnettdream,6,sub-03_ses-garnettdream_task-lis_run-21_eeg.vhdr,30.35186,0.5913,30.9432,"chapter estimate (deviates > max(40 ms, 3 SE))",0.5913,decoder z>=5,7.0,0.5457,22.6
+03,garnettdream,7,sub-03_ses-garnettdream_task-lis_run-22_eeg.vhdr,0.04277,0.5457,0.5885,listener median,0.5391,decoder z>=5,4.7,0.5457,22.6
+03,garnettdream,8,sub-03_ses-garnettdream_task-lis_run-23_eeg.vhdr,9.09996,0.5457,9.6457,listener median,0.5457,listener median,,0.5457,22.6
+03,garnettdream,9,sub-03_ses-garnettdream_task-lis_run-24_eeg.vhdr,0.14776,0.5457,0.6935,listener median,0.5245,decoder z>=5,6.7,0.5457,22.6
+03,littleprince,1,sub-03_ses-littleprince_task-lis_run-11_eeg.vhdr,0.02376,0.5457,0.5695,listener median,0.5457,listener median,,0.5457,22.6
+03,littleprince,2,sub-03_ses-littleprince_task-lis_run-12_eeg.vhdr,0.13022,0.5457,0.6759,listener median,0.5457,listener median,,0.5457,22.6
+03,littleprince,3,sub-03_ses-littleprince_task-lis_run-13_eeg.vhdr,0.16548,0.5457,0.7112,listener median,0.5457,listener median,,0.5457,22.6
+03,littleprince,4,sub-03_ses-littleprince_task-lis_run-14_eeg.vhdr,0.12172,0.9757,1.0974,"chapter estimate (deviates > max(40 ms, 3 SE))",0.9757,decoder z>=2,13.3,0.5457,22.6
+03,littleprince,5,sub-03_ses-littleprince_task-lis_run-15_eeg.vhdr,0.12633,0.5457,0.672,listener median,0.5457,listener median,,0.5457,22.6
+03,littleprince,6,sub-03_ses-littleprince_task-lis_run-16_eeg.vhdr,0.13878,0.5457,0.6845,listener median,0.5634,decoder z>=2,7.5,0.5457,22.6
+03,littleprince,7,sub-03_ses-littleprince_task-lis_run-17_eeg.vhdr,0.17211,0.5457,0.7178,listener median,0.5457,listener median,,0.5457,22.6
+03,littleprince,8,sub-03_ses-littleprince_task-lis_run-18_eeg.vhdr,7.45962,0.5457,8.0053,listener median,0.5457,listener median,,0.5457,22.6
+03,littleprince,9,sub-03_ses-littleprince_task-lis_run-19_eeg.vhdr,0.13483,1.5651,1.6999,"chapter estimate (deviates > max(40 ms, 3 SE))",1.5651,decoder z>=5,10.0,0.5457,22.6
+03,littleprince,10,sub-03_ses-littleprince_task-lis_run-110_eeg.vhdr,0.1586,0.6096,0.7682,"chapter estimate (deviates > max(40 ms, 3 SE))",0.6096,decoder z>=2,13.7,0.5457,22.6
+03,littleprince,11,sub-03_ses-littleprince_task-lis_run-111_eeg.vhdr,0.12854,0.5457,0.6742,listener median,0.5457,listener median,,0.5457,22.6
+03,littleprince,12,sub-03_ses-littleprince_task-lis_run-112_eeg.vhdr,0.10585,0.5457,0.6516,listener median,0.5627,decoder z>=2,21.1,0.5457,22.6
+03,littleprince,13,sub-03_ses-littleprince_task-lis_run-113_eeg.vhdr,0.11983,0.5457,0.6655,listener median,0.5576,decoder z>=5,13.5,0.5457,22.6
+03,littleprince,14,sub-03_ses-littleprince_task-lis_run-114_eeg.vhdr,0.14593,0.5457,0.6916,listener median,0.5533,decoder z>=5,19.4,0.5457,22.6
+03,littleprince,15,sub-03_ses-littleprince_task-lis_run-21_eeg.vhdr,26.29835,0.5457,26.844,listener median,0.5158,decoder z>=5,8.2,0.5457,22.6
+03,littleprince,16,sub-03_ses-littleprince_task-lis_run-22_eeg.vhdr,0.02838,0.5457,0.5741,listener median,0.5405,decoder z>=2,11.2,0.5457,22.6
+03,littleprince,17,sub-03_ses-littleprince_task-lis_run-23_eeg.vhdr,0.12981,0.5014,0.6312,"chapter estimate (deviates > max(40 ms, 3 SE))",0.5014,decoder z>=5,8.7,0.5457,22.6
+03,littleprince,18,sub-03_ses-littleprince_task-lis_run-24_eeg.vhdr,0.11742,0.5457,0.6631,listener median,0.5457,listener median,,0.5457,22.6
+03,littleprince,19,sub-03_ses-littleprince_task-lis_run-25_eeg.vhdr,0.10832,0.5457,0.654,listener median,0.5322,decoder z>=5,18.5,0.5457,22.6
+03,littleprince,20,sub-03_ses-littleprince_task-lis_run-26_eeg.vhdr,0.12591,0.5457,0.6716,listener median,0.5457,listener median,,0.5457,22.6
+03,littleprince,21,sub-03_ses-littleprince_task-lis_run-27_eeg.vhdr,0.13208,0.5457,0.6778,listener median,0.5096,decoder z>=5,12.5,0.5457,22.6
+03,littleprince,22,sub-03_ses-littleprince_task-lis_run-28_eeg.vhdr,0.12291,0.5457,0.6686,listener median,0.5457,listener median,,0.5457,22.6
+03,littleprince,23,sub-03_ses-littleprince_task-lis_run-29_eeg.vhdr,0.11488,0.5457,0.6606,listener median,0.5457,listener median,,0.5457,22.6
+03,littleprince,24,sub-03_ses-littleprince_task-lis_run-210_eeg.vhdr,0.12147,0.5457,0.6672,listener median,0.534,decoder z>=5,11.9,0.5457,22.6
+03,littleprince,25,sub-03_ses-littleprince_task-lis_run-211_eeg.vhdr,10.96024,0.5927,11.5529,"chapter estimate (deviates > max(40 ms, 3 SE))",0.5927,decoder z>=5,7.5,0.5457,22.6
+03,littleprince,26,sub-03_ses-littleprince_task-lis_run-212_eeg.vhdr,0.12045,0.5457,0.6662,listener median,0.5433,decoder z>=5,7.0,0.5457,22.6
+03,littleprince,27,sub-03_ses-littleprince_task-lis_run-213_eeg.vhdr,0.10815,0.5457,0.6538,listener median,0.5336,decoder z>=2,10.7,0.5457,22.6
+04,garnettdream,1,sub-04_ses-garnettdream_task-lis_run-11_eeg.vhdr,123.93221,0.5468,124.479,listener median,0.5338,decoder z>=5,3.7,0.5468,18.8
+04,garnettdream,2,sub-04_ses-garnettdream_task-lis_run-12_eeg.vhdr,0.13642,0.5468,0.6832,listener median,0.5506,decoder z>=5,4.8,0.5468,18.8
+04,garnettdream,3,sub-04_ses-garnettdream_task-lis_run-13_eeg.vhdr,0.13795,0.5468,0.6848,listener median,0.5576,decoder z>=5,12.6,0.5468,18.8
+04,garnettdream,4,sub-04_ses-garnettdream_task-lis_run-14_eeg.vhdr,25.7144,0.5468,26.2612,listener median,0.5772,decoder z>=5,3.6,0.5468,18.8
+04,garnettdream,5,sub-04_ses-garnettdream_task-lis_run-15_eeg.vhdr,0.13731,0.5468,0.6841,listener median,0.5489,decoder z>=5,4.5,0.5468,18.8
+04,garnettdream,6,sub-04_ses-garnettdream_task-lis_run-21_eeg.vhdr,29.15065,0.6215,29.7722,"chapter estimate (deviates > max(40 ms, 3 SE))",0.6215,decoder z>=5,5.2,0.5468,18.8
+04,garnettdream,7,sub-04_ses-garnettdream_task-lis_run-22_eeg.vhdr,0.04211,0.5468,0.5889,listener median,0.5262,decoder z>=5,5.5,0.5468,18.8
+04,garnettdream,8,sub-04_ses-garnettdream_task-lis_run-23_eeg.vhdr,37.74882,0.5468,38.2956,listener median,0.5237,decoder z>=5,3.8,0.5468,18.8
+04,garnettdream,9,sub-04_ses-garnettdream_task-lis_run-24_eeg.vhdr,0.11025,0.5468,0.657,listener median,0.5399,decoder z>=2,8.3,0.5468,18.8
+04,littleprince,1,sub-04_ses-littleprince_task-lis_run-11_eeg.vhdr,0.02349,0.5468,0.5703,listener median,0.5426,decoder z>=5,9.2,0.5468,18.8
+04,littleprince,2,sub-04_ses-littleprince_task-lis_run-12_eeg.vhdr,0.13888,0.5468,0.6857,listener median,0.5468,listener median,,0.5468,18.8
+04,littleprince,3,sub-04_ses-littleprince_task-lis_run-13_eeg.vhdr,0.14665,0.5468,0.6934,listener median,0.5591,decoder z>=2,9.9,0.5468,18.8
+04,littleprince,4,sub-04_ses-littleprince_task-lis_run-14_eeg.vhdr,0.1316,0.5468,0.6784,listener median,0.5291,decoder z>=5,3.9,0.5468,18.8
+04,littleprince,5,sub-04_ses-littleprince_task-lis_run-15_eeg.vhdr,0.18927,0.5468,0.7361,listener median,0.5502,decoder z>=5,4.3,0.5468,18.8
+04,littleprince,6,sub-04_ses-littleprince_task-lis_run-16_eeg.vhdr,0.12376,0.5468,0.6706,listener median,0.5468,listener median,,0.5468,18.8
+04,littleprince,7,sub-04_ses-littleprince_task-lis_run-17_eeg.vhdr,0.13056,0.5468,0.6774,listener median,0.577,decoder z>=2,15.3,0.5468,18.8
+04,littleprince,8,sub-04_ses-littleprince_task-lis_run-18_eeg.vhdr,14.5045,0.6117,15.1162,"chapter estimate (deviates > max(40 ms, 3 SE))",0.6117,decoder z>=2,7.2,0.5468,18.8
+04,littleprince,9,sub-04_ses-littleprince_task-lis_run-19_eeg.vhdr,0.13107,0.5468,0.6779,listener median,0.5845,decoder z>=2,11.4,0.5468,18.8
+04,littleprince,10,sub-04_ses-littleprince_task-lis_run-110_eeg.vhdr,0.21212,0.5468,0.7589,listener median,0.5466,decoder z>=5,9.9,0.5468,18.8
+04,littleprince,11,sub-04_ses-littleprince_task-lis_run-111_eeg.vhdr,0.01876,0.473,0.4918,"chapter estimate (deviates > max(40 ms, 3 SE))",0.473,decoder z>=5,16.3,0.5468,18.8
+04,littleprince,12,sub-04_ses-littleprince_task-lis_run-112_eeg.vhdr,0.02276,0.5468,0.5696,listener median,0.5184,rescan decoder z>=2,9.7,0.5468,18.8
+04,littleprince,13,sub-04_ses-littleprince_task-lis_run-113_eeg.vhdr,0.15273,0.5468,0.6995,listener median,0.5206,decoder z>=5,10.1,0.5468,18.8
+04,littleprince,14,sub-04_ses-littleprince_task-lis_run-114_eeg.vhdr,0.11708,0.5468,0.6639,listener median,0.5381,decoder z>=5,6.8,0.5468,18.8
+04,littleprince,15,sub-04_ses-littleprince_task-lis_run-21_eeg.vhdr,0.03851,0.6393,0.6778,"chapter estimate (deviates > max(40 ms, 3 SE))",0.6393,decoder z>=5,7.9,0.5468,18.8
+04,littleprince,16,sub-04_ses-littleprince_task-lis_run-22_eeg.vhdr,0.02854,0.5468,0.5753,listener median,0.5468,listener median,,0.5468,18.8
+04,littleprince,17,sub-04_ses-littleprince_task-lis_run-23_eeg.vhdr,0.12463,0.5468,0.6714,listener median,0.5324,decoder z>=5,5.3,0.5468,18.8
+04,littleprince,18,sub-04_ses-littleprince_task-lis_run-24_eeg.vhdr,0.10456,0.5468,0.6514,listener median,0.5468,listener median,,0.5468,18.8
+04,littleprince,19,sub-04_ses-littleprince_task-lis_run-25_eeg.vhdr,0.12486,0.5468,0.6717,listener median,0.5383,decoder z>=2,6.0,0.5468,18.8
+04,littleprince,20,sub-04_ses-littleprince_task-lis_run-26_eeg.vhdr,0.11365,0.5468,0.6604,listener median,0.5362,decoder z>=2,14.5,0.5468,18.8
+04,littleprince,21,sub-04_ses-littleprince_task-lis_run-27_eeg.vhdr,0.15887,0.5468,0.7057,listener median,0.5255,decoder z>=5,11.0,0.5468,18.8
+04,littleprince,22,sub-04_ses-littleprince_task-lis_run-28_eeg.vhdr,0.11969,0.5468,0.6665,listener median,0.5499,decoder z>=2,12.7,0.5468,18.8
+04,littleprince,23,sub-04_ses-littleprince_task-lis_run-29_eeg.vhdr,0.13242,0.5468,0.6792,listener median,0.5468,listener median,,0.5468,18.8
+04,littleprince,24,sub-04_ses-littleprince_task-lis_run-210_eeg.vhdr,0.13335,0.5468,0.6801,listener median,0.5468,decoder z>=2,4.1,0.5468,18.8
+04,littleprince,25,sub-04_ses-littleprince_task-lis_run-211_eeg.vhdr,-14.48544,0.5468,-13.9386,listener median,0.5468,listener median,,0.5468,18.8
+04,littleprince,26,sub-04_ses-littleprince_task-lis_run-212_eeg.vhdr,0.11793,0.5468,0.6647,listener median,0.5542,decoder z>=5,5.1,0.5468,18.8
+04,littleprince,27,sub-04_ses-littleprince_task-lis_run-213_eeg.vhdr,0.11757,0.5468,0.6644,listener median,0.5528,decoder z>=5,9.2,0.5468,18.8
+05,garnettdream,1,sub-05_ses-garnettdream_task-lis_run-11_eeg.vhdr,116.70183,0.5109,117.2127,listener median,0.4745,decoder z>=5,1.4,0.5109,14.4
+05,garnettdream,2,sub-05_ses-garnettdream_task-lis_run-12_eeg.vhdr,0.13651,0.5109,0.6474,listener median,0.5103,decoder z>=5,3.3,0.5109,14.4
+05,garnettdream,3,sub-05_ses-garnettdream_task-lis_run-13_eeg.vhdr,0.15575,0.5109,0.6666,listener median,0.4974,decoder z>=5,2.6,0.5109,14.4
+05,garnettdream,4,sub-05_ses-garnettdream_task-lis_run-14_eeg.vhdr,7.69188,0.5109,8.2028,listener median,0.5248,decoder z>=5,1.9,0.5109,14.4
+05,garnettdream,5,sub-05_ses-garnettdream_task-lis_run-21_eeg.vhdr,25.87166,0.5109,26.3826,listener median,0.5365,decoder z>=5,2.0,0.5109,14.4
+05,garnettdream,6,sub-05_ses-garnettdream_task-lis_run-22_eeg.vhdr,0.05076,0.5109,0.5617,listener median,0.5052,decoder z>=5,2.4,0.5109,14.4
+05,garnettdream,7,sub-05_ses-garnettdream_task-lis_run-23_eeg.vhdr,4.4641,0.5109,4.975,listener median,0.5133,decoder z>=5,1.9,0.5109,14.4
+05,garnettdream,8,sub-05_ses-garnettdream_task-lis_run-24_eeg.vhdr,0.11994,0.5571,0.677,"chapter estimate (deviates > max(40 ms, 3 SE))",0.5571,decoder z>=5,2.7,0.5109,14.4
+05,littleprince,1,sub-05_ses-littleprince_task-lis_run-11_eeg.vhdr,0.02973,0.5109,0.5406,listener median,0.5064,decoder z>=5,5.4,0.5109,14.4
+05,littleprince,2,sub-05_ses-littleprince_task-lis_run-12_eeg.vhdr,0.03041,0.5109,0.5413,listener median,0.5079,decoder z>=5,4.9,0.5109,14.4
+05,littleprince,3,sub-05_ses-littleprince_task-lis_run-13_eeg.vhdr,0.03079,0.5109,0.5417,listener median,0.496,decoder z>=5,5.6,0.5109,14.4
+05,littleprince,4,sub-05_ses-littleprince_task-lis_run-14_eeg.vhdr,0.03306,0.5109,0.544,listener median,0.5123,decoder z>=5,5.1,0.5109,14.4
+05,littleprince,5,sub-05_ses-littleprince_task-lis_run-15_eeg.vhdr,0.03324,0.5109,0.5441,listener median,0.5115,decoder z>=5,5.3,0.5109,14.4
+05,littleprince,6,sub-05_ses-littleprince_task-lis_run-16_eeg.vhdr,0.02486,0.5109,0.5358,listener median,0.5109,listener median,,0.5109,14.4
+05,littleprince,7,sub-05_ses-littleprince_task-lis_run-17_eeg.vhdr,0.03465,0.5109,0.5456,listener median,0.501,decoder z>=5,4.4,0.5109,14.4
+05,littleprince,8,sub-05_ses-littleprince_task-lis_run-18_eeg.vhdr,0.03723,0.5109,0.5481,listener median,0.5084,decoder z>=5,6.0,0.5109,14.4
+05,littleprince,9,sub-05_ses-littleprince_task-lis_run-19_eeg.vhdr,0.03755,0.5109,0.5484,listener median,0.514,decoder z>=5,5.7,0.5109,14.4
+05,littleprince,10,sub-05_ses-littleprince_task-lis_run-110_eeg.vhdr,0.03367,0.5109,0.5446,listener median,0.5073,decoder z>=5,2.9,0.5109,14.4
+05,littleprince,11,sub-05_ses-littleprince_task-lis_run-111_eeg.vhdr,0.02657,0.5109,0.5375,listener median,0.5666,decoder z>=2,19.5,0.5109,14.4
+05,littleprince,12,sub-05_ses-littleprince_task-lis_run-112_eeg.vhdr,0.02721,0.5109,0.5381,listener median,0.5314,decoder z>=2,11.8,0.5109,14.4
+05,littleprince,13,sub-05_ses-littleprince_task-lis_run-113_eeg.vhdr,0.0333,0.5109,0.5442,listener median,0.52,decoder z>=5,3.1,0.5109,14.4
+05,littleprince,15,sub-05_ses-littleprince_task-lis_run-21_eeg.vhdr,33.28108,0.5109,33.792,listener median,0.5259,decoder z>=5,11.1,0.5109,14.4
+05,littleprince,16,sub-05_ses-littleprince_task-lis_run-22_eeg.vhdr,0.02669,0.5109,0.5376,listener median,0.5006,decoder z>=5,11.1,0.5109,14.4
+05,littleprince,17,sub-05_ses-littleprince_task-lis_run-23_eeg.vhdr,0.11228,0.5109,0.6232,listener median,0.5014,decoder z>=2,11.4,0.5109,14.4
+05,littleprince,18,sub-05_ses-littleprince_task-lis_run-24_eeg.vhdr,0.11799,0.5109,0.6289,listener median,0.5109,listener median,,0.5109,14.4
+05,littleprince,19,sub-05_ses-littleprince_task-lis_run-25_eeg.vhdr,0.10898,0.5109,0.6199,listener median,0.4919,decoder z>=2,15.6,0.5109,14.4
+05,littleprince,20,sub-05_ses-littleprince_task-lis_run-26_eeg.vhdr,0.10586,0.5109,0.6168,listener median,0.5302,decoder z>=5,7.4,0.5109,14.4
+05,littleprince,21,sub-05_ses-littleprince_task-lis_run-27_eeg.vhdr,0.12259,0.5109,0.6335,listener median,0.4797,decoder z>=5,3.3,0.5109,14.4
+05,littleprince,22,sub-05_ses-littleprince_task-lis_run-28_eeg.vhdr,0.11618,0.5109,0.6271,listener median,0.5036,decoder z>=5,6.6,0.5109,14.4
+05,littleprince,23,sub-05_ses-littleprince_task-lis_run-29_eeg.vhdr,0.11168,0.5109,0.6226,listener median,0.5109,listener median,,0.5109,14.4
+05,littleprince,24,sub-05_ses-littleprince_task-lis_run-210_eeg.vhdr,0.12842,0.5109,0.6393,listener median,0.5198,decoder z>=5,8.0,0.5109,14.4
+05,littleprince,25,sub-05_ses-littleprince_task-lis_run-211_eeg.vhdr,9.11562,0.5109,9.6265,listener median,0.515,decoder z>=5,3.8,0.5109,14.4
+05,littleprince,26,sub-05_ses-littleprince_task-lis_run-212_eeg.vhdr,0.1407,0.5109,0.6516,listener median,0.5298,decoder z>=5,5.2,0.5109,14.4
+06,garnettdream,1,sub-06_ses-garnettdream_task-lis_run-11_eeg.vhdr,116.62682,0.5031,117.1299,listener median,0.5019,decoder z>=5,5.9,0.5031,23.0
+06,garnettdream,2,sub-06_ses-garnettdream_task-lis_run-12_eeg.vhdr,0.04742,0.5031,0.5505,listener median,0.506,decoder z>=5,4.0,0.5031,23.0
+06,garnettdream,3,sub-06_ses-garnettdream_task-lis_run-13_eeg.vhdr,0.05429,0.5031,0.5574,listener median,0.5152,decoder z>=5,3.5,0.5031,23.0
+06,garnettdream,5,sub-06_ses-garnettdream_task-lis_run-21_eeg.vhdr,36.29059,0.5031,36.7937,listener median,0.5314,decoder z>=5,3.4,0.5031,23.0
+06,garnettdream,6,sub-06_ses-garnettdream_task-lis_run-22_eeg.vhdr,0.0503,0.5031,0.5534,listener median,0.5031,decoder z>=5,2.9,0.5031,23.0
+06,garnettdream,7,sub-06_ses-garnettdream_task-lis_run-23_eeg.vhdr,8.06916,0.5031,8.5723,listener median,0.5133,decoder z>=5,3.9,0.5031,23.0
+06,garnettdream,8,sub-06_ses-garnettdream_task-lis_run-24_eeg.vhdr,0.13902,0.5031,0.6421,listener median,0.5398,decoder z>=5,3.9,0.5031,23.0
+06,littleprince,1,sub-06_ses-littleprince_task-lis_run-11_eeg.vhdr,0.01526,0.5031,0.5184,listener median,0.486,decoder z>=2,12.7,0.5031,23.0
+06,littleprince,2,sub-06_ses-littleprince_task-lis_run-12_eeg.vhdr,0.11825,0.4536,0.5718,"chapter estimate (deviates > max(40 ms, 3 SE))",0.4536,decoder z>=5,6.5,0.5031,23.0
+06,littleprince,3,sub-06_ses-littleprince_task-lis_run-13_eeg.vhdr,0.12318,0.5031,0.6263,listener median,0.4961,decoder z>=2,7.8,0.5031,23.0
+06,littleprince,4,sub-06_ses-littleprince_task-lis_run-14_eeg.vhdr,0.12907,0.4594,0.5885,"chapter estimate (deviates > max(40 ms, 3 SE))",0.4594,decoder z>=5,5.6,0.5031,23.0
+06,littleprince,5,sub-06_ses-littleprince_task-lis_run-15_eeg.vhdr,0.12394,0.5031,0.627,listener median,0.4744,decoder z>=2,6.9,0.5031,23.0
+06,littleprince,6,sub-06_ses-littleprince_task-lis_run-16_eeg.vhdr,0.10114,0.5031,0.6042,listener median,0.4912,decoder z>=5,6.7,0.5031,23.0
+06,littleprince,7,sub-06_ses-littleprince_task-lis_run-17_eeg.vhdr,0.12605,0.5031,0.6292,listener median,0.5139,decoder z>=5,3.9,0.5031,23.0
+06,littleprince,8,sub-06_ses-littleprince_task-lis_run-18_eeg.vhdr,14.54352,0.4519,14.9954,"chapter estimate (deviates > max(40 ms, 3 SE))",0.4519,decoder z>=2,6.7,0.5031,23.0
+06,littleprince,9,sub-06_ses-littleprince_task-lis_run-19_eeg.vhdr,0.12648,0.5031,0.6296,listener median,0.5031,listener median,,0.5031,23.0
+06,littleprince,10,sub-06_ses-littleprince_task-lis_run-110_eeg.vhdr,0.14415,0.5031,0.6472,listener median,0.4905,decoder z>=2,13.4,0.5031,23.0
+06,littleprince,11,sub-06_ses-littleprince_task-lis_run-111_eeg.vhdr,0.10334,0.5031,0.6064,listener median,0.5031,listener median,,0.5031,23.0
+06,littleprince,12,sub-06_ses-littleprince_task-lis_run-112_eeg.vhdr,0.10892,0.5031,0.612,listener median,0.5031,listener median,,0.5031,23.0
+06,littleprince,13,sub-06_ses-littleprince_task-lis_run-113_eeg.vhdr,0.13279,0.5031,0.6359,listener median,0.4892,decoder z>=5,7.8,0.5031,23.0
+06,littleprince,14,sub-06_ses-littleprince_task-lis_run-114_eeg.vhdr,0.11467,0.5031,0.6178,listener median,0.5123,decoder z>=5,6.9,0.5031,23.0
+06,littleprince,15,sub-06_ses-littleprince_task-lis_run-21_eeg.vhdr,41.31745,0.5902,41.9077,"chapter estimate (deviates > max(40 ms, 3 SE))",0.5902,decoder z>=2,5.4,0.5031,23.0
+06,littleprince,16,sub-06_ses-littleprince_task-lis_run-22_eeg.vhdr,0.03044,0.5031,0.5335,listener median,0.5031,listener median,,0.5031,23.0
+06,littleprince,17,sub-06_ses-littleprince_task-lis_run-23_eeg.vhdr,0.11663,0.5031,0.6197,listener median,0.5031,listener median,,0.5031,23.0
+06,littleprince,18,sub-06_ses-littleprince_task-lis_run-24_eeg.vhdr,0.12849,0.5031,0.6316,listener median,0.5031,listener median,,0.5031,23.0
+06,littleprince,19,sub-06_ses-littleprince_task-lis_run-25_eeg.vhdr,0.13396,0.5031,0.6371,listener median,0.5031,listener median,,0.5031,23.0
+06,littleprince,20,sub-06_ses-littleprince_task-lis_run-26_eeg.vhdr,0.14291,0.5031,0.646,listener median,0.5025,decoder z>=2,14.0,0.5031,23.0
+06,littleprince,21,sub-06_ses-littleprince_task-lis_run-27_eeg.vhdr,0.12908,0.5031,0.6322,listener median,0.525,decoder z>=2,8.3,0.5031,23.0
+06,littleprince,22,sub-06_ses-littleprince_task-lis_run-28_eeg.vhdr,0.11503,0.5475,0.6625,"chapter estimate (deviates > max(40 ms, 3 SE))",0.5475,decoder z>=2,14.2,0.5031,23.0
+06,littleprince,23,sub-06_ses-littleprince_task-lis_run-29_eeg.vhdr,0.12334,0.5031,0.6264,listener median,0.5031,listener median,,0.5031,23.0
+06,littleprince,24,sub-06_ses-littleprince_task-lis_run-210_eeg.vhdr,0.12778,0.5031,0.6309,listener median,0.534,decoder z>=5,16.4,0.5031,23.0
+06,littleprince,25,sub-06_ses-littleprince_task-lis_run-211_eeg.vhdr,9.30999,0.5738,9.8838,"chapter estimate (deviates > max(40 ms, 3 SE))",0.5738,decoder z>=2,22.3,0.5031,23.0
+06,littleprince,26,sub-06_ses-littleprince_task-lis_run-212_eeg.vhdr,0.11736,0.5031,0.6205,listener median,0.5016,decoder z>=5,10.7,0.5031,23.0
+06,littleprince,27,sub-06_ses-littleprince_task-lis_run-213_eeg.vhdr,0.11883,0.4506,0.5694,"chapter estimate (deviates > max(40 ms, 3 SE))",0.4506,dnn z>=2,11.8,0.5031,23.0
+07,garnettdream,1,sub-07_ses-garnettdream_task-lis_run-11_eeg.vhdr,136.93935,0.9174,137.8567,"chapter estimate (deviates > max(40 ms, 3 SE))",0.9174,decoder z>=5,5.8,0.5081,25.5
+07,garnettdream,2,sub-07_ses-garnettdream_task-lis_run-12_eeg.vhdr,0.11328,0.5081,0.6214,listener median,0.5225,decoder z>=5,5.0,0.5081,25.5
+07,garnettdream,3,sub-07_ses-garnettdream_task-lis_run-13_eeg.vhdr,0.12272,0.7321,0.8548,"chapter estimate (deviates > max(40 ms, 3 SE))",0.7321,decoder z>=5,2.1,0.5081,25.5
+07,garnettdream,4,sub-07_ses-garnettdream_task-lis_run-14_eeg.vhdr,10.29282,0.5081,10.8009,listener median,0.5081,listener median,,0.5081,25.5
+07,garnettdream,5,sub-07_ses-garnettdream_task-lis_run-21_eeg.vhdr,37.1672,0.5081,37.6753,listener median,0.5463,decoder z>=5,5.9,0.5081,25.5
+07,garnettdream,6,sub-07_ses-garnettdream_task-lis_run-22_eeg.vhdr,0.04611,0.5081,0.5542,listener median,0.5029,decoder z>=5,4.7,0.5081,25.5
+07,garnettdream,7,sub-07_ses-garnettdream_task-lis_run-23_eeg.vhdr,5.48861,0.5081,5.9967,listener median,0.5159,decoder z>=5,2.8,0.5081,25.5
+07,garnettdream,8,sub-07_ses-garnettdream_task-lis_run-24_eeg.vhdr,0.12154,0.5081,0.6296,listener median,0.5207,decoder z>=5,2.0,0.5081,25.5
+07,littleprince,1,sub-07_ses-littleprince_task-lis_run-11_eeg.vhdr,0.02406,0.5081,0.5322,listener median,0.483,decoder z>=2,13.2,0.5081,25.5
+07,littleprince,2,sub-07_ses-littleprince_task-lis_run-12_eeg.vhdr,0.12172,0.5081,0.6298,listener median,0.4909,decoder z>=5,10.1,0.5081,25.5
+07,littleprince,3,sub-07_ses-littleprince_task-lis_run-13_eeg.vhdr,0.14245,0.5081,0.6506,listener median,0.4795,decoder z>=5,10.1,0.5081,25.5
+07,littleprince,4,sub-07_ses-littleprince_task-lis_run-14_eeg.vhdr,0.11581,0.5081,0.6239,listener median,0.4905,decoder z>=5,5.7,0.5081,25.5
+07,littleprince,5,sub-07_ses-littleprince_task-lis_run-15_eeg.vhdr,0.11488,0.5081,0.623,listener median,0.4879,decoder z>=2,11.6,0.5081,25.5
+07,littleprince,6,sub-07_ses-littleprince_task-lis_run-16_eeg.vhdr,0.11038,0.5081,0.6185,listener median,0.4917,decoder z>=5,10.0,0.5081,25.5
+07,littleprince,7,sub-07_ses-littleprince_task-lis_run-17_eeg.vhdr,0.12769,0.5081,0.6358,listener median,0.4969,decoder z>=5,6.1,0.5081,25.5
+07,littleprince,8,sub-07_ses-littleprince_task-lis_run-18_eeg.vhdr,7.5149,0.5081,8.023,listener median,0.4974,decoder z>=5,8.7,0.5081,25.5
+07,littleprince,9,sub-07_ses-littleprince_task-lis_run-19_eeg.vhdr,0.12732,0.5081,0.6354,listener median,0.4714,decoder z>=5,13.0,0.5081,25.5
+07,littleprince,10,sub-07_ses-littleprince_task-lis_run-110_eeg.vhdr,0.13122,0.5081,0.6393,listener median,0.4873,decoder z>=5,6.0,0.5081,25.5
+07,littleprince,11,sub-07_ses-littleprince_task-lis_run-111_eeg.vhdr,0.1062,0.5081,0.6143,listener median,0.5081,listener median,,0.5081,25.5
+07,littleprince,12,sub-07_ses-littleprince_task-lis_run-112_eeg.vhdr,0.10958,0.5081,0.6177,listener median,0.5156,decoder z>=5,15.1,0.5081,25.5
+07,littleprince,13,sub-07_ses-littleprince_task-lis_run-113_eeg.vhdr,0.10732,0.5081,0.6154,listener median,0.5056,decoder z>=5,10.6,0.5081,25.5
+07,littleprince,14,sub-07_ses-littleprince_task-lis_run-114_eeg.vhdr,0.10547,0.5081,0.6136,listener median,0.5106,decoder z>=5,7.0,0.5081,25.5
+07,littleprince,15,sub-07_ses-littleprince_task-lis_run-21_eeg.vhdr,43.80367,0.5627,44.3664,"chapter estimate (deviates > max(40 ms, 3 SE))",0.5627,decoder z>=2,4.7,0.5081,25.5
+07,littleprince,16,sub-07_ses-littleprince_task-lis_run-22_eeg.vhdr,0.01719,0.4605,0.4777,"chapter estimate (deviates > max(40 ms, 3 SE))",0.4605,decoder z>=2,8.7,0.5081,25.5
+07,littleprince,17,sub-07_ses-littleprince_task-lis_run-23_eeg.vhdr,0.08825,0.5081,0.5963,listener median,0.511,decoder z>=2,9.8,0.5081,25.5
+07,littleprince,18,sub-07_ses-littleprince_task-lis_run-24_eeg.vhdr,0.1282,0.5081,0.6363,listener median,0.5081,listener median,,0.5081,25.5
+07,littleprince,19,sub-07_ses-littleprince_task-lis_run-25_eeg.vhdr,0.11662,0.5081,0.6247,listener median,0.5373,decoder z>=2,8.8,0.5081,25.5
+07,littleprince,20,sub-07_ses-littleprince_task-lis_run-26_eeg.vhdr,0.12126,0.4659,0.5872,"chapter estimate (deviates > max(40 ms, 3 SE))",0.4659,dnn z>=2,8.9,0.5081,25.5
+07,littleprince,21,sub-07_ses-littleprince_task-lis_run-27_eeg.vhdr,0.10779,0.5081,0.6159,listener median,0.5027,decoder z>=5,5.7,0.5081,25.5
+07,littleprince,22,sub-07_ses-littleprince_task-lis_run-28_eeg.vhdr,0.12396,0.5081,0.6321,listener median,0.5223,decoder z>=2,9.0,0.5081,25.5
+07,littleprince,23,sub-07_ses-littleprince_task-lis_run-29_eeg.vhdr,0.10316,0.5081,0.6113,listener median,0.5081,listener median,,0.5081,25.5
+07,littleprince,24,sub-07_ses-littleprince_task-lis_run-210_eeg.vhdr,0.13081,0.5081,0.6389,listener median,0.5358,decoder z>=5,14.3,0.5081,25.5
+07,littleprince,25,sub-07_ses-littleprince_task-lis_run-211_eeg.vhdr,12.83247,0.5629,13.3954,"chapter estimate (deviates > max(40 ms, 3 SE))",0.5629,decoder z>=2,5.9,0.5081,25.5
+07,littleprince,26,sub-07_ses-littleprince_task-lis_run-212_eeg.vhdr,0.09933,0.5081,0.6074,listener median,0.5192,decoder z>=5,4.3,0.5081,25.5
+07,littleprince,27,sub-07_ses-littleprince_task-lis_run-213_eeg.vhdr,0.10412,0.5081,0.6122,listener median,0.4973,decoder z>=5,7.0,0.5081,25.5
+08,garnettdream,1,sub-08_ses-garnettdream_task-lis_run-11_eeg.vhdr,119.08961,0.5066,119.5962,listener median,0.4815,decoder z>=5,6.4,0.5066,15.0
+08,garnettdream,2,sub-08_ses-garnettdream_task-lis_run-12_eeg.vhdr,0.13095,0.5066,0.6376,listener median,0.4965,decoder z>=5,3.4,0.5066,15.0
+08,garnettdream,3,sub-08_ses-garnettdream_task-lis_run-13_eeg.vhdr,0.13949,0.5066,0.6461,listener median,0.4942,decoder z>=5,4.1,0.5066,15.0
+08,garnettdream,4,sub-08_ses-garnettdream_task-lis_run-14_eeg.vhdr,9.52915,0.5476,10.0767,"chapter estimate (deviates > max(40 ms, 3 SE))",0.5476,decoder z>=5,3.6,0.5066,15.0
+08,garnettdream,5,sub-08_ses-garnettdream_task-lis_run-21_eeg.vhdr,34.49784,0.5066,35.0044,listener median,0.5303,decoder z>=5,5.3,0.5066,15.0
+08,garnettdream,6,sub-08_ses-garnettdream_task-lis_run-22_eeg.vhdr,0.04823,0.5066,0.5548,listener median,0.5138,decoder z>=5,5.1,0.5066,15.0
+08,garnettdream,7,sub-08_ses-garnettdream_task-lis_run-23_eeg.vhdr,13.36426,0.5066,13.8709,listener median,0.5066,listener median,,0.5066,15.0
+08,garnettdream,8,sub-08_ses-garnettdream_task-lis_run-24_eeg.vhdr,0.13558,0.5066,0.6422,listener median,0.5333,decoder z>=5,4.7,0.5066,15.0
+08,littleprince,1,sub-08_ses-littleprince_task-lis_run-11_eeg.vhdr,0.03004,0.5066,0.5366,listener median,0.4789,decoder z>=2,10.7,0.5066,15.0
+08,littleprince,2,sub-08_ses-littleprince_task-lis_run-12_eeg.vhdr,0.12489,0.5066,0.6315,listener median,0.4793,decoder z>=5,4.8,0.5066,15.0
+08,littleprince,3,sub-08_ses-littleprince_task-lis_run-13_eeg.vhdr,0.11291,0.5066,0.6195,listener median,0.4981,decoder z>=5,7.3,0.5066,15.0
+08,littleprince,4,sub-08_ses-littleprince_task-lis_run-14_eeg.vhdr,0.12412,0.5066,0.6307,listener median,0.5046,decoder z>=5,6.3,0.5066,15.0
+08,littleprince,5,sub-08_ses-littleprince_task-lis_run-15_eeg.vhdr,0.12477,0.5066,0.6314,listener median,0.5054,decoder z>=5,10.4,0.5066,15.0
+08,littleprince,6,sub-08_ses-littleprince_task-lis_run-16_eeg.vhdr,0.1483,0.5066,0.6549,listener median,0.5066,listener median,,0.5066,15.0
+08,littleprince,7,sub-08_ses-littleprince_task-lis_run-17_eeg.vhdr,0.14874,0.5066,0.6553,listener median,0.517,decoder z>=5,10.8,0.5066,15.0
+08,littleprince,8,sub-08_ses-littleprince_task-lis_run-18_eeg.vhdr,13.52091,0.5066,14.0275,listener median,0.5088,decoder z>=2,13.8,0.5066,15.0
+08,littleprince,9,sub-08_ses-littleprince_task-lis_run-19_eeg.vhdr,0.13053,0.5066,0.6371,listener median,0.5033,decoder z>=5,7.9,0.5066,15.0
+08,littleprince,10,sub-08_ses-littleprince_task-lis_run-110_eeg.vhdr,0.10914,0.5066,0.6157,listener median,0.5113,decoder z>=5,8.2,0.5066,15.0
+08,littleprince,11,sub-08_ses-littleprince_task-lis_run-111_eeg.vhdr,0.10781,0.5066,0.6144,listener median,0.5066,listener median,,0.5066,15.0
+08,littleprince,12,sub-08_ses-littleprince_task-lis_run-112_eeg.vhdr,0.11393,0.5066,0.6205,listener median,0.5066,listener median,,0.5066,15.0
+08,littleprince,13,sub-08_ses-littleprince_task-lis_run-113_eeg.vhdr,0.10516,0.5066,0.6118,listener median,0.5079,decoder z>=5,7.7,0.5066,15.0
+08,littleprince,14,sub-08_ses-littleprince_task-lis_run-114_eeg.vhdr,0.12183,0.5066,0.6284,listener median,0.5019,decoder z>=5,8.1,0.5066,15.0
+08,littleprince,15,sub-08_ses-littleprince_task-lis_run-21_eeg.vhdr,30.50534,0.5066,31.0119,listener median,0.5363,decoder z>=2,9.9,0.5066,15.0
+08,littleprince,16,sub-08_ses-littleprince_task-lis_run-22_eeg.vhdr,0.02338,0.5066,0.53,listener median,0.5066,listener median,,0.5066,15.0
+08,littleprince,17,sub-08_ses-littleprince_task-lis_run-23_eeg.vhdr,0.12783,0.5066,0.6344,listener median,0.4785,decoder z>=5,11.4,0.5066,15.0
+08,littleprince,18,sub-08_ses-littleprince_task-lis_run-24_eeg.vhdr,0.11667,0.5066,0.6233,listener median,0.5066,listener median,,0.5066,15.0
+08,littleprince,19,sub-08_ses-littleprince_task-lis_run-25_eeg.vhdr,0.12016,0.5066,0.6268,listener median,0.5066,listener median,,0.5066,15.0
+08,littleprince,20,sub-08_ses-littleprince_task-lis_run-26_eeg.vhdr,0.11217,0.5066,0.6188,listener median,0.5003,rescan decoder z>=2,15.1,0.5066,15.0
+08,littleprince,21,sub-08_ses-littleprince_task-lis_run-27_eeg.vhdr,0.11645,0.5066,0.6231,listener median,0.484,decoder z>=5,7.0,0.5066,15.0
+08,littleprince,22,sub-08_ses-littleprince_task-lis_run-28_eeg.vhdr,0.12036,0.5066,0.627,listener median,0.5066,listener median,,0.5066,15.0
+08,littleprince,23,sub-08_ses-littleprince_task-lis_run-29_eeg.vhdr,0.11106,0.5066,0.6177,listener median,0.5066,listener median,,0.5066,15.0
+08,littleprince,24,sub-08_ses-littleprince_task-lis_run-210_eeg.vhdr,0.12893,0.5066,0.6355,listener median,0.5129,decoder z>=2,15.4,0.5066,15.0
+08,littleprince,25,sub-08_ses-littleprince_task-lis_run-211_eeg.vhdr,19.31717,0.5066,19.8238,listener median,0.5066,listener median,,0.5066,15.0
+08,littleprince,26,sub-08_ses-littleprince_task-lis_run-212_eeg.vhdr,0.10853,0.5066,0.6151,listener median,0.5232,decoder z>=2,4.9,0.5066,15.0
+08,littleprince,27,sub-08_ses-littleprince_task-lis_run-213_eeg.vhdr,0.11264,0.5066,0.6192,listener median,0.5166,decoder z>=5,14.0,0.5066,15.0

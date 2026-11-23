@@ -443,6 +443,28 @@ standardised_v2`, `standardised_trigger_v2`, `validation_{chapter,trigger}_v2/` 
 - First pilot (`standardised`, `standardised_trigger`) used per-trial bads and broke the validator (subjects with
   different channel sets); superseded by the `_v2` folders (same EEG samples, per-participant bads).
 
+### 6e. Decision (user, 2026-11-23): option B onsets, no drift correction
+- **Onsets: option B** is the adaptor default (`latency="option_b"`): the listener median, except chapters whose EEG
+  estimate deviates by more than max(40 ms, 3 SE) from it (39 of 281 chapters: 01 10, 02 4, 03 6, 04 4, 05 1, 06 7,
+  07 6, 08 1). Every subject/trial's t0, option-B latency, onset and source are logged in `onsets_optionB.csv`
+  (`timing/make_logs.py`). `latency="chapter"` (the z >= 2 per-chapter rule) and `"listener_median"` stay available.
+- Why (comparison over all 8 listeners, `tmp/review/chen2026/scripts/timing_compare.py`, outputs in
+  `tmp/review/chen2026/timing_compare/`): held-out halves test (latency from the odd 30-s blocks, decoder r on the
+  even ones, and vice versa), mean over chapters: option B 0.113, z >= 2 rule 0.110, listener median 0.107,
+  constant 0.5 s 0.094, trigger only (t0) -0.008. Option B is ahead in 6 of 8 listeners (the z >= 2 rule in sub-01
+  and sub-05); per chapter the z >= 2 rule beats the median in 107 and loses in 109, i.e. per-chapter values help only
+  where a chapter really deviates. The half-data estimates are noisier than full-chapter ones, so this test is
+  conservative for the per-chapter rule. Forward TRFs (`trf.png`): trigger-only timing puts the response at
+  +0.6-0.7 s; every latency-corrected timing gives peaks at ~+100 and ~+220 ms (sharpest with per-chapter values in
+  sub-04..07; sub-02 shows no clear response under any timing).
+- **Drift: not applied.** The EEG estimates are logged in `drift.csv`: per listener Theil-Sen -4..+22 ppm (sub-02
+  uninformative), every 95% CI includes 0, and sub-05 (+1 [-8, +12]) and sub-08 (-3 [-15, +15]) sit near 0, which a
+  single playback-device drift would not do. The dataset value +16 ppm (median over listeners; joint_fit pool
+  +16.5 +- 3.2 without sub-05) is therefore not a reliable measurement; any drift is small (<= ~20 ms at the end of the
+  longest, 20-min chapter; ~4 ms in a median 4.3-min chapter). The provenance keeps `drift_ppm` = 16 as the
+  documented estimate and `drift_corrected_ppm` = 0.
+- Trial lengths: Garnett Dream 6.5-20.4 min (median 10.8), Little Prince 38 s-8.6 min (median 3.4); 24.72 h.
+
 ## 7. Cross-subject duration check
 - Trigger-derived duration: the ROWS/ROWE span equals the json span to within the 3 ms jitter in every chapter (|d| <=
   6 ppm for chapters > 2 min). End-of-audio markers do not exist in PL. Because the triggers and their timestamps share
@@ -474,8 +496,8 @@ mapping above stays.
   the registry was not edited.
 
 ## 10. Open questions (recommended default in brackets)
-1-3. Latency, per-chapter onsets and drift: done for all 8 listeners on 2026-11-23 (unanchored, 0-4 s, decoder + DNN);
-   the decisions are listed at the end of section 6b [option B timing table; document the +16 ppm drift].
+1-3. Latency, per-chapter onsets and drift: **decided 2026-11-23 (section 6e): option B onsets by default, drift
+   documented (drift.csv) and not applied.**
    (Earlier default "constant L = 0.50 s" is superseded: 8 chapters start 0.1-1.0 s late.)
 4. sub-01 Garnett Dream 6 (run-21) shows no envelope tracking (z 2.0; nothing within +-30 s or with any other wav)
    although its triggers are normal and the EEG looks clean: keep, or drop? [keep with fallback timing; still no

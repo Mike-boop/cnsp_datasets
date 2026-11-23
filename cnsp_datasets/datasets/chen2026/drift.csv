@@ -1,0 +1,10 @@
+sub,drift_theilsen_ppm,ci95_lo,ci95_hi,joint_fit_ppm,joint_fit_se,n_chapters,note
+01,15.4,-6.6,52.4,17.3,13.5,32,
+02,144.3,-14.7,165.9,79.9,38.3,5,uninformative (weak tracking)
+03,16.2,-3.9,36.4,19.0,8.9,18,
+04,-4.5,-39.2,24.6,11.5,8.0,20,
+05,1.1,-8.0,11.8,0.1,0.2,26,joint_fit stuck at 0 (excluded from the pool)
+06,19.4,-3.2,41.9,17.0,4.7,15,
+07,22.0,-1.1,42.6,21.2,8.8,22,
+08,-2.8,-15.5,15.3,4.2,12.6,19,
+pooled,15.4,,,16.5,3.2,,"dataset value +16 ppm: NOT applied (user, 2026-11-23). Every listener's CI includes 0 and sub-05/08 sit near 0, so it is not a reliable measurement; any drift is small (<= ~20 ms at the end of the longest chapter)"

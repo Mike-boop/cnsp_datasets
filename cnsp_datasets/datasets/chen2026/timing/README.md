@@ -35,6 +35,8 @@ DNN steps.
 | 8 | `ext_scan.py <sub>` | step 7, cache, classifier | `align/ext/` (decoder and DNN, latency -1..+8 s) |
 | 9 | `timing_v2.py` | steps 5-8 | `timing_table_v2.csv`, `timing_v2_overview.png`, `align/z2/ext_results.csv`, `sub-XX_ext_curves.png` |
 | 10 | `make_timing_csv.py [out]` | steps 1, 7, 9 | `../timing.csv` (default) |
+| 11 | `make_logs.py` | `../timing.csv`, step 5 summaries | `../onsets_optionB.csv`, `../drift.csv` |
+| (check) | `timing_compare.py <WORK> <out>` | timing table v2, decoder half curves, cache | passes / held-out / TRF comparison of the timing rules (basis of the option-B decision, notes 6e) |
 
 `fail_z2.csv` lists every chapter that fails the full decoder rule below, with the reason (`why`). Steps 2-5 and 8
 skip finished outputs.
