@@ -20,8 +20,9 @@ Scripts: `tmp/review/scripts/chen2023_*.py`. That folder is temporary; the numbe
 4. **Audio vs MEG clock drift of about +500 ppm**, measured from the MEG itself (no audio copy; section 7): best
    drift per subject 352-631 ppm (median 525, 12 subjects), like the +485 ppm (habersetzer2025) and +538 ppm
    (yang2026) of other TRIUX setups. Uncorrected, it costs 14% of the low-tier r and all of the 30-60 / 30-250 Hz
-   response; corrected (+485 ppm, in the validation only) both high tiers pass in 10/12 and 9/12 subjects.
-   **Not applied by default** (data-derived, not hardware): adaptor option `drift_ppm`; user decision.
+   response. A fine scan (350-650 ppm, 30-60 Hz TRF SNR) puts the peak at **510.5 ppm, 95% CI 502-518**
+   (per subject 469-541). **Applied by default: `drift_ppm=510`** (data-derived; approved by the user 2026-11-23);
+   4 held-out subjects standardised with it reach the brainstem tier (4/4 subjects significant in every tier).
 5. MaxFilter SSS already applied by the authors: the 30-250 Hz validation runs on the data as shipped.
 
 ## 1. Source
@@ -101,9 +102,10 @@ No derivatives, no MRI.
   measured a **16 ms trigger-to-sound delay** (Black Box Toolkit v2; it includes the tubes) and shifted their data
   by 16 samples (`preproc_ICA_lag16.m`).
 - Adaptor: onset = STI101 trigger sample + `sound_delay_ms` (default 16, the authors' value), trial length = wav
-  length (ceil at 1000 Hz), no resampling (native 1000 Hz). Drift: `drift_ppm` (default 0 = none; the
-  MEG-derived estimate `DATA_DRIFT_PPM` = 510 is recorded in the provenance as `drift_ppm`, the applied value as
-  `drift_corrected_ppm`); a correction is folded into the crop (`crop_on_audio_clock`, one interpolation).
+  length (ceil at 1000 Hz), no resampling (native 1000 Hz). Drift: `drift_ppm`, default `DATA_DRIFT_PPM` = 510
+  (MEG-derived, approved by the user 2026-11-23; 0 = no correction), folded into the crop (`crop_on_audio_clock`,
+  one interpolation). Provenance: `drift_ppm` (estimate), `drift_corrected_ppm` (applied), `drift_source`
+  ("data-derived ... approved by the user 2026-11-23").
   Trial = 3 x (run - 1) + position. Every recording extends >= 6.3 s past its stimulus even at +1000 ppm.
 - Drift and latency are estimated from the data in section 7.
 
@@ -146,7 +148,37 @@ shift is not read as an onset error. Figure `R/chen2023/latency_per_subject_drif
 (`R/chen2023/latency_per_subject.png`: the same without drift correction, flat TRFs, uninformative).
 The DNN offset check (accou2023) is EEG-only and was not run.
 
-Validation tier: `low` as standardised (default); `brainstem` with `drift_ppm` ~ +500.
+**Fine drift scan (validation only; same 12 subjects):** 350-650 ppm in 25 ppm steps. The drift is applied to the
+stimulus instead of the MEG (the MEG sample t pairs with stimulus time t / (1 + d): the feature is stretched by
+1 + d), which to first order equals the adaptor's resampling of the MEG; checked on S001, 1.17 / 1.25 at
+475 / 500 ppm against 1.22 at 485 ppm from MEG resampling. Scores: the validator's 30-60 Hz TRF SNR (same
+settings) and its low-tier r. Peak of the subject-mean curve (parabola through the maximum), bootstrap over
+subjects (2000):
+- 30-60 Hz SNR: **510.5 ppm, 95% CI 502.1-518.2**; per subject 469-541 ppm (median 507); mean SNR 0.99 at
+  350 ppm, 1.67 at 500 ppm, 1.07 at 650 ppm; 11/12 subjects significant (p < 0.05) at the grid maximum;
+- low-tier r: 535 ppm, 95% CI 486-571 (flat over this range: r changes by < 1%).
+Figure `R/chen2023/drift_scan_fine.png`; script `R/scripts/chen2023_drift_fine.py`, summary
+`chen2023_drift_fine_summary.py`, results `R/chen2023/drift_fine/summary.json`. Default set to 510 ppm (the
+pooled peak rounded to 5 ppm).
+
+**Drift-corrected pilot (default `drift_ppm=510`):** 4 complete subjects held out from both scans (11 =
+`sub-5551a7b45438`, the other channel setup, 19, 20, 21), 96 trials, 16 GB, `R/chen2023/standardised_drift/`;
+validator on magnetometers (`R/chen2023/validation_drift.json`, figure
+`R/chen2023/validation_drift/validation.png`):
+
+| | low r | 30-60 Hz SNR (p) | 30-250 Hz SNR (p) | tier |
+|---|---|---|---|---|
+| subjects 19-21, no drift correction (pilot 1) | 0.035 (3/3 sig.) | 0.92 (0.60; 0/3) | 0.96 (0.77; 0/3) | low |
+| subjects 11, 19-21, +510 ppm | 0.042 (4/4) | **1.87 (0.01; 4/4)** | **1.64 (0.01; 4/4)** | **brainstem** |
+
+Per subject (+510 ppm): 30-60 Hz SNR 1.95 / 1.34 / 2.08 / 2.10, 30-250 Hz 1.34 / 1.21 / 1.62 / 2.38 (subjects 11,
+19, 20, 21). Low r of 19-21: 0.029 / 0.033 / 0.044 -> 0.035 / 0.035 / 0.048. The TRFs peak at 20-50 ms with nothing
+at negative lags. Trial-offset jitter MAD 17 ms (0.5-8 Hz; not a hardware measure).
+
+The first pilot (`R/chen2023/standardised/`, 498 trials, 80 GB, no drift correction) was deleted on 2026-11-23 at
+15:12 CET with the user's approval.
+
+Validation tier: **brainstem** with the default `drift_ppm=510` (`low` without drift correction).
 
 ## 8. Data size
 19.39 h over 24 subjects (525 trials, longest = only stimulus per trial): mean 0.81 h per subject, range
@@ -160,12 +192,11 @@ Validation tier: `low` as standardised (default); `brainstem` with `drift_ppm` ~
 2. **The 16 ms delay** is applied by default (authors' measurement, hardware-measured, like habersetzer2025's
    acoustic delay; confirmed to +1 ms [0, 3] by the drift-corrected 30-60 Hz TRF). Approve, or set
    `sound_delay_ms=0`.
-3. **Drift correction.** Recommended: apply +510 ppm (`drift_ppm=510`, the median of the per-subject estimates
-   rounded to the habersetzer/yang range) as the dataset default, because the gain is large and consistent
-   (r +14%, both high tiers from fail to pass). It is data-derived, so by the campaign rule it stays off until the
-   user approves. A per-subject value is not recommended (352-631 ppm spread is mostly estimation noise on a
-   coarse grid).
+3. **Drift correction: decided.** Approved by the user 2026-11-23; default `drift_ppm=510` (fine-scan pooled
+   peak 510.5 ppm, 95% CI 502-518). One dataset value, not per subject (per-subject peaks 469-541 ppm are within
+   the scan's noise).
 4. **Licence**: no redistribution of standardised copies without the custodian's permission.
 5. Upstream questions: the 5 incomplete subjects, the events.tsv gaps, the `sub-520e215b49cf` date.
 6. Subject numbering 1-24 (sink needs ints; PLAN says keep original names): original ids are in the provenance.
-7. Storage: the 80 GB pilot standardisation could be cut to a few subjects (deletion needs the user's sign-off).
+7. Storage: the first 80 GB pilot was deleted (user approval, 2026-11-23); `R/chen2023/standardised_drift/` (16 GB,
+   4 subjects) remains. A full run would be ~85 GB (19.4 h x 1.24 MB/s).
