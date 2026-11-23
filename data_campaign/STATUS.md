@@ -50,6 +50,7 @@ Last updated: 2026-11-23.
 | piazza2025_l1l / _l2l | piazza2025 | dev | low (data shared preprocessed 1-8 Hz, 100 Hz) | ~15 GB in tmp (download, standardised, v1) | all 50 standardised; L2L 6-25 channel order unknown; L1L 13-15 stimulus files remapped by trial length; licence unknown |
 | calderondepalma2023 | calderondepalma2023 | dev | low (all 13; all 5 conditions; ceiling at 64 Hz) | 2.4 GB download + 1.0 GB standardised in tmp | CND; channel order inferred (biosemi64); degraded-audio envelopes only; DNN +2.5 ms; BSD-3 |
 | brodbeck2018 | brodbeck2018 | dev | low (all 26; ceiling at 100 Hz); attended > ignored 26/26 | download, x/ and standardised (2.5 GB) in tmp; vault backup verified | 100 Hz tSSS epochs only; no overlap with brodbeck2022; no licence stated |
+| straetmans2021 | straetmans2021 | dev | none (no stimulus shipped; sanity only) | download 1.2 GB + standardised in tmp | kept as EEG-only (user, 2026-11-23); ask the authors for the wavs |
 
 Not in the campaign sheet: mai2023 (dev, iEEG, not reviewed), jehn2024 (dev), karengal2025 / koelbl2021 /
 schuller2022full (internal).
@@ -59,7 +60,6 @@ schuller2022full (internal).
 |---|---|---|---|---|
 | chen2026 | chen2026 | dev (notes only, no adaptor) | downloaded (49 GB) + NHR vault backup verified (md5 13/13 local, 178/178 sizes on vault); 281 chapters trigger-verified (24.8 h; sub-05 LP 14/27, sub-06 GD 4 absent) | user decisions on per-chapter latency (option B proposed) and +16 ppm drift; then adaptor reading `timing_table_proposal.csv` |
 | hassan2026 | hassan2026 | dev (registry + notes, 1273cb2) | blocked: HF repo gated (auto-approve), no token; 5.15 GB without video | user accepts terms + adds HF token (`hf`) to secrets.json; then download, explore, adaptor |
-| straetmans2021 | straetmans2021 | dev (adaptor a0bce7b, 95007d6) | no stimulus in the release (commercial audiobook); EEG standardised for all 20, sanity checks only | user: keep EEG-only dataset? ask authors for the wavs, side condition, event times |
 
 ## Open items across datasets
 - **Push `dev`**: many commits are ahead of `origin/dev`; needs the user's approval.
