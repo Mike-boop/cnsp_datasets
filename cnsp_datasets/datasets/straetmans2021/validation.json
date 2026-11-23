@@ -1,0 +1,79 @@
+{
+ "dataset": "straetmans2021",
+ "date": "2026-11-23",
+ "validation_tier": "none",
+ "reason": "no stimulus shared (no audio or envelope): the PLAN 5 model tiers (low, mlr, brainstem) cannot run; 250 Hz also rules out mlr/brainstem",
+ "validator": {
+  "summary": {
+   "validation_tier": "none",
+   "tiers_run": [
+    "low"
+   ]
+  },
+  "trials_failed": "120/120: no speech audio or envelope stimulus",
+  "reference": "average"
+ },
+ "sanity": {
+  "n_trials": 120,
+  "n_subjects": 20,
+  "trials_per_subject": [
+   6
+  ],
+  "sfreq": [
+   250.0
+  ],
+  "n_channels": [
+   24
+  ],
+  "bads": {
+   "sub-018": [
+    "P4"
+   ]
+  },
+  "duration_vs_narrative_median_ms": {
+   "min": -12.063386582553903,
+   "max": 75.41018264072363,
+   "mad": 5.890145083299103
+  },
+  "median_std_uv": {
+   "min": 30.23692823282759,
+   "median": 44.068072260390736,
+   "max": 93.10772977734553
+  },
+  "unit_range_v": [
+   1e-06,
+   0.0002
+  ],
+  "n_flagged": 0,
+  "size_gb": 0.936818228
+ },
+ "timing": {
+  "lsl_effective_srate_ppm": {
+   "001": 27.02,
+   "002": 2.08,
+   "003": -0.19,
+   "004": -0.57,
+   "005": -0.62,
+   "006": -0.09,
+   "007": -0.6,
+   "008": -0.77,
+   "009": -1.59,
+   "010": 2.06,
+   "011": -0.36,
+   "012": -0.11,
+   "013": -1.44,
+   "014": -1.34,
+   "015": 1.28,
+   "016": -1.09,
+   "017": -2.98,
+   "018": -3.09,
+   "019": -0.92,
+   "020": -2.22
+  },
+  "marker_duration_residual_ms": {
+   "sd": 16.65733071853616,
+   "median_abs": 5.999999999971806
+  },
+  "onset_erp": "inconclusive (no clear N1 at start markers; play-button press 20-52 ms before each marker)"
+ }
+}
