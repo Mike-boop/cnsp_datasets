@@ -1,6 +1,7 @@
 """
 Shared pieces of the li2025 onset/drift scripts: the speech envelope and the preprocessed MEG, read from the download
-through the adaptor without onset correction, the lagged design of a ridge forward TRF, and the saved TRF weights.
+through the adaptor without onset correction, the lagged design of a ridge forward TRF, the saved TRF weights and the
+template match that turns a TRF into a delay.
 
 Preprocessing (analysis only; the standardised data stay raw): magnetometers without bads and MEG062 (on the z-axis,
 undefined HFC basis), homogeneous field correction (order 1), 0.1 Hz high-pass of the whole recording; envelope
@@ -14,6 +15,7 @@ import numpy as np
 from scipy.fft import next_fast_len
 from scipy.signal import butter, hilbert, resample_poly, sosfiltfilt
 
+from cnsp_datasets.align.scan import peak_offset
 from cnsp_datasets.datasets.li2025.adaptor import N_TIMES, VIDEO, Li2025Adaptor, _decode, group  # noqa: F401
 
 FS = 64
@@ -21,6 +23,8 @@ ALPHA = 1.0  # ridge, relative to the mean eigenvalue of X'X
 SOS = butter(4, [0.5, 8], "bandpass", fs=FS, output="sos")
 LAGS = np.arange(round(-1.5 * FS), round(1.5 * FS) + 1)
 N = N_TIMES * FS // 1000
+WIN = np.where((LAGS >= -0.2 * FS) & (LAGS <= 0.6 * FS))[0]  # template lags -0.2..+0.6 s
+CANDS = np.arange(0, len(LAGS) - WIN[-1])  # shifts that keep the window within the fitted lags (0..0.9 s)
 
 
 def envelope(download_dir: str) -> np.ndarray:
@@ -33,7 +37,7 @@ def envelope(download_dir: str) -> np.ndarray:
 
 def meg(download_dir: str, skip=(54,)):
     """Yield (subject, raw info, Y (samples x channels)) per participant; sub-54 (truncated) skipped by default."""
-    for rec in Li2025Adaptor(download_dir, onset_correction=False).parse():
+    for rec in Li2025Adaptor(download_dir, onset="none").parse():
         if rec.subject in skip:
             continue
         raw = rec.neural_data_fn()
@@ -69,13 +73,31 @@ def regularised(X: np.ndarray) -> np.ndarray:
     return xx + ALPHA * np.trace(xx) / len(LAGS) * np.eye(len(LAGS))
 
 
+def weight_files(src: str) -> list[str]:
+    """trf_weights.py output files (sub-XX.npz), sorted by subject."""
+    return sorted(glob.glob(os.path.join(src, "sub-*.npz")))
+
+
 def load_weights(src: str):
-    """trf_weights.py output: (list of npz, channels good in all subjects, stack(group, key) -> subj x lags x ch)."""
-    data = [np.load(f) for f in sorted(glob.glob(os.path.join(src, "sub-*.npz")))]
+    """
+    trf_weights.py output: (list of npz, channels good in all subjects, stack(group, key) -> subj x lags x ch);
+    stack(None, key) stacks all subjects, in weight_files order.
+    """
+    data = [np.load(f) for f in weight_files(src)]
     common = sorted(set.intersection(*[set(d["ch_names"]) for d in data]))
 
     def stack(g, key):
         return np.array([d[key][:, [list(d["ch_names"]).index(c) for c in common]]
-                         for d in data if str(d["group"]) == g])
+                         for d in data if g is None or str(d["group"]) == g])
 
     return data, common, stack
+
+
+def match_curve(template: np.ndarray, W: np.ndarray) -> np.ndarray:
+    """Space-time r between the template (raveled WIN x channels) and W's lags WIN + k, for every shift k in CANDS."""
+    return np.array([np.corrcoef(template, W[WIN + k].ravel())[0, 1] for k in CANDS])
+
+
+def match_delay(curve: np.ndarray) -> float:
+    """Best-matching delay (s) of a match curve, parabolic refinement."""
+    return peak_offset(curve) / FS

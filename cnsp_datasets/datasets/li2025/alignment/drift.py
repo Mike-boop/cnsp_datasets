@@ -16,10 +16,9 @@ import sys
 
 import numpy as np
 
-from cnsp_datasets.align.scan import peak_offset
 from cnsp_datasets.datasets.li2025.adaptor import GROUP_LABEL
-from cnsp_datasets.datasets.li2025.alignment.common import (FS, LAGS, N, design, envelope, group, load_weights,
-                                                             meg, regularised)
+from cnsp_datasets.datasets.li2025.alignment.common import (FS, WIN, N, design, envelope, group, load_weights,
+                                                             match_curve, match_delay, meg, regularised)
 
 
 def part_trfs(src, out, common, n_parts):
@@ -55,18 +54,15 @@ def main(argv):
     src, weights, out = argv[:3]
     n_parts = int(argv[3]) if len(argv) > 3 else 3
     os.makedirs(out, exist_ok=True)
-    lags_s = LAGS / FS
     _, common, stack = load_weights(weights)
-    win = np.where((lags_s >= -0.2) & (lags_s <= 0.6))[0]
-    template = stack("A", "w_corrected").mean(0)[win].ravel()
-    cands = np.arange(0, len(LAGS) - win[-1])  # shifts that keep the window within the fitted lags (0..0.9 s)
+    template = stack("A", "w_corrected").mean(0)[WIN].ravel()
 
     def delay(W):
         """Best-matching delay (s) of a TRF (lags x common channels) to the template."""
-        r = np.array([np.corrcoef(template, W[win + k].ravel())[0, 1] for k in cands])
+        r = match_curve(template, W)
         if r.argmax() == len(r) - 1:
             print("warning: best delay at the edge of the search range", flush=True)
-        return peak_offset(r) / FS
+        return match_delay(r)
 
     def slope_ppm(t, d):
         return float(np.polyfit(t, d, 1)[0] * 1e6)
