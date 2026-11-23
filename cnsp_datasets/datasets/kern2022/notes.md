@@ -94,17 +94,17 @@ Findings that explain `adaptor.py` and `drift.py`. Review scripts and results: `
 - Trigger jitter relative to the Psychtoolbox audio start: residual SD 0.20-0.39 ms per participant (section 8).
 - Sound delivery: Etymotic ER3A with tubes and Doc's Promolds; tube length not reported, acoustic delay (~1 ms per
   ~34 cm of tube) not corrected.
-- **Proposed onset (open question 1):** trigger + 4.1 ms for the pieces, trigger + the trial's own measured delay
-  for the test snippets (`audio_delay=True`). Default off: trials start at the trigger.
+- **Onset (approved, user 2026-11-23):** trigger + 4.1 ms for the pieces, trigger + the trial's own measured delay
+  for the test snippets (`audio_delay=True`, default). `audio_delay=False` starts trials at the trigger.
 
 ## 7. Drift
 - Audio copy (reliable pieces): **+6.47 ppm** (median of 210 fits; IQR 6.21-6.85; participant medians 6.21-6.78;
   MEG clock fast). Per-piece values have a small consistent piece bias (113 ~7.3, 118 ~5.5 ppm in every participant;
   <= 0.2 ms over a piece). Independent check from the logs (section 8): MEG vs sound card median +6.0 ppm (3.9-8.6).
   Same lab as armeni2022 (+5.7 ppm).
-- At 6.5 ppm the longest piece (276 s) drifts 1.8 ms. **Proposed (open question 2):** `drift_correction=True` with
+- At 6.5 ppm the longest piece (276 s) drifts 1.8 ms. **Approved (user, 2026-11-23: "hardware-derived values
+  should be corrected for, unless validation gives reason to doubt them"):** `drift_correction=True` (default) with
   one dataset constant of +6.5 ppm (hardware-derived from the audio copy), folded into the 1200 -> 1000 Hz resample.
-  Default off until approved.
 - Evidence figure (per participant: delay per reliable piece, drift per piece, log-based drift):
   `tmp/review/kern2022/evidence_delay_drift.png`; tables `audio_fit_subject_summary.csv`, `log_drift.csv`,
   `test_snippet_delay.csv` there.
@@ -119,39 +119,45 @@ Findings that explain `adaptor.py` and `drift.py`. Review scripts and results: `
   (MEG vs PC) + (PC vs sound card): median +6.0 ppm, range +3.9 to +8.6 over the 35 sessions (`log_drift.csv`).
 
 ## 9. Validation (2026-11-23, pilot: sub001, sub010, sub020, sub030; first 10 pieces each, music only; axial
-gradiometers (`mag`), no re-referencing; adaptor defaults, i.e. trials at the trigger, no drift correction)
+gradiometers (`mag`), no re-referencing)
 `validate_subset.py kern2022 ... mag low,mlr,brainstem "r.subject in (1, 10, 20, 30) and r.condition == 'music' and
-r.trial <= 13"` (10 pieces keep a subject at ~5-6 GB in the validator); `validation.json` here, figure
-`tmp/review/kern2022/validation/validation.png`.
-- low (0.5-8 Hz): mean r 0.020 (0.022 / 0.011 / 0.029 / 0.017), p_circ 0.020, p_mismatch 0.048, 3/4 participants
-  above the nulls, TRF peak at 0 lag. Pass. The TRF is periodic (peaks at 0, ~85, ~230, ~400 ms, above the null at
-  -100 ms too), presumably the regular note rate (median inter-onset 200 ms) smearing the response.
-- mlr (30-60 Hz): SNR 1.08, p 0.030, 1/4 participants; peak at ~45 ms (window edge). Pass, weak.
-- brainstem tier (30-250 Hz, MEG window 28-45 ms): SNR 1.33, p 0.010, 2/4 participants; a clear peak at ~37 ms, no
-  spike at 0 or negative lags (no visible stimulus pickup). Pass. **Validation tier (pilot): brainstem** (for MEG: a
-  high-frequency cortical response). Weak per participant: most energy of the music is above the MEG's 300 Hz
-  low-pass, the data are uncompensated (no synthetic 3rd-order gradiometers) and only ~23 min per participant
-  were used.
-- Not yet run: the recommended onset/drift settings (open questions 1-2; a +4.1 ms shift and <= 1.8 ms drift are
-  below the resolution of these tiers), all 35 participants, the test condition.
+r.trial <= 13" 1` (10 pieces keep a subject at ~5-6 GB in the validator). Run twice: without corrections (trials at
+the trigger, no drift; `tmp/review/kern2022/validation_uncorrected/`) and with the adaptor defaults (+4.1 ms onset,
++6.5 ppm drift; `tmp/review/kern2022/validation/`, `validation.json` here).
+
+| tier | uncorrected | corrected (defaults) |
+|---|---|---|
+| low 0.5-8 Hz | r 0.020 (0.022/0.011/0.029/0.017), p_circ 0.020, p_mismatch 0.048, 3/4, peak 0 ms | r 0.020 (0.022/0.011/0.030/0.017), p_circ 0.020, p_mismatch 0.048, 3/4, peak 78 ms |
+| mlr 30-60 Hz | SNR 1.08, p 0.030, 1/4; peak ~45 ms | SNR 1.19, p 0.010, 2/4; peak ~42 ms |
+| 30-250 Hz (28-45 ms) | SNR 1.33, p 0.010, 2/4; peak ~37 ms | SNR 1.32, p 0.010, 3/4; peak ~33 ms |
+
+- Per participant (corrected vs uncorrected): mlr SNR up in 3/4 (sub030 0.92 -> 0.91); 30-250 Hz SNR up in 3/4,
+  sub030 1.01 -> 0.92 (not significant either way). The high-frequency peaks move ~4 ms earlier, as the onset
+  shift predicts, and get slightly higher; no tier is worse, so validation gives no reason to doubt the
+  hardware-derived values.
+- The 0.5-8 Hz TRF is periodic (peaks at 0, ~80, ~230, ~400 ms, above the null at -100 ms too), presumably the
+  regular note rate (median inter-onset 200 ms) smearing the response; its two first peaks are nearly equal, so the
+  reported peak flips between 0 and 78 ms.
+- 30-250 Hz: a clear peak in the window, no spike at 0 or negative lags (no visible stimulus pickup).
+  **Validation tier (pilot): brainstem** (for MEG: a high-frequency cortical response). Weak per participant: most
+  energy of the music is above the MEG's 300 Hz low-pass, the data are uncompensated (no synthetic 3rd-order
+  gradiometers) and only ~23 min per participant were used.
+- Not yet run: all 35 participants, the test condition.
 
 ## 10. Checks
 - Download: 1162 files, sizes as listed by WebDAV and **sha256 equal to `MANIFEST.txt` for all 1162** (2026-11-23).
 - Triggers: 19 distinct piece codes and 3 test codes in every recording, 6 test codes in sub008 (snippets repeated);
   773 trials (665 music, 108 test). Every piece's trigger order equals the logfile's `stimulus` order.
-- Pilot standardisation (sub001, sub010, sub020, sub030; defaults): 88 trials, 13 GB (~3.3 GB per participant; ~115
-  GB for all 35); trial length = wav length; 269 mag + 29 ref_meg + 4 misc at 1000 Hz.
+- Pilot standardisation (sub001, sub010, sub020, sub030; uncorrected, then again with the corrected defaults): 88
+  trials, 13 GB (~3.3 GB per participant; ~115 GB for all 35); trial length = wav length; 269 mag + 29 ref_meg + 4 misc at 1000 Hz.
 
 ## 11. Data size
 - 35 participants x 0.722 h of music (the 19 pieces, 43.3 min) = 25.27 h, identical for everyone (each piece once),
   plus 0.40 h of test snippets (40 s per participant, 80 s in sub008). Recordings 50-71 min.
 
 ## Open questions (with recommended defaults)
-1. **Onset (data-altering).** Start pieces 4.1 ms after the trigger and test snippets at their measured delay
-   (`audio_delay=True`), from the UADC002 audio copy? Recommended: yes (hardware audio copy; 210 fits, participant
-   medians 3.7-4.6 ms). Default now: off.
-2. **Drift (data-altering).** Correct +6.5 ppm (`drift_correction=True`, one constant, in the same resample)?
-   Recommended: yes (audio copy, every participant 6.2-6.8 ppm; logs agree, +6.0). Default now: off.
+1. ~~Onset~~: approved (user, 2026-11-23); `audio_delay=True` is the default.
+2. ~~Drift~~: approved (user, 2026-11-23); `drift_correction=True` (+6.5 ppm) is the default.
 3. Keep the test snippets (condition `test`; the volume was adjusted during them)? Recommended: keep (everything
    played is kept; easy to filter).
 4. Carry the MIDI note annotations (`MidiDataMEG.csv`) as a TextGrid `notes` tier? Recommended: later, after

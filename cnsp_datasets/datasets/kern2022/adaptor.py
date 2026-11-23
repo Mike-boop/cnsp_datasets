@@ -36,13 +36,13 @@ class Kern2022Adaptor:
     condition `test`), one trial per UPPT001 trigger as listed in audio_fit.csv (drift.py). Stimulus: wav channel 0,
     the one played to both ears. audio_delay=True starts each trial at the sound onset measured on the UADC002 audio
     copy (pieces: +MUSIC_DELAY_MS; test snippets: the trial's own delay, which for snippet 2 rests on a weak fit that
-    agrees with snippet 3); drift_correction=True resamples onto the audio clock (+DRIFT_PPM). Channels: MEG,
-    reference sensors, UADC002 (audio copy), UADC005-007 (EyeLink x, y, pupil). `subjects` limits the participants
-    (e.g. [1, 10]; pilots). See notes.md.
+    agrees with snippet 3); drift_correction=True resamples onto the audio clock (+DRIFT_PPM) in the same resample.
+    Both are hardware-derived and on by default (user, 2026-11-23). Channels: MEG, reference sensors, UADC002 (audio
+    copy), UADC005-007 (EyeLink x, y, pupil). `subjects` limits the participants (e.g. [1, 10]; pilots). See notes.md.
     """
 
-    def __init__(self, download_dir: str, sfreq: float | None = 1000, audio_delay: bool = False,
-                 drift_correction: bool = False, subjects: Iterable[int] | None = None):
+    def __init__(self, download_dir: str, sfreq: float | None = 1000, audio_delay: bool = True,
+                 drift_correction: bool = True, subjects: Iterable[int] | None = None):
         self.download_dir = download_dir
         self.sfreq = sfreq
         self.audio_delay = audio_delay
@@ -69,9 +69,11 @@ class Kern2022Adaptor:
                 method = "stimtrack_xcorr" if self.audio_delay and condition == "test" else "sw_trigger"
                 description = provenance(
                     method, TRIGGER,
-                    f"Sound {delay:.1f} ms after the trigger ({'corrected' if self.audio_delay else 'not corrected'};"
-                    f" UADC002 audio copy); drift {'corrected' if self.drift else 'not corrected'}. See notes.md.",
-                    drift_ppm=DRIFT_PPM, jitter_ms=JITTER_MS[condition], piece_code=int(row.code))
+                    f"Sound {delay:.1f} ms after the trigger ({'corrected' if self.audio_delay else 'not corrected'})"
+                    f" and drift {'corrected' if self.drift else 'not corrected'}: hardware-derived (UADC002 audio"
+                    " copy), corrected by default (user, 2026-11-23). See notes.md.",
+                    drift_ppm=DRIFT_PPM, jitter_ms=JITTER_MS[condition], piece_code=int(row.code),
+                    onset_corrected=self.audio_delay, drift_corrected=bool(self.drift))
                 yield TrialRecord(subject=subject, session=1, trial=trial, condition=condition,
                                   ns_type="meg",
                                   stimulus=StimulusRecord("audio", name, _wav_loader(wav), True, "audio"),
