@@ -42,6 +42,7 @@ Last updated: 2026-11-23.
 | levy2024 | levy2024 | dev | low | deleted | |
 | brodbeck2022 | brodbeck2022 | dev | low (mlr population only) | deleted | no audio (copyright) |
 | vanheusden2020 | vanheusden2020 | dev | mlr | deleted; user's manual download kept | |
+| presacco2016 | presacco2016 | dev | brainstem (30-250 Hz; mlr fails) | 171 GB in tmp (zips + extracted + pilot) | MEG only; pilot 20 subj; licence not stated; drift -37 ppm documented; full run pending storage |
 
 Not in the campaign sheet: mai2023 (dev, iEEG, not reviewed), jehn2024 (dev), karengal2025 / koelbl2021 /
 schuller2022full (internal).
@@ -50,7 +51,6 @@ schuller2022full (internal).
 | repo name | sheet id | branch | state | next |
 |---|---|---|---|---|
 | chen2026 | chen2026 | dev (notes only, no adaptor) | downloaded (49 GB) + NHR vault backup verified (md5 13/13 local, 178/178 sizes on vault); 281 chapters trigger-verified (24.8 h; sub-05 LP 14/27, sub-06 GD 4 absent) | user decisions on per-chapter latency (option B proposed) and +16 ppm drift; then adaptor reading `timing_table_proposal.csv` |
-| presacco2016 | presacco2016 | dev (registry only) | 7/46 subject zips; DRUM timeouts | resume with 1 worker, read_timeout 120 s; then explore |
 | chen2023 | chen2023 | dev (registry `gitlab_lfs` + notes) | downloaded 108.6 GB, sha256 761/761 ok; 520/576 presentations present; vocoded stimuli not shipped; ANC DUA bans redistribution | explore trigger→wav mapping (authors' code), rebuild vocoded stimuli, adaptor |
 | hassan2026 | hassan2026 | dev (registry + notes, 1273cb2) | blocked: HF repo gated (auto-approve), no token; 5.15 GB without video | user accepts terms + adds HF token (`hf`) to secrets.json; then download, explore, adaptor |
 
