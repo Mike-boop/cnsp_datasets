@@ -2,8 +2,9 @@
 
 20 listeners (1-10 non-musicians, 11-20 expert pianists) x 30 trials: 10 MIDI-synthesised piano pieces (~2.5 min),
 each played 3 times. BioSemi ActiveTwo, 64 scalp channels + 2 mastoids, **raw at 512 Hz** (integer ADC counts, no
-filter, no reference). Stimuli shipped only as 64 Hz features (envelope, note onsets, pitch-weighted note onsets)
-plus the MIDI scores; no audio. Trials are cut by the authors, with 1 s of padding (512 samples before the
+filter, no reference). Dryad ships the stimuli only as 64 Hz features (envelope, note onsets, pitch-weighted note
+onsets) plus the MIDI scores; **the played wavs come from the Kern et al. 2022 Donders collection** (section 4) and
+are the default stimulus. Trials are cut by the authors, with 1 s of padding (512 samples before the
 stimulus, ~1 s after). Presentation order not shipped.
 
 ## 1. Source
@@ -18,6 +19,11 @@ stimulus, ~1 s after). Presentation order not shipped.
   https://doi.org/10.7554/eLife.51784 (`data_campaign/papers/diliberto2020.pdf`). The 3 ECoG patients of the paper
   are not in the release. Reanalysed by Kern et al. 2022 (kern2022).
 - Shared code: none.
+- **Stimulus audio:** Kern, Heilbron, de Lange & Spaak (2022) re-released the 10 EEG stimuli in their Donders
+  collection dccn/DSC_3018045.02_116_v1 (doi:10.34973/5qxw-nn97; CC-BY-4.0 plus the Radboud data use agreement;
+  needs a data.ru.nl account): `MusicData/MusicEEG/wav/audio01..10.wav`. Registry entry `diliberto2020_audio`
+  (radboud_rdr, include filter: only these 10 files, 278 MB) downloads them into `<download>/donders/`; all 10
+  matched the collection's sha-256 and are byte-identical to the kern2022 download (2026-11-23).
 
 ## 2. Layout
 - `diliBach_4dryad_CND/dataStim.mat` (one file for all subjects), struct `stim`: `names` = 'Speech Envelope
@@ -46,7 +52,19 @@ stimulus, ~1 s after). Presentation order not shipped.
   'Note Pitch Vectors' (onset pulses weighted by absolute pitch). Score-derived, not model-derived.
 - MIDI scores of all 10 pieces. The audio was synthesised from them with MuseScore 2 piano sounds at fixed tempi
   (47-140 bpm; paper), but the exact rendering (soundfont, version, gain) is unknown, so the audio cannot be rebuilt
-  reliably. No audio shipped.
+  reliably. No audio on Dryad.
+- **Audio (default stimulus): the 10 wavs of the Kern 2022 Donders collection** (44.1 kHz, int16, stereo; L and R
+  near-identical, r = 0.99999 but not bit-identical; stored as shipped, scaled to +-1). Evidence that they are the
+  played stimuli, on the shipped time base (`tmp/review/scripts/diliberto2020/wav_compare.py`, figure
+  `tmp/review/diliberto2020/wav_vs_shipped_envelope.png`, numbers in `wav_vs_shipped_envelope.json`):
+  - mapping: `MusicData/MusicEEG/OverviewMusicEEG.csv` lists audio01..10 with the same jsbach.net original names
+    as the Dryad readme (fp-1all ... vp3-3gav_v2), piece k = audiok;
+  - length: ceil(wav duration x 64) = the shipped envelope length for all 10 pieces (120.2-199.3 s);
+  - envelope: |Hilbert| of the wav, 30 Hz low-pass, sampled at 64 Hz, vs the shipped envelope: r = 0.9995-0.9999
+    at lag 0, best lag 0 (+-0.5 s scanned) for all 10 pieces (L, R and their mean alike; a MATLAB-style resample of
+    |Hilbert| gives r >= 0.9992). The shipped envelope is this envelope times a constant (~1/420). So the wav and
+    the shipped envelope share time zero, and the authors' onset (EEG sample 513) applies to the wav.
+  - The Kern MIDI files (`MusicData/MusicEEG/midi`) differ in size from the Dryad ones (other export); not used.
 - IDyOM expectation features of the paper are not shipped.
 
 ## 5. Neural data
@@ -83,7 +101,8 @@ stimulus, ~1 s after). Presentation order not shipped.
 - Applied: **onset = EEG sample 513** (the leading 512 padding samples are dropped); the trailing ~1 s of EEG is
   kept (the longer signal is cut at the point of use). `alignment_method` = `onset_only` (onsets from the authors'
   epoching, no trigger information). No drift correction (cannot be estimated; see 7).
-- Plausible tier: `low` only (64 Hz features; no audio for the 30-60 / 30-250 Hz tiers).
+- Tier: `mlr` with the wav (section 11; the 30-60 Hz TRF peaks at 22-47 ms with nothing at negative lags,
+  which also confirms the onset to within a few ms); `low` with the shipped 64 Hz envelope.
 
 ## 7. Cross-subject duration check
 - Not possible: trial lengths were set by the authors (stimulus + fixed padding). Drift cannot be estimated. For
@@ -93,7 +112,8 @@ stimulus, ~1 s after). Presentation order not shipped.
 - 20 participants x 30 trials = 600 trials. Pieces: 159-199 s (sum 1601.7 s = 26.7 min); each heard 3 times:
   **80.1 min per participant** (all identical), **26.7 h** in total (stimulus-based). Musicians (11-20) and
   non-musicians (1-10): 13.3 h each.
-- Standardised size: ~0.65 GB per subject (66 channels, float32, 512 Hz), ~13 GB in total.
+- Standardised size: ~0.65 GB per subject (66 channels, float32, 512 Hz; 21.6 MB per trial) + 0.94 GB of audio (10
+  stereo wavs as float32), ~13 GB in total.
 
 ## 9. Upstream issues
 - `origTrialPosition` is empty in all 20 EEG files, although the readme says the presentation order is included.
@@ -105,9 +125,10 @@ stimulus, ~1 s after). Presentation order not shipped.
 2. Onset at EEG sample 513 as documented; leading padding dropped, trailing ~1 s kept. [Accept.]
 3. Trial number = shipped index + 1 (presentation order unavailable); piece, repetition and group (musician /
    non-musician) in the provenance; condition `listening`. [Accept.]
-4. Stimuli: one stimulus per piece (`piece01`..`piece10`), feature `envelope` at 64 Hz. Note onsets and
-   pitch-weighted note onsets (score-derived) could be added as extra features of the same stimulus. [Envelope
-   only by default; option `note_features=True` adds `note_onsets` and `note_pitch`.]
+4. Stimuli: one stimulus per piece (`piece01`..`piece10`). [Default `stimulus="audio"`: the Kern 2022 Donders
+   wav (section 4; coordinator request 2026-11-23, adopted after the checks in sections 4 and 11);
+   `stimulus="envelope"` keeps the Dryad 64 Hz envelope; `note_features=True` adds the shipped `note_onsets` and
+   `note_pitch` (score-derived) to either.]
 5. Bads: sub8 C4, sub12 Fpz. [Accept.]
 
 ## 11. Validation (2026-11-23; all 20 subjects, 600 trials)
@@ -120,4 +141,17 @@ stimulus, ~1 s after). Presentation order not shipped.
   lags; peaks at ~15, ~150 and ~234 ms (trf_peak_s 0.234). Weakest subjects sub2 (0.019) and sub7 (0.021), which
   also had no clear onset xcorr peak (section 6). Per-trial offset estimates are unreliable at this SNR (18 at
   the search edge, jitter SD 160 ms, MAD 14 ms); the drift estimate (-56 +- 184 ppm) is not informative.
-- mlr / brainstem: not possible (no audio; 64 Hz features only).
+- mlr / brainstem: not possible with the 64 Hz envelope.
+
+### With the played wav (default; same 20 subjects, `--tiers low,mlr,brainstem`, average reference)
+- Run 2026-11-23 17:33-17:50; `tmp/review/diliberto2020/validation.json` (copied here; the envelope run's is in
+  `tmp/review/diliberto2020/validation_envelope.json` and in commit a0b1263), figures
+  `tmp/review/diliberto2020/validation.png` (wav) and `validation_envelope.png` (shipped envelope).
+- **low: pass, same as the envelope** (mean r 0.046, median 0.044, per subject within +-0.002 of the envelope run;
+  all 20 significant; p_circ 0.020, p_mismatch 0.048; TRF peak 234 ms).
+- **mlr (30-60 Hz, 18-45 ms): pass.** Mean SNR 1.81, p 0.010, 13/20 subjects significant. TRF GFP flat at negative
+  lags, peaks at ~22, ~35 and ~47 ms: a middle-latency response, not a stimulus-locked ripple.
+- **brainstem (30-250 Hz at 512 Hz EEG, so up to 256 Hz Nyquist; 4-9 ms): nominal pass only.** Mean SNR 1.10,
+  p 0.030, 4/20 subjects significant; the GFP in 4-9 ms (~1.1) stays inside the null band and no wave V is
+  visible; the 30-250 Hz TRF is dominated by the ~35 ms MLR peak. Recorded tier: **`mlr`** (TIERS in the adaptor),
+  pending the user's view. An ABR is not expected to be resolvable here (512 Hz sampling, sparse piano onsets).

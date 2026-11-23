@@ -434,6 +434,13 @@
       "identifiers": ["10.5061/dryad.g1jwstqmh"],
       "description": "Di Liberto et al. (2020, eLife) EEG (BioSemi 64 ch, CND, 512 Hz), 20 listeners, monophonic Bach melodies played on piano (MIDI shipped); Dryad needs DRYAD_TOKEN",
       "url": "https://datadryad.org/dataset/doi:10.5061/dryad.g1jwstqmh"
+    },
+    "diliberto2020_audio": {
+      "source": "radboud_rdr",
+      "identifiers": ["dccn/DSC_3018045.02_116_v1"],
+      "description": "Stimulus audio of diliberto2020 (audio01..10.wav, 44.1 kHz stereo), from the Kern et al. (2022) Donders collection, which re-released the Di Liberto 2020 EEG stimuli; needs RADBOUD_USERNAME/RADBOUD_PASSWORD (Donders data use agreement). Download into <diliberto2020 download>/donders",
+      "url": "https://doi.org/10.34973/5qxw-nn97",
+      "include": ["MusicData/MusicEEG/wav/audio*.wav"]
     }
   }
 }
