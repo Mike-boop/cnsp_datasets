@@ -46,6 +46,7 @@ Last updated: 2026-11-23.
 | karunathilake2023 | karunathilake2023 | dev | brainstem (clear speech; vocoded low only) | 203 GB in tmp (zips + extracted + pilot) | pilot 16/39; separate study from _aging; subject = R-number mod 1000; full run pending storage |
 | karunathilake2025 | karunathilake2025 | dev | brainstem (pooled, 3 subj; noise condition low only) | 59 GB in tmp (zip + 3 extracted + pilot) | pilot 3/30; full run (~35 GB) pending storage |
 | deoisres2023 | deoisres2023 | dev | mlr (pilot 5/22; brainstem only via S03 stimulus artefact) | user's manual download (read-only) + 13 GB extracted + 5.2 GB pilot in tmp | ePrints blocks scripts (Anubis); drift -24 ppm corrected by default; decisions pending |
+| chen2023 | chen2023 | dev | low as standardised; brainstem with +485-510 ppm drift (validation only) | 183 GB in tmp (download 102 + pilot 80) | drift_ppm default 0 until user approves +510; 16 ms delay applied; ANC DUA: no redistribution |
 
 Not in the campaign sheet: mai2023 (dev, iEEG, not reviewed), jehn2024 (dev), karengal2025 / koelbl2021 /
 schuller2022full (internal).
@@ -54,7 +55,6 @@ schuller2022full (internal).
 | repo name | sheet id | branch | state | next |
 |---|---|---|---|---|
 | chen2026 | chen2026 | dev (notes only, no adaptor) | downloaded (49 GB) + NHR vault backup verified (md5 13/13 local, 178/178 sizes on vault); 281 chapters trigger-verified (24.8 h; sub-05 LP 14/27, sub-06 GD 4 absent) | user decisions on per-chapter latency (option B proposed) and +16 ppm drift; then adaptor reading `timing_table_proposal.csv` |
-| chen2023 | chen2023 | dev (registry `gitlab_lfs` + notes) | downloaded 108.6 GB, sha256 761/761 ok; 520/576 presentations present; vocoded stimuli not shipped; ANC DUA bans redistribution | explore trigger→wav mapping (authors' code), rebuild vocoded stimuli, adaptor |
 | hassan2026 | hassan2026 | dev (registry + notes, 1273cb2) | blocked: HF repo gated (auto-approve), no token; 5.15 GB without video | user accepts terms + adds HF token (`hf`) to secrets.json; then download, explore, adaptor |
 
 ## Open items across datasets
