@@ -422,6 +422,12 @@
       "identifiers": ["bjdh6"],
       "description": "Winchester et al. (2026, eLife RP108767) EEG (mBrainTrain Smarting, CND), 31 listeners, 32 MIDI-synthesised two-voice piano pieces (original, inverted, monophonic voices); stimuli shipped only as 125 Hz features (Hilbert envelopes, onsets, pitch), no wavs",
       "url": "https://osf.io/bjdh6/"
+    },
+    "diliberto2020": {
+      "source": "dryad",
+      "identifiers": ["10.5061/dryad.g1jwstqmh"],
+      "description": "Di Liberto et al. (2020, eLife) EEG (BioSemi 64 ch, CND, 512 Hz), 20 listeners, monophonic Bach melodies played on piano (MIDI shipped); Dryad needs DRYAD_TOKEN",
+      "url": "https://datadryad.org/dataset/doi:10.5061/dryad.g1jwstqmh"
     }
   }
 }
