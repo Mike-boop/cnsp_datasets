@@ -398,8 +398,9 @@ extended search for the rest. Scripts `reclassify_z2.py`, `ext_scan.py`, `timing
 - `timing.py` recomputes the t0 part from events.tsv + the reader json and checks it against `timing.csv` (file,
   t0 within 0.01 ms, ROWS found, event count, residual SD; exit 1 on a mismatch): all 281 match (max difference
   0.005 ms). Trigger slope max |d| 28.9 ppm over files > 2 min (meaningless for drift, same clock). The latency
-  columns come from the EEG analysis scripts in `tmp/review/chen2026/scripts/` (decoder_scan, dnn_scan, ext_scan,
-  reclassify_z2, timing_v2), which are not in the repo.
+  columns come from the EEG analysis scripts, now in the repo under `timing/` (README there: run order, inputs, outputs,
+  rule; paths via environment variables in `timing/settings.py`). Re-running the light steps (t0 table, analysis,
+  re-classification, v2 table, make_timing_csv) on the stored scans reproduced `timing.csv` byte for byte (2026-11-23).
 - Adaptor options: `latency` = `chapter` (default) | `option_b` | `listener_median`; `drift_ppm` (default 0; the
   +16 ppm estimate is in the provenance as `drift_ppm`, applied only if passed); `audio_dir` (default
   `<download>/ChineseEEG-2_audio`, the holtze2021_audio layout: download or link the chen2026_audio entry there).
