@@ -359,6 +359,13 @@
       "identifiers": ["438737"],
       "description": "Van Heusden et al. (2020) EEG (BioSemi), hearing-impaired listeners aided and unaided, continuous speech",
       "url": "https://eprints.soton.ac.uk/id/eprint/438737/"
+    },
+    "deoisres2023": {
+      "source": "eprints",
+      "identifiers": ["476402"],
+      "description": "Deoisres (2023) EEG (BioSemi 32 ch), continuous speech and speech-modulated noise in quiet and at 5 SNRs",
+      "url": "https://eprints.soton.ac.uk/id/eprint/476402/",
+      "exclude": ["SIN_EEG_Da.rar"]
     }
   }
 }
