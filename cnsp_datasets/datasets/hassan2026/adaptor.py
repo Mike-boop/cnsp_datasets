@@ -18,15 +18,24 @@ from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 EEG_FS, AUDIO_FS = 500.0, 16000
 MASTOIDS = ("M1", "M2")
 DRIFT_PPM = 9.0  # amplifier vs host clock, median of 16 subjects (notes 6a); not corrected
+# The sound reaches the EEG 0.718 s after the earliest playback timestamp (brain-based, notes.md section 6e; applied
+# by default, rule in CLAUDE.md): pooled accou2023 DNN offset -718 ms (negative = EEG late; 95% CI -719..-717, 16
+# subjects, 1,600 trials), the same for trials attended on device 1 and 2; per-subject values -703..-723 ms, not
+# reliably different, so one constant.
+ONSET_CORRECTION_S = 0.718
 BLOCK2_START = "eval_050"  # first trial after the longest break in 12 of 16 subjects (notes 3)
 UNITS = ("raw ADC per the card; values are volts (+-2^23 x 1e-8 clip, 1-40 Hz RMS 5-19 uV, alpha peak; notes 5), "
          "kept unscaled")
-NOTES = ("Onset = align.anchor_unix (earliest audio playback-start timestamp) - eeg.first_sample_unix (LSL), "
-         "software timestamps on one host clock (paper II-D); all six loudspeaker streams share this onset: the "
+NOTES = ("Onset = align.anchor_unix (earliest audio playback-start timestamp) - eeg.first_sample_unix (LSL) + "
+         "onset_correction_s (see onset_correction_method; the sound reaches the EEG ~0.72 s after the playback "
+         "timestamp, notes.md section 6e); software timestamps on one host clock (paper II-D). With the correction, "
+         "the last ~0.4 s of each stimulus has no EEG. All six loudspeaker streams share the onset: the "
          "per-device playback timestamps (0/+80/+160 ms) are not applied, because the scene microphone and the EEG "
-         "show devices 1 and 2 sounding together (notes.md section 6). The EEG lag sweep puts the sound ~0.8 s "
-         "after this onset (documented, not applied). EEG clock vs host clock ~+9 ppm, not corrected (0.27 ms per "
-         "30 s trial). Original amplifier reference (CPz, inferred).")
+         "show devices 1 and 2 sounding together (notes.md section 6). EEG clock vs host clock ~+9 ppm, not "
+         "corrected (0.27 ms per 30 s trial). Original amplifier reference (CPz, inferred).")
+DNN_METHOD = ("brain-based, constant: accou2023 match-mismatch DNN offset of the attended talker, pooled over 16 "
+              "subjects (notes.md section 6e; circular: estimated from this EEG); may include ~15 ms of "
+              "speech-in-noise response latency")
 COMPREHENSION_NOTE = "comprehension_correct is False for all 1,600 evaluation trials as shipped (upstream issue)"
 
 
@@ -37,12 +46,18 @@ class Hassan2026Adaptor:
     (speakers 5-6) on 6 loudspeakers; 32-ch ANT eego at 500 Hz, shipped per trial (parquet) with unix timestamps.
 
     Trial = presentation position (1-105, the same order for all subjects); condition = the authors' kind
-    (`training`, `main`). The EEG is cropped at the stimulus onset (notes.md section 6) and runs to the end of the
-    shipped trial (~30.3 s). Stimuli: the six 16 kHz FLACs, named `<trial_id>_speaker<k>`, the attended talker
-    flagged. M1/M2 are `misc`. Gaze, IMU and video are not included.
+    (`training`, `main`). The EEG is cropped at the stimulus onset and runs to the end of the shipped trial: onset
+    = earliest playback timestamp + ONSET_CORRECTION_S (onset="dnn", default; ~29.6 s of EEG) or the timestamp
+    alone (onset="none", ~30.3 s); notes.md section 6. Stimuli: the six 16 kHz FLACs, named
+    `<trial_id>_speaker<k>`, the attended talker flagged. M1/M2 are `misc`. Gaze, IMU and video are not included.
     """
 
-    def __init__(self, download_dir: str):
+    def __init__(self, download_dir: str, onset: str = "dnn"):
+        if onset not in ("dnn", "none"):
+            raise ValueError(f"onset must be 'dnn' or 'none', not {onset!r}")
+        self.method = "dnn" if onset == "dnn" else "sw_trigger"
+        self.onset = (dict(onset_correction_s=ONSET_CORRECTION_S, onset_correction_method=DNN_METHOD) if onset == "dnn"
+                      else dict(onset_correction_s=0.0, onset_correction_method="none (earliest playback timestamp)"))
         self.root = os.path.join(download_dir, "maestro-eeg-dataset")
         meta = os.path.join(self.root, "metadata")
         self.subjects = pd.read_csv(os.path.join(meta, "subjects.csv"))["subject_id"].tolist()
@@ -69,7 +84,8 @@ class Hassan2026Adaptor:
                 tid = j["trial_id"]
                 if tid == BLOCK2_START:
                     block = 2  # paper: two sessions; longest break before eval_050 in 12 of 16 subjects (notes 3)
-                onset = round((j["align"]["anchor_unix"] - j["eeg"]["first_sample_unix"]) * EEG_FS)
+                lead = j["align"]["anchor_unix"] - j["eeg"]["first_sample_unix"]
+                onset = round((lead + self.onset["onset_correction_s"]) * EEG_FS)
                 yield TrialRecord(
                     subject=int(subject[1:]), session=1, trial=pos, condition=j["kind"], ns_type="eeg",
                     stimulus=self._stimuli(tid),
@@ -85,16 +101,18 @@ class Hassan2026Adaptor:
         tid, row = j["trial_id"], self.trials.loc[j["trial_id"]]
         att, anchor = int(row["attended_speaker"]), j["align"]["anchor_unix"]
         correct = self.correct.get((subject, tid))
+        # keyed by device_id_raw: its mapping to devices 1-3 of the FLAC names is not documented (notes 6a)
+        offsets = {str(d["device_id_raw"]): round(1e3 * (d["playback_start_unix"] - anchor), 1)
+                   for d in j["audio"]["devices"]}
         return provenance(
-            "sw_trigger", "software (paper: LSL first-sample and playback-start unix timestamps, one host clock)",
-            f"{NOTES} {COMPREHENSION_NOTE}.", drift_ppm=DRIFT_PPM,
+            self.method,
+            "software (paper: LSL first-sample and playback-start unix timestamps, one host clock)",
+            f"{NOTES} {COMPREHENSION_NOTE}.", drift_ppm=DRIFT_PPM, validation_tier="low",
             participant=subject, trial_id=tid, block=block, attended_speaker=att,
             hemisphere_attended=row["hemisphere_attended"], inout_attended=row["inout_attended"],
             azimuth_attended_deg=self.azimuth[att], snr_db=float(row["snr_db"]),
             comprehension_correct=None if pd.isna(correct) else bool(correct), onset_sample=onset,
-            # keyed by device_id_raw: its mapping to devices 1-3 of the FLAC names is not documented (notes 6a)
-            playback_offsets_ms_by_raw_device={str(d["device_id_raw"]): round(1e3 * (d["playback_start_unix"] - anchor), 1)
-                                               for d in j["audio"]["devices"]},
+            playback_offsets_ms_by_raw_device=offsets, **self.onset,
             units_as_shipped=UNITS, reference="amplifier reference (CPz, inferred; not shipped)",
             external_sensors={"M1": "left mastoid", "M2": "right mastoid"},
         )

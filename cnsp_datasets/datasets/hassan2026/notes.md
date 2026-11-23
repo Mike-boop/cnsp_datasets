@@ -18,8 +18,10 @@ That folder is temporary; every number that explains a choice is copied here.
    aligns EEG sample 0 with audio sample 0, ~4.4 s off; upstream issue).
 5. **The per-device playback timestamps (0 / +80 / +160 ms) are not acoustic**: the scene-video microphone and the
    EEG both show devices 1 and 2 sounding together (section 6b, 6d).
-6. **The sound reaches the EEG ~0.8 s after the earliest playback timestamp** (backward-model lag sweep, all 16
-   subjects, median +797 ms, IQR 750-859 ms; section 6d). Brain-based, so documented, not applied (user decision).
+6. **The sound reaches the EEG 0.718 s after the earliest playback timestamp** (accou2023 DNN, 16 subjects, 95% CI
+   +-1 ms, the same for devices 1 and 2; backward-model lag sweep ~0.8 s; section 6e). Without it the dataset is
+   barely usable, so it is **applied by default** (`onset="dnn"`; `onset="none"` turns it off; CLAUDE.md rule).
+7. **Alignment grade: `poor`** (onset estimated from the EEG). Validation tier: **low** (section 9).
 
 ## 1. Source
 - Data: https://huggingface.co/datasets/aspire-osu/maestro-eeg-dataset, pinned to commit
@@ -145,14 +147,18 @@ although their timestamps always differ by >= 80 ms. Device 3 (rear noise) is no
 The absolute latency of the sound cannot be read from the video (its start in unix time is not given:
 `tobii.recording_start_unix` is the anchor). Figure: `R/hassan2026/figures/alignment_evidence.png` (right panel).
 
-### 6c. Alignment implemented (default; user to confirm)
-- Onset (all six streams) = `round((anchor_unix - eeg.first_sample_unix) x 500)` samples into the trial parquet;
-  the adaptor crops the EEG there and keeps it to the end of the trial (~30.3 s after the onset).
+### 6c. Alignment implemented
+- Onset (all six streams) = `round((anchor_unix - eeg.first_sample_unix + c) x 500)` samples into the trial
+  parquet, c = 0.718 s (`onset="dnn"`, default, section 6e) or 0 (`onset="none"`); the adaptor crops the EEG
+  there and keeps it to the end of the trial (~29.6 s after the corrected onset, ~30.3 s without; the 30-s
+  stimuli are not cut). Provenance: `alignment_method = dnn` (`sw_trigger` with `onset="none"`),
+  `onset_correction_s`, `onset_correction_method`, `alignment_quality = poor`.
 - `alignment_method = sw_trigger`, `trigger_type = software (paper)`, `drift_ppm = 9.0` (amplifier vs host clock,
   measured, not corrected), `jitter_ms = null`; the per-device timestamp offsets go into the trial metadata
   (`playback_offsets_ms_by_raw_device`); `units_as_shipped` says raw ADC per the card, volts per section 5.
-- Not applied: the authors' per-device shift by the playback timestamps (contradicted by 6b and 6d), and the
-  ~0.8 s latency of 6d (brain-based; user decision).
+- Not applied: the authors' per-device shift by the playback timestamps (contradicted by 6b, 6d and 6e).
+- User decisions 2026-11-23: CHiME-Home licence OK; shared onset to be confirmed by the DNN (it is, 6e); brain-based
+  correction applied by default when the dataset is unusable without it (new CLAUDE.md rule).
 
 ### 6d. Lag sweep (exploration, `tmp/review/scripts/hassan2026_lag_sweep.py`, `explore/lag_sweep_wide.csv`)
 Backward model per subject: EEG 0.5-8 Hz at 64 Hz, average reference without bads and mastoids, decoder lags
@@ -164,11 +170,34 @@ S14 781, S15 750, S16 859 ms (median 797, IQR 750-859). Trials attended on devic
 same shift (+797 ms each; r 0.041 and 0.036), so device 2 is not 80 ms later than device 1 in the EEG either.
 Interpretation: the sound starts ~0.8 s after the earliest playback request, or the LSL first-sample timestamp is
 ~0.8 s late (cannot be told apart; the sum is what matters). Cf. chen2026 ~0.5 s, pkueeg2025/wang2025 ~0.2 s.
-Consequence: with the default onset, the last ~0.5 s of each stimulus has no EEG (the EEG ends 0.34 s after
-anchor + 30 s), and a validation at lag 0 will look weak; the validator's lag sweep should show the same peak.
+Consequence: the EEG ends 0.34 s after anchor + 30 s, so with the corrected onset the last ~0.4 s of each stimulus
+has no EEG; at the shipped onset the validation at lag 0 is weak (section 9).
 Figures: `R/hassan2026/figures/lag_sweep_per_subject.png`, `R/hassan2026/figures/alignment_evidence.png`.
-Still to do: the accou2023 DNN offset scan per device stream (needs standardised data), and whether the latency
-varies across trials or blocks.
+The DNN scan (6e) confirms it. Whether the latency varies across trials or blocks is not resolvable at 0.5-8 Hz
+per 30-s trial.
+
+### 6e. DNN offsets (accou2023 match-mismatch, `data_campaign/scripts/dnn_offsets.py` via
+`tmp/review/scripts/hassan2026_dnn.py`, lags widened to +-1.5 s; `hassan2026_dnn_analysis.py`)
+All 1,600 evaluation trials, attended talker, EEG standardised at the shipped onset (500 Hz -> 128 Hz in the
+classifier's steps). Sign as in dnn_offsets: negative = EEG late, i.e. the sound later than assumed.
+- **Pooled: -718.2 ms (95% CI over subjects -719.2 .. -717.1).** Attended on device 1 (speakers 1/2): -718.4 ms
+  [-720.1, -716.8]; on device 2 (speakers 3/4): -717.9 ms [-719.6, -716.5]. The devices differ by 0.5 ms, not 80:
+  **the shared onset is confirmed.**
+- Per subject (95% CI by bootstrapping trials): S01 -717 [-720,-705], S02 -715 [-721,-710], S03 -705 [-719,-178],
+  S04 -703 [-719,-174], S05 -719 [-724,-713], S06 -720 [-729,-713], S07 -718 [-722,-713], S08 -717 [-731,-706],
+  S09 -720 [-726,-711], S10 -717 [-727,-711], S11 -721 [-725,-715], S12 -723 [-732,-713], S13 -720 [-734,-707],
+  S14 -719 [-722,-715], S15 -721 [-727,-715], S16 -718 [-723,-713] ms (S03/S04: a secondary peak widens the upper
+  CI; their point estimates sit on the same peak). The CIs overlap; no subject differs reliably, so one constant.
+- Agreement with the backward-model sweep (6d): both show one latency of ~0.7-0.8 s in every subject; the sweep's
+  peaks are broad (562-1031 ms, 15.6 ms steps, and biased by where the response falls in its 0-250 ms decoder
+  window); the DNN peak is sharp, so the DNN value is used.
+- Applied: c = 0.718 s. Circular (estimated from this EEG), and may include the ~15 ms that speech in noise adds
+  to DNN offsets (WORKFLOW 6). Check on the corrected data: **+0.2 ms (95% CI -1.0 .. +1.4)**, device 1 +0.1,
+  device 2 +0.3 ms.
+- Figures: `R/hassan2026/figures/dnn_offsets_hassan2026.png` (shipped onset: pooled, per device, per subject vs
+  the sweep), `R/hassan2026/figures/dnn_offsets_hassan2026_corrected.png` (corrected; its orange sweep markers
+  are those of the uncorrected sweep). Interpretation: the sound starts ~0.72 s after the playback request (or
+  the LSL first-sample stamp is that late); cf. chen2026 ~0.5 s.
 
 ## 7. Cross-subject duration check
 FLACs are 30.000 s; the timestamps of the end of playback are 30.06-30.35 s after the start (call overhead, not
@@ -180,21 +209,29 @@ Defaults agreed for the user (coordinator, 2026-11-23): gaze/IMU downloaded but 
 for timing checks; training trials included (condition `training`); all 6 streams stored as stimuli, the attended
 one flagged.
 
-Open:
-1. Onset convention (6c): all streams at the anchor [implemented], vs the authors' per-device shift [rejected by
-   6b/6d].
-2. The ~0.8 s brain-based latency (6d): document only [default per the rules], or apply as a constant onset
-   correction (+0.80 s, i.e. crop 400 samples later; the stimulus then extends ~0.46 s past the EEG).
-3. Python dependencies: the adaptor reads parquet (pyarrow) and FLAC (soundfile); neither is in the project venv
-   or pyproject, and the install (`uv pip install pyarrow==25.0.1 soundfile==0.14.0`, additions only) was denied
-   by the permission system; the pilot, validation and DNN check wait on it.
-4. CHiME-Home licence of the noise stimuli.
+Resolved 2026-11-23: onset convention (shared onset, confirmed by the DNN, 6e); the latency is applied by default
+(6e); pyarrow/soundfile installed by the user; CHiME-Home licence OK.
 
-## 9. Upstream issues (for `R/upstream_issues.md`)
+## 9. Validation (PLAN.md 5; all 16 subjects, average reference, attended talker; `validation.json`)
+`data_campaign/scripts/standardise_validate.sh hassan2026 --first-attended`, 2026-11-23.
+
+| onset | low: mean r | low: subjects sig. | p circ / mismatch | TRF peak | mlr SNR (p) | brainstem SNR (p) | tier |
+|---|---|---|---|---|---|---|---|
+| shipped (`none`) | 0.0097 | 5/16 | 0.020 / 0.048 | 469 ms (rising to the window edge) | 1.01 (0.27) | 1.00 (0.46) | low |
+| DNN (`dnn`, default) | 0.0193 | 11/16 | 0.020 / 0.048 | 62.5 ms (P1 ~60, second peak ~230 ms) | 0.94 (0.92) | 0.95 (0.93) | low |
+
+The p-values are at the resolution of the tests in both runs. mlr and brainstem fail, as expected with software
+timing that is only corrected by a constant (trial-to-trial jitter of the playback start is unknown; the validator's
+per-trial offset spread is ~250 ms SD at 0.5-8 Hz, i.e. not resolvable per 30-s trial). Figures:
+`R/hassan2026/validation.png` (DNN onset), `R/hassan2026/validation_shipped_onset.png`.
+Data size: 16 participants x 100 evaluation trials x 30 s = 13.3 h (0.83 h each), plus 0.67 h training; standardised
+~4.5 GB (1.95 MB EEG per trial, 1.92 MB per stimulus).
+
+## 10. Upstream issues (for `R/upstream_issues.md`)
 - Loader 0.1.2 ignores the timing json: EEG sample 0 is ~4.4 s before audio sample 0 (1.7-5.7 s per trial).
 - The per-device playback timestamps (0/80/160 ms) do not reflect the sound (microphone: devices together); the
   paper's per-device shift adds 80-160 ms errors. The raw device id -> device 1/2/3 mapping is not documented.
-- ~0.8 s between the playback timestamp and the EEG response (lag sweep), not mentioned in the paper.
+- 0.718 s between the playback timestamp and the sound in the EEG (DNN, all subjects), not in the paper.
 - Card azimuth table disagrees with `metadata/audio_layout.json`.
 - "Naturally mixed audio recording" announced in the paper, not in the release; `tobii.recording_start_unix` equals
   the audio anchor in every trial.
