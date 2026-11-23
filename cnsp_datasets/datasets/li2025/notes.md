@@ -240,13 +240,20 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
 
 ## 8. Open questions (defaults in bold)
 1. Onset: **decided 2026-11-23: brain-based per-subject delays applied by default** (`onset.csv`, section 7;
-   `onset="group"` for 0.80 s sub-31..47 / 0.42 s sub-48..60, `onset="none"` for the shipped onset). Open: the
-   three fallback subjects (sub-35/37/40, no reliable match; sub-37's own peak ~0.62 s); sub-36 near the search
-   edge, and the LOSO matches of sub-36/39/47 at it (the 0..0.9 s range is limited by the fitted lags -1.5..+1.5 s);
-   sub-50/52/53's later first ~10 min (not corrected: drift/step corrections stay off).
+   `onset="group"` for 0.80 s sub-31..47 / 0.42 s sub-48..60, `onset="none"` for the shipped onset).
+   **Per-subject confirmed as the default by the user (2026-11-23).** **Fallbacks accepted (user, 2026-11-23)**:
+   sub-35/37/40 (no reliable match; sub-37's own peak ~0.62 s) take the group-A delay, 0.80 s, flagged
+   `onset_fallback`. **Documented, not corrected (user, 2026-11-23)**: sub-50/52/53 sit ~150 ms later in their first
+   ~10 min (parts 1-2: sub-50 0.56/0.47 s, sub-52 0.70/0.57 s, sub-53 0.58/0.54 s, vs whole-recording 0.437 / 0.553 /
+   0.428 s; `tmp/review/li2025/alignment_v2/per_subject/parts_per_subject.json`). Their early parts are the weakest
+   fits (match r 0.12-0.14 in part 1), so a real latency change during playback cannot be told apart from noise; the
+   adopted single delay fits the remaining ~60 % of their sessions. Users who need sub-second timing early in these
+   three recordings should treat it as uncertain by ~0.15 s. Still open: sub-36 near the search edge, and the LOSO
+   matches of sub-36/39/47 at it (the 0..0.9 s range is limited by the fitted lags -1.5..+1.5 s).
 2. Drift: **not corrected** (brain-based: group A -14 ppm, CI -22..-6 (5 parts: -11, CI -20..-2); group B shows a
    ~0.12 s step at ~8-13 min instead of a drift). Open: whether group A's ~-12 ppm (~20 ms over the session) is worth
-   applying, and what to do about group B's step.
+   applying. Group B's "step" is resolved: it was mostly the mixture of subjects at ~0.8 and ~0.4 s (now per-subject),
+   plus sub-50/52/53's later early parts (documented in item 1).
 3. Bads: **paper's MEG019/MEG048 for sub-32..47 + the 10x rule**.
 4. sub-54: **include the 698 s readable part** (flagged `truncated_upload` in the sidecar).
 5. quiz/replay runs: **not standardised** (no auditory stimulus).
