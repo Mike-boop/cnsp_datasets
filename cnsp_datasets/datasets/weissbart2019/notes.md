@@ -25,3 +25,7 @@ One trial per story (condition `natural`); stimuli: the audio and its word/phone
 
 ## Data size
 13 participants, 0.66 h each (15 stories; sub-03 14), 8.6 h in total. Estimated from the stimuli (tmp/review/data_size.md).
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**good**: Stimtrack onsets (Sound channel) in the BIDS rebuild, agree with the authors' onsets.mat to 1 ms; drift 1.2 ppm not corrected; DNN +3.4 ms; brainstem tier.

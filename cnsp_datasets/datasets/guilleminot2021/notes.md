@@ -37,3 +37,7 @@ audio-tactile), Delay (tactile relative to speech, ms) and Correlated.
 
 ## Open
 - There is behavioural data associated with this dataset that is not included yet.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**good**: Onset per trial from the EEG Sound channel (567 trials; 6 marker+2 ms fallbacks); standardised check 0 ms lag; ~7 ppm not corrected; DNN ~-15 ms = response latency in noise; mlr tier.

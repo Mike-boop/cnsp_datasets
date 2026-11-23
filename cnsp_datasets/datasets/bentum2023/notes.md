@@ -22,3 +22,7 @@ Included by default (from 2026-11-19). The authors excluded them from their anal
 
 ## Data size
 48 participants, 4.33 h each (3.63-4.38), 207.8 h in total, 1617 blocks (all blocks incl. bad/doubtful; EEG from onset to end marker = the played audio). Per task per participant: news 1.49 h, story 1.37 h, dialogue 1.47 h. Three blocks end after their recording (pp002 and pp006 block 7, pp035 dialogue block 2) and are not counted.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**poor**: Software onset/end markers (~17 ms grid); marker-based drift 33 ppm corrected (hardware-like, logs confirm); DNN offset -68 ms in all conditions documented, not applied, read as playback latency (timing error).

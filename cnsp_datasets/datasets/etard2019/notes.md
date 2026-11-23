@@ -29,3 +29,7 @@ I think we no longer have textgrids, but transcripts are definitely available on
 
 ## Data size
 20 participants, 1.57 h each on average (0.72-1.87; 18 took the English session, 15 the Dutch one), 31.4 h in total. Per condition ~0.16-0.26 h per participant (4 runs). Estimated from the stimuli (tmp/review/data_size.md).
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**good**: Stimtrack (Sound channel, 672 runs) in the BIDS rebuild; triggers coincide with it to 1 ms; drift 0.8 ppm, not corrected; noise DNN offsets are response latency; brainstem tier.

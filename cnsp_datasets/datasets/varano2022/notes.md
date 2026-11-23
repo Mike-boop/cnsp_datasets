@@ -39,3 +39,7 @@ detection, per the readme and `EEG_stimuli/code`).
 
 ## Open
 - Behavioural data (`behavioural`, `QandA.csv`) is not included yet.
+
+## Alignment grade
+Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
+**medium**: Nominal onset 1.995 s into the authors' split files (authors' aligned stimuli agree 113/113), no stimtrack shipped; DNN -12..-27 ms = response latency in noise (guilleminot gives the same with measured onsets); low tier.
