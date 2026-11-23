@@ -441,6 +441,18 @@
       "description": "Stimulus audio of diliberto2020 (audio01..10.wav, 44.1 kHz stereo), from the Kern et al. (2022) Donders collection, which re-released the Di Liberto 2020 EEG stimuli; needs RADBOUD_USERNAME/RADBOUD_PASSWORD (Donders data use agreement). Download into <diliberto2020 download>/donders",
       "url": "https://doi.org/10.34973/5qxw-nn97",
       "include": ["MusicData/MusicEEG/wav/audio*.wav"]
+    },
+    "peng2026": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.19610628"],
+      "description": "Peng et al. (2026) SoundBubble-EEG (EGI HydroCel GSN 128, 250 Hz), 30 listeners, two competing spatialised talkers in three scenes (Restaurant, TV, Meeting); one BIDS zip (Sound_Bubble_BIDS.zip, 21.6 GB); version 19610628 pinned (concept 19610627)",
+      "url": "https://zenodo.org/records/19610628"
+    },
+    "zhang2025": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.17393865"],
+      "description": "Zhang et al. (2025) ear-EEG (cEEGrid + OpenBCI, 125 Hz), attention switching between talkers; version 17393865 pinned",
+      "url": "https://zenodo.org/records/17393865"
     }
   }
 }
