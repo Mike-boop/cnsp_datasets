@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from cnsp_datasets.align.scan import correct_drift, joint_fit, peak_offset, pooled_drift
+from cnsp_datasets.align.scan import correct_drift, joint_fit, peak_offset, pooled_drift, upsample_lags
 
 FS, SEG = 256, 5 * 256
 
@@ -71,7 +71,6 @@ def _white_noise_scores(rng, dur_s, onset_s, ppm, snr, lags):
 
 
 def test_upsample_lags_keeps_samples_and_noise_variance():
-    from cnsp_datasets.align.scan import upsample_lags
     x = np.random.default_rng(0).standard_normal((121, 2000))
     fine = upsample_lags(x, 8)
     assert fine.shape == (961, 2000)

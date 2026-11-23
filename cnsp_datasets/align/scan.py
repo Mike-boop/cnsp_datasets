@@ -121,18 +121,23 @@ def upsample_lags(scores: np.ndarray, factor: int) -> np.ndarray:
     finer: (n_lags - 1) * factor + 1 rows, row factor * k equal to row k.
 
     The line through the first and last rows is removed first, so the periodic interpolant has no step at the wrap.
-    Unlike linear interpolation, this keeps the noise variance the same at every fractional lag (exactly for an odd
-    number of lags): linear interpolation halves white-noise variance half-way between samples.
+    Unlike linear interpolation (which halves white-noise variance half-way between samples), this keeps the noise
+    variance the same at every fractional lag away from the first and last two lags; in the outermost intervals it
+    falls to ~0.75.
     '''
     from scipy.signal import resample
 
-    n = len(scores)
-    if factor == 1 or n < 2:
+    if factor == 1:
         return scores
+    n = len(scores)
     shape = (-1,) + (1,) * (scores.ndim - 1)
-    line = lambda w: (1 - w.reshape(shape)) * scores[0] + w.reshape(shape) * scores[-1]
-    fine = resample(scores - line(np.linspace(0, 1, n)), n * factor, axis=0)[:(n - 1) * factor + 1]
-    return (fine + line(np.linspace(0, 1, len(fine)))).astype(scores.dtype, copy=False)
+
+    def line(n_rows):
+        w = np.linspace(0, 1, n_rows).reshape(shape)
+        return (1 - w) * scores[0] + w * scores[-1]
+
+    fine = resample(scores - line(n), n * factor, axis=0)[:(n - 1) * factor + 1]
+    return (fine + line(len(fine))).astype(scores.dtype, copy=False)
 
 
 def joint_fit(
@@ -165,7 +170,8 @@ def joint_fit(
     t = (starts + segment_length / 2) / fs
     t_centre = t.mean()
     dt = t - t_centre
-    margin = int(np.ceil(np.abs(drift_grid_ppm).max() * 1e-6 * np.abs(dt).max() * fs)) + 1
+    # + 1 for the interpolation step, + 2 to stay off the outermost lags, where upsample_lags lowers the noise variance
+    margin = int(np.ceil(np.abs(drift_grid_ppm).max() * 1e-6 * np.abs(dt).max() * fs)) + 3
     if 2 * margin >= len(lags):
         raise ValueError("Lag range too narrow for this drift grid")
     centre_lags = lags[margin:-margin]
@@ -193,7 +199,9 @@ def joint_fit(
     drift_ppm, centre_lag = best(surface)
     loo = np.array([best((sums.sum(axis=1) - sums[:, k]) / (len(t) - counts[k])) for k in range(n_chunks)])
     loo_onset = loo[:, 1] - loo[:, 0] * 1e-6 * t_centre * fs
-    jack = lambda x: float(np.sqrt((n_chunks - 1) / n_chunks * ((x - x.mean()) ** 2).sum()))
+    def jack(x):
+        return float(np.sqrt((n_chunks - 1) / n_chunks * ((x - x.mean()) ** 2).sum()))
+
     return dict(
         drift_ppm=float(drift_ppm), drift_se=jack(loo[:, 0]),
         centre_lag=float(centre_lag), centre_lag_se=jack(loo[:, 1]),
