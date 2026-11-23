@@ -45,6 +45,7 @@ Last updated: 2026-11-23.
 | presacco2016 | presacco2016 | dev | brainstem (30-250 Hz; mlr fails) | extracted MEG + pilot in tmp (MEG zips deleted); vault backup verified 2026-11-23 | MEG only; pilot 20 subj; licence not stated; drift -37 ppm documented; full run pending storage |
 | karunathilake2023 | karunathilake2023 | dev | brainstem (clear speech; vocoded low only) | 203 GB in tmp (zips + extracted + pilot) | pilot 16/39; separate study from _aging; subject = R-number mod 1000; full run pending storage |
 | karunathilake2025 | karunathilake2025 | dev | brainstem (pooled, 3 subj; noise condition low only) | 59 GB in tmp (zip + 3 extracted + pilot) | pilot 3/30; full run (~35 GB) pending storage |
+| deoisres2023 | deoisres2023 | dev | mlr (pilot 5/22; brainstem only via S03 stimulus artefact) | user's manual download (read-only) + 13 GB extracted + 5.2 GB pilot in tmp | ePrints blocks scripts (Anubis); drift -24 ppm corrected by default; decisions pending |
 
 Not in the campaign sheet: mai2023 (dev, iEEG, not reviewed), jehn2024 (dev), karengal2025 / koelbl2021 /
 schuller2022full (internal).
