@@ -111,6 +111,8 @@ changed in the data; decisions for the human checkpoint are in "Open questions".
 - Not possible (onset triggers only). `drift_ppm = null`, `jitter_ms = null`.
 
 ## 8. Adaptor (implemented, 2026-11-23)
+- Shared code with the lab's other KIT datasets (R-number subjects, wav loaders, epoch/continuous-raw helpers,
+  bad-channel rules) in `datasets/simon_base/common.py` (2026-11-23; output unchanged).
 - Reads `**/R*/R*_fif-raw.fif` and `**/AS_M01.wav` (stimulus folder) under the root (extracted zips).
 - Subject = **R-number mod 1000** (R2383 -> 383, R2548 -> 548, R2682 -> 682, ...; checked unique), as in
   karunathilake2023, because the reader accepts only 3-digit `sub-` folders. R-number in the sidecar
