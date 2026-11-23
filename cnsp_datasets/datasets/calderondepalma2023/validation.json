@@ -1,0 +1,350 @@
+{
+ "dataset": "calderondepalma2023",
+ "reference": "average (applied by the validator; data stored without reference, CMS/DRL)",
+ "data": "all 13 subjects, 325 trials, 64 Hz EEG, authors' 64 Hz envelopes of the degraded audio",
+ "tiers": [
+  "low"
+ ],
+ "validation_tier": "low",
+ "note": "mlr/brainstem impossible at 64 Hz",
+ "sanity": {
+  "n_trials": 325,
+  "n_flagged": 0,
+  "n_flat_channels_total": 0,
+  "n_nan_channels_total": 0,
+  "neural_minus_stim_s": [
+   0.5,
+   0.515625
+  ],
+  "eeg_median_std_V_range": [
+   3.376995219959041e-06,
+   1.225581988536167e-05
+  ]
+ },
+ "low_forward_repo_validator": {
+  "config": {
+   "LOW": {
+    "fs": 64,
+    "band": [
+     0.5,
+     8.0
+    ],
+    "lags": [
+     -0.2,
+     0.6
+    ],
+    "valid": [
+     -0.15,
+     0.5
+    ],
+    "alpha": 1.0,
+    "n_folds": 5,
+    "n_circ": 50,
+    "n_mismatch": 20,
+    "min_shift": 5.0,
+    "offset_range": 0.5
+   },
+   "HF": {
+    "fs": 1000,
+    "lags": [
+     -0.1,
+     0.1
+    ],
+    "valid": [
+     -0.075,
+     0.075
+    ],
+    "noise": [
+     -0.075,
+     -0.02
+    ],
+    "n_null": 100,
+    "min_shift": 1.0,
+    "alpha": 1.0
+   },
+   "TIERS": {
+    "mlr": {
+     "band": [
+      30,
+      60
+     ],
+     "window": {
+      "eeg": [
+       0.018,
+       0.045
+      ],
+      "meg": [
+       0.018,
+       0.045
+      ]
+     }
+    },
+    "brainstem": {
+     "band": [
+      30,
+      250
+     ],
+     "window": {
+      "eeg": [
+       0.004,
+       0.009
+      ],
+      "meg": [
+       0.028,
+       0.045
+      ]
+     }
+    }
+   },
+   "UNIT_RANGES": {
+    "eeg": [
+     1e-06,
+     0.0002
+    ],
+    "mag": [
+     1e-14,
+     1e-11
+    ],
+    "grad": [
+     1e-12,
+     1e-09
+    ]
+   },
+   "picks": "eeg",
+   "reference": "average",
+   "seed": 0,
+   "tiers": [
+    "low"
+   ],
+   "dataset": "calderondepalma2023"
+  },
+  "pooled": {
+   "n_subjects": 13,
+   "mean_r": 0.031429711966113265,
+   "median_r": 0.03006150730664321,
+   "p_circ": 0.0196078431372549,
+   "p_mismatch": 0.047619047619047616,
+   "frac_subjects_sig": 0.9230769230769231,
+   "trf_peak_s": 0.1875,
+   "jitter_sd_ms": 141.77605607523287,
+   "jitter_mad_ms": 38.300509386099726,
+   "n_offsets_at_edge": 10,
+   "drift_ppm_median": 77.03521815651077,
+   "drift_ppm_se": 185.8662529139036,
+   "pass": true
+  },
+  "per_subject": {
+   "1": {
+    "r": 0.03245469234307708,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "peak_s": 0.1875
+   },
+   "2": {
+    "r": 0.04334732311637809,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "peak_s": 0.15625
+   },
+   "3": {
+    "r": 0.046333589794945985,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "peak_s": 0.21875
+   },
+   "4": {
+    "r": 0.00014668565934541035,
+    "p_circ": 0.4117647058823529,
+    "p_mismatch": 0.6190476190476191,
+    "peak_s": 0.046875
+   },
+   "5": {
+    "r": 0.02671490493745955,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "peak_s": 0.21875
+   },
+   "6": {
+    "r": 0.045525166502358605,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "peak_s": 0.1875
+   },
+   "7": {
+    "r": 0.02281729643732112,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "peak_s": 0.21875
+   },
+   "8": {
+    "r": 0.030221399585063737,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "peak_s": 0.203125
+   },
+   "9": {
+    "r": 0.05785907936289915,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "peak_s": 0.03125
+   },
+   "10": {
+    "r": 0.0279964513469266,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "peak_s": 0.109375
+   },
+   "11": {
+    "r": 0.03006150730664321,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "peak_s": 0.15625
+   },
+   "12": {
+    "r": 0.017724243035632848,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "peak_s": 0.09375
+   },
+   "14": {
+    "r": 0.02738391613142106,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "peak_s": 0.1875
+   }
+  },
+  "per_condition": {
+   "Clean": {
+    "n_subjects": 13,
+    "mean_r": 0.03487236958044253,
+    "median_r": 0.03641453606740674,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "frac_subjects_sig": 0.6923076923076923,
+    "trf_peak_s": 0.140625,
+    "jitter_sd_ms": 140.03915474449758,
+    "jitter_mad_ms": 29.91345077049797,
+    "n_offsets_at_edge": 0,
+    "drift_ppm_median": -57.50846543264783,
+    "drift_ppm_se": 503.28046601373364,
+    "pass": true
+   },
+   "Spectral60": {
+    "n_subjects": 13,
+    "mean_r": 0.021894952251449665,
+    "median_r": 0.018603628994024707,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "frac_subjects_sig": 0.6153846153846154,
+    "trf_peak_s": 0.1875,
+    "jitter_sd_ms": 214.74177604852255,
+    "jitter_mad_ms": 88.59742024215576,
+    "n_offsets_at_edge": 2,
+    "drift_ppm_median": 155.29518478240982,
+    "drift_ppm_se": 601.6096148848916,
+    "pass": true
+   },
+   "Spectral80": {
+    "n_subjects": 13,
+    "mean_r": 0.02611798106512791,
+    "median_r": 0.021088897667308412,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "frac_subjects_sig": 0.6923076923076923,
+    "trf_peak_s": 0.03125,
+    "jitter_sd_ms": 155.27523328407625,
+    "jitter_mad_ms": 72.33246651598164,
+    "n_offsets_at_edge": 4,
+    "drift_ppm_median": 238.5807902609828,
+    "drift_ppm_se": 474.9644603434357,
+    "pass": true
+   },
+   "Temporal60": {
+    "n_subjects": 13,
+    "mean_r": 0.025912388871484213,
+    "median_r": 0.020830457363186616,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "frac_subjects_sig": 0.6923076923076923,
+    "trf_peak_s": 0.21875,
+    "jitter_sd_ms": 137.63637508971271,
+    "jitter_mad_ms": 41.86734998099566,
+    "n_offsets_at_edge": 5,
+    "drift_ppm_median": -114.60934233769096,
+    "drift_ppm_se": 445.84026180721156,
+    "pass": true
+   },
+   "Temporal80": {
+    "n_subjects": 13,
+    "mean_r": 0.02823513511905094,
+    "median_r": 0.029632943312263967,
+    "p_circ": 0.0196078431372549,
+    "p_mismatch": 0.047619047619047616,
+    "frac_subjects_sig": 0.6923076923076923,
+    "trf_peak_s": 0.21875,
+    "jitter_sd_ms": 158.12432098465982,
+    "jitter_mad_ms": 33.10303233649227,
+    "n_offsets_at_edge": 1,
+    "drift_ppm_median": -135.72632876546757,
+    "drift_ppm_se": 539.4354514388776,
+    "pass": true
+   }
+  }
+ },
+ "dnn_offset_vs_accou2023_ms": {
+  "pooled": {
+   "offset_ms": 2.472078390813759,
+   "ci95_ms": [
+    -0.7646801167280267,
+    6.010479170173596
+   ],
+   "n_subjects": 13,
+   "n_trials": 100
+  },
+  "Clean": {
+   "offset_ms": 6.174157338604269,
+   "ci95_ms": [
+    2.4301895255179176,
+    9.034851656929686
+   ],
+   "n_subjects": 13,
+   "n_trials": 65
+  },
+  "Temporal60": {
+   "offset_ms": 9.642033833423437,
+   "ci95_ms": [
+    4.095354853917999,
+    15.382196910561614
+   ],
+   "n_subjects": 13,
+   "n_trials": 65
+  },
+  "Temporal80": {
+   "offset_ms": 7.692554191283563,
+   "ci95_ms": [
+    2.728570196498223,
+    13.54684177368319
+   ],
+   "n_subjects": 13,
+   "n_trials": 65
+  },
+  "Spectral60": {
+   "offset_ms": -4.003245478130357,
+   "ci95_ms": [
+    -7.09949924850403,
+    -1.1688034767100661
+   ],
+   "n_subjects": 13,
+   "n_trials": 65
+  },
+  "Spectral80": {
+   "offset_ms": -3.711983469589397,
+   "ci95_ms": [
+    -6.863868051960984,
+    -0.25799460839859084
+   ],
+   "n_subjects": 13,
+   "n_trials": 65
+  }
+ }
+}

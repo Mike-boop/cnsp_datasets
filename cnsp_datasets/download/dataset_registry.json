@@ -372,6 +372,14 @@
       "identifiers": ["ba3p4"],
       "description": "Piazza et al. (2025) EEG (64 ch, CND, preprocessed 1-8 Hz at 100 Hz; L2 learners BrainVision, native listeners BioSemi), stories in three speech registers in babble",
       "url": "https://osf.io/ba3p4/"
+    },
+    "calderondepalma2023": {
+      "source": "osf",
+      "identifiers": [
+        "gx6rm"
+      ],
+      "description": "Calderon-De-Palma et al. (2023, Interspeech) EEG (BioSemi 64 ch, CND), audiobook with spectral/temporal modulation degradations, 13 participants",
+      "url": "https://osf.io/gx6rm/"
     }
   }
 }
