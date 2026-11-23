@@ -361,6 +361,12 @@
       "description": "Karunathilake et al. (2023) MEG (KIT), younger and older adults, continuous speech",
       "url": "https://drum.lib.umd.edu/items/91b2c409-8659-40fe-87dd-b701599b4841"
     },
+    "brodbeck2018": {
+      "source": "drum",
+      "identifiers": ["6ce1b090-3446-46d8-9582-f689afcd23de"],
+      "description": "Brodbeck, Hong & Simon (2018, Curr Biol) MEG (KIT), two-talker cocktail party, attend one talker; 26 participants",
+      "url": "https://drum.lib.umd.edu/items/6ce1b090-3446-46d8-9582-f689afcd23de"
+    },
     "presacco2016": {
       "source": "drum",
       "identifiers": ["79afc7aa-560d-442d-b201-ab63e7f1e69f"],
