@@ -102,3 +102,14 @@ As needed:
   - Don't cut stimuli to the neural data: the longer signal is cut at the point of use.
   - Model-derived regressors are off by default.
 - **Drift.** Hardware-derived drift correction is on by default, folded into the single resample.
+- **Alignment quality.** Grade every dataset and record the grade in `data_campaign/STATUS.md` (`alignment`
+  column), the spreadsheet (`alignment_quality`) and the dataset's `notes.md`, with one line of evidence:
+  - `good`: onsets (and drift, if corrected) come from hardware and were verified, e.g. a stimtrack or audio
+    copy, or hardware triggers checked against one;
+  - `medium`: the trigger source is unknown or software, the shipped timing is kept, and validation confirms it
+    (at least the low tier, a plausible TRF latency, nothing at negative lags, no correction needed);
+  - `poor`: onsets or drift are estimated from the neural data (a brain-based correction, applied or only
+    documented as an offset);
+  - `none`: not assessable (e.g. no stimulus).
+
+  Grade by the weakest part: hardware onsets with brain-based drift are `poor`.
