@@ -71,7 +71,6 @@ class TestExtractArchives:
 
         assert mat.exists()
 
-
     def test_refuses_tar_member_outside_directory(self, tmp_path):
         inner = tmp_path / "x.txt"
         inner.write_text("x")
@@ -86,7 +85,10 @@ class TestExtractArchives:
 
 
 def _rar4(files):
-    """A RAR 4 archive with stored (uncompressed) entries; bsdtar can read RAR but not write it."""
+    """
+    A RAR 4 archive with stored (uncompressed) entries; bsdtar can read RAR but not write it. files: name -> data, or
+    name -> (data, unix mode), e.g. a symlink (b"/etc/passwd", 0o120777).
+    """
     import struct
     import zlib
 
@@ -95,9 +97,10 @@ def _rar4(files):
         return struct.pack("<H", zlib.crc32(rest) & 0xFFFF) + rest
 
     out = b"Rar!\x1a\x07\x00" + block(0x73, 0, bytes(6))
-    for name, data in files.items():
+    for name, entry in files.items():
+        data, mode = entry if isinstance(entry, tuple) else (entry, 0o100644)
         header = struct.pack("<IIBIIBBHI", len(data), len(data), 3, zlib.crc32(data), 0x5A210000, 20, 0x30,
-                             len(name.encode()), 0o100644) + name.encode()
+                             len(name.encode()), mode) + name.encode()
         out += block(0x74, 0x8000, header) + data
     return out + block(0x7B, 0x4000, b"")
 
@@ -124,6 +127,19 @@ class TestExtractRar:
         with pytest.raises(ValueError, match="Refusing"):
             download_helpers.extract_archives(str(target))
         assert sorted(p.name for p in tmp_path.rglob("*")) == ["download", "evil.rar"]   # nothing written
+
+    def test_refuses_symlink_entries(self, tmp_path):
+        rpath = tmp_path / "evil.rar"
+        rpath.write_bytes(_rar4({"fine.txt": b"ok", "x": (b"/etc/passwd", 0o120777)}))
+
+        with pytest.raises(ValueError, match="link"):
+            download_helpers.extract_archives(str(tmp_path))
+        assert sorted(p.name for p in tmp_path.iterdir()) == ["evil.rar"]
+
+    def test_corrupt_archive_reports_bsdtar_error(self, tmp_path):
+        (tmp_path / "bad.rar").write_bytes(b"Rar!\x1a\x07\x00garbage")
+        with pytest.raises(RuntimeError, match="bsdtar -tf"):
+            download_helpers.extract_archives(str(tmp_path))
 
 
 def test_rar_without_bsdtar_explains(tmp_path, monkeypatch):
@@ -515,8 +531,17 @@ class TestRadboudRdr:
         files = download_helpers.id_to_downloadables_radboud_rdr("dccn/DSC_1_v1")
 
         assert mock_get.call_args.args[0] == "https://webdav.data.ru.nl/dccn/DSC_1_v1/MANIFEST.txt"
-        assert files[0] == {"name": "sub-01/a b.wav", "url": "https://webdav.data.ru.nl/dccn/DSC_1_v1/sub-01/a%20b.wav",
+        assert files[0] == {"name": "sub-01/a b.wav",
+                            "url": "https://webdav.data.ru.nl/dccn/DSC_1_v1/sub-01/a%20b.wav",
                             "checksum": "sha256:abc", "headers": {"Authorization": "Basic dTpw"}}
+
+    @patch("cnsp_datasets.download.download_helpers.requests.get")
+    def test_username_without_password_explains(self, mock_get, monkeypatch):
+        monkeypatch.setenv("RADBOUD_USERNAME", "u")
+        monkeypatch.delenv("RADBOUD_PASSWORD", raising=False)
+        mock_get.return_value = MagicMock(status_code=200, text="abc f.wav\n")
+        with pytest.raises(ValueError, match="RADBOUD_PASSWORD"):
+            download_helpers.id_to_downloadables_radboud_rdr("dccn/DSC_1_v1")
 
     @patch("cnsp_datasets.download.download_helpers.requests.get")
     def test_public_collection_without_credentials(self, mock_get, monkeypatch):

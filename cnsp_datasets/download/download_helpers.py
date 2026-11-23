@@ -21,25 +21,35 @@ from urllib.parse import quote
 def _extract_rar(file_path, target_dir):
     """
     Unpack a RAR archive into target_dir with bsdtar (libarchive; Python has no RAR reader). Downloads are untrusted:
-    the archive is refused before anything is written if an entry is absolute or contains "..".
+    the archive is refused before anything is written if an entry is absolute, contains ".." or is a (sym/hard) link.
+    Multi-volume archives (.partN.rar) are not supported.
     """
     bsdtar = shutil.which("bsdtar")
     if bsdtar is None:
         raise RuntimeError(f"Cannot extract {file_path}: RAR archives need bsdtar from libarchive "
                            "(e.g. `apt install libarchive-tools` or `conda install -c conda-forge libarchive`)")
-    listing = subprocess.run([bsdtar, "-tf", file_path], capture_output=True, text=True, check=True).stdout
-    for name in listing.splitlines():
+
+    def run(*args):
+        try:
+            return subprocess.run([bsdtar, *args], capture_output=True, text=True, check=True).stdout
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(f"bsdtar {' '.join(args)} failed: {e.stderr.strip()}") from e
+
+    names, modes = run("-tf", file_path).splitlines(), run("-tvf", file_path).splitlines()
+    for name, mode in zip(names, modes):
         path = PurePosixPath(name.replace("\\", "/"))
-        if path.is_absolute() or ".." in path.parts or re.match(r"^[A-Za-z]:", name):
+        if path.is_absolute() or ".." in path.parts:
             raise ValueError(f"Refusing to extract {file_path}: entry '{name}' would land outside {target_dir}")
-    subprocess.run([bsdtar, "-xf", file_path, "-C", target_dir], check=True)
+        if mode[:1] in ("l", "h"):
+            raise ValueError(f"Refusing to extract {file_path}: entry '{name}' is a link")
+    run("-xf", file_path, "-C", target_dir)
 
 
 def extract_archives(download_dir, recursive=False):
     """
     Extract all archives in the specified directory.
-    Supports .zip, .tar, .tar.gz, .rar (needs bsdtar) and .gz (single file). Tar and RAR entries that would land
-    outside the directory are refused (zipfile strips them itself).
+    Supports .zip, .tar, .tar.gz, .rar (needs bsdtar; not multi-volume) and .gz (single file). Tar and RAR entries
+    that would land outside the directory are refused (zipfile strips them itself), as are RAR archives with links.
     If `recursive` is True, also extracts archives found within extracted archives.
 
     Notes:
@@ -120,8 +130,8 @@ def _dryad_token():
     """
     Bearer token for Dryad file downloads, which require one (metadata does not), or None if not configured.
 
-    Set DRYAD_CLIENT_ID and DRYAD_CLIENT_SECRET from a Dryad API account (https://datadryad.org/api; preferred: each
-    call exchanges them for a fresh short-lived token, so a resumed download never runs on an expired one), or
+    Set DRYAD_CLIENT_ID and DRYAD_CLIENT_SECRET from a Dryad API account (https://datadryad.org/api; preferred: they
+    are exchanged for a fresh short-lived token per run, so a restarted download never uses an expired one), or
     DRYAD_TOKEN, a token minted beforehand.
     """
     client_id, secret = os.environ.get("DRYAD_CLIENT_ID"), os.environ.get("DRYAD_CLIENT_SECRET")
@@ -171,8 +181,8 @@ def doi_to_downloadables_dryad(doi):
     ]
     if token is None:
         print(
-            f"Warning: Dryad needs an API token to download files. Either set DRYAD_TOKEN (or DRYAD_CLIENT_ID and "
-            f"DRYAD_CLIENT_SECRET; https://datadryad.org/api), or download these files from "
+            f"Warning: Dryad needs an API token to download files. Either set DRYAD_CLIENT_ID and DRYAD_CLIENT_SECRET "
+            f"(or DRYAD_TOKEN; https://datadryad.org/api), or download these files from "
             f"https://datadryad.org/dataset/doi:{doi} into the download directory and run with skip_existing=True: "
             + ", ".join(f["name"] for f in files)
         )
@@ -594,6 +604,8 @@ def id_to_downloadables_radboud_rdr(id, rdr_server="https://webdav.data.ru.nl"):
 
     headers = None
     if os.environ.get("RADBOUD_USERNAME"):
+        if not os.environ.get("RADBOUD_PASSWORD"):
+            raise ValueError("RADBOUD_USERNAME is set but RADBOUD_PASSWORD is not")
         token = base64.b64encode(f"{os.environ['RADBOUD_USERNAME']}:{os.environ['RADBOUD_PASSWORD']}".encode())
         headers = {"Authorization": f"Basic {token.decode()}"}
 
@@ -638,7 +650,8 @@ def id_to_downloadables_huggingface(repo):
 def listing_to_downloadables_scidb(listing):
     """
     Files of a Science Data Bank (scidb.cn) dataset, from a listing shipped with the adaptor, e.g.
-    "chen2026/scidb_files.json" (relative to cnsp_datasets/datasets): the site lists files only to a browser.
+    "chen2026/scidb_files.json" (relative to cnsp_datasets/datasets; an absolute path is used as is): the site lists
+    files only to a browser.
     """
     path = Path(__file__).parents[1] / "datasets" / listing
     files = json.loads(path.read_text(encoding="utf-8"))["files"]

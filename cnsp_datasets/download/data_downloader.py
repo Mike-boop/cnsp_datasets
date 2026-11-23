@@ -14,6 +14,7 @@ from tqdm import tqdm
 
 USER_AGENT = "dataset-downloader/0.1 (python-requests)"  # generic: no project or personal details
 MAX_RETRY_AFTER = 300  # seconds
+DEFAULT_READ_TIMEOUT = 15  # seconds a stalled transfer may wait for data
 
 
 class _HTTPError(Exception):
@@ -35,8 +36,8 @@ class DataDownloader:
     A class to download files from URLs with optional checksum verification and progress bar.
     """
 
-    def __init__(self, download_dir, max_workers=1, retries=10, skip_existing=True, verify_checksum=True, read_timeout=15,
-                 log_path=None):
+    def __init__(self, download_dir, max_workers=1, retries=10, skip_existing=True, verify_checksum=True,
+                 read_timeout=DEFAULT_READ_TIMEOUT, log_path=None):
         """
         Initialize the DataDownloader.
 

@@ -1,8 +1,9 @@
 import json
+from pathlib import Path
 
 import pytest
 
-from cnsp_datasets.standardise.provenance import provenance
+from cnsp_datasets.standardise.provenance import ALIGNMENT_METHODS, provenance
 
 
 def test_provenance_round_trips():
@@ -26,8 +27,6 @@ def test_provenance_accepts_plan_vocabulary(method):
 
 
 def test_plan_lists_the_same_alignment_methods():
-    from pathlib import Path
-    from cnsp_datasets.standardise.provenance import ALIGNMENT_METHODS
     plan = (Path(__file__).parents[2] / "PLAN.md").read_text(encoding="utf-8")
     row = next(line for line in plan.splitlines() if line.startswith("| `alignment_method` |"))
     assert set(row.split("|")[2].replace("`", "").replace(" ", "").split(",")) == ALIGNMENT_METHODS
