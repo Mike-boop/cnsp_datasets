@@ -20,12 +20,10 @@ objective validation before anything counts as done.
 **Out (for now)**
 - Anatomy and source localisation (`AnatRecord` stays, unused).
 - CND output: `cnd_sink.py` is deprecated and will be removed; third parties can convert.
-- Applying brain-based alignment (DNN, TRF, decoders) in adaptors by default: `cnsp_datasets/align/` is used to
-  check timing and, for poorly aligned data, to estimate onsets/drift that are documented (json/csv in the dataset
-  folder), not applied. The user may approve an exception per dataset. Approved exceptions:
-  - li2025: onset correction on by default, 0.80 s for sub-31..47 and 0.42 s for sub-48..60, from population TRFs;
-    group B aligned to group A's TRF by multichannel template matching (`alignment_method` `brain_trf`; user,
-    2026-11-23).
+- Applying brain-based alignment (DNN, TRF, decoders) in adaptors by default, except when a dataset is unusable
+  without it (section 3, "Brain-based corrections"). Otherwise `cnsp_datasets/align/` is used to check timing and,
+  for poorly aligned data, to estimate onsets/drift that are documented (json/csv in the dataset folder), not
+  applied.
 
 ## 2. Standard format
 
@@ -82,7 +80,7 @@ Users need this most when deciding whether a dataset supports high-frequency ana
   estimate.
 - `dnn`: onsets or drift applied from a match-mismatch DNN (`align/`).
 - `brain_trf`: onsets or drift applied from the neural response itself (TRFs, decoders, template matching), only
-  as an approved exception (section 1).
+  under the rule in section 3 ("Brain-based corrections").
 - `none`: not aligned.
 
 Dataset-level metadata: licence, citation(s), DOI, units as shipped, original reference, channel list and
@@ -92,7 +90,16 @@ external sensors, stimulus availability.
 
 - **Hardware-derived corrections are applied by default** (user): onsets and drift measured from an audio copy
   (stimtrack, aux), hardware triggers or other acquisition hardware are on by default unless validation casts doubt
-  on them. Brain-based estimates are documented, not applied, unless the user approves an exception (section 1).
+  on them.
+- **Brain-based corrections** (DNN, TRF, decoder offsets and drift) are documented in `notes.md`, not applied, with
+  one exception (user, 2026-11-23): when a dataset is unusable without them (e.g. the shipped onset misses the sound
+  by hundreds of ms), the brain-based alignment is applied by default, an adaptor option turns it off, and the
+  dataset is graded `poor`. `alignment_method` is then `dnn` or `brain_trf`. Examples:
+  - li2025: 0.80 s for sub-31..47 and 0.42 s for sub-48..60, from population TRFs; group B aligned to group A's
+    TRF by multichannel template matching (`brain_trf`);
+  - chen2026: per-chapter EEG latency;
+  - chen2023: drift;
+  - hassan2026: DNN onset.
 - **Triggers:** use start/end triggers where available. Whether triggers are hardware or software is often
   undocumented; record what is known and how.
 - **Drift vs jitter:** when several participants heard the same stimulus, compare trigger-derived durations with the
@@ -108,13 +115,26 @@ external sensors, stimulus availability.
   trials), so a pooled estimate can hide a condition-specific error.
 - Reuse `align/scan.py` (`lag_scores`, `joint_fit`, `pooled_drift`, `refine_onset`, `correct_drift`) where it fits.
 
+### Alignment grades
+Every dataset gets one grade, recorded in `data_campaign/STATUS.md` (`alignment` column), the spreadsheet
+(`alignment_quality`) and the dataset's `notes.md`, with one line of evidence:
+- `good`: onsets (and drift, if corrected) come from hardware and were verified, e.g. a stimtrack or audio copy, or
+  hardware triggers checked against one;
+- `medium`: the trigger source is unknown or software, the shipped timing is kept, and validation confirms it (at
+  least the low tier, a plausible TRF latency, nothing at negative lags, no correction needed);
+- `poor`: onsets or drift are estimated from the neural data (a brain-based correction, applied or only documented
+  as an offset);
+- `none`: not assessable (e.g. no stimulus).
+
+The weakest part decides: hardware onsets with brain-based drift are `poor`.
+
 ## 4. Agents and workflow
 
 ```
 main session: download (background job + log monitoring)
    → data-explorer  → notes.md + alignment plan
    → HUMAN CHECKPOINT: approve the alignment plan
-   → data-standardiser → adaptor.py, pilot run (~20 subjects)
+   → data-standardiser → adaptor.py, pilot run (size estimated from one trial; ~20 subjects if it fits)
    → validator  → validation report (pass/fail per tier)
    → reviewer   → style review of the adaptor
    → full standardisation run
@@ -205,16 +225,28 @@ HPC server). Data is never kept long term here.
 - Existing downloads in `/data_storage/gu08wuvu/datasets/` are **read-only**: read from them instead of
   re-downloading.
 - Enforced by `.claude/hooks/storage_guard.py` (PreToolUse): blocks writes outside `tmp/` under the datasets
-  root, and blocks download/standardise commands while `tmp/` exceeds 1 TB.
+  root, and blocks download/standardise commands while `tmp/` exceeds its limit (1 TB; a user-approved window is
+  set in env `CNSP_TMP_LIMIT_GB` or the file `tmp/TMP_LIMIT_GB`).
+- **Vault backup** (user, 2026-11-23): the raw data of DRUM and Zenodo downloads (slow, time out, rate-limit) are
+  backed up to the NHR vault (`csnhr:/home/vault/iwpm/iwpm104h/<dataset>`) before anything local is deleted:
+  manifest (paths, sizes, md5) + rsync, then check every file's size with `stat` (readdir on `/home/vault` is
+  unreliable). chen2026 (SciDB) was backed up on request. Other sources are re-downloaded when needed.
 
 ### Zenodo usage limits (promised to the Zenodo moderators, 2026-11-21)
-Zenodo blocked this server (HTTP 403, "unusual traffic") on 2026-11-21. The user promised:
+Zenodo blocked this server (HTTP 403, "unusual traffic") on 2026-11-21, and again on 2026-11-23 at 21:09 after an
+access test had passed at ~20:30. The user promised:
 - **at most three concurrent file downloads** from Zenodo at a time (`download_dataset` caps `max_workers` at 3
   for Zenodo sources; keep any other script at <= 3 too);
 - **at most 1-2 Zenodo datasets downloaded per day** (log each one, with the date, in `data_campaign/HANDOVER.md`
   so other sessions can count).
 Check access with a single request before starting; never work around a block (no user-agent changes, proxies or
-other hosts).
+other hosts). On a block, stop and report, and never retry from another machine. While
+`tmp/review/ZENODO_BLOCKED` exists, `.claude/hooks/command_guard.py` blocks commands that contact Zenodo.
+- Scripts that contact Zenodo identify themselves in the User-Agent (the tool's name; contact details only as the
+  user configures them).
+- An archival copy of the Zenodo datasets is pulled separately by the user's `zenodo_slowpull`
+  (github.com/Mike-boop/zenodo_slowpull): one connection, rate limit, daily budget, md5, resume, hard stop on 403.
+  It runs on the vault node, not from this server.
 
 ## 8. Future work
 
@@ -267,4 +299,5 @@ other hosts).
   sound card's.
 - **Constant onset offsets documented, not applied** (user, 2026-11-22): pkueeg2025 (~-75 ms NeuroScan, ~-42 ms
   Neuracle, DNN vs accou2023) and wang2025 (~-0.19 s, DNN + TRF), alongside das2019 / bentum2023 /
-  broderick2019_cocktail (section 8). Applied as an approved exception: li2025 (section 1).
+  broderick2019_cocktail (section 8). Applied because the data are unusable without them: li2025, chen2026,
+  chen2023 drift, hassan2026 (section 3, "Brain-based corrections").
