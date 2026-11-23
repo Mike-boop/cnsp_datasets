@@ -87,18 +87,26 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
 - Trigger type (hardware/software), presentation software and the audio latency after the trigger are **not
   documented**. A video start trigger from presentation software typically leads the sound by a constant or
   variable amount (LESSONS: 40-500 ms).
-- **Adopted (settled by the rules, no correction)**: onset = first sample of the shipped file
-  (`alignment_method = onset_only`, `trigger_type = unknown`); trial = the whole file at its native 1000 Hz (no
-  resample); the audio is 0.234 s longer than the recording and is not cut (cut at the point of use). No drift
-  measurement is possible from the data (one trigger, no audio copy): `drift_ppm` null, not corrected.
-- Brain-based checks of the onset are below (section 7); their results are documented, not applied.
+- **Adopted (user decision 2026-11-23): brain-based onset correction, on by default.** The trial starts
+  `ONSET_DELAY_S` into the shipped file: **0.80 s for sub-31..47 (group A), 0.42 s for sub-48..60 (group B)**, i.e.
+  800 / 420 samples at 1000 Hz, so the correction is a crop (no resampling). `onset_correction=False` gives the
+  shipped onset (first sample). Native 1000 Hz kept; the audio (1519.235 s) is longer than the remaining recording
+  (1518.20 / 1518.58 s) and is not cut. Sidecar: `alignment_method = onset_only` (the provenance vocabulary has no
+  brain-based value), `trigger_type` "unknown (inferred software ...) + onset_correction_s", plus
+  `onset_correction_s`, `onset_correction_method` (with the uncertainty) and `recording_group`.
+- This is an exception to the campaign rule that constant brain/DNN-based offsets are documented, not applied
+  (PLAN.md section 8): the delays are large (0.4-0.8 s) and the shipped onset is a software trigger, not the sound.
+- Estimation: section 7; code in `alignment/` (reads the download through the adaptor with `onset_correction=False`,
+  so it reproduces the delays from code alone; see `alignment/README.md`).
+- No drift correction (no clock reference; brain-based estimate in section 7).
 
 ## 7. Cross-subject duration check and brain-based timing
 - Durations: all baba files 1519.001 s (sub-54 698 s, truncated); audio 1519.235 s. Fixed-length crops, so they
   carry no drift or jitter information.
 - All timing analyses use HFC (order 1, MEG062 left out) and a 0.1 Hz high-pass of the **whole** recording
   (validation only; the stored data stay raw). Figures/numbers under `tmp/review/li2025/`.
-- **The sound starts well after the shipped onset** (brain-based; circular, documented, not applied):
+- **The sound starts well after the shipped onset** (brain-based; circular; applied by default since the user's
+  decision of 2026-11-23, see section 6):
   - Whole-recording population TRF (`scripts/li2025_poptrf.py`, `poptrf/poptrf.png`): envelope (0.5-8 Hz, 64 Hz)
     -> magnetometers over lags -1.5..+1.5 s, ridge alpha 1 x mean eigenvalue, 29 participants (sub-54 left out),
     50 circular-shift nulls. GFP peaks at **+0.92 s** (2.1x the null median, far above its 95th percentile).
@@ -112,9 +120,19 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
     assumes an envelope-TRF peak near 100 ms). Typical of a software video trigger sent before playback starts
     (LESSONS: chen2026 ~0.5 s); the group difference matches the change in spectra between the two recording
     periods (different setup or presentation settings). The visual stream may contribute to the TRF.
-  - Applying it would mean starting each trial 0.55-0.8 s into the file (losing that much MEG; the audio is then
-    0.32-0.57 s longer than the remaining recording, cut at the point of use). Constant offsets are documented, not
-    applied (user rule 2026-11-22): **user decision**.
+  - **Group B refined (main session, 2026-11-23)**: 0.55 s overshoots (a component lands at -141 ms). Group B's
+    uncorrected multichannel TRF matched to group A's corrected TRF (space-time r over -0.2..0.6 s, 58 channels good
+    in all subjects; `alignment/match_groups.py`): best **0.44 s** (r 0.60; bootstrap 95% CI 0.41-0.80 s, skewed;
+    r 0.50 at 0.55 s, 0.10 at 0.30 s). The user's reading (B's +109 ms at 0.55 s = A's +250 ms component) gives
+    0.41 s; **adopted 0.42 s**. A B component at ~-40 ms remains unexplained (possibly visual / lip-driven).
+  - Group A confirmed: with 0.80 s the corrected TRF peaks at +94 / +250 ms with right temporal / posterior
+    topographies (main session, `trf_weights/butterfly_topo.png`).
+  - **Check with the adopted delays** (`alignment/poptrf.py <download> <out> 0.80,0.42`, 20 nulls; figure
+    `tmp/review/li2025/alignment/poptrf/poptrf_0.8_0.42.png`): group A GFP peaks at **+0.125 s** (2.5x the null
+    median), group B at **+0.062 s** (2.1x), with a shoulder at ~0 / -0.04 s; nothing remains at the uncorrected
+    positions.
+  - Uncertainty: A +-~50 ms (assumes an envelope-TRF peak near 0.1 s); B CI 0.41-0.80 s (skewed), leftover -40 ms
+    component.
 - **Superseded first estimate** (kept for the record): a cross-validated lag sweep with lags 0-0.5 s and a weak ridge
   (alpha 1e-2; `scripts/li2025_shiftsweep.py`, `shiftsweep/`) peaked at a shift of -0.47 s in 29/30 subjects with
   an identical curve shape in all of them (dip at 0, side peaks at -0.47 and +0.5 s). The population TRF, the
@@ -124,15 +142,33 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
   30-60 Hz (notched; raw or HFC; `scripts/li2025_artefact.py`, `artefact_test*/`) and the 45-55 Hz band (the
   soundtrack's 50 Hz hum is only 1.8x its neighbours) give nothing above the noise maximum in single subjects. No
   stimtrack-like leakage, so the onset cannot be measured precisely.
-- **Drift**: not measurable from triggers. Brain-based, from the low-tier segment offsets at -0.8 s (6 x 250 s per
-  subject): median -9.8 ppm, SE 117 ppm, i.e. no evidence of drift at the ~100 ppm level (0.15 s over the session
-  would need ~100 ppm).
+- **Drift** (not measurable from triggers; brain-based, **not applied**). `alignment/drift.py`: per subject, ridge
+  TRFs on the three thirds of the uncorrected recording (~506 s each, centres 4.2 / 12.7 / 21.1 min); delay of each
+  third = shift of best space-time match to group A's corrected template (-0.2..0.6 s, 58 channels, parabolic
+  refinement); slope over the thirds (> 0: MEG clock fast vs audio); bootstrap over subjects (1000). Figure
+  `tmp/review/li2025/alignment/drift/drift.png`, numbers `alignment/drift/drift.json`.
+  - **Group A (n = 17): delays 0.806 / 0.797 / 0.791 s -> -14 ppm (95% CI -22 to -6 ppm)**, i.e. ~-21 ms over the
+    1519 s session; per-subject median -13 ppm. Small, and the template comes from the same subjects (circular).
+  - **Group B (n = 12): delays 0.551 / 0.429 / 0.423 s -> -127 ppm (95% CI -380 to +8 ppm)**: not a drift estimate;
+    the first third sits 0.12 s later than the other two (a step, or the ambiguous match between B's -40 ms and
+    +60 ms components). Per-subject median -31 ppm.
+  - **Five parts** (`drift ... 5`, centres 2.5 / 7.6 / 12.7 / 17.7 / 22.8 min): group A -11 ppm (95% CI -20 to
+    -2; delays 0.807 / 0.798 / 0.799 / 0.792 / 0.793 s), consistent with three parts. Group B 0.564 / 0.544 / 0.426 /
+    0.426 / 0.423 s: a **step of ~0.12 s between ~8 and ~13 min**, flat before and after, i.e. not a clock drift.
+    Either the sound delay changed once during playback (e.g. a player hiccup) or the template match switches between
+    B's two components; per subject this is too noisy to tell. The adopted 0.42 s fits the last ~60 % of the session;
+    the first ~40 % may be ~0.12 s later than corrected. **Open question for the user.**
+  - The refactored repo scripts (`alignment/`, rerun 2026-11-23 into `tmp/review/li2025/alignment_v2/`) reproduce
+    the main session's match (0.4375 s, r 0.602) and the three-part drift exactly.
+  - Earlier estimate from the low-tier segment offsets (6 x 250 s, -0.8 s offset): -9.8 +- 117 ppm (too loose).
+  - Conclusion: no correction. Group A's -14 ppm would move the end of the session by ~21 ms.
 
 ## 8. Open questions (defaults in bold)
-1. Onset: **keep the authors' crop (trigger at sample 0)**; the brain-based delays (sub-31..47 ~0.80 s,
-   sub-48..60 ~0.55 s) are documented, not applied. User decision: apply them (per group, cropping the start of
-   the MEG), offer them as an option, or document only.
-2. Drift: **not corrected** (no clock reference; brain-based estimate consistent with 0).
+1. Onset: **decided 2026-11-23: brain-based delays applied by default** (0.80 s sub-31..47, 0.42 s sub-48..60;
+   `onset_correction=False` for the shipped onset).
+2. Drift: **not corrected** (brain-based: group A -14 ppm, CI -22..-6 (5 parts: -11, CI -20..-2); group B shows a
+   ~0.12 s step at ~8-13 min instead of a drift). Open: whether group A's ~-12 ppm (~20 ms over the session) is worth
+   applying, and what to do about group B's step.
 3. Bads: **paper's MEG019/MEG048 for sub-32..47 + the 10x rule**.
 4. sub-54: **include the 698 s readable part** (flagged `truncated_upload` in the sidecar).
 5. quiz/replay runs: **not standardised** (no auditory stimulus).
@@ -151,9 +187,22 @@ shipped onset). Results in `tmp/review/li2025/validation_offset{0,-0.8,5_control
 | stimulus delayed 0.8 s | 0.0234 | 0.020 / 0.048 | 90 % | 109 ms | 16 ms |
 | group B, delayed 0.55 s | 0.0247 | 0.020 / - | 100 % | 94 ms | 16 ms |
 | control, +5 s (wrong) | -0.0020 | 1.0 / 1.0 | 0 % | - | - |
+| **onset-corrected standardisation (adaptor default)** | 0.0236 | 0.020 / 0.048 | 90 % | 234 ms (109 / 219 per group) | 13 ms |
 
-- **Tier: `low`** (0.5-8 Hz forward model above circular-shift and mismatched-segment nulls; as shipped it passes
-  too, but the TRF sits at the window edge, i.e. misaligned by the delay above).
+Per recording group (`validation_corrected/groups_before_after.png`; GFP / null median, lags -0.15..0.5 s):
+
+| group | run | mean r | subjects sig | TRF peak | max GFP ratio | jitter MAD |
+|---|---|---|---|---|---|---|
+| A (sub-31..47, n 17) | shipped onset | 0.0070 | 41 % | 469 ms (edge) | 1.38 | 186 ms |
+| A | corrected 0.80 s | 0.0230 | 82 % | 109 ms (2nd ~235 ms) | 2.35 | 11 ms |
+| B (sub-48..60, n 13) | shipped onset | 0.0170 | 100 % | 484 ms (edge) | 2.18 | 33 ms |
+| B | corrected 0.42 s | 0.0245 | 100 % | 219 ms (also ~65 ms, bump ~-30 ms) | 2.21 | 15 ms |
+
+The corrected standardisation (re-standardised 2026-11-23, all 30) gives the low tier with TRF peaks at plausible
+latencies in both groups; the HF tiers again "pass" nominally (p 0.01) but are the lag-0 artefact (see above).
+
+- **Tier: `low`** (0.5-8 Hz forward model above circular-shift and mismatched-segment nulls; with the shipped onset
+  it passes too, but the TRF sits at the window edge, i.e. misaligned by the delay above).
 - **High-frequency tiers: not credible.** Every run, including the wrong-offset control, shows the same lag-0 peak
   in the 30-60 Hz TRF (~2.2x, ringing at +-20 ms) and nominal mlr "passes" (p 0.01), and the 30-250 Hz TRF shows no
   response in its window. So the peak is an analysis artefact independent of the alignment (likely the segment
@@ -162,8 +211,8 @@ shipped onset). Results in `tmp/review/li2025/validation_offset{0,-0.8,5_control
 - First runs filtered each 250 s segment separately: the nT DC offsets of the raw OPMs then gave edge transients
   that correlate with the stimulus at lag 0 (TRF peak at 0 in all bands; moved to `superseded/`). Lesson: high-pass
   OPM data on the whole recording before cutting.
-- Data size: 30 participants, 12.43 h recorded (0.422 h each; sub-54 0.194 h); listening time per participant =
-  the 1519.2 s video.
+- Data size: 30 participants, 12.43 h recorded (0.422 h each; sub-54 0.194 h); 12.42 h after the onset crop
+  (1518.20 s group A, 1518.58 s group B, sub-54 697.58 s); listening time per participant = the 1519.2 s video.
 
 ## Upstream issues
 - sub-54 `task-baba` and `task-replay` fifs are truncated in v1.0.5 (181857342 / 181501853 bytes, last data buffer

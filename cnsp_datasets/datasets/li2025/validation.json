@@ -1,6 +1,475 @@
 {
- "note": "Segment validation (6 x 250 s per subject), HFC + 0.1 Hz HP + notches on the whole recording, validation only; script tmp/review/scripts/li2025_validate.py; tier low; high-frequency tiers not credible (lag-0 artefact also in the wrong-offset control). See notes.md section 9.",
+ "note": "Segment validation (6 x 250 s per subject), HFC + 0.1 Hz HP + notches on the whole recording, validation only; script tmp/review/scripts/li2025_validate.py. First run: the onset-corrected standardisation (adaptor default, 0.80 s sub-31..47 / 0.42 s sub-48..60); the others: the shipped onset with validation-only stimulus offsets. Tier low; high-frequency tiers not credible (lag-0 artefact also in the wrong-offset control). notes.md section 9.",
  "runs": {
+  "onset_corrected_standardisation (adaptor default)": {
+   "config": {
+    "picks": "mag",
+    "reference": null,
+    "tiers": [
+     "low",
+     "mlr",
+     "brainstem"
+    ],
+    "preprocessing": "['hfc', 'notch'] (validation only)",
+    "segment_s": 250.0,
+    "stimulus_offset_s": 0.0
+   },
+   "summary": {
+    "low": {
+     "n_subjects": 30,
+     "mean_r": 0.023634026279766036,
+     "median_r": 0.02381777911818457,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "frac_subjects_sig": 0.9,
+     "trf_peak_s": 0.234375,
+     "jitter_sd_ms": 78.29451319649003,
+     "jitter_mad_ms": 13.389257579369687,
+     "n_offsets_at_edge": 6,
+     "drift_ppm_median": -4.37674387128284,
+     "drift_ppm_se": 101.34406761323945,
+     "pass": true
+    },
+    "mlr": {
+     "n_subjects": 30,
+     "mean_snr": 1.0628849079252478,
+     "p": 0.009900990099009901,
+     "frac_subjects_sig": 0.13333333333333333,
+     "pass": true
+    },
+    "brainstem": {
+     "n_subjects": 30,
+     "mean_snr": 1.1075198049392327,
+     "p": 0.009900990099009901,
+     "frac_subjects_sig": 0.0,
+     "pass": true
+    },
+    "validation_tier": "brainstem",
+    "tiers_run": [
+     "low",
+     "mlr",
+     "brainstem"
+    ]
+   },
+   "subjects": [
+    {
+     "subject": 31,
+     "r": 0.01121,
+     "p_circ": 0.11764705882352941,
+     "p_mismatch": 0.47619047619047616,
+     "segment_offsets_s": [
+      0.0148,
+      -0.0295,
+      -0.0002,
+      0.0134,
+      null,
+      0.4507
+     ]
+    },
+    {
+     "subject": 32,
+     "r": 0.02648,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.0218,
+      0.0123,
+      -0.0011,
+      -0.0053,
+      -0.0079,
+      -0.0076
+     ]
+    },
+    {
+     "subject": 33,
+     "r": 0.03377,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.0112,
+      0.0047,
+      0.0084,
+      -0.0024,
+      0.0097,
+      -0.0165
+     ]
+    },
+    {
+     "subject": 34,
+     "r": 0.04118,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.0197,
+      -0.0074,
+      -0.0082,
+      0.0046,
+      -0.0081,
+      0.0055
+     ]
+    },
+    {
+     "subject": 35,
+     "r": 0.02756,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      -0.0029,
+      0.0178,
+      0.0609,
+      0.0158,
+      0.0048,
+      -0.0079
+     ]
+    },
+    {
+     "subject": 36,
+     "r": 0.0354,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      -0.0026,
+      -0.0134,
+      0.028,
+      -0.0143,
+      -0.0111,
+      0.0026
+     ]
+    },
+    {
+     "subject": 37,
+     "r": 0.00199,
+     "p_circ": 0.45098039215686275,
+     "p_mismatch": 0.5714285714285714,
+     "segment_offsets_s": [
+      -0.4781,
+      -0.1705,
+      0.0316,
+      null,
+      0.1205,
+      -0.0191
+     ]
+    },
+    {
+     "subject": 38,
+     "r": 0.01237,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      null,
+      0.0098,
+      -0.0044,
+      0.0007,
+      -0.0144,
+      0.0107
+     ]
+    },
+    {
+     "subject": 39,
+     "r": 0.02044,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.0164,
+      0.0299,
+      -0.0035,
+      -0.02,
+      -0.0037,
+      -0.0034
+     ]
+    },
+    {
+     "subject": 40,
+     "r": 0.00184,
+     "p_circ": 0.19607843137254902,
+     "p_mismatch": 0.5238095238095238,
+     "segment_offsets_s": [
+      0.4747,
+      -0.0095,
+      null,
+      -0.4839,
+      null,
+      -0.028
+     ]
+    },
+    {
+     "subject": 41,
+     "r": 0.02605,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.0103,
+      -0.0048,
+      0.011,
+      -0.0009,
+      -0.0063,
+      -0.006
+     ]
+    },
+    {
+     "subject": 42,
+     "r": 0.02352,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.0217,
+      0.0074,
+      0.0023,
+      -0.0013,
+      -0.0171,
+      -0.0034
+     ]
+    },
+    {
+     "subject": 43,
+     "r": 0.01667,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      -0.0352,
+      -0.0337,
+      -0.014,
+      -0.0228,
+      -0.01,
+      0.0363
+     ]
+    },
+    {
+     "subject": 44,
+     "r": 0.01579,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.0306,
+      -0.0038,
+      0.0044,
+      -0.0098,
+      -0.0038,
+      0.0013
+     ]
+    },
+    {
+     "subject": 45,
+     "r": 0.02513,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.0389,
+      0.0041,
+      0.0254,
+      -0.0103,
+      -0.0044,
+      -0.0225
+     ]
+    },
+    {
+     "subject": 46,
+     "r": 0.02201,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.0294,
+      0.0283,
+      -0.0129,
+      -0.0049,
+      -0.0144,
+      0.0013
+     ]
+    },
+    {
+     "subject": 47,
+     "r": 0.04931,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.0439,
+      0.0012,
+      0.0151,
+      -0.0052,
+      -0.0075,
+      -0.0365
+     ]
+    },
+    {
+     "subject": 48,
+     "r": 0.02422,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.0036,
+      -0.0032,
+      0.0069,
+      0.0096,
+      0.0032,
+      -0.0174
+     ]
+    },
+    {
+     "subject": 49,
+     "r": 0.02777,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.0363,
+      0.0035,
+      -0.0235,
+      0.056,
+      0.0159,
+      -0.022
+     ]
+    },
+    {
+     "subject": 50,
+     "r": 0.03023,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.0314,
+      0.0439,
+      -0.0102,
+      -0.0258,
+      -0.0249,
+      0.0065
+     ]
+    },
+    {
+     "subject": 51,
+     "r": 0.03352,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.026,
+      0.0083,
+      0.0024,
+      -0.0118,
+      -0.0059,
+      -0.0063
+     ]
+    },
+    {
+     "subject": 52,
+     "r": 0.02248,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.1414,
+      0.1297,
+      0.0024,
+      -0.0492,
+      -0.0041,
+      -0.0166
+     ]
+    },
+    {
+     "subject": 53,
+     "r": 0.02412,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.0588,
+      0.0028,
+      0.0131,
+      -0.0142,
+      -0.1591,
+      -0.0064
+     ]
+    },
+    {
+     "subject": 54,
+     "r": 0.0205,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      -0.0032,
+      0.0016
+     ]
+    },
+    {
+     "subject": 55,
+     "r": 0.02804,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.0108,
+      0.0175,
+      0.0148,
+      0.0003,
+      -0.0177,
+      -0.0265
+     ]
+    },
+    {
+     "subject": 56,
+     "r": 0.03268,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.0082,
+      0.0119,
+      0.0017,
+      0.0109,
+      -0.0233,
+      -0.0079
+     ]
+    },
+    {
+     "subject": 57,
+     "r": 0.022,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.036,
+      -0.0123,
+      -0.004,
+      -0.0123,
+      0.0055,
+      -0.016
+     ]
+    },
+    {
+     "subject": 58,
+     "r": 0.01519,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.1359,
+      -0.0252,
+      0.0031,
+      -0.0016,
+      null,
+      -0.0102
+     ]
+    },
+    {
+     "subject": 59,
+     "r": 0.01486,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.0398,
+      0.0332,
+      0.0301,
+      -0.0292,
+      -0.0327,
+      -0.0188
+     ]
+    },
+    {
+     "subject": 60,
+     "r": 0.02267,
+     "p_circ": 0.0196078431372549,
+     "p_mismatch": 0.047619047619047616,
+     "segment_offsets_s": [
+      0.0152,
+      0.0016,
+      0.0151,
+      -0.0049,
+      0.0099,
+      -0.017
+     ]
+    }
+   ]
+  },
   "as_shipped": {
    "config": {
     "picks": "mag",
