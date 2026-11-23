@@ -353,6 +353,41 @@ strong; else the listener median (fallback for weak chapters).
    fallback timing (recommended) or exclude.
 5. Missing EEG: sub-05 LP 14 and LP 27, sub-06 GD 4 (no file / 1 ROWS): record as absent.
 
+### 6c. Timing proposal v2: z >= 2 (user review, 2026-11-23; nothing applied)
+The user judged several trial-level peaks below z 5 convincing and asked for z >= 2, consistency checks, and an
+extended search for the rest. Scripts `reclassify_z2.py`, `ext_scan.py`, `timing_v2.py`; outputs
+`tmp/review/chen2026/timing_table_v2.csv` (v1 columns + `rule`, `latency_se_ms`, `listener_median_ms`, `v1_latency_s`,
+`v1_source`), `timing_v2_overview.png`, `align/z2/sub-XX_passes.png`, `align/z2/sub-XX_ext_curves.png`,
+`align/z2/reclass.csv`, `align/z2/ext_results.csv`.
+- **z >= 2 on the decoder (0-4 s scan)**: 216 of 281 chapters pass (v1: 157), 59 newly admitted. Replication across
+  odd/even 30-s halves: both halves within 50 ms of the full estimate in 31 of the 59 new (151 of 157 old), one half in
+  26, neither in 2. Where one half disagrees, that half usually has no peak near the full estimate at all (half the
+  data of a weak chapter), not a competing peak.
+- **What the SE <= 25 ms check adds**: it removes 10 z >= 2 passes, of which only 2 replicate across halves, and 4 of the
+  5 inconsistent ones. Kept. With it, the 49 new passes split 29 both halves / 20 one half / 0 neither.
+- **Consistency**: per listener, median and robust SD (1.4826 MAD, 14-61 ms) over the z >= 2 passes; peak ratio =
+  second-highest local maximum (outside +-150 ms) / main peak, clean < 0.75. Inconsistent (> 3 robust SD and not
+  clean): sub-01 GD 6 (1012 ms, SE 648), sub-02 LP 16 (3753), sub-02 LP 21 (793, SE 1439), sub-06 LP 17 (2026,
+  SE 1754), sub-07 GD 4 (2662, SE 2741); all but sub-02 LP 16 are also removed by the SE check. Edge artefact: sub-02
+  LP 18 at -18 ms (peak at the scan boundary). Beyond 3 robust SD but clean (kept): the v1 late outliers plus newly
+  sub-02 LP 4 (864 ms), sub-03 LP 4 (976 ms, halves 994/944), sub-04 LP 8 (612), sub-05 LP 11 (567), sub-06 LP 15 (590).
+- Note: z near 2 is at the level of null-sampling noise. The same chapter can cross 2 with another draw of the 10
+  mismatched envelopes, e.g. sub-01 LP 6 at 1.4 in the 0-4 s scan and 3.1 in the extended one, same latency.
+- **Extended search** (-1..+8 s; decoder and DNN, 5-10 mismatched nulls) for the 77 chapters failing the decoder rule
+  (z < 2: 65, SE > 25: 10, inconsistent 1, edge 1; sub-02 has 28 of them). Accept if z >= 2, SE <= 25 (decoder) / 40 ms (DNN),
+  not at the range edge, latency >= 0, and consistent. **No extended-range peak was found**: the 11 peaks with z >= 2
+  outside the 0-4 s window are either at negative latency (-0.8..-0.9 s, i.e. before the playback request; all in short
+  LP chapters with multi-peak curves, e.g. sub-04 LP 23 DNN z 15.8, peak ratio 0.95), or at +4.8..+6.5 s with SEs of
+  2-5 s. Accepted inside the original window: 3 decoder rescans (sub-01 LP 6 575 ms, sub-04 LP 12 518, sub-08 LP 20 500)
+  and 9 DNN peaks (DNN - listener offset; offsets as before, else the pooled -8 ms; sub-02 GD 2, GD 3, LP 12, 14,
+  16, 17, 21, sub-06 LP 27, sub-07 LP 20; 451-754 ms).
+- **Counts per listener** (decoder z >= 5 / decoder z >= 2 / rescan decoder / DNN z >= 2 / listener median):
+  01 32/2/1/0/1, 02 5/3/0/7/21, 03 18/6/0/0/12, 04 20/9/1/0/6, 05 26/4/0/0/3, 06 15/10/0/1/8, 07 22/8/0/1/4,
+  08 19/5/1/0/10; total 157/47/3/9/65 (v1: 157 decoder / 6 DNN / 118 median).
+- Effect: only 3 chapters move by > 100 ms against v1 (sub-02 LP 4 581 -> 864 ms, sub-02 LP 12 581 -> 754, sub-03
+  LP 4 545 -> 976); the other new admissions are within tens of ms of the listener median. Listener medians now over
+  the z >= 2 passes (e.g. sub-01 506 ms, sub-02 583 ms). Option B is recomputed the same way (`latency_optionB_s`).
+
 ## 7. Cross-subject duration check
 - Trigger-derived duration: the ROWS/ROWE span equals the json span to within the 3 ms jitter in every chapter (|d| <=
   6 ppm for chapters > 2 min). End-of-audio markers do not exist in PL. Because the triggers and their timestamps share
