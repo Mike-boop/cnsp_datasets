@@ -288,6 +288,12 @@
       "description": "Herrmann (2025) dataset",
       "url": "https://osf.io/p8nxq/"
     },
+    "chen2023": {
+      "source": "gitlab_lfs",
+      "identifiers": ["data.anc.plus.ac.at/bids-datasets/auditory/yc_audiobook_vocoding@0a5a02a22a3c41e2eba6fff3e2a25fdc1ddda6bf"],
+      "description": "Chen et al. (2023, NeuroImage) MEG (TRIUX, MaxFiltered), audiobook at six noise-vocoding levels, 24 participants; ANC BIDS (GitLab LFS), DOI 10.60817/v2fd-cq35, pinned to commit 0a5a02a2 (2026-10-21)",
+      "url": "https://bids-datasets.data-pages.anc.plus.ac.at/auditory/yc_audiobook_vocoding/"
+    },
     "chen2026": {
       "source": "scidb",
       "identifiers": ["chen2026/scidb_files.json"],

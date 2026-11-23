@@ -10,6 +10,7 @@ import tarfile
 import requests
 import httpx
 
+from fnmatch import fnmatch
 from pathlib import Path
 from urllib.parse import quote, urlparse
 
@@ -615,3 +616,53 @@ def listing_to_downloadables_scidb(listing):
     files = json.loads(path.read_text(encoding="utf-8"))["files"]
     return [{"name": f["path"], "url": f["download_url"], "size": f["size_bytes"], "checksum": f"md5:{f['md5']}"}
             for f in files]
+
+
+def id_to_downloadables_gitlab_lfs(project):
+    """
+    Files of a public GitLab repository whose data are in Git LFS, given as "<host>/<group>/.../<project>", e.g.
+    "data.anc.plus.ac.at/bids-datasets/auditory/yc_audiobook_vocoding" ("<project>@<ref>" pins a branch, tag or
+    commit; default: the default branch).
+
+    LFS files (matched by the repository's .gitattributes) carry the sha256 and size from their pointer files;
+    small git-tracked files get none. Files are served by the raw-file API, which resolves LFS objects.
+    """
+    project, _, ref = project.partition("@")
+    host, path = project.split("/", 1)
+    api = f"https://{host}/api/v4/projects/{quote(path, safe='')}"
+    session = requests.Session()
+
+    def get(url):
+        response = session.get(url, timeout=60)
+        if response.status_code != 200:
+            raise Exception(f"Failed to list GitLab project {project}: {response.status_code} for {url}")
+        return response
+
+    ref = ref or get(api).json()["default_branch"]
+    raw = f"{api}/repository/files/{{}}/raw?ref={quote(ref)}"
+    blobs, url = [], f"{api}/repository/tree?recursive=true&per_page=100&ref={quote(ref)}"
+    while url:  # the tree listing is paginated through Link headers
+        response = get(url)
+        blobs += [e for e in response.json() if e["type"] == "blob"]
+        url = response.links.get("next", {}).get("url")
+
+    attributes = session.get(raw.format(".gitattributes"), timeout=60)
+    lfs_patterns = [line.split()[0] for line in (attributes.text if attributes.status_code == 200 else "").splitlines()
+                    if "filter=lfs" in line]
+
+    def is_lfs(file_path):
+        # a gitattributes pattern without a slash matches the basename, with one the path from the root
+        return any(fnmatch(file_path if "/" in pat else file_path.rsplit("/", 1)[-1], pat.lstrip("/"))
+                   for pat in lfs_patterns)
+
+    files = []
+    for blob in blobs:
+        entry = {"name": blob["path"], "url": raw.format(quote(blob["path"], safe="")) + "&lfs=true",
+                 "checksum": None}
+        if is_lfs(blob["path"]):
+            pointer = get(f"{api}/repository/blobs/{blob['id']}/raw").text
+            if pointer.startswith("version https://git-lfs"):
+                fields = dict(line.split(" ", 1) for line in pointer.strip().splitlines())
+                entry.update(size=int(fields["size"]), checksum=fields["oid"])
+        files.append(entry)
+    return files

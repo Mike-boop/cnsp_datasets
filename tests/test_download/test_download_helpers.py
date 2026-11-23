@@ -367,3 +367,29 @@ class TestEprints:
 
         assert files == [{"name": "a.bdf", "url": "https://e/id/file/1", "size": 12, "checksum": "md5:abc"}]
         assert "/cgi/export/eprint/438737/JSON/" in mock_get.call_args.args[0]
+
+
+class TestGitlabLfs:
+    @patch("cnsp_datasets.download.download_helpers.requests.Session")
+    def test_lfs_pointers_give_size_and_sha256(self, mock_session):
+        api = "https://lab.org/api/v4/projects/grp%2Fproj"
+        tree = [{"type": "tree", "path": "sub-01", "id": "t"},
+                {"type": "blob", "path": "README.md", "id": "b1"},
+                {"type": "blob", "path": "sub-01/a_meg.fif", "id": "b2"}]
+        responses = {
+            f"{api}/repository/tree?recursive=true&per_page=100&ref=v1": MagicMock(
+                status_code=200, json=MagicMock(return_value=tree), links={}),
+            f"{api}/repository/files/.gitattributes/raw?ref=v1": MagicMock(
+                status_code=200, text="*.fif filter=lfs diff=lfs merge=lfs -text\n"),
+            f"{api}/repository/blobs/b2/raw": MagicMock(
+                status_code=200, text="version https://git-lfs.github.com/spec/v1\noid sha256:abc\nsize 42\n"),
+        }
+        mock_session.return_value.get.side_effect = lambda url, timeout: responses[url]
+
+        files = download_helpers.id_to_downloadables_gitlab_lfs("lab.org/grp/proj@v1")
+
+        assert files == [
+            {"name": "README.md", "url": f"{api}/repository/files/README.md/raw?ref=v1&lfs=true", "checksum": None},
+            {"name": "sub-01/a_meg.fif", "url": f"{api}/repository/files/sub-01%2Fa_meg.fif/raw?ref=v1&lfs=true",
+             "checksum": "sha256:abc", "size": 42},
+        ]

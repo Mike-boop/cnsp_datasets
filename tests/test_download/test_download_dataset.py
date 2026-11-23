@@ -96,6 +96,7 @@ class TestResolveDownloadables:
             "deepblue": "cnsp_datasets.download.download_helpers.id_to_downloadables_deepblue",
             "drum": "cnsp_datasets.download.download_helpers.id_to_downloadables_drum",
             "eprints": "cnsp_datasets.download.download_helpers.id_to_downloadables_eprints",
+            "gitlab_lfs": "cnsp_datasets.download.download_helpers.id_to_downloadables_gitlab_lfs",
         }
         dummy_file = [{"url": "http://x.com/f", "name": "f.mat", "checksum": None}]
 

@@ -13,6 +13,7 @@ SOURCE_MAX_WORKERS = {
     "zenodo": 3,  # promised to the Zenodo moderators (2026-11-21); see PLAN.md section 7
     "drum": 2,
     "eprints": 1,
+    "gitlab_lfs": 3,  # self-hosted lab servers
 }
 SOURCE_READ_TIMEOUT = {"scidb": 300}  # seconds; Science Data Bank often takes > 15 s to start or resume a stream
 
@@ -71,6 +72,9 @@ class Dataset:
             return _gather(getter, self.identifiers)
         if self.source == "radboud_rdr":
             getter = download_helpers.id_to_downloadables_radboud_rdr
+            return _gather(getter, self.identifiers)
+        if self.source == "gitlab_lfs":
+            getter = download_helpers.id_to_downloadables_gitlab_lfs
             return _gather(getter, self.identifiers)
 
         raise ValueError(f"[{self.key}] Unknown source '{self.source}'")
