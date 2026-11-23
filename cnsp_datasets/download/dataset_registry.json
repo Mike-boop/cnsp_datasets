@@ -400,6 +400,12 @@
       ],
       "description": "Calderon-De-Palma et al. (2023, Interspeech) EEG (BioSemi 64 ch, CND), audiobook with spectral/temporal modulation degradations, 13 participants",
       "url": "https://osf.io/gx6rm/"
+    },
+    "winchester2026": {
+      "source": "osf",
+      "identifiers": ["bjdh6"],
+      "description": "Winchester et al. (2026, eLife RP108767) EEG (mBrainTrain Smarting, CND), 31 listeners, 32 MIDI-synthesised two-voice piano pieces (original, inverted, monophonic voices); stimuli shipped only as 125 Hz features (Hilbert envelopes, onsets, pitch), no wavs",
+      "url": "https://osf.io/bjdh6/"
     }
   }
 }
