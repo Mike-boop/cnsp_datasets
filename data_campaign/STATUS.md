@@ -42,7 +42,7 @@ Last updated: 2026-11-23.
 | levy2024 | levy2024 | dev | low | deleted | |
 | brodbeck2022 | brodbeck2022 | dev | low (mlr population only) | deleted | no audio (copyright) |
 | vanheusden2020 | vanheusden2020 | dev | mlr | deleted; user's manual download kept | |
-| presacco2016 | presacco2016 | dev | brainstem (30-250 Hz; mlr fails) | 171 GB in tmp (zips + extracted + pilot) | MEG only; pilot 20 subj; licence not stated; drift -37 ppm documented; full run pending storage |
+| presacco2016 | presacco2016 | dev | brainstem (30-250 Hz; mlr fails) | extracted MEG + pilot in tmp (MEG zips deleted); vault backup verified 2026-11-23 | MEG only; pilot 20 subj; licence not stated; drift -37 ppm documented; full run pending storage |
 | karunathilake2023 | karunathilake2023 | dev | brainstem (clear speech; vocoded low only) | 203 GB in tmp (zips + extracted + pilot) | pilot 16/39; separate study from _aging; subject = R-number mod 1000; full run pending storage |
 | karunathilake2025 | karunathilake2025 | dev | brainstem (pooled, 3 subj; noise condition low only) | 59 GB in tmp (zip + 3 extracted + pilot) | pilot 3/30; full run (~35 GB) pending storage |
 
