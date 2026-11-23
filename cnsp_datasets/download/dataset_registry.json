@@ -366,6 +366,12 @@
       "description": "Deoisres (2023) EEG (BioSemi 32 ch), continuous speech and speech-modulated noise in quiet and at 5 SNRs",
       "url": "https://eprints.soton.ac.uk/id/eprint/476402/",
       "exclude": ["SIN_EEG_Da.rar"]
+    },
+    "piazza2025": {
+      "source": "osf",
+      "identifiers": ["ba3p4"],
+      "description": "Piazza et al. (2025) EEG (64 ch, CND, preprocessed 1-8 Hz at 100 Hz; L2 learners BrainVision, native listeners BioSemi), stories in three speech registers in babble",
+      "url": "https://osf.io/ba3p4/"
     }
   }
 }
