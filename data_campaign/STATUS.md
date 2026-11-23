@@ -61,6 +61,7 @@ schuller2022full (internal).
 |---|---|---|---|---|
 | chen2026 | chen2026 | dev (notes only, no adaptor) | downloaded (49 GB) + NHR vault backup verified (md5 13/13 local, 178/178 sizes on vault); 281 chapters trigger-verified (24.8 h; sub-05 LP 14/27, sub-06 GD 4 absent) | user decisions on per-chapter latency (option B proposed) and +16 ppm drift; then adaptor reading `timing_table_proposal.csv` |
 | hassan2026 | hassan2026 | dev (registry + notes, 1273cb2) | blocked: HF repo gated (auto-approve), no token; 5.15 GB without video | user accepts terms + adds HF token (`hf`) to secrets.json; then download, explore, adaptor |
+| diliberto2020 | diliberto2020 | dev (registry c75d67f) | blocked: Dryad token expired (401); 6.0 GB, CC0; 64 Hz envelope + MIDI, no audio | user: fresh Dryad token or client id/secret in secrets.json; then `R/scripts/diliberto2020_download.sh` |
 
 ## Open items across datasets
 - **Push `dev`**: many commits are ahead of `origin/dev`; needs the user's approval.
