@@ -64,7 +64,7 @@ schuller2022full (internal).
 ## In progress
 | repo name | sheet id | branch | state | next |
 |---|---|---|---|---|
-| hassan2026 | hassan2026 | dev (registry + notes, 1273cb2) | blocked: HF repo gated (auto-approve), no token; 5.15 GB without video | user accepts terms + adds HF token (`hf`) to secrets.json; then download, explore, adaptor |
+| hassan2026 | hassan2026 | dev (adaptor e24fecd, not run) | downloaded 5.15 GB, verified; EEG in volts; ~0.8 s latency after the playback timestamp (lag sweep, all 16 subj; documented); per-device timestamps not acoustic | user: allow pyarrow + soundfile in the venv; decide the 0.8 s offset; then pilot + validation |
 | peng2026 | peng2026 | dev (registry fe3393d) | Zenodo 403 (unusual traffic) at 21:09 on 2026-11-23; not downloaded; 21.6 GB single zip; sub-01..09 E-Prime trigger bug (authors re-aligned) | user: Zenodo support?; then download |
 | zhang2025 | zhang2025 | dev (registry fe3393d) | Zenodo 403; not downloaded; file list unverified (may need an exclude) | after peng2026 |
 
