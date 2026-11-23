@@ -204,6 +204,14 @@
       "description": "Straetmans et al. (2021) mobile EEG (walking vs sitting), two competing speakers, attend one; 20 participants",
       "url": "https://openneuro.org/datasets/ds003801/versions/1.0.0"
     },
+    "li2025": {
+      "source": "openneuro",
+      "identifiers": ["10.18112/openneuro.ds005346.v1.0.5"],
+      "description": "Li et al. (2025, Sci Data) BABA: OPM-MEG (Quanmag, 64 ch) while watching a 25 min Chinese TV show with sound; 30 participants (the fMRI half is not downloaded)",
+      "url": "https://openneuro.org/datasets/ds005346/versions/1.0.5",
+      "include": ["*.json", "*.tsv", "README", "CHANGES", "sourcedata/*", "sub-*/meg/*"],
+      "exclude": ["derivatives/*", "sub-*/func/*", "sub-*/anat/*"]
+    },
     "schueller2024": {
       "source": "zenodo",
       "identifiers": ["10.5281/zenodo.12793944", "10.5281/zenodo.12794769", "10.5281/zenodo.12794808"],
