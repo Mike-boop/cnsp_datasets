@@ -383,6 +383,12 @@
       "description": "Brodbeck, Hong & Simon (2018, Curr Biol) MEG (KIT), two-talker cocktail party, attend one talker; 26 participants",
       "url": "https://drum.lib.umd.edu/items/6ce1b090-3446-46d8-9582-f689afcd23de"
     },
+    "kulasingham2021": {
+      "source": "drum",
+      "identifiers": ["93067450-51d7-43c6-bb8f-53d4195db334"],
+      "description": "Kulasingham et al. (2021, J Neurosci) MEG (KIT), 22 participants, two-talker mixtures of isochronous spoken sentences and arithmetic equations, attend one stream",
+      "url": "https://drum.lib.umd.edu/items/93067450-51d7-43c6-bb8f-53d4195db334"
+    },
     "presacco2016": {
       "source": "drum",
       "identifiers": ["79afc7aa-560d-442d-b201-ab63e7f1e69f"],
