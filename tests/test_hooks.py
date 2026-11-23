@@ -55,6 +55,8 @@ def test_zenodo_flag(tmp_path, monkeypatch):
         assert e.value.code == 2
     command_guard.check("python -c \"download_dataset('hassan2026', '/x')\"")  # not a Zenodo dataset
     command_guard.check("cat /home/x/peng2026/notes.md")  # no download
+    command_guard.check("git commit -m 'PLAN: Zenodo blocks; see https://zenodo.org/records/1'")  # text only
+    command_guard.check("cat >> PLAN.md <<'EOF'\nzenodo.org download notes for peng2026\nEOF")  # doc edit
 
 
 def test_storage_limit_override(tmp_path, monkeypatch):

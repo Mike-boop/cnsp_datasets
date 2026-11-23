@@ -43,6 +43,20 @@ def zenodo_datasets():
     return names
 
 
+NET_CMD = re.compile(CMD_START + r"(?:curl|wget|http|aria2c|lftp)\b", re.M)
+NET_PY = re.compile(r"\b(?:requests\.|urlopen|urllib|httpx|download_dataset|download_retry|DataDownloader)\b")
+
+
+def contacts_zenodo(cmd):
+    """A network tool aimed at zenodo.org, or a downloader run on a Zenodo-registered dataset.
+
+    Text that only mentions Zenodo (commit messages, echo, doc edits) is allowed."""
+    low = cmd.lower()
+    if "zenodo.org" in low and (NET_CMD.search(cmd) or NET_PY.search(cmd)):
+        return True
+    return bool(NET_PY.search(cmd)) and any(re.search(r"\b{}\b".format(re.escape(n)), cmd) for n in zenodo_datasets())
+
+
 def check(cmd):
     if KILL.search(cmd):
         block("Blocked: `pkill -f`/`pgrep -f` can match this tool's own shell. Find the PID with "
@@ -50,11 +64,7 @@ def check(cmd):
     if GIT_ADD_ALL.search(cmd):
         block("Blocked: `git add -A`/`--all`/`.` stages other agents' work and .venv. Stage explicit paths "
               "(`git add -- <paths>`).")
-    if os.path.exists(ZENODO_FLAG):
-        low = cmd.lower()
-        hits = "zenodo.org" in low or ("download" in low and any(
-            re.search(r"\b{}\b".format(re.escape(n)), cmd) for n in zenodo_datasets()))
-        if hits:
+    if os.path.exists(ZENODO_FLAG) and contacts_zenodo(cmd):
             block(f"Blocked: Zenodo has blocked this server ({ZENODO_FLAG}). Never work around a block; ask the "
                   "user, and delete the flag only after access has been checked by hand.")
 
