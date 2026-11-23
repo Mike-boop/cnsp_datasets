@@ -6,12 +6,11 @@ import re
 from functools import lru_cache
 from typing import Iterable
 
-import mne
 import numpy as np
 import pandas as pd
 
 from cnsp_datasets.datasets.brodbeck2022 import ndvar
-from cnsp_datasets.standardise.clock import crop_on_audio_clock
+from cnsp_datasets.datasets.simon_base.common import crop_meg, read_raw
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -91,19 +90,10 @@ class Brodbeck2022Adaptor:
 
     def _meg_loader(self, stem: str, onset: float, stim: str, description: str):
         def _loader():
-            raw = _read(f"{stem}_split-01_meg.fif")  # bads as in channels.tsv (notes.md section 5)
-            picks = mne.pick_types(raw.info, meg=True, ref_meg=True, exclude=[])
-            out = crop_on_audio_clock(raw, onset * FS, _duration(self._path(stim, ".TextGrid")), picks=picks)
-            out.info["description"] = description
-            return out
+            raw = read_raw(f"{stem}_split-01_meg.fif", FS)  # opening split-01 joins split-02; bads as in channels.tsv
+            return crop_meg(raw, onset * FS, _duration(self._path(stim, ".TextGrid")), description)
 
         return _loader
-
-
-@lru_cache(maxsize=1)
-def _read(path: str) -> mne.io.BaseRaw:
-    """Continuous recording (opening split-01 joins split-02)."""
-    return mne.io.read_raw_fif(path, preload=False, verbose="ERROR")
 
 
 @lru_cache(maxsize=1)

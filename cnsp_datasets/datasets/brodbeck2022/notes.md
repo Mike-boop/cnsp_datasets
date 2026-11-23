@@ -2,6 +2,7 @@
 
 Explorer notes (2026-11-22). Review scripts: `tmp/review/brodbeck2022/scripts/`, results
 `tmp/review/brodbeck2022/results/` (both deleted when the dataset is done; numbers that matter are copied here).
+Shared code with the lab's other KIT datasets in `datasets/simon_base/common.py` (2026-11-23; output unchanged).
 
 ## 1. Source
 - OpenNeuro ds007870 v1.3.4 "Appleseed Audiobook MEG", doi:10.18112/openneuro.ds007870.v1.3.4, BIDS 1.7.0,
