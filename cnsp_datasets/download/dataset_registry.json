@@ -327,6 +327,20 @@
       "description": "Levy et al. (2024) EEG, 49 participants, continuous speech (per-participant .mat files)",
       "url": "https://osf.io/svjqg/"
     },
+    "karunathilake2023": {
+      "source": "dryad",
+      "identifiers": ["10.5061/dryad.sbcc2frd6"],
+      "description": "Karunathilake et al. (2023, PNAS) MEG (KIT), clear vs noise-vocoded audiobook passages (PRE/CLEAN/POST), main + control study; raw MEG. MRI and authors' TRFs skipped (Dryad needs DRYAD_TOKEN)",
+      "url": "https://datadryad.org/dataset/doi:10.5061/dryad.sbcc2frd6",
+      "exclude": ["mri.zip", "TRFs.zip"]
+    },
+    "karunathilake2025": {
+      "source": "dryad",
+      "identifiers": ["10.5061/dryad.ht76hdrpf"],
+      "description": "Karunathilake et al. (2025, J Neurosci) MEG (KIT), TTS passages: narrative, scrambled words, nonwords, speech-modulated noise; raw MEG. Authors' TRFs skipped (Dryad needs DRYAD_TOKEN)",
+      "url": "https://datadryad.org/dataset/doi:10.5061/dryad.ht76hdrpf",
+      "exclude": ["trfs.zip"]
+    },
     "karunathilake2023_aging": {
       "source": "drum",
       "identifiers": ["91b2c409-8659-40fe-87dd-b701599b4841"],
