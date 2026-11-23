@@ -18,6 +18,7 @@ from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 FS = 1000
 AUDIO_FS = 44100
 N_EPOCH = 60000      # samples per shipped epoch (60 s)
+N_REP, N_CH = 3, 192  # repetitions per file, channels per file
 ONSET = 1            # onset-trigger edge: epoch index 1 (notes.md section 6)
 N_MEG, N_REF = 157, 3
 UNIT = 1e-15         # shipped values are fT (notes.md section 5)
@@ -62,8 +63,7 @@ class Presacco2016Adaptor:
         self.download_dir = download_dir
 
     def parse(self) -> Iterable[TrialRecord]:
-        stim_dir = _one(os.path.join(self.download_dir, "**", "High Context"))
-        stim_dir = os.path.dirname(stim_dir)
+        stim_dir = os.path.dirname(_one(os.path.join(self.download_dir, "**", "High Context")))
         for sdir in sorted(glob.glob(os.path.join(self.download_dir, "**", "S[0-9][0-9]_*_MEG"), recursive=True)):
             name = os.path.basename(sdir)
             m = re.fullmatch(r"S(\d\d)_(.+)_MEG", name)
@@ -71,7 +71,8 @@ class Presacco2016Adaptor:
             subject = int(m.group(1)) + offset
             for i, (tag, (cond, fg, bg, snr, line)) in enumerate(CONDITIONS.items()):
                 mat = _find_mat(sdir, tag)
-                for rep in range(3):
+                stimuli = _stimuli(stim_dir, fg, bg)
+                for rep in range(N_REP):
                     description = provenance(
                         "onset_only", TRIGGER_TYPE, NOTES, participant=name,
                         age_group=age, hearing=hearing, file=os.path.basename(mat), repetition=rep + 1,
@@ -81,30 +82,32 @@ class Presacco2016Adaptor:
                         reference="not applicable (MEG)",
                         preprocessing="none (raw; online filters of the KIT system only)")
                     yield TrialRecord(
-                        subject=subject, session=1, trial=3 * i + rep + 1, condition=cond, ns_type="meg",
-                        stimulus=self._stimuli(stim_dir, fg, bg),
+                        subject=subject, session=1, trial=N_REP * i + rep + 1, condition=cond, ns_type="meg",
+                        stimulus=stimuli,
                         neural_data_fn=_meg_loader(mat, rep, line, description))
 
-    def _stimuli(self, stim_dir: str, fg: str, bg: str | None) -> list[StimulusRecord]:
-        """Foreground (attended), then the background talker (unattended) in noise."""
-        out = [StimulusRecord("audio", fg, _audio(_wav(stim_dir, fg)), is_attended=True)]
-        if bg:
-            out.append(StimulusRecord("audio", bg, _audio(_wav(stim_dir, bg)), is_attended=False))
-        return out
+def _stimuli(stim_dir: str, fg: str, bg: str | None) -> list[StimulusRecord]:
+    """Foreground (attended), then the background talker (unattended) in noise."""
+    out = [StimulusRecord("audio", fg, _audio(_wav(stim_dir, fg)), is_attended=True)]
+    if bg:
+        out.append(StimulusRecord("audio", bg, _audio(_wav(stim_dir, bg)), is_attended=False))
+    return out
 
 
 def _find_mat(sdir: str, tag: str) -> str:
     """The file of one condition. Names vary in the hearing-impaired group (S01HL_M3H, S01HL_M3_H, S01_HL_M3H,
     S04HL_M6L_II; notes.md section 2): match the tag without underscores, allowing an `II` suffix."""
     want = tag.replace("_", "")
-    hits = [p for p in glob.glob(os.path.join(sdir, "*.mat"))
-            if re.sub(r"^S\d\d_?(HL)?_", "", os.path.basename(p)[:-4]).replace("_", "") in (want, want + "II")]
+    stems = {p: os.path.splitext(os.path.basename(p))[0] for p in glob.glob(os.path.join(sdir, "*.mat"))}
+    hits = [p for p, stem in stems.items()
+            if re.sub(r"^S\d\d_?(HL)?_", "", stem).replace("_", "") in (want, want + "II")]
     if len(hits) != 1:
         raise FileNotFoundError(f"{sdir}: expected one file for {tag}, found {hits}")
     return hits[0]
 
 
 def _one(pattern: str) -> str:
+    """The single match of a recursive glob."""
     hits = glob.glob(pattern, recursive=True)
     if len(hits) != 1:
         raise FileNotFoundError(f"expected one match for {pattern}, found {hits}")
@@ -112,6 +115,7 @@ def _one(pattern: str) -> str:
 
 
 def _wav(stim_dir: str, name: str) -> str:
+    """English background and `_H` wavs are in High Context, the rest in Low Context."""
     folder = "High Context" if name.endswith("_H") or name == "English_F" else "Low Context"
     return os.path.join(stim_dir, folder, f"{name}.wav")
 
@@ -133,33 +137,36 @@ def _read(mat: str) -> tuple[np.ndarray, list[int]]:
     with h5py.File(mat, "r") as f:
         d = f["data_exported"]
         labels = ["".join(map(chr, f[r][()].ravel())) for r in d["labels"][0]]
-        if d["sampling_frequency"][()].item() != FS or labels != [str(i) for i in range(1, 193)]:
+        if d["sampling_frequency"][()].item() != FS or labels != [str(i) for i in range(1, N_CH + 1)]:
             raise ValueError(f"{mat}: unexpected rate or channel labels")
         b = d["bad_channels"]
         bads = [] if b.attrs.get("MATLAB_empty", 0) else [int(i) for i in b[()].ravel()]
+        if any(i >= N_MEG for i in bads):
+            raise ValueError(f"{mat}: listed bad channel outside the MEG sensors: {bads}")
         x = d["eeg_data_aligned"][()]
-    if x.shape != (3, 192, N_EPOCH):
+    if x.shape != (N_REP, N_CH, N_EPOCH):
         raise ValueError(f"{mat}: unexpected shape {x.shape}")
     return x, bads
 
 
 def _info() -> mne.Info:
+    """KIT-157: 157 axial gradiometers (`mag`) and 3 reference magnetometers, no positions."""
     names = [f"MEG {i:03d}" for i in range(1, N_MEG + N_REF + 1)]
     info = mne.create_info(names, FS, ["mag"] * N_MEG + ["ref_meg"] * N_REF)
     for i, ch in enumerate(info["chs"]):
         ch["coil_type"] = FIFF.FIFFV_COIL_KIT_GRAD if i < N_MEG else FIFF.FIFFV_COIL_KIT_REF_MAG
-        ch["unit"] = FIFF.FIFF_UNIT_T
     with info._unlock():
         info["line_freq"] = 60.0
     return info
 
 
 def _meg_loader(mat: str, rep: int, line: int, description: str) -> Callable[[], mne.io.BaseRaw]:
+    """Lazy loader of one repetition, from the onset-trigger edge, in T, with bads."""
     def _loader() -> mne.io.BaseRaw:
         x, listed = _read(mat)
         x = x[rep]
-        trig = x[line - 1, :10]
-        if not (trig[ONSET] < 0.5 * trig[0] and trig[ONSET - 1] > 0.5 * trig[0]):  # active-low edge at ONSET
+        hi, lo = x[line - 1, ONSET - 1:ONSET + 1]
+        if not (hi > 0 and lo < 0.5 * hi):  # active-low edge at ONSET
             raise ValueError(f"{mat} rep {rep + 1}: onset trigger edge not at sample {ONSET}")
         data = x[: N_MEG + N_REF, ONSET:] * UNIT
         raw = mne.io.RawArray(np.ascontiguousarray(data), _info(), verbose="ERROR")
