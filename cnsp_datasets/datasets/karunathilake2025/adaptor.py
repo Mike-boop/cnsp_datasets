@@ -6,8 +6,9 @@ from typing import Callable, Iterable
 
 import mne
 
-from cnsp_datasets.datasets.simon_base.common import (audio_loader, check_unique_subjects, crop_meg, find_one,
-                                                      read_raw, rms_bads, stim_events, subject_number, wav_samples)
+from cnsp_datasets.datasets.simon_base.common import (REFERENCE, audio_loader, check_unique_subjects, crop_meg,
+                                                      find_one, read_raw, rms_bads, stim_events, subject_number,
+                                                      wav_samples)
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -62,7 +63,7 @@ class Karunathilake2025Adaptor:
                 description = provenance(
                     "sw_trigger", TRIGGER_TYPE, NOTES, participant=pid, passage_type=CONDITIONS[prefix],
                     passage=int(passage), repetition=count[code], block=(trial - 1) // 8 + 1, trigger_code=code,
-                    onset_s=onset / FS, stimulus_file=f"{name}.wav")
+                    onset_s=onset / FS, stimulus_file=f"{name}.wav", units_as_shipped="T", reference=REFERENCE)
                 wav = os.path.join(stim_dir, f"{name}.wav")
                 yield TrialRecord(
                     subject=subject_number(pid), session=1, trial=trial, condition=CONDITIONS[prefix],

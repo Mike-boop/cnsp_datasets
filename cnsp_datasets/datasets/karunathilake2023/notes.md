@@ -120,7 +120,8 @@ checkpoint are in section 8.
 - Sidecar: `sw_trigger`, trigger_type as above, `drift_ppm`/`jitter_ms` null, plus `participant`, `study`,
   `passage`, `presentation`, `trigger_code`, `onset_s`, `stimulus_file`, `vocoded`, `clarity_rating` (vocoded
   trials), `q2_as_shipped`, `in_authors_pool` (exp.py `ALL`), `in_authors_main_analysis` (exp.py `good_sub2`, main
-  only).
+  only), `units_as_shipped` ("T"), `reference` ("not applicable (MEG)"); the last two as in the lab's other KIT
+  datasets (user decision, 2026-11-23).
 
 ## Upstream issues
 - README lists `predictors.zip`; it is not in the Dryad record.

@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 from cnsp_datasets.datasets.brodbeck2022 import ndvar
-from cnsp_datasets.datasets.simon_base.common import crop_meg, read_raw
+from cnsp_datasets.datasets.simon_base.common import REFERENCE, crop_meg, read_raw
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -59,7 +59,7 @@ class Brodbeck2022Adaptor:
                 description = provenance(
                     "sw_trigger", TRIGGER_TYPE, NOTES + (" " + FLAGS[sub, seg] if (sub, seg) in FLAGS else ""),
                     drift_ppm=DRIFT_PPM, jitter_ms=JITTER_MS, onset_s=float(onset), stimulus_file=stim,
-                    flagged=(sub, seg) in FLAGS)
+                    flagged=(sub, seg) in FLAGS, units_as_shipped="T", reference=REFERENCE)
                 yield TrialRecord(
                     subject=sub, session=1, trial=seg, condition="appleseed", ns_type="meg",
                     stimulus=self._stimuli(name, stim),

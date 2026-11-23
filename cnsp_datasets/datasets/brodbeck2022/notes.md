@@ -3,6 +3,8 @@
 Explorer notes (2026-11-22). Review scripts: `tmp/review/brodbeck2022/scripts/`, results
 `tmp/review/brodbeck2022/results/` (both deleted when the dataset is done; numbers that matter are copied here).
 Shared code with the lab's other KIT datasets in `datasets/simon_base/common.py` (2026-11-23; output unchanged).
+Sidecar fields `units_as_shipped` ("T") and `reference` ("not applicable (MEG)") on every trial, as in the
+lab's other KIT datasets (user decision, 2026-11-23).
 
 ## 1. Source
 - OpenNeuro ds007870 v1.3.4 "Appleseed Audiobook MEG", doi:10.18112/openneuro.ds007870.v1.3.4, BIDS 1.7.0,
@@ -95,8 +97,9 @@ Shared code with the lab's other KIT datasets in `datasets/simon_base/common.py`
   `highpass 0`, `lowpass 200`); recording ~57-60 min per subject (3446-3627 s).
 - Channels (all subjects identical, 193): `MEG 001-157` axial gradiometers (MNE `mag`, coil
   `FIFFV_COIL_KIT_GRAD`, unit T, cal 1; values ~1e-12 T), `MEG 158-160` reference magnetometers (`ref_meg`,
-  `KIT_REF_MAG`), `MISC 001-032` (V), `STI 014` (synthesised trigger channel). Units as shipped: T and V.
-  No EEG/EOG/ECG. No software compensation applied (`comps` empty, `GradientOrder 0`), no projectors.
+  `KIT_REF_MAG`), `MISC 001-032` (V), `STI 014` (synthesised trigger channel). Units as shipped: T and V
+  (output: T only; MISC dropped). No EEG/EOG/ECG. No software compensation applied (`comps` empty,
+  `GradientOrder 0`), no projectors.
 - MISC content (sub-01, full recording, `misc_scan.py`, `misc_rms.py`): MISC 003 and MISC 008 are 0/5 V trigger
   lines (pulses of 5 ms); MISC 002, 004-007, 009-029 are constant 5.0 V (idle lines; MISC 004 is the Tone line,
   code 163); MISC 001, 030, 031, 032 are low-level noise (std 1.9 mV, 1.5e-4 V steps), with the same power during

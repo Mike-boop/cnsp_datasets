@@ -176,6 +176,7 @@ def test_brodbeck2022_parse_and_load(tmp_path, monkeypatch):
     np.testing.assert_array_equal(out.get_data(), src.get_data(picks=meg_picks(src.info), start=7000, stop=7250))
     meta = json.loads(out.info["description"])
     assert meta["onset_s"] == 7.0 and meta["stimulus_file"] == "6" and meta["flagged"] is False
+    assert (meta["units_as_shipped"], meta["reference"]) == ("T", "not applicable (MEG)")
     assert json.loads(records[1].neural_data_fn().info["description"])["alignment_method"] == "sw_trigger"
 
 
@@ -204,6 +205,7 @@ def test_karunathilake2025_parse_and_load(tmp_path):
     assert [(m["repetition"], m["passage"], m["block"], m["trigger_code"]) for m in meta] == [
         (1, 1, 1, 164), (2, 1, 1, 164), (1, 2, 1, 165)]
     assert meta[2]["onset_s"] == 5.0 and meta[2]["stimulus_file"] == "ASN_M02.wav"
+    assert {(m["units_as_shipped"], m["reference"]) for m in meta} == {("T", "not applicable (MEG)")}
     out = records[8].neural_data_fn()
     assert out.n_times == 100 and out.info["bads"] == ["MEG 002", "MEG 004"]
     assert json.loads(out.info["description"])["block"] == 2
@@ -253,6 +255,7 @@ def test_karunathilake2023_parse_and_load(tmp_path):
     assert (meta["passage"], meta["presentation"], meta["clarity_rating"], meta["q2_as_shipped"]) == (
         2, "clean", None, "q2")
     assert meta["in_authors_pool"] and meta["in_authors_main_analysis"] and meta["onset_s"] == 3.0
+    assert (meta["units_as_shipped"], meta["reference"]) == ("T", "not applicable (MEG)")
     assert out.n_times == 100 and out.info["bads"] == ["MEG 002"]  # flat only: no saturation rule here
     post = json.loads(by_subject[684][5].neural_data_fn().info["description"])
     assert (post["clarity_rating"], post["vocoded"]) == (21, True)

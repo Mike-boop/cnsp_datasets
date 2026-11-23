@@ -124,7 +124,9 @@ changed in the data; decisions for the human checkpoint are in "Open questions".
   channels in `info['bads']` (section 5). The adaptor checks 32 triggers = each code twice in a row.
 - Stimulus: the played wav (22,050 Hz, int16 / 32768 as float32, uncut), attended.
 - Sidecar: `sw_trigger`, trigger_type as above, `drift_ppm`/`jitter_ms` null, plus `participant`, `passage_type`,
-  `passage` (1-4), `repetition` (1-2), `block` (1-4), `trigger_code`, `onset_s`, `stimulus_file`.
+  `passage` (1-4), `repetition` (1-2), `block` (1-4), `trigger_code`, `onset_s`, `stimulus_file`,
+  `units_as_shipped` ("T"), `reference` ("not applicable (MEG)"); the last two as in the lab's other KIT datasets
+  (user decision, 2026-11-23).
 - Output size: ~1.17 GB per participant (32 trials, float32), ~35 GB for all 30.
 
 ## Data size
