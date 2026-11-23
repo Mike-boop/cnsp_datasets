@@ -55,6 +55,7 @@ Last updated: 2026-11-23.
 | li2025 | li2025 | dev | low (per-subject onset: r 0.024, TRF peak 78 ms both groups) | 18.9 GB download + 12 GB standardised in tmp | OPM-MEG; brain-based per-subject onset delays by default (onset.csv; 0.39-0.89 s; 3 fallbacks), per-group as option (user confirmed per-subject; fallbacks sub-35/37/40 accepted; sub-50/52/53 early ~150 ms lag documented) |
 | diliberto2020 | diliberto2020 | dev | mlr (all 20; 30-60 Hz 13/20; brainstem nominal only) | 12 GB download+extracted + 0.3 GB wavs + 13 GB standardised in tmp | music (Bach); wavs from the kern2022 Donders collection are the default stimulus (match the shipped envelope at lag 0, r >= 0.9995); ADC counts scaled to V |
 | kern2022 | kern2022 | dev | brainstem (pilot 4/35; 30-250 Hz 3/4 subj) | 207 GB download + 13 GB pilot in tmp | music; audio copy: onset +4.1 ms and drift +6.5 ppm on by default (user, hardware-derived; validation no worse); full run ~115 GB |
+| hassan2026 | hassan2026 | dev | low (all 16; r 0.0097 → 0.0193 with the onset correction) | download 5.15 GB + standardised 4.5 GB in tmp | alignment poor: +0.718 s DNN onset applied by default (all 6 streams; devices 1/2 within 0.5 ms; per-subject -703..-723 ms); drift +9 ppm not corrected |
 | chen2026 | chen2026 | dev | low (pilot 3/8, old per-chapter default; mlr pass is a ripple artefact) | deleted by the user (results kept; raw on the NHR vault) | onset = t0 (trigger fit) + option-B latency (listener median unless the chapter deviates > max(40 ms, 3 SE); 39/281 chapters own value; user 2026-11-23; onsets_optionB.csv); drift +16 ppm logged in drift.csv, not applied (unreliable); dev 6324961; next: full run of 8 listeners (~48 GB), sub-02 (kept), deletion |
 | kulasingham2021 | kulasingham2021 | dev | low (all 22; ceiling at 200 Hz); attended > ignored 20/22 | 4.9 GB zips + 11 GB extracted + 5 GB standardised in tmp; vault backup verified | preprocessed epochs only; R2522 block order corrected from the data (readme wrong); no licence stated |
 
@@ -64,7 +65,6 @@ schuller2022full (internal).
 ## In progress
 | repo name | sheet id | branch | state | next |
 |---|---|---|---|---|
-| hassan2026 | hassan2026 | dev (adaptor e24fecd, not run) | downloaded 5.15 GB, verified; EEG in volts; ~0.8 s latency after the playback timestamp (lag sweep, all 16 subj; documented); per-device timestamps not acoustic | user: allow pyarrow + soundfile in the venv; decide the 0.8 s offset; then pilot + validation |
 | peng2026 | peng2026 | dev (registry fe3393d) | Zenodo 403 (unusual traffic) at 21:09 on 2026-11-23; not downloaded; 21.6 GB single zip; sub-01..09 E-Prime trigger bug (authors re-aligned) | user: Zenodo support?; then download |
 | zhang2025 | zhang2025 | dev (registry fe3393d) | Zenodo 403; not downloaded; file list unverified (may need an exclude) | after peng2026 |
 
