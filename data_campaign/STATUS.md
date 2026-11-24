@@ -22,6 +22,7 @@ Last updated: 2026-11-24.
 | guilleminot2021 | guilleminot2022 | main | mlr | good | deleted | ~7 ppm, not corrected |
 | jehn2025_nh / _hi / _ci | jehn2025-nh / -ha / -ci | main | mlr / mlr / brainstem | good | deleted | drift correction optional, off; user to decide |
 | narayanan2021 | narayanan2021 | main | low | medium | deleted (vault backup) | drift correction on |
+| rotaru2026 | rotaru2026 | dev (a276a9c) | mlr (all 11; low 9/11, 30-60 Hz p 0.01, brainstem fails); attended > ignored 11/12 (p 0.0015) | good (proposed; user to confirm) | download 16 + extracted 40 + standardised 16 GB (~71 GB; delete pending; no vault backup yet) | 1-s sound-card pulse train in Status: hardware onset + drift (+6 ppm) per trial; 12 playback stalls split into runs (tmp data predates the final adaptor, <= 1 ms); CLA/psCLA feedback gains (±6 dB/s) not shipped, wavs are pre-gain (flagged per trial); 10/31 podcasts also in accou2023; DNN -9.7 ms (documented); 11 of 19 participants public |
 | schueller2024 | schuller2023 | main | brainstem (Set1) | good | user's read-only copy | Sets 2/3 wait for Zenodo |
 | varano2022 | varano2026 | main | low | medium | deleted | re-standardise after the audio-cut fix (PLAN 8) |
 | weissbart2019 | weissbart2020 | main | brainstem | good | BIDS in user's folder | BIDS re-upload pending (licence) |
