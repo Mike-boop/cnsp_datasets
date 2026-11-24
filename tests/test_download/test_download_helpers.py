@@ -3,6 +3,7 @@ import gzip
 import json
 import os
 import shutil
+import subprocess
 import tarfile
 import tempfile
 import zipfile
@@ -138,8 +139,51 @@ class TestExtractRar:
 
     def test_corrupt_archive_reports_bsdtar_error(self, tmp_path):
         (tmp_path / "bad.rar").write_bytes(b"Rar!\x1a\x07\x00garbage")
-        with pytest.raises(RuntimeError, match="bsdtar -tf"):
+        with pytest.raises(RuntimeError, match="bsdtar -t -f"):
             download_helpers.extract_archives(str(tmp_path))
+
+
+@pytest.mark.skipif(shutil.which("zip") is None or shutil.which("bsdtar") is None,
+                    reason="needs Info-ZIP zip (to build the volumes) and bsdtar")
+class TestExtractSplitZip:
+    @staticmethod
+    def _split_zip(tmp_path):
+        """A split zip (`dl/meg.z01`, `meg.z02`, ... + `meg.zip`) of incompressible files under `meg/`."""
+        src, dl = tmp_path / "src", tmp_path / "dl"
+        dl.mkdir()
+        (src / "meg").mkdir(parents=True)
+        payload = {name: os.urandom(100_000) for name in ("a-raw.fif", "b-raw.fif")}
+        for name, data in payload.items():
+            (src / "meg" / name).write_bytes(data)
+        subprocess.run(["zip", "-q", "-r", "-s", "64k", str(dl / "meg.zip"), "meg"], cwd=src, check=True)
+        volumes = sorted(p.name for p in dl.iterdir())
+        assert len(volumes) > 2 and volumes[0] == "meg.z01"
+        return dl, payload, volumes
+
+    def test_joins_and_extracts(self, tmp_path):
+        dl, payload, _ = self._split_zip(tmp_path)
+
+        download_helpers.extract_archives(str(dl))
+
+        for name, data in payload.items():
+            assert (dl / "meg" / name).read_bytes() == data
+        assert sorted(p.name for p in dl.iterdir()) == ["meg"]   # volumes removed
+
+    def test_keep_leaves_the_volumes(self, tmp_path):
+        dl, payload, volumes = self._split_zip(tmp_path)
+
+        download_helpers.extract_archives(str(dl), keep=True)
+
+        assert (dl / "meg" / "a-raw.fif").read_bytes() == payload["a-raw.fif"]
+        assert sorted(p.name for p in dl.iterdir()) == ["meg"] + volumes
+
+    def test_missing_volume_is_refused(self, tmp_path):
+        dl, _, _ = self._split_zip(tmp_path)
+        (dl / "meg.z02").unlink()
+
+        with pytest.raises(ValueError, match="not z01"):
+            download_helpers.extract_archives(str(dl))
+        assert not (dl / "meg").exists()
 
 
 def test_rar_without_bsdtar_explains(tmp_path, monkeypatch):

@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import glob
 import os
 import json
 import re
@@ -8,6 +9,7 @@ import shutil
 import subprocess
 import zipfile
 import tarfile
+import threading
 import requests
 import httpx
 
@@ -18,39 +20,84 @@ from urllib.parse import quote
 
 ## general utilities
 
-def _extract_rar(file_path, target_dir):
+def _extract_bsdtar(volumes, target_dir):
     """
-    Unpack a RAR archive into target_dir with bsdtar (libarchive; Python has no RAR reader). Downloads are untrusted:
-    the archive is refused before anything is written if an entry is absolute, contains ".." or is a (sym/hard) link.
-    Multi-volume archives (.partN.rar) are not supported.
+    Unpack an archive into target_dir with bsdtar (libarchive), for formats Python cannot read: RAR, and split zips,
+    whose `volumes` are streamed to bsdtar's stdin in order. Downloads are untrusted: the archive is refused before
+    anything is written if an entry is absolute, contains ".." or is a (sym/hard) link. A streamed zip carries no
+    Unix modes, so links in split zips are written as small regular files (never followed).
+    Multi-volume RAR archives (.partN.rar) are not supported.
     """
     bsdtar = shutil.which("bsdtar")
     if bsdtar is None:
-        raise RuntimeError(f"Cannot extract {file_path}: RAR archives need bsdtar from libarchive "
+        raise RuntimeError(f"Cannot extract {volumes[-1]}: RAR archives and split zips need bsdtar from libarchive "
                            "(e.g. `apt install libarchive-tools` or `conda install -c conda-forge libarchive`)")
+    errors = []
+
+    def feed(fd):
+        try:
+            with open(fd, 'wb') as pipe:
+                for volume in volumes:
+                    with open(volume, 'rb') as f:
+                        shutil.copyfileobj(f, pipe, 1 << 20)
+        except BrokenPipeError:  # bsdtar stopped early; its error is reported
+            pass
+        except OSError as e:
+            errors.append(e)
 
     def run(*args):
+        if len(volumes) == 1:
+            return _run_bsdtar(bsdtar, args, volumes[0])
+        read_fd, write_fd = os.pipe()
+        feeder = threading.Thread(target=feed, args=(write_fd,))
+        feeder.start()
         try:
-            return subprocess.run([bsdtar, *args], capture_output=True, text=True, check=True).stdout
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"bsdtar {' '.join(args)} failed: {e.stderr.strip()}") from e
+            return _run_bsdtar(bsdtar, args, volumes[-1], stdin=read_fd)
+        finally:
+            os.close(read_fd)
+            feeder.join()
+            if errors:
+                raise errors[0]
 
-    names, modes = run("-tf", file_path).splitlines(), run("-tvf", file_path).splitlines()
+    names, modes = run("-t").splitlines(), run("-tv").splitlines()
     for name, mode in zip(names, modes):
         path = PurePosixPath(name.replace("\\", "/"))
         if path.is_absolute() or ".." in path.parts:
-            raise ValueError(f"Refusing to extract {file_path}: entry '{name}' would land outside {target_dir}")
+            raise ValueError(f"Refusing to extract {volumes[-1]}: entry '{name}' would land outside {target_dir}")
         if mode[:1] in ("l", "h"):
-            raise ValueError(f"Refusing to extract {file_path}: entry '{name}' is a link")
-    run("-xf", file_path, "-C", target_dir)
+            raise ValueError(f"Refusing to extract {volumes[-1]}: entry '{name}' is a link")
+    run("-x", "-C", target_dir)
 
 
-def extract_archives(download_dir, recursive=False):
+def _run_bsdtar(bsdtar, args, archive, stdin=None):
+    """stdout of `bsdtar <args> -f <archive>` (`-f -` with `stdin`)."""
+    try:
+        return subprocess.run([bsdtar, *args, "-f", archive if stdin is None else "-"], stdin=stdin,
+                              capture_output=True, text=True, check=True).stdout
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"bsdtar {' '.join(args)} -f {archive} failed: {e.stderr.strip()}") from e
+
+
+def _split_zip_parts(zip_path):
+    """The other volumes of a split zip (`<stem>.z01`, `<stem>.z02`, ... next to `<stem>.zip`), in order."""
+    stem = zip_path[:-len('.zip')]
+    parts = sorted(glob.glob(f"{glob.escape(stem)}.z[0-9][0-9]"))
+    expected = [f"{stem}.z{i:02d}" for i in range(1, len(parts) + 1)]
+    if parts != expected:
+        found = [p[-3:] for p in parts]
+        raise ValueError(f"Split zip {zip_path}: volumes {found} are not z01..z{len(parts):02d}")
+    return parts
+
+
+def extract_archives(download_dir, recursive=False, keep=False):
     """
     Extract all archives in the specified directory.
-    Supports .zip, .tar, .tar.gz, .rar (needs bsdtar; not multi-volume) and .gz (single file). Tar and RAR entries
-    that would land outside the directory are refused (zipfile strips them itself), as are RAR archives with links.
+    Supports .zip (also split zips `<stem>.z01`... + `<stem>.zip`, via bsdtar), .tar, .tar.gz, .rar (needs bsdtar;
+    not multi-volume) and .gz (single file). Tar, RAR and split-zip entries that would land outside the directory
+    are refused (zipfile strips them itself), as are RAR archives with links.
     If `recursive` is True, also extracts archives found within extracted archives.
+    Archives are deleted after extraction unless `keep` is True (e.g. for checksums or a backup); a rerun then
+    extracts them again.
 
     Notes:
     Does not extract .nii.gz files; these can be extracted on-the-fly with nibabel.
@@ -59,32 +106,34 @@ def extract_archives(download_dir, recursive=False):
         for filename in filenames:
             file_path = os.path.join(dirpath, filename)
             extracted_dir = None
+            done = [file_path]
 
             if filename.endswith('.zip'):
-                with zipfile.ZipFile(file_path, 'r') as zip_ref:
-                    zip_ref.extractall(dirpath)
+                parts = _split_zip_parts(file_path)
+                if parts:
+                    _extract_bsdtar(parts + [file_path], dirpath)
+                    done += parts
+                else:
+                    with zipfile.ZipFile(file_path, 'r') as zip_ref:
+                        zip_ref.extractall(dirpath)
                 print(f"Extracted {filename} to {dirpath}")
-                os.remove(file_path)
                 extracted_dir = os.path.join(dirpath, os.path.splitext(filename)[0])
 
             elif filename.endswith('.tar.gz'):
                 with tarfile.open(file_path, 'r:*') as tar_ref:
                     tar_ref.extractall(dirpath, filter="data")
                 print(f"Extracted {filename} to {dirpath}")
-                os.remove(file_path)
                 extracted_dir = os.path.join(dirpath, filename.replace('.tar.gz', ''))
 
             elif filename.endswith('.tar'):
                 with tarfile.open(file_path, 'r:*') as tar_ref:
                     tar_ref.extractall(dirpath, filter="data")
                 print(f"Extracted {filename} to {dirpath}")
-                os.remove(file_path)
                 extracted_dir = os.path.join(dirpath, os.path.splitext(filename)[0])
 
             elif filename.endswith('.rar'):
-                _extract_rar(file_path, dirpath)
+                _extract_bsdtar([file_path], dirpath)
                 print(f"Extracted {filename} to {dirpath}")
-                os.remove(file_path)
                 extracted_dir = os.path.join(dirpath, os.path.splitext(filename)[0])
 
             elif filename.endswith('.gz') and not filename.endswith('.nii.gz'):
@@ -93,10 +142,17 @@ def extract_archives(download_dir, recursive=False):
                     with open(output_file, 'wb') as f_out:
                         shutil.copyfileobj(f_in, f_out)
                 print(f"Decompressed {filename} to {output_file}")
-                os.remove(file_path)
+
+            else:
+                done = []
+
+            if not keep:
+                for path in done:
+                    os.remove(path)
 
             if recursive and extracted_dir and os.path.isdir(extracted_dir):
-                extract_archives(extracted_dir, recursive=True)
+                extract_archives(extracted_dir, recursive=True, keep=keep)
+
 
 ## helpers for obtaining downloadable files (urls) and checksums (where available) from a particular dataset identifier.
 ## all of these functions return a list of dicts, each dict containing:
