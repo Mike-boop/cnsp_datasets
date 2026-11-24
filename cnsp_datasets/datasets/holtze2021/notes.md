@@ -1,4 +1,10 @@
-# holtze2021: two competing talkers, own name in the ignored stream (OpenNeuro ds003516)
+# holtze2021: two competing talkers, own name in the ignored stream (OpenNeuro ds003516 + ds004015)
+
+**v2 (2026-11-24, user decision): combined dataset.** Scalp EEG from ds003516 (sections 1-11, unchanged; the scalp
+files are byte-identical to v1) plus the concurrent cEEGrid (around-ear) recordings from OpenNeuro ds004015, which
+also brings the cEEGrid of 15 Jaeger et al. (2020) sessions (the recordings behind jaeger2025). One file per montage
+and trial. New: sections 12-16 and the grade section. Evidence for v2: `tmp/review/holtze2021_v2/` (`agent_log.md`,
+`figures/`), scripts in `tmp/review/scripts/holtze2021_v2/`.
 
 Explorer notes (2026-11-22). Evidence scripts and plots: `/data_storage/gu08wuvu/datasets/tmp/review/holtze2021/`
 (`scripts/`, `plots/`); that folder is temporary, so the numbers that matter are copied here.
@@ -244,6 +250,171 @@ Evidence in `/data_storage/gu08wuvu/datasets/tmp/review/holtze2021/{validation,d
   4-8 Hz 4.7 / 3.7, 8-15 Hz 2.2 / 1.6 (8-10 Hz 3.9 / 2.3, 10-12 Hz 2.2 / 1.7, 12-14 Hz 1.25 / 1.36),
   15-30 Hz 1.1 / 1.2, 30-250 Hz 1.0-1.1. Above the surrogate to ~10-12 Hz; attended > ignored at 0.2-1 and 4-8 Hz.
 
+## 12. Second source: OpenNeuro ds004015 (cEEGrid), added 2026-11-24
+- **"Attended speaker paradigm (cEEGrid data)"**, OpenNeuro ds004015 v1.0.2 (2022-10-04),
+  doi:10.18112/openneuro.ds004015.v1.0.2, **CC0**. Registry `holtze2021_ceegrid`; the adaptor expects it in
+  `<download>/ds004015` (or `ceegrid_dir=`). Paper: Holtze B, Rosenkranz M, Jaeger M, Debener S, Mirkovic B (2022).
+  Ear-EEG measures of auditory attention to continuous speech. Front. Neurosci. 16:869426,
+  doi:10.3389/fnins.2022.869426. Code: https://github.com/BjoernHoltze/EarEEGAuditoryAttentionMeasures (v1.1,
+  doi:10.5281/zenodo.6379903; analysis only, no BIDS conversion; epochs from `StartTrigger` with no shift).
+- Pooled cEEGrid of two studies, 36 participants, one continuous EEGLAB file per participant (whole session:
+  calibration (Holtze), 20-beep period, all blocks and breaks; one `boundary` where two XDF files were merged,
+  between blocks 1 and 2). Not cut into fixed windows like ds003516. 6.48 GB.
+  - sub-016..036 = **holtze2021** `bjh_s01, 02, 03, 05, 06, 08, 09, 11..15, 17..25` (`sourcedata/subj_info.mat`,
+    same order as `participants.tsv`): = ds003516 sub-0NN for bjh_sNN. Attended side, sex, age and condition order
+    match in **21/21**. The 4 missing (bjh_s04, 07, 10, 16) are the authors' excluded subjects (`incl` = excl), and
+    the cross-correlation of the two files (section 13) confirms every pairing (peak z 5-880, all at -30..-70 ms).
+  - sub-001..015 = **Jaeger et al. (2020)** `maj_s07, 08, 09, 10, 12, 14, 15, 18, 20, 22, 23, 24, 25, 26, 27`
+    (Front. Neurosci. 14:603, doi:10.3389/fnins.2020.00603): the recordings behind the results-only jaeger2025 entry
+    (attended side matches its code in 15/15). Their 94-channel BrainAmp cap was never shared. Free-field
+    loudspeakers at -45/+45 deg, 1.1 m, 70 dB SPL, both talkers at equal level, six 10-min blocks separated by ~5 min
+    breaks; no names inserted (Jaeger 2020).
+- `participants.tsv`: `attended_ch`, `gender`, `age`, `orig_study`, `first_bl/second_bl/third_bl` (the 3 blocks the
+  2022 paper analysed; the files hold all blocks), `con_order` (Holtze only).
+- Events: `StartTrigger` per block, `Beep`/`beep` (20), `Calib_Start/End` (Holtze), `omni`/`beam` name onsets
+  (Holtze, 40, table-derived as in ds003516: onset - StartTrigger = the same tables). Markers past the end of the data
+  (52 ms after the last sample: blocks whose EEG was not saved) are dropped by MNE: **sub-002 (maj_s08) blocks 1-4,
+  sub-005/006 (maj_s12/14) blocks 1-3, sub-013 (maj_s23) blocks 1-5**; every other Jaeger session has 6 blocks.
+  The last usable block of each lies fully inside its file.
+- **Jaeger block 6 has no stimulus** (no envelope, no audio in any version): skipped. Jaeger blocks 1-5 used
+  holtze2021's five block pairs: the paper says "the same audio books were used in both studies", the ds004015 64-Hz
+  envelopes `Mirkovic2016_{s}_{b}` are shared by both halves, and a cEEGrid backward decoder (leave-one-block-out)
+  reconstructs block k's attended story best among the 5 blocks' stories in **68/70 Jaeger blocks** (mean r on the
+  diagonal 0.052-0.065, off-diagonal <= 0.008; `figures/ceegrid_raw_timing.png`).
+- **Audio:** v1.0.0/1.0.1 shipped `stimuli/Stream_{s}_{b}_fs32k.wav` (mono, 32 kHz; removed in v1.0.2). Downloaded
+  (registry `holtze2021_ceegrid_audio`) and compared: each is **sample-identical** to channel s-1 of holtze2021's
+  v1.1.1 `Block_{b}_32k.wav` (all 10). The shipped 64 Hz envelopes match wav channel s-1 (r 0.94-0.95; cross pairs
+  <= 0.03). So both halves use holtze2021's existing stimuli; nothing new is needed.
+- Sidecar error: `eeg.json` says BrainAmp and copies the cap's filter settings. The cEEGrid was a **SMARTING
+  (mBrainTrain) 24-channel Bluetooth amplifier** (paper: "connected to a 24-channel mobile amplifier (SMARTING ...)
+  which transmitted the data via Bluetooth"; the XDF stream header kept in each `.set`, `EEG.etc.info`, says
+  `name EEG, source_id SMARTING, channel_count 18`, while ds003516's is `BrainAmpSeries`, 64 channels). Same host
+  (`recorder3`) and same XDF file as the scalp (first timestamps 20 ms apart in bjh_s01).
+
+## 13. cEEGrid alignment (2026-11-24)
+- **What the shipped markers contain.** The 2022 paper: "To account for the constant delay between the onset
+  markers ... and the corresponding EEG, we presented 20 beep tones"; the cEEGrid was shifted so that its beep N1
+  matched the cap's (whose delay came from a timing test), giving **70 ms (Holtze) and 54 ms (Jaeger)**. Their
+  analysis code applies no shift, so the shift is already in ds004015's events. Consistent with that, the
+  cEEGrid beep-ERP GFP peaks at **108 ms in both halves** with the shipped `beep` markers
+  (`scripts/holtze2021_v2/ceegrid_raw_check.py`).
+- **Hardware check against the concurrent scalp file** (`scalp_vs_ceegrid.py`, all 21 Holtze sessions, 105 blocks):
+  per block, the ds003516 scalp block (StartTrigger - 0.05 s to + 629 s) is cross-correlated with the cEEGrid at the
+  ds004015 StartTrigger + the same offset: sum over all 49 x 18 channel pairs of the squared normalised
+  cross-correlation (1-40 Hz), +-3 s, plus the same in 60-s windows (+-60 ms around the block peak).
+  Shared artefacts (blinks, muscle, movement) give sharp peaks: z 5-880 (median ~150).
+  - **The cEEGrid is 37 ms early relative to the scalp**: the scalp sample at its StartTrigger appears in the cEEGrid
+    at the ds004015 StartTrigger **-37.0 ms** (median over blocks of the median 60-s window lag; IQR -39.0..-34.9,
+    range -29.7..-69.5). Between subjects SD 5.5 ms; within subject between blocks SD 2.5 ms; precision per block
+    ~0.8 ms (SD of the window lags). **bjh_s06**: -39 ms in block 1, then -58.5, -62.4, -66.1, -69.5 ms (a step at
+    the XDF merge, then ~3.5 ms per block). bjh_s08 block 4: the whole-block peak failed (-1799 ms, z 5.5,
+    artefact-dominated); every 60-s window gives -36..-40 ms (z 34-203); the window median (-37.7 ms) is used.
+    Figures: `figures/scalp_vs_ceegrid_summary.png`, `figures/scalp_vs_ceegrid_bjh<NN>.png` (per subject: window
+    lags vs time per block, peak z).
+  - Interpretation: with the cap delay of 102 ms and the authors' 70 ms in the markers, the SMARTING stamps the same
+    instant ~69 ms earlier than the BrainAmp (70 - 37 - 102), and the true cEEGrid delay (~33 ms after the raw
+    marker) is ~37 ms shorter than the authors' N1-matched 70 ms: the around-ear N1 (reference R04b) peaks ~37 ms
+    later than the cap N1, so matching the peaks misaligned the montages. Matching shared artefacts measures the
+    montages' relative timing directly.
+  - **Drift cEEGrid vs scalp: +4.0 ppm** (Theil-Sen of the window lags, IQR 2.9-4.8) and **+3.8 ppm** from the 50 Hz
+    line-noise phase difference (blocks with line coherence > 0.5, IQR 3.4-4.1); LSL headers: 500.0093 vs
+    500.0067 Hz effective (+5.3 ppm, bjh_s01). Separate amplifier clocks, as expected. Over a block the cEEGrid
+    moves ~2.5 ms against the scalp; with the onset taken as the block's median window lag (~block centre) the error
+    is <= 1.3 ms at the block edges. **Not corrected** (below the ~7 ms marker jitter; the scalp's own drift vs the
+    audio is not corrected either).
+- **Holtze half: onset = ds004015 StartTrigger + this block's lag** (`ceegrid_onsets.csv`, written by
+  `scalp_vs_ceegrid_summary.py`; columns: ids, StartTriggers of both files, lag, whole-block lag, peak z, window SD,
+  drifts). This carries the scalp onset (validated, medium) over to the cEEGrid clock, i.e. both files of a trial
+  share one stimulus timeline. Derived from the two recordings, not from a brain response: on by default (hardware
+  rule).
+- **Jaeger half: onset = ds004015 StartTrigger + median(Holtze lags) + 2 ms = -35.0 ms.** Reasoning: the same
+  SMARTING and BrainAmp setup and recorder; markers = raw + 54 ms (paper); cap delay 88 ms (jaeger2025 code,
+  "BrainAmp delay between marker and sound onset"); so onset = raw + 88 + (SMARTING - BrainAmp stamp difference) =
+  StartTrigger + L_Holtze + (88 - 54) - (102 - 70). Inputs are the authors' stated constants and the Holtze hardware
+  lag; no brain-based estimate of ours. Uncertainty per session ~ +-5.5 ms (between-subject SD of the Holtze lags),
+  plus XDF-merge steps like bjh_s06's (20 ms) that cannot be seen without a scalp file: `jitter_ms` 9 for the Jaeger
+  trials (7 for the Holtze half). The beep N1 at the shipped markers (108 ms in both halves) supports the same
+  marker treatment in both halves.
+- Relative checks (shipped markers, `ceegrid_raw_check.py`): leave-one-block-out backward decoder lag sweep peaks at
+  -0.2 ms [-3.5, 3.0] (Holtze, attended) and +1.3 ms [-1.0, 4.6] (Jaeger). These only show that the blocks are
+  consistent with each other (a constant offset is absorbed by the decoder); no block is off.
+- Adaptor option `ceegrid_onset="shipped"` uses ds004015's markers unchanged (both halves; the authors' N1-based
+  shift).
+- **User decision 2026-11-24:** the default above is approved: cEEGrid onset = StartTrigger + the block's lag vs the
+  concurrent scalp file (Holtze, median -37 ms), Jaeger = median Holtze lag + 2 ms (-35.0 ms);
+  `ceegrid_onset="shipped"` stays an option; the +4 ppm cEEGrid-vs-scalp drift is documented, not corrected.
+- The match-mismatch DNN (accou2023) cannot check the cEEGrid: it needs the 64-channel 10-20 montage.
+
+## 14. cEEGrid channels
+- 18 channels `L01..L08, L04a, L04b, R01..R08` minus `R04a` (ground) and `R04b` (reference), as shipped (MNE reads
+  them as `eeg`); uV in the files -> V. 500 Hz (no resampling). Original reference R04b kept.
+- Large DC offsets (|x| ~ 9 mV mean per channel; SMARTING is DC-coupled; the sidecar's 0.0159 Hz high-pass is the
+  cap's): `info["highpass"]` left at 0. 1-40 Hz SD 4-10 uV per channel (median per subject 4.1-9.6 uV).
+- Positions: template, from the EEGLAB file (= `electrodes.tsv`, "Other"/EEGLAB unit sphere).
+- **Bads** (`ceegrid_bads.py`, `figures/ceegrid_channel_sd.png`): per block, flat (1-40 Hz SD < 0.5 uV) or SD > 5x the
+  subject's median: sub-002 R05 (flat, all blocks), sub-010 R04 + R05 (flat, all), sub-018 R05 (b1, b3), R07 (b2-b4),
+  sub-020 R05 (b1), sub-028 R07 + L02 (b3), sub-029 R01 (b5), sub-031 L03 (all), sub-032 R05 + R04 + L04b + L03 (b3),
+  L02 (b5), sub-033 R01 (b2-b4): 36 channel-blocks (ds004015 ids; `GRID_BADS` in the adaptor). sub-013 (maj_s23)
+  blocks 4-5 reach 3.6-4.5 mV on all channels at once with normal SD (8-15 uV): a common-mode event through the
+  reference, not bad channels; kept.
+
+## 15. v2 structure, ids and size
+- **One file per montage and trial** (PLAN.md montage rule): `ns_type` **`eeg`** (scalp, ds003516; unchanged) and
+  **`around-ear-eeg`** (cEEGrid, ds004015; name chosen so that in-ear files can get their own type). Same trial
+  numbers, conditions and stimuli for both files of a Holtze trial; both aligned to the same stimulus timeline
+  (section 13).
+- **Subject ids:** Holtze subjects keep their ds003516 ids (1..25 = bjh_s01..s25). Jaeger subjects are
+  **100 + maj number** (107..127 = maj_s07..s27), so they cannot collide with the Holtze ids and stay traceable to
+  jaeger2025's numbering. Every cEEGrid file's provenance has `ds004015_id`, `ds003516_id` (Holtze), `original_id`
+  (`bjh_sNN`/`maj_sNN`), `original_study`, `presentation`, `blocks_analysed_2022`.
+- Map (also in the README):
+
+| subject | original id | ds003516 | ds004015 | files |
+|---|---|---|---|---|
+| 1, 2, 3, 5, 6, 8, 9, 11-15, 17-25 | bjh_sNN | sub-0NN | sub-016 .. sub-036 (in this order) | scalp + cEEGrid |
+| 4, 7, 10, 16 | bjh_sNN | sub-0NN | - | scalp only (authors' excluded) |
+| 107, 108, 109, 110, 112, 114, 115, 118, 120, 122, 123, 124, 125, 126, 127 | maj_sNN | - | sub-001 .. sub-015 | cEEGrid only |
+
+- Session 1 for everyone (one session per participant in both studies). Conditions: Holtze as before
+  (`attend-<side>-<omni-noname|omni|beam>`); Jaeger **`attend-<side>-freefield`** (loudspeakers +-45 deg, equal
+  level, no names); the setup is also in the provenance (`presentation`).
+- Records: 125 scalp + 105 Holtze cEEGrid + 70 Jaeger cEEGrid = 300 files. Size (from one written trial each):
+  scalp 58 MB, cEEGrid 22 MB per trial, stimuli 0.4 GB: ~12 GB.
+- **Hours** (stimulus time): scalp 21.2 h (25 subjects); cEEGrid Holtze 17.8 h (21 x 3055 s, concurrent with the
+  scalp), Jaeger **11.9 h** (12 x 5 blocks + 4 + 3 + 3 = 70 blocks, 42774 s; 0.79 h per participant, 0.51-0.85 h);
+  cEEGrid total 29.7 h; distinct recording time 33.1 h (36 + 4 = 40 participants).
+
+## 16. cEEGrid validation (2026-11-24)
+Default cEEGrid onsets (section 13), 500 Hz, union of a subject's bads excluded, average reference over the cEEGrid
+channels. Scripts `scripts/holtze2021_v2/{validate.py, backward.py, validation_summary.py}`, results
+`tmp/review/holtze2021_v2/validation/` (`summary.json`, `run.log`).
+- **Low tier (repo validator, forward 0.5-8 Hz), attended:** Holtze 21/21 subjects significant against both nulls,
+  median r 0.025 (pass); Jaeger 14/15, median r 0.029 (pass). By condition (Holtze): omni 14/21 (r 0.019), beam
+  15/21 (r 0.023). **Ignored:** Holtze 7/21 (r 0.006), Jaeger 8/15 (r 0.009); both pass the group test.
+- **Backward (LOBO decoder, 0-250 ms):** attended r median 0.047 (Holtze) / 0.051 (Jaeger), every subject above both
+  nulls (21/21, 15/15); ignored 0.024 / 0.022 (13/21, 9/15). **Attended > ignored: Holtze 20/21, Jaeger 15/15**
+  (Wilcoxon p < 1e-4 both). AAD median accuracy 10/30/60 s: Holtze 0.62/0.73/0.78 (20/21 above chance at each),
+  Jaeger 0.61/0.68/0.74 (14, 12, 13 of 15).
+- Lag sweep peaks: Holtze -0.7 ms [-2.6, 1.0], Jaeger +1.6 ms [-0.1, 3.9]. Relative only (the decoder absorbs a
+  constant offset); cEEGrid forward TRF GFP has no clear peak (flat 0-400 ms), so the validation **cannot check the
+  absolute cEEGrid onset**; that rests on section 13.
+- Scalp (byte-identical to v1; v1 forward tiers stand), backward re-run on the v2 files: attended r median 0.153,
+  ignored 0.072, attended > ignored 25/25, AAD-30 median 0.94, lag sweep peak 0 ms.
+- Figures: `figures/r-attended-vs-r-ignored_around-ear-eeg.png`, `figures/lag_sweep_per_subject_around-ear-eeg.png`.
+- Attended < ignored in one cEEGrid subject (13 = bjh_s13: 0.035 vs 0.048); its scalp file confirms the side
+  (0.165 vs 0.128). 30-60 / 30-250 Hz tiers not run for the cEEGrid (they fail for the scalp).
+- **Tier: low** for both halves; `GRID_VALIDATION_TIER = "low"` in the adaptor (the 175 cEEGrid files were
+  re-written with it after validation, provenance only).
+
 ## Alignment grade
-Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
-**medium**: Software LSL markers with the authors' 102 ms delay (paper; confirmed by splices); ~7 ms jitter; DNN -7.9 ms 'no correction'; drift brain-based -5.6 ppm not applied; low tier.
+Grade under the CLAUDE.md rule (weakest part decides); scalp accepted by the user 2026-11-24, cEEGrid (v2) accepted
+2026-11-24. **medium** for both montages.
+- Scalp: software LSL markers with the authors' 102 ms delay (paper; confirmed by splices); ~7 ms jitter; DNN
+  -7.9 ms, no correction; drift brain-based -5.6 ppm, not applied; low tier.
+- cEEGrid: carried onto the scalp timeline by cross-correlating the concurrent recordings (-37 ms, IQR 4 ms over
+  105 blocks; section 13), Jaeger half by the same lag plus the papers' stated constants (-35.0 ms); low tier in
+  both halves (section 16).
+
+Evidence line: "scalp: software markers with the authors' 102 ms delay, validated (low tier, DNN -7.9 ms, no
+correction); cEEGrid: carried onto the scalp timeline by cross-correlating the concurrent recordings (-37 ms, IQR
+4 ms), Jaeger by the same lag plus the paper's constants."

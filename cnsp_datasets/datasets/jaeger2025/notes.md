@@ -50,6 +50,20 @@ Recorded for a future search for the raw data; from `maj_preprocessing_lambda.m`
   600.5-622.6 s; here 6 blocks of 10 min, gaps > 500 ms shortened), but neither audio nor regressors are shipped, so
   this cannot be checked. Participants: different study (Jaeger 2020 vs Holtze 2021); overlap of individuals unknown.
 
+## 4b. Update 2026-11-24: the cEEGrid of these sessions is in holtze2021
+- OpenNeuro ds004015 (Holtze et al. 2022, CC0) ships the **cEEGrid** (18 ch around-ear, SMARTING amplifier, 500 Hz)
+  of 15 of these 20 sessions: ds004015 sub-001..015 = `maj_s07, 08, 09, 10, 12, 14, 15, 18, 20, 22, 23, 24, 25, 26,
+  27` (`sourcedata/subj_info.mat`; attended side matches `maj_preprocessing_lambda.m` in 15/15). Not in ds004015:
+  maj_s06, s11, s13, s16, s21. The 94-channel cap is still not shared anywhere.
+- The stories are holtze2021's narratives: blocks 1-5 track `story{1,2}_block{1..5}` of holtze2021's v1.1.1 audio
+  (cEEGrid decoder identity matrix diagonal, 68/70 blocks), block 6 has no stimulus.
+- **User decision 2026-11-24:** these sessions are standardised as part of **holtze2021** (cEEGrid files only,
+  `ns_type` `around-ear-eeg`, subjects 107..127 = 100 + maj number, condition `attend-<side>-freefield`).
+  See `datasets/holtze2021/notes.md`, sections 12-16. This entry stays not incorporable (results only).
+- Onset of these sessions in holtze2021: ds004015 StartTrigger -35.0 ms (median cEEGrid-vs-scalp lag of the Holtze
+  sessions + 2 ms for the studies' stated delays; user-approved 2026-11-24); low tier passed (14/15), attended >
+  ignored 15/15; holtze2021 grade medium.
+
 ## 5. Open questions (default chosen)
 1. Incorporate? **Default: no — record as not incorporable (no neural data, no stimuli).** Keep the registry entry
    so the decision is traceable, or drop it (main session's call).

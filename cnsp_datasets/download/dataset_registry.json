@@ -357,6 +357,19 @@
       "url": "https://openneuro.org/datasets/ds003516/versions/1.1.1",
       "include": ["stimuli/Block_*_32k.wav"]
     },
+    "holtze2021_ceegrid": {
+      "source": "openneuro",
+      "identifiers": ["10.18112/openneuro.ds004015.v1.0.2"],
+      "description": "Holtze et al. (2022) cEEGrid (18 ch around-ear EEG) of holtze2021's sessions (sub-016..036 = bjh_s01..s25) and of Jaeger et al. (2020) (sub-001..015 = maj_s07..s27); the cEEGrid source of holtze2021: download into <holtze2021 download>/ds004015 (or pass ceegrid_dir)",
+      "url": "https://openneuro.org/datasets/ds004015/versions/1.0.2"
+    },
+    "holtze2021_ceegrid_audio": {
+      "source": "openneuro",
+      "identifiers": ["10.18112/openneuro.ds004015.v1.0.1"],
+      "description": "Stimulus audio of ds004015 (Stream_{1,2}_{1..5}_fs32k.wav, mono), from OpenNeuro ds004015 v1.0.1 (CC0): removed in v1.0.2. Only used to check that they equal holtze2021_audio; download into <ds004015 download>/stimuli_v1.0.1",
+      "url": "https://openneuro.org/datasets/ds004015/versions/1.0.1",
+      "include": ["stimuli/Stream_*_fs32k.wav"]
+    },
     "levy2024": {
       "source": "osf",
       "identifiers": ["svjqg"],
