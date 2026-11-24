@@ -40,7 +40,7 @@ Last updated: 2026-11-24.
 | stoll2025 (+ _cortex) | stoll2025 | dev | brainstem (cortex weakly) | good | deleted | |
 | harshaiyahav2025 | harshaiyahav2025 | dev | low | medium | deleted | CND envelopes only; DNN -15.6 ms |
 | herrmann2025 | herrmann2025 | dev | mlr | medium | deleted | |
-| holtze2021 | holtze2021 | dev | low | medium | deleted | v1.1.1 audio; **being rebuilt (user 2026-11-24)**: combined with OpenNeuro ds004015 cEEGrid (21 Holtze subj + 15 Jaeger 2020 subj), scalp and cEEGrid in separate files; cEEGrid onset = scalp-file cross-correlation lag (-37 ms; Jaeger -35 ms), approved by the user 2026-11-24; validation: cEEGrid low tier Holtze 21/21, Jaeger 14/15, attended > ignored 20/21 and 15/15; commit pending |
+| holtze2021 | holtze2021 | dev (f2dcb2b) | low (scalp 25/25 attended > ignored; cEEGrid Holtze 21/21 and Jaeger 14/15 low tier, attended > ignored 20/21 and 15/15) | medium | standardised 12 GB + downloads in tmp (26 GB; delete pending) | v2 (user 2026-11-24): ds003516 scalp (25 subj, 21.2 h) + ds004015 cEEGrid (21 Holtze + 15 Jaeger 2020 subj as 107-127, 29.7 h) in separate files; cEEGrid onset from the scalp cross-correlation (-37 ms; Jaeger -35 ms), user-approved; ceegrid_onset="shipped" option; drift +4 ppm not corrected; v1.1.1 audio; Mirkovic 2016 noted (no data) |
 | momenian2024 | momenian2024 | dev | low | poor | deleted | stimulus rebuilt per participant |
 | habersetzer2025 | habersetzer2025 | dev | brainstem (tSSS) | good | deleted | +485 ppm corrected |
 | pkueeg2025 | pkueeg2025 | dev | low (pilot 12 subj) | poor | deleted | drift 76.8 ppm kept; alternatives 47/27 ppm; DNN -75/-42 ms documented |
@@ -80,7 +80,7 @@ schuller2022full (internal).
 | repo name | sheet id | branch | state | next |
 |---|---|---|---|---|
 | lin2024 | lin2024 | dev (notes) | **dropped (user 2026-11-24)**: no stimulus audio or envelopes in Zenodo 11541114; EEG 500 Hz, 1 Hz high-passed, cut per trial; 20 subj × 20 trials, 8.09 h; documented in notes.md | tmp deleted; woody keeps the copy; revive only if the authors share the 40 HSK stories |
-| jaeger2025 | jaeger2025 | dev (notes 373ebc2) | not incorporable: the Zenodo release has only TRF weights / prediction r (Data.zip), no EEG or stimuli; grade none; download 15 GB in tmp (delete pending sign-off; woody keeps the copy) | ask the authors for the raw XDF + regressors/audio (draft in upstream_issues.md); recordings = Jaeger 2020, probably holtze2021's narratives; 2026-11-24: its sessions' cEEGrid (15/20 subj) is in ds004015 → merged into holtze2021 (user) |
+| jaeger2025 | jaeger2025 | dev (notes) | results-only release (TRF results, no EEG/stimuli); its sessions' cEEGrid (15/20 subj) is now in holtze2021 (subjects 107-127, from ds004015) | merged into holtze2021 |
 | cervantesconstantino2018 | cervantesconstantino2018 | dev (registry ba87fef, notes b371434) | not incorporable: DRUM release is results only (repetition-averaged z-scored DSS components at 1 kHz, 50 Hz envelopes, decoders, TRFs; ~6 min/subject), no sensor MEG, single trials or audio; grade none; no vault backup; 2.8 GB in tmp (delete pending sign-off) | ask the Simon lab for the raw KIT data + wavs + probe times (draft in upstream_issues.md); R2434 = copy of R2433 |
 | schueller2024 Sets 2/3 | schuller2023 | main | Set2 on woody (38.5 GB, md5 ok), Set3 downloading there | not this pass (user 2026-11-24: Set1 adaptor robust enough); second pass |
 
