@@ -483,6 +483,13 @@
       "identifiers": ["10.5281/zenodo.16536441"],
       "description": "Geirnaert et al. (2025, Sci Rep) Ear-SAAD: simultaneous scalp (32 incl. EOG), around-ear (19) and in-ear (12) EEG, two Danish talkers, 15 participants x 60 min; audio shipped; bids_dataset.zip (12.2 GB), preprocessedData.zip, experiment manual; version 16536441 pinned; CC BY-NC-SA 4.0",
       "url": "https://zenodo.org/records/16536441"
+    },
+    "gao2024": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.10472483"],
+      "description": "Gao et al. (2024) echoic speech, MEGIN TRIUX neo MEG: authors' tSSS-cleaned MEG at 100 Hz, cut into ~30 s story chunks (exp1/2/3_PreData zips, 51 listeners in 3 experiments, 48 shipped), chunk wavs incl. direct/echo components (Experiment_Stimuli.zip, 4.6 GB), condition orders (exp*_behave_result). Figure result files and analysis code skipped",
+      "url": "https://zenodo.org/records/10472483",
+      "exclude": ["Fig*_data.mat", "Fig*_new.m", "tools.zip"]
     }
   }
 }
