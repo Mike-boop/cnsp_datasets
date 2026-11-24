@@ -376,6 +376,13 @@
       "description": "Levy et al. (2024) EEG, 49 participants, continuous speech (per-participant .mat files)",
       "url": "https://osf.io/svjqg/"
     },
+    "diliberto2023": {
+      "source": "osf",
+      "identifiers": ["mdnwg"],
+      "description": "Di Liberto et al. (2023, Nat Commun) EEG (EGI, preprocessed CND: 58 ch, 50 Hz), 47 infants at 4, 7 and 11 months (longitudinal) and 17 adults, 18 audio-visual nursery rhymes; shipped envelope and phonetic features only (no audio). Analysis code without its results and libraries",
+      "url": "https://osf.io/mdnwg/",
+      "exclude": ["code/results/*", "libs/*", "code/*.asv"]
+    },
     "karunathilake2023": {
       "source": "dryad",
       "identifiers": ["10.5061/dryad.sbcc2frd6"],
