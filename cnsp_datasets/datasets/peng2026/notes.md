@@ -95,7 +95,9 @@ one-off scripts in `R/scripts/peng2026_*.py`.
   - Effect vs shipped (sub-01..08): +20..+37 ms on the first trial of a run to -54..-90 ms on the last.
 - `onset="authors"`: the shipped events.tsv onsets.
 - This correction is derived from the acquisition logs (clocks, event arrival), not from the EEG; applied by
-  default as the better trigger reconstruction (worker default; listed for the user's decision).
+  default as the better trigger reconstruction.
+- **User decision (2026-11-24):** keep the correction on by default for now; revisit it at the next run of this
+  dataset (e.g. against a stimtrack-like check, or the DNN offset of sub-01..08 vs sub-10..30 per run).
 - The absolute sound onset relative to OnsetTime (audio output latency, Windows/E-Prime) is unknown; no stimtrack.
 - In-ear tubes: none (Sony MDR-EX15LP earbuds).
 
