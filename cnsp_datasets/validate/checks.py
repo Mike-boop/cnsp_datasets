@@ -138,7 +138,7 @@ def validate_subject(records, picks, reference, cache, seed, tiers=ALL_TIERS):
     rng = np.random.default_rng(seed)
     neural, stims, names, trials = [], [], [], []
     hf = {tier: dict(acorr=0, xcorr=0) for tier in TIERS}
-    fs_hf, modality = None, "eeg"
+    fs_hf, fs_low, modality = None, None, "eeg"
     for record in records:
         info = dict(subject=record.subject, session=record.session, trial=record.trial)
         trials.append(info)
@@ -151,6 +151,8 @@ def validate_subject(records, picks, reference, cache, seed, tiers=ALL_TIERS):
             modality = "meg" if {"mag", "grad"} & set(raw.get_channel_types()) else "eeg"
 
             x, fs = resampled(raw, LOW["fs"])
+            if fs_low not in (None, fs):
+                raise ValueError(f"low-tier rate {fs} Hz differs from this subject's earlier trials ({fs_low} Hz)")
             s = stimulus_feature(stim, "low", fs, cache)
             info.update(sanity(raw, x, fs, len(s)), stimulus=stim.name)
             info["flags"] = sanity_flags(info)
@@ -158,6 +160,7 @@ def validate_subject(records, picks, reference, cache, seed, tiers=ALL_TIERS):
             neural.append(zscore(bandpass(x, LOW["band"], fs)[:, :n], axis=-1))
             stims.append(zscore(bandpass(s, LOW["band"], fs)[:n]))
             names.append(stim.name)
+            fs_low = fs  # == LOW["fs"] unless the native rate is lower (never upsampled)
             info["low_index"] = len(neural) - 1
 
             if not set(TIERS) & set(tiers):
@@ -183,7 +186,7 @@ def validate_subject(records, picks, reference, cache, seed, tiers=ALL_TIERS):
 
     out = dict(subject=records[0].subject, trials=trials, modality=modality)
     if "low" in tiers and len(neural) >= 2:
-        out["low"] = low_tier(neural, stims, names, LOW["fs"], rng)
+        out["low"] = low_tier(neural, stims, names, fs_low, rng)
         for i, t in enumerate(trials):
             if "low_index" in t:
                 t["r"] = out["low"]["r_trials"][t["low_index"]]
@@ -216,6 +219,8 @@ def group_summary(subjects, tiers=ALL_TIERS):
     """Population statistics and pass/fail per tier."""
     summary = {}
     low = [s["low"] for s in subjects if "low" in s]
+    if len({len(s["lags_s"]) for s in low}) > 1:
+        raise ValueError("subjects were validated at different low-tier rates (native rates below 64 Hz differ)")
     if low:
         r = np.array([s["r"] for s in low])
         null_c = np.array([s["null_circ"] for s in low]).mean(0)
