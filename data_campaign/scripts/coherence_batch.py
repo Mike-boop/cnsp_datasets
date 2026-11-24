@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
 sys.path.insert(0, "/home/gu08wuvu/eeg-envelope-coherence-neuroimage/src")
-sys.path.insert(0, "/home/gu08wuvu/cnsp_datasets_dev")
+sys.path.insert(0, "/home/gu08wuvu/cnsp_datasets")
 from coherence.coherence import (coherence_from_prep, null_coherence_shuffled_windows_from_prep,  # noqa: E402
                                  prepare_coherence)
 from scipy.fft import next_fast_len  # noqa: E402

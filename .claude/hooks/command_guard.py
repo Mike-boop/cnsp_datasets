@@ -15,8 +15,7 @@ import sys
 
 REVIEW = "/data_storage/gu08wuvu/datasets/tmp/review"
 ZENODO_FLAG = os.path.join(REVIEW, "ZENODO_BLOCKED")
-REGISTRIES = ("/home/gu08wuvu/cnsp_datasets/cnsp_datasets/download/dataset_registry.json",
-              "/home/gu08wuvu/cnsp_datasets_dev/cnsp_datasets/download/dataset_registry.json")
+REGISTRIES = ("/home/gu08wuvu/cnsp_datasets/cnsp_datasets/download/dataset_registry.json",)
 
 # Only where the word starts a command (line start, after ; & | `, `$(`, `!`, or a shell keyword), so commit messages
 # and echoed text that merely mention these commands are not blocked.

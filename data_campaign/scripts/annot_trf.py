@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import butter, hilbert, resample_poly, sosfiltfilt
 warnings.filterwarnings("ignore")
-sys.path.insert(0, "/home/gu08wuvu/cnsp_datasets_dev")
+sys.path.insert(0, "/home/gu08wuvu/cnsp_datasets")
 from cnsp_datasets.standardise.format_dataset import get_adaptor_class
 
 FS, WIN = 200, 120

@@ -8,7 +8,7 @@ d=$1; shift
 opts=()
 while [ $# -ge 2 ] && [ "$1" = --adaptor-opt ]; do opts+=(--adaptor-opt "$2"); shift 2; done
 [ "${1:-}" = --adaptor-opt ] && { echo "--adaptor-opt needs a value" >&2; exit 2; }
-cd ${CNSP_REPO:-/home/gu08wuvu/cnsp_datasets_dev}
+cd ${CNSP_REPO:-/home/gu08wuvu/cnsp_datasets}
 export MNE_DONTWRITE_HOME=true
 echo "=== $d standardise start $(date) ${opts[*]}"
 rm -rf $R/$d/standardised
