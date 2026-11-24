@@ -61,6 +61,7 @@ Last updated: 2026-11-24.
 | chen2026 | chen2026 | dev | low (pilot 3/8, old per-chapter default; mlr pass is a ripple artefact); defaults now option B onsets, no drift, all 8 kept (2026-11-24) | poor | deleted by the user (results kept; raw on the NHR vault) | onset = t0 (trigger fit) + option-B latency (listener median unless the chapter deviates > max(40 ms, 3 SE); 39/281 chapters own value; user 2026-11-23; onsets_optionB.csv); drift +16 ppm logged in drift.csv, not applied (unreliable); dev 6324961; next: full run of 8 listeners (~48 GB), sub-02 (kept), deletion |
 | kulasingham2021 | kulasingham2021 | dev | low (all 22; ceiling at 200 Hz); attended > ignored 20/22 | medium | deleted (results kept; re-downloadable; raw on the NHR vault) | preprocessed epochs only; R2522 block order corrected from the data (readme wrong); no licence stated |
 | wang2026 | wang2026 | dev | low (all 18; mlr/brainstem fail); attended > ignored n.s. (11/18, p 0.32) | medium | standardised_final 11 GB + download (delete pending) | Trigger-channel onsets (S14 CNT table 48 ms early); DNN -26 ms (documented); passive block has no stimulus |
+| geirnaert2025 | geirnaert2025 | dev | low (all 15; scalp 13/15, ear 8/15; mlr/brainstem fail); attended > ignored scalp 15/15, ear 14/15 | medium | standardised_v3 16 GB + download/extracted (~75 GB total; delete pending) | scalp and ear amplifiers as ns_types eeg / ear-eeg; ~15 ms inter-amplifier steps in 4 trials (documented); DNN -10 ms; CC BY-NC-SA |
 
 Not in the campaign sheet: mai2023 (dev, iEEG, not reviewed), jehn2024 (dev), karengal2025 / koelbl2021 /
 schuller2022full (internal).
@@ -73,7 +74,6 @@ schuller2022full (internal).
 | jaeger2025 | jaeger2025 | dev (notes 373ebc2) | not incorporable: the Zenodo release has only TRF weights / prediction r (Data.zip), no EEG or stimuli; grade none; download 15 GB in tmp (delete pending sign-off; woody keeps the copy) | ask the authors for the raw XDF + regressors/audio (draft in upstream_issues.md); recordings = Jaeger 2020, probably holtze2021's narratives |
 | cervantesconstantino2018 | cervantesconstantino2018 | dev (registry ba87fef, notes b371434) | not incorporable: DRUM release is results only (repetition-averaged z-scored DSS components at 1 kHz, 50 Hz envelopes, decoders, TRFs; ~6 min/subject), no sensor MEG, single trials or audio; grade none; no vault backup; 2.8 GB in tmp (delete pending sign-off) | ask the Simon lab for the raw KIT data + wavs + probe times (draft in upstream_issues.md); R2434 = copy of R2433 |
 | thornton2025 | thornton2025 | dev (registry 79cd601) | 2026-11-24: copying from woody; worker incorporating (after zhang2025) | |
-| geirnaert2025 | geirnaert2025 | dev (registry 79cd601) | 2026-11-24: copying from woody; worker incorporating | audio shipped? cEEGrid layout |
 | schueller2024 Sets 2/3 | schuller2023 | main | Set2 on woody (38.5 GB, md5 ok), Set3 downloading there | not this pass (user 2026-11-24: Set1 adaptor robust enough); second pass |
 
 ## Open items across datasets
