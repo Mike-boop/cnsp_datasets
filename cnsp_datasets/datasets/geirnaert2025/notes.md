@@ -141,7 +141,10 @@ Standardised: 77 MB per trial and amplifier (fif, float32), 13.8 GB EEG + 2.8 GB
 ## 10. Open questions (defaults taken, worker run 2026-11-24)
 1. Two amplifiers -> two files per trial with ns_type `eeg` (scalp) and `ear-eeg` (in-ear + around-ear + Fp1-cr)
    in one standardised directory [taken]. Alternative: two datasets (`geirnaert2025_scalp`, `_ear`).
-2. In-ear and around-ear stay in one file: they share one amplifier and reference [taken].
+2. In-ear and around-ear stay in one file: they share one amplifier and reference [taken]. **Second pass:** the
+   newer rule (CLAUDE.md, user 2026-11-24) wants one file per montage, so split the ear file into in-ear
+   (`EL*`/`ER*`) and around-ear (`cEL*`/`cER*`) files, all aligned; decide where `Fp1-cr` goes. Not done now
+   (user: pick up on the second pass).
 3. EOG names kept (`EOG2-4`), directions only inferred [taken].
 4. No correction of the inter-amplifier jumps; affected trials listed here and in the README [taken]. A
    per-segment correction of the ear file to the scalp time base would be hardware-derived, but it is unknown
