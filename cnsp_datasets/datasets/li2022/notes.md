@@ -118,16 +118,55 @@ Scratch: `R/li2022/` (`R = /data_storage/gu08wuvu/datasets/tmp/review`); scripts
 - Interpretation: the playback software starts the sound ~0.22 s after it sends the S marker (output buffer /
   scheduling), plus marker jitter of ~10-20 ms. With the correction the TRF peaks move to ~+0.1 / +0.25 s.
 
-### Applied (pending user decision, see Open questions)
+### Audio audit (2026-11-24; user asked: are all clean wavs dry, is clean TrailK = HRTF TrailK?)
+- **All 32 clean wavs are dry** (two isolated talkers): inter-channel coherence 100-4000 Hz 0.000-0.002 (HRTF wavs
+  0.26-0.37), max waveform xcorr within +-1 ms 0.002-0.013 (HRTF 0.35-0.51), envelope r between channels
+  -0.07..0.10 (HRTF 0.65-0.73), level difference within +-0.7 dB, spectral tilt -26.5..-29.7 dB/oct with no outlier
+  (|z| < 3); no clean channel equals or is a delayed copy of an HRTF ear (waveform r 0.43-0.67).
+  `R/li2022/figures/audio_channel_diagnostics.png`, `audio_channel_diagnostics.csv` (`scripts/li2022/audio_check.py`).
+- **Transfer functions** clean talker -> HRTF ear (`audio_transfer_functions.png`, `scripts/li2022/audio_tf.py`): the
+  same filter in every file (RMS deviation from the median 1.9-3.6 dB, no outlier), i.e. each HRTF wav is its clean
+  wav through one fixed HRTF per side; ipsilateral group delay 33-45 samples, contralateral 58-91 (ITD ~0.7 ms; the
+  32 vs 67 sample lags in `wavs.csv` are ipsi vs contra peaks). The HRTF path also band-limits to ~0.3-4 kHz
+  (paper: "band-limited at 4 kHz"); the clean wavs are not band-limited.
+- **Pairing**: 64 x 64 envelope similarity (each clean talker vs each HRTF ear, max xcorr over +-1 s;
+  `audio_similarity_matrix.png`, `audio_similarity.npz`): for every clean TrailK the best HRTF file is TrailK
+  (min margin over the best other file 0.69), at lag 0; c0 dominates the left ear and c1 the right ear in all 32;
+  clean and HRTF durations equal for every K. Only Trail16/17 share a duration (72.6 s) but do not match each other.
+  No duplicates (max envelope r between different clean talker channels 0.18). No mapping change needed.
+- **What was played**: the HRTF wavs (paper 2.2: "After head-related transfer function filtering, two auditory streams
+  were played 90 deg to the left ... and right ... via a pair of insert phones"). DNN scan with HRTF stimuli
+  (`scripts/li2022/dnn_scan_hrtf.py`; stopped at 13 subjects / 396 trials on request): clean attended d = 0.214 s
+  [0.206, 0.219], HRTF mix 0.202 s [0.197, 0.207] (higher z: 7.0 vs 5.3), HRTF attended-side ear 0.204 s; mismatched
+  HRTF mix flat. HRTF - clean = -12 ms [-15, -8]: within the stated uncertainty, so the 0.216 s onset (clean
+  attended talker, all 17 subjects) is kept. `audio_dnn_clean_vs_hrtf.png`.
+
+### Applied (user decision 2026-11-24)
 - Adaptor default `onset="dnn"`: onset = S + 0.216 s (`alignment_method` `dnn`); `onset="marker"` = S.
 - No drift correction (none measurable). Insert phones ER4SR (no tube delay); HRTF filter delay ~0.7-1.6 ms (c0 vs
   left ear) not corrected.
 
 ### Grade
 - **poor**: the onset is estimated from the neural data (DNN, constant 0.216 s); the markers are software with
-  ~10-20 ms jitter.
+  ~10-20 ms jitter (~13 ms per marker).
 
-## 7. Validation (pilot, 2026-11-24)
+## 7. Validation (full, 2026-11-24)
+All 17 subjects, 544 trials, default `onset="dnn"` (`R/li2022/standardised/`, 11 GB), validator tiers low, mlr,
+brainstem, average reference (64 EEG channels); `R/li2022/validation.json`, `validate.log`, figure
+`R/li2022/validation.png` (script `scripts/li2022/validate_full.sh`).
+- **low: pass.** mean r 0.0310 (median 0.0304), p_circ 0.020, p_mismatch 0.048, 15/17 subjects significant (S1 r
+  0.007 p 0.25, S13 r 0.011 p 0.12 not; both also failed in the pilot). TRF GFP peaks 0.156 s and ~0.25 s; a small
+  shoulder above the null at -0.02..0 s is the 0.5-8 Hz smoothing of the onset lobe plus ~13 ms marker jitter, not
+  a separate negative-lag response. Validator per-trial offsets are noise (SD 191 ms, 34 at the edge; single trials
+  are too short, as in the DNN per-trial scan); drift median 23 ppm (SE 512), none.
+- **mlr: fail** (SNR 1.02, p 0.22, 3/17 nominal); **brainstem: fail** (0.97, p 0.74, 0/17). Validation tier `low`.
+- **Attended vs ignored** (`scripts/li2022/attended_ignored.py`; ignored = the other clean talker, not the HRTF mix):
+  ignored low tier mean r 0.0198 (also passes, 14/17 significant, as expected for a two-talker mix). Attended -
+  ignored r > 0 in 14/17 subjects (S8, S13, S16 slightly negative, -0.002..-0.004), Wilcoxon p = 6.6e-4;
+  `R/li2022/r-attended-vs-r-ignored.png`, `validation_ignored.json`, `attended_ignored.log`. Confirms the labels
+  (including the S9-S17 flip: S9-S17 differences +0.005..+0.037 except S13, S16).
+
+### Pilot (2026-11-24)
 Pilot: S1, S4, S7, S10, S13, S16 (both groups; S4 bads; S13 split + truncated), all 32 trials each, standardised with
 both onsets (`R/li2022/pilot_{dnn,marker}/`), validator tiers low, mlr, brainstem, average reference (64 ch).
 
@@ -146,13 +185,11 @@ both onsets (`R/li2022/pilot_{dnn,marker}/`), validator tiers low, mlr, brainste
   contrast over all 17 subjects (section 3) is the stronger label check.
 - Offsets stored in `alignment/dnn_offsets.csv` (per subject, block and file) and `alignment/dnn_summary.json`.
 
-## 8. Open questions (recommended default first)
-1. Apply the 0.216 s brain-based onset by default (`onset="dnn"`, grade poor; precedent hassan2026, chen2026)? Or
-   ship the marker timing and document the offset (`onset="marker"`; precedent wang2025 ~0.19 s, pkueeg2025)?
-   Recommended: apply, because the TRF latencies are otherwise off by >0.2 s (and the lag-sweep peak sits at
-   +0.2 s).
-2. Keep the authors' poor-answer trials (recommended; listed in the README) or drop them?
-3. Keep the two truncated trials (recommended; S14 Trail22 is only 16 s)?
+## 8. Decisions (user, 2026-11-24)
+1. The 0.216 s brain-based onset is applied by default (`onset="dnn"`, grade poor); `onset="marker"` keeps the
+   shipped timing.
+2. The trials the authors dropped for poor comprehension answers are kept (listed in the README).
+3. The two truncated trials are kept, flagged (`eeg_truncated_s`).
 
 ## Upstream issues
 - Paper: 8192 Hz sample rate; the files are 1000 Hz.
