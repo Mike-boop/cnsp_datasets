@@ -62,6 +62,7 @@ Last updated: 2026-11-24.
 | kulasingham2021 | kulasingham2021 | dev | low (all 22; ceiling at 200 Hz); attended > ignored 20/22 | medium | deleted (results kept; re-downloadable; raw on the NHR vault) | preprocessed epochs only; R2522 block order corrected from the data (readme wrong); no licence stated |
 | wang2026 | wang2026 | dev | low (all 18; mlr/brainstem fail); attended > ignored n.s. (11/18, p 0.32) | medium | standardised_final 11 GB + download (delete pending) | Trigger-channel onsets (S14 CNT table 48 ms early); DNN -26 ms (documented); passive block has no stimulus |
 | geirnaert2025 | geirnaert2025 | dev | low (all 15; scalp 13/15, ear 8/15; mlr/brainstem fail); attended > ignored scalp 15/15, ear 14/15 | medium | standardised_v3 16 GB + download/extracted (~75 GB total; delete pending) | scalp and ear amplifiers as ns_types eeg / ear-eeg; ~15 ms inter-amplifier steps in 4 trials (documented); DNN -10 ms; CC BY-NC-SA |
+| peng2026 | peng2026 | dev | low (all 30; weak: r 0.008, 12/30; TV fails mismatch); AAD (ear proxy) 0.55, restaurant 0.61 | medium | download/extracted/standardised ~47 GB (delete pending) | **user OK pending**: sub-01..08 onsets rebuilt from the Net Station log (shipped ones drift ~+65 ppm, up to 0.1 s), on by default, `onset="authors"` restores; DNN -26 ms; mixtures only (no talker streams) |
 
 Not in the campaign sheet: mai2023 (dev, iEEG, not reviewed), jehn2024 (dev), karengal2025 / koelbl2021 /
 schuller2022full (internal).
@@ -69,7 +70,6 @@ schuller2022full (internal).
 ## In progress
 | repo name | sheet id | branch | state | next |
 |---|---|---|---|---|
-| peng2026 | peng2026 | dev (registry fe3393d) | 2026-11-24: copying from woody (slowpull, md5 ok); worker incorporating | sub-01..09 E-Prime trigger re-alignment to check |
 | zhang2025 | zhang2025 | dev (registry fe3393d) | 2026-11-24: copying from woody; worker incorporating | file list / exclude |
 | jaeger2025 | jaeger2025 | dev (notes 373ebc2) | not incorporable: the Zenodo release has only TRF weights / prediction r (Data.zip), no EEG or stimuli; grade none; download 15 GB in tmp (delete pending sign-off; woody keeps the copy) | ask the authors for the raw XDF + regressors/audio (draft in upstream_issues.md); recordings = Jaeger 2020, probably holtze2021's narratives |
 | cervantesconstantino2018 | cervantesconstantino2018 | dev (registry ba87fef, notes b371434) | not incorporable: DRUM release is results only (repetition-averaged z-scored DSS components at 1 kHz, 50 Hz envelopes, decoders, TRFs; ~6 min/subject), no sensor MEG, single trials or audio; grade none; no vault backup; 2.8 GB in tmp (delete pending sign-off) | ask the Simon lab for the raw KIT data + wavs + probe times (draft in upstream_issues.md); R2434 = copy of R2433 |
