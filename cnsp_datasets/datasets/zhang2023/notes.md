@@ -1,4 +1,4 @@
-# zhang2023: NJU auditory attention detection dataset (Emotiv EPOC Flex, Zenodo 7253438): DECISION NEEDED
+# zhang2023: NJU auditory attention detection dataset (Emotiv EPOC Flex, Zenodo 7253438)
 
 Explorer notes (2026-11-24). Scratch: `/data_storage/gu08wuvu/datasets/tmp/review/zhang2023/` (temporary:
 `agent_log.md`, `*.log`, `figures/`). One-off scripts: `tmp/review/scripts/zhang2023/` (`expinfo_lib.py` decodes
@@ -11,8 +11,9 @@ weakly, with late peaks (250-450 ms).**
 
 **A DNN rescue was tried (section 6b).** The accou2023 match-mismatch classifier was scanned per trial over ±12 s
 against rebuilt unspliced sources. It found offsets of about 1-3 s (once 9 s) in individual presentation pairs,
-which explains the missing tracking. But only 14 of 313 pairs (0.73 h of 13.8 h) get a confident estimate,
-against 0 of 626 null pairs. No adaptor has been written; the options are in section 8.**
+which explains the missing tracking. But only 16 of 313 pairs (0.84 h of 13.8 h) get a confident estimate in the
+reproducible repo run, against 1 of 626 null pairs. The scratch run had 14 pairs (0.73 h) and 0 null pairs. The adaptor provides the shipped trials by default and the confident pairs with their
+offsets as an option; grade poor (section 8).**
 
 ## 1. Source
 - Zenodo 7253438 (doi 10.5281/zenodo.7253438), "Auditory Attention Detection Dataset Nanjing University", Zhang
@@ -128,7 +129,8 @@ against 0 of 626 null pairs. No adaptor has been written; the options are in sec
 
 ## 6b. DNN rescue attempt (2026-11-24, per-trial and per-pair offsets)
 Scripts: `tmp/review/scripts/zhang2023/` (`rebuild_sources.py`, `dnn_scan.py`, `dnn_analyse.py`, `dnn_pairs.py`,
-`dnn_trf_check.py`). Results: `R/zhang2023/dnn_scan/` (`dnn_trials.csv`, `dnn_pairs.csv`, per-trial caches).
+`dnn_trf_check.py`; repo versions in `timing/`). Results: `R/zhang2023/dnn_scan/` (`dnn_trials.csv`, `dnn_pairs.csv`,
+per-trial caches); the repo rerun writes `pair_offsets.csv`.
 Logs: `R/zhang2023/dnn_analyse.log`, `dnn_pairs.log`, `dnn_trf_pairs.log`. Figures: `R/zhang2023/figures/dnn_*`.
 
 ### Rebuilt sources and maps
@@ -201,36 +203,56 @@ Figures: `dnn_trf_before_after_pairs.png`, `dnn_trf_before_after_pairs_pooled.pn
 - Brain-derived offsets estimated from the same EEG are circular. The cross-fitting between presentations removes
   the direct circularity, not the selection.
 
+### Repo rerun (`timing/`, the reproducible version; `pair_offsets.csv`)
+- The scratch scan chose its null sources with Python's salted `hash()`; the repo scan seeds with crc32. Maps
+  come from `pieces.csv`: 3205 pieces, which differ from the scratch maps in 271 of 6.36 M samples.
+- **Result: 16 of 313 pairs confident (0.84 h) against 1 of 626 null pairs.** All 14 scratch pairs are kept with
+  identical lags. Two more pass: S10 11+12 at -1.13 s (p 0.0047) and S16 9+10 at +1.68 s (p 0.0059); both had
+  agreeing presentations in the scratch run at p just above 0.01.
+- Per subject: S06 6 pairs (0.33 h), S16 5 (0.25 h), S10 2 (0.11 h), S05 1, S09 1, S20 1.
+- Figure: `R/zhang2023/figures/dnn_pair_offsets_repo.png`. Caches: `R/zhang2023/dnn_repo/`.
+
 ## 7. Cross-subject duration check
 Not possible: no triggers or recording-length information, and every trial was cut by the authors. The shipped
 wav and EEG lengths match exactly (125 audio samples per EEG sample) in every trial.
 
-## 8. Options (decision needed)
-1. **Do not incorporate (recommended).** Preprocessed 128 Hz data with authors' splices, unknown onset source,
-   and the shipped timing off by seconds per presentation pair. A DNN offset is recoverable for only 0.73 h
-   (14 pairs in 6 subjects) of 13.8 h. It would get the `discarded` tab with this note.
-1b. Incorporate only the **14 DNN-confident pairs** (28 trials, 0.73 h, S05/S06/S09/S10/S16/S20), with the
-   pair offsets applied by default (`dnn_pairs.csv`) and graded `poor`. Post-shift r is only 0.03-0.05.
-2. Incorporate **S18-S21 only** (1.8 h): grade `medium` at best, if the full low tier passes. Their late peaks
-   (250-450 ms) suggest an uncorrected software lead, which may push the grade to `poor`.
-3. Incorporate everything as shipped, flagged as failing validation. This goes against PLAN.md section 3: no
-   grade fits, since `medium` needs a passing validation and `poor` needs a brain-based estimate, which is not
-   possible here.
+## 8. Decision and adaptor (user, 2026-11-24)
+**Alignment grade: poor.** The shipped timing fails validation in 17/21 subjects. The only usable timing is the
+brain-derived DNN pair offsets. In the repo run they pass for 16 pairs, against 1 of 626 null pairs, and they raise
+the cross-fitted TRF r from -0.010 to 0.032.
 
-If incorporated (options 2 and 3), the proposed design is:
-- one record per shipped trial, with the EEG in V at 128 Hz (no resampling; native ≤ 1024);
-- two stimuli per trial, the shipped spliced wavs named `S<ss>_t<tt>_<l|r>_<eeg_NN>`, since `data_fn` must depend
-  only on the name. The alternative, rebuilt 115 s sources plus one record per contiguous piece, would give many
-  short pieces;
-- condition `attend-<stream>-<static|moving>` with azimuths in provenance;
-- S06 trials 1-10 kept but flagged as uncleaned, S18 empty trials skipped, and the splice list (piece starts) in
-  provenance;
-- `expinfo` decoded with the `expinfo_lib.py` logic ported into the adaptor.
+Options considered: discard; S18-S21 only; as shipped; confident pairs only. The user chose to provide both:
+- **`pairs="all"` (default): every shipped trial as shipped.** 666 trials (S18 trials 9 and 22 are empty and
+  skipped), shipped timing, shipped per-trial wavs. It fails validation in 17/21 subjects, which the README says.
+  `alignment_method` "onset_only".
+- **`pairs="confident"`: the 16 DNN-confident pairs, 32 trials, 0.84 h** (`pair_offsets.csv`, from `timing/`).
+  `alignment_method` "dnn", with `dnn_offset_s` / `dnn_offset_samples` and `dnn_pair` in the sidecar.
+  - Each stimulus is rebuilt from the unspliced source at the trial's splice map plus the pair offset
+    (`splices.realigned`), and named `..._dnn`.
+  - The shipped wav cannot simply be shifted: an offset of 1-3 s crosses the splices (median piece 7.8 s) and
+    would pull in audio that was cut out, not the audio that was playing.
+  - With offset 0, the rebuild equals the shipped wav on every mapped sample (checked on 18 stimuli: max diff 0).
+  - EEG samples without an agreed source position get zeros in the rebuilt stimulus.
+
+Design:
+- one record per shipped trial; subject = the number of `S##` (`subject_name` in the sidecar); session 1;
+- condition `attend-<l|r>-<static|moving>`, where l/r are the table's streams;
+- EEG at 128 Hz in V (no resampling), the 32 Emotiv names, template standard_1020 positions;
+- `info['bads']` empty: no channel is flat or an outlier, the authors interpolated theirs, and neighbouring
+  channels correlate up to 0.94-0.995;
+- stimuli: two 16 kHz mono `audio` per trial, `S<ss>_t<tt>_<l|r>_<eeg_NN_mono>[_dnn]`;
+- sidecar: `protocol` (A/B), `azimuth_deg` (static: per stream; moving: the shipped trajectory), `uncleaned`
+  (S06 t1-10), `splice_pieces` and `mapped_fraction`;
+- the splice maps are derived from the download by `timing/make_maps.py` (`splices.py`): `pieces.csv` (3205
+  pieces) and `source_cover.csv` (735 rows);
+- `expinfo.py` decodes the MATLAB table.
+
+Not used: the authors' envelopes and `recordWav` (a room recording not on the EEG clock).
 
 ## 9. Size
 - Shipped (cleaned) EEG: 13.8 h in total, 21 participants, mean 39.5 min each (21-52 min); S18-S21 1.8 h. This
   counts the trial durations, so the spliced-out time is excluded.
-- Output if incorporated: EEG ≈ 0.2 GB; stimuli at 16 kHz float32 for 2 streams ≈ 6 GB (fewer if deduplicated).
+- Standardised: default 666 trials, 6.8 GB (one 40 s trial = 5.6 MB); confident 32 trials, 0.84 h, 0.47 GB.
 - Scratch now: `R/zhang2023` = 21 GB (zip 11 GB plus extracted 11 GB).
 
 ## 10. Overlap
@@ -239,6 +261,24 @@ If incorporated (options 2 and 3), the proposed design is:
 - The IEEE DataPort "NJU auditory attention decoding dataset" named in the repo README is probably a related
   release. It was not checked.
 - No other dataset uses these Mandarin news stimuli.
+
+## 11. Validation (2026-11-24; low tier, 0.5-8 Hz, average reference; 128 Hz data, so no higher tiers)
+- **Default, 666 trials** (`validation.json`; figure `R/zhang2023/validation/validation.png`):
+  - Per-subject r between -0.007 and +0.007 for S01-S17, and none significant: p_circ ≥ 0.10, with S04 at
+    p_mismatch 0.048 and r 0.007.
+  - Significant: S18 r 0.029, S19 0.035, S21 0.020 (p_circ 0.020). S20 r 0.010, p_circ 0.14.
+  - The group TRF stays inside the null band at all lags. Offset jitter MAD 346 ms; 82 offsets at the window edge.
+  - The validator's group flag says pass (mean r 0.004, p_circ 0.020, p_mismatch 0.048), but only 3/21 subjects
+    are significant. **Fails in 18/21 subjects.**
+- **`pairs="confident"`, 32 trials** (`validation_confident.json`; figure
+  `R/zhang2023/validation_confident/validation.png`):
+  - Pass: mean r 0.028, median 0.025; TRF GFP peak at 172 ms, above the null from ~150 to 300 ms; offset jitter MAD
+    36 ms; 1 offset at the edge.
+  - Per subject: S06 r 0.036 and S16 0.046 (p_circ 0.020). S05 0.025, S09 0.025, S10 0.015 and S20 0.022 have
+    p_circ 0.06-0.10, with 2-4 trials each.
+  - A smaller GFP bump at -30..0 ms is also above the null. It is probably spread from the per-pair offset error
+    (resolution ~10 ms) and the 0.5-8 Hz smoothing.
+  - **Circular:** the offsets were chosen on the same EEG.
 
 ## Upstream issues
 - `expinfo` is stored as a MATLAB `table` with `string` columns, which is unreadable outside MATLAB.
