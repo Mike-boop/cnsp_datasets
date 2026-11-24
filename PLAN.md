@@ -46,7 +46,9 @@ objective validation before anything counts as done.
 - **Channels kept and dropped:** drop completely unused channels (e.g. disconnected peripheral ports). Channels that
   are flat or carry only electrical noise for a participant stay in the data and are listed in `info['bads']`.
 - **Files:** EEG from several simultaneous EEG systems goes in separate files (avoids MNE re-referencing
-  problems). Simultaneous EEG and MEG can share one `.fif` file.
+  problems). Simultaneous EEG and MEG can share one `.fif` file. Different montages also go in separate files, even
+  on one amplifier: scalp, around-ear (cEEGrid-type) and in-ear EEG each get their own file (own `ns_type`), all
+  aligned to the same stimulus timeline (user, 2026-11-24).
 - **Subjects and sessions:** keep the original subject names (no renumbering); label sessions as accurately as the
   data allow.
 - **Reference:** keep the original reference; record it in the metadata. Do not re-reference during

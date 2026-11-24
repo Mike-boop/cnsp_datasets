@@ -95,6 +95,8 @@ As needed:
   - EOG as VEOG/HEOG when the direction is known, otherwise EOG.
   - Peripherals kept; unused ports dropped.
   - Each EEG system in its own file; simultaneous EEG and MEG may share one fif.
+  - Each montage in its own file too, even on one amplifier: scalp, around-ear (cEEGrid-type) and in-ear EEG are
+    stored separately, all aligned to the same stimulus timeline (user, 2026-11-24).
   - Sessions labelled as accurately as the data allow.
 - **Bad channels.** Keep them in the data and list them in `info['bads']`. Analysis code must exclude them itself:
   `raw.pick("eeg")` keeps bads.

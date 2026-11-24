@@ -59,6 +59,15 @@ def test_constant_offset_shifts_trf_peak():
     assert abs(s["low"]["trf_peak_s"] - 0.4) < 0.03, s["low"]["trf_peak_s"]
 
 
+def test_low_tier_at_native_rate_below_64_hz():
+    """EEG kept at 50 Hz (not upsampled to 64): lags in seconds still match the 50 Hz samples."""
+    records = _records(offset=0.2, n_subjects=2)
+    for r in records:
+        r.neural_data_fn = lambda f=r.neural_data_fn: f().resample(50, verbose="ERROR")
+    s = validate(group_by_subject(records), picks="eeg", n_jobs=2, tiers=["low"])["summary"]
+    assert abs(s["low"]["trf_peak_s"] - 0.3) < 0.03, s["low"]["trf_peak_s"]
+
+
 def test_jitter_and_drift_are_estimated():
     s = validate(group_by_subject(_records(jitter=0.04, n_trials=8)), picks="eeg", n_jobs=3, tiers=["low"])["summary"]
     assert 25 < s["low"]["jitter_sd_ms"] < 60, s["low"]["jitter_sd_ms"]
