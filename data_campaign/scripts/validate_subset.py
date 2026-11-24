@@ -4,7 +4,7 @@ usage: validate_subset.py <dataset> <download dir> <out dir> <picks> <tiers> <py
 e.g.   validate_subset.py libribrain100 DIR OUT meg low,mlr "r.subject <= 12" 2
 """
 import json, os, sys
-sys.path.insert(0, "/home/gu08wuvu/cnsp_datasets_dev")
+sys.path.insert(0, "/home/gu08wuvu/cnsp_datasets")
 os.environ.setdefault("MNE_DONTWRITE_HOME", "true")
 from cnsp_datasets.standardise.format_dataset import get_adaptor_class
 from cnsp_datasets.validate import group_by_subject, report, validate

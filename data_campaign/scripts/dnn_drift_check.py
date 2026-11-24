@@ -13,7 +13,7 @@ from collections import defaultdict
 
 import numpy as np
 
-sys.path.insert(0, "/home/gu08wuvu/cnsp_datasets_dev")
+sys.path.insert(0, "/home/gu08wuvu/cnsp_datasets")
 m = runpy.run_path(os.path.join(os.path.dirname(os.path.abspath(__file__)), "dnn_offsets.py"))
 from cnsp_datasets.standardise.flat_sink import FlatSourceV1  # noqa: E402
 

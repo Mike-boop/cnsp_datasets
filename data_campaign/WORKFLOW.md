@@ -141,7 +141,7 @@ For residual drift, run `scripts/dnn_drift_check.py`, which compares early and l
   deleting.
 - **Timing.** Add a row to `R/timing.md` (onset method, drift, DNN offset).
 - **Review.** Run agent `reviewer` on the adaptor.
-- **Commit** on `dev` in the dev worktree, with explicit paths.
+- **Commit** on `dev`, with explicit paths.
 - **Records.** Update `STATUS.md` and the spreadsheet:
   - fill the status columns;
   - move the row from `candidates` to `incorporated` when done;

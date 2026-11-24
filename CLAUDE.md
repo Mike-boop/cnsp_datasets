@@ -18,8 +18,9 @@ As needed:
 - `cnsp_datasets/datasets/<name>/notes.md`: per-dataset findings; read it before touching an adaptor.
 
 ## Where things are
-- **Checkouts.** `/home/gu08wuvu/cnsp_datasets` is on `main`. `/home/gu08wuvu/cnsp_datasets_dev` is a worktree on
-  `dev`; new datasets are built there.
+- **Checkout.** `/home/gu08wuvu/cnsp_datasets` is the one checkout; switch with `git checkout main|dev`. New datasets
+  are built on `dev`, so check out `dev` before running dataset code. (The `cnsp_datasets_dev` worktree was removed
+  on 2026-11-24 so that `dev` can be checked out here; a branch can only be checked out in one place.)
 - **Branches.**
   - `main`: public, reviewed datasets plus all infrastructure (docs, `.claude/`, `data_campaign/`).
   - `dev`: main + new and experimental datasets.
@@ -39,7 +40,7 @@ As needed:
 
 ## Running code
 - **Python.** Use `/home/gu08wuvu/cnsp_datasets/.venv/bin/python -I`, and in scripts
-  `sys.path.insert(0, "/home/gu08wuvu/cnsp_datasets_dev")` (or the checkout you mean).
+  `sys.path.insert(0, "/home/gu08wuvu/cnsp_datasets")` (with the branch you mean checked out).
   - `-I` matters because a data or script folder can shadow the stdlib (a stray `inspect.py` broke `import mne`).
   - `python -c` puts the cwd first on `sys.path`.
   - Run from the worktree, never from inside a data folder.
