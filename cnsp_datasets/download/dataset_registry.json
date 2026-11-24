@@ -220,6 +220,12 @@
       "description": "Straetmans et al. (2021) mobile EEG (walking vs sitting), two competing speakers, attend one; 20 participants",
       "url": "https://openneuro.org/datasets/ds003801/versions/1.0.0"
     },
+    "li2022": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.7795585"],
+      "description": "Li et al. (2022, O-COCOSDA) ESAA Mandarin two-talker auditory attention EEG (BrainAmp 64 ch + ECG, 1000 Hz, 17 subjects x 32 trials); per-subject MATLAB files (S1..S17.zip), clean and HRTF stimulus wavs, and the authors' code",
+      "url": "https://zenodo.org/records/7795585"
+    },
     "li2025": {
       "source": "openneuro",
       "identifiers": ["10.18112/openneuro.ds005346.v1.0.5"],

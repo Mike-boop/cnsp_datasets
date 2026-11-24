@@ -1,0 +1,14 @@
+{
+ "description": "li2022 accou2023 DNN (fs128_1020-64_broadband) offset d of the sound re the S marker (s); d > 0 = sound after S. Circular: estimated from this EEG. See notes.md section 6.",
+ "population": {
+  "d_s": 0.2159,
+  "ci95_s": [
+   0.2101,
+   0.2194
+  ],
+  "subject_median_s": 0.2172,
+  "d_ignored_s": 0.213
+ },
+ "applied_s": 0.216,
+ "drift_ppm_early_vs_late": -54
+}
