@@ -422,6 +422,12 @@
       "url": "https://drum.lib.umd.edu/items/da9293b8-cc3c-4965-8b4f-dd1bc91daca5",
       "exclude": ["ico-4.zip", "vol-7-*.zip"]
     },
+    "miran2020b": {
+      "source": "drum",
+      "identifiers": ["d935265d-895c-4fc7-aec2-36dc7682d87d"],
+      "description": "Miran et al. (2020, PLoS Comput Biol) instructed attention switching: KIT MEG, 7 subjects, DSS-denoised sensor epochs at 200 Hz (2 conditions x 3 x 60 s), Sp1/Sp2 talker wavs (diotic mixture); one uncompressed zip",
+      "url": "https://drum.lib.umd.edu/items/d935265d-895c-4fc7-aec2-36dc7682d87d"
+    },
     "presacco2016": {
       "source": "drum",
       "identifiers": ["79afc7aa-560d-442d-b201-ab63e7f1e69f"],
