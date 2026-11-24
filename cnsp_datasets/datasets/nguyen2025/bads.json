@@ -1,0 +1,117 @@
+{
+ "sub-001/ear-eeg": [
+  "EOG"
+ ],
+ "sub-002/ear-eeg": [
+  "ERB"
+ ],
+ "sub-003/ear-eeg": [
+  "ELC",
+  "ERB",
+  "ERC"
+ ],
+ "sub-004/ear-eeg": [
+  "ELC",
+  "EOG"
+ ],
+ "sub-004/eeg": [
+  "M2",
+  "O2"
+ ],
+ "sub-005/ear-eeg": [
+  "ELA",
+  "ERC"
+ ],
+ "sub-005/eeg": [
+  "O2"
+ ],
+ "sub-006/ear-eeg": [
+  "ELA",
+  "ERI"
+ ],
+ "sub-006/eeg": [
+  "Fp1"
+ ],
+ "sub-007/ear-eeg": [
+  "ELA",
+  "ELB",
+  "ELC",
+  "ELE",
+  "ELI",
+  "ELT",
+  "ERA",
+  "ERB",
+  "ERC",
+  "ERE",
+  "ERI",
+  "ERT",
+  "EOG"
+ ],
+ "sub-008/ear-eeg": [
+  "ELT"
+ ],
+ "sub-008/eeg": [
+  "M1",
+  "M2"
+ ],
+ "sub-009/ear-eeg": [
+  "ELA",
+  "ERI"
+ ],
+ "sub-011/ear-eeg": [
+  "ELC",
+  "ERC"
+ ],
+ "sub-012/ear-eeg": [
+  "ERT"
+ ],
+ "sub-012/eeg": [
+  "M2",
+  "O2"
+ ],
+ "sub-015/ear-eeg": [
+  "ERA"
+ ],
+ "sub-015/eeg": [
+  "FC5",
+  "M1",
+  "T7-T3",
+  "M2",
+  "Oz",
+  "O2"
+ ],
+ "sub-016/ear-eeg": [
+  "ERI"
+ ],
+ "sub-017/ear-eeg": [
+  "ERC",
+  "ERI"
+ ],
+ "sub-017/eeg": [
+  "M1",
+  "M2",
+  "O2"
+ ],
+ "sub-018/ear-eeg": [
+  "ERE",
+  "ERI"
+ ],
+ "sub-020/ear-eeg": [
+  "ERE",
+  "ERI"
+ ],
+ "sub-020/eeg": [
+  "M2"
+ ],
+ "sub-022/ear-eeg": [
+  "ELA"
+ ],
+ "sub-025/ear-eeg": [
+  "ELA"
+ ],
+ "sub-025/eeg": [
+  "M1",
+  "M2",
+  "O2"
+ ]
+}

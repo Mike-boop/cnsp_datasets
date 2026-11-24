@@ -1,0 +1,30 @@
+{
+ "steps": {
+  "sub-001/attend/39": "single window: -10 ms at 20-30 s (in sync in 4 of 5 windows)",
+  "sub-002/focus/19": "single window: -25 ms at 10-20 s (in sync in 2 of 3 windows)",
+  "sub-004/attend/30": "single window: +8 ms at 0-10 s (in sync in 5 of 6 windows)",
+  "sub-004/attend/51": "single window: +11 ms at 0-10 s (in sync in 4 of 5 windows)",
+  "sub-004/attend/52": "single window: +5 ms at 5-15 s (in sync in 4 of 5 windows)",
+  "sub-004/attend/60": "single window: +7 ms at 20-30 s (in sync in 4 of 5 windows)",
+  "sub-004/focus/6": "single window: +23 ms at 0-10 s (in sync in 2 of 3 windows)",
+  "sub-005/attend/37": "step: -11 ms at 5-15 s, -15 ms at 10-20 s, -15 ms at 15-25 s, -15 ms at 20-30 s, -15 ms at 25-35 s (in sync in 1 of 6 windows)",
+  "sub-005/focus/14": "step: -14 ms at 0-10 s, -16 ms at 5-15 s, -14 ms at 10-20 s (in sync in 0 of 3 windows)",
+  "sub-009/attend/40": "single window: -7 ms at 20-30 s (in sync in 4 of 5 windows)",
+  "sub-009/attend/56": "single window: +5 ms at 0-10 s (in sync in 5 of 6 windows)",
+  "sub-016/attend/33": "step: -10 ms at 15-25 s, -16 ms at 20-30 s, -16 ms at 25-35 s (in sync in 3 of 6 windows)",
+  "sub-018/attend/40": "step: +12 ms at 0-10 s, +12 ms at 5-15 s (in sync in 3 of 5 windows)",
+  "sub-019/attend/52": "step: -14 ms at 10-20 s, -16 ms at 15-25 s, -15 ms at 20-30 s (in sync in 2 of 5 windows)",
+  "sub-020/focus/3": "single window: -14 ms at 10-20 s (in sync in 2 of 3 windows)",
+  "sub-021/attend/52": "single window: -9 ms at 20-30 s (in sync in 4 of 5 windows)",
+  "sub-022/attend/27": "step: -10 ms at 15-25 s, -10 ms at 20-30 s, -11 ms at 25-35 s (in sync in 3 of 6 windows)",
+  "sub-023/focus/10": "step: -6 ms at 5-15 s, -11 ms at 10-20 s (in sync in 1 of 3 windows)",
+  "sub-024/attend/29": "step: -6 ms at 0-10 s, -12 ms at 5-15 s, -16 ms at 10-20 s, -16 ms at 15-25 s, -16 ms at 20-30 s (in sync in 0 of 5 windows)"
+ },
+ "unassessable": [
+  "sub-007",
+  "sub-008",
+  "sub-015",
+  "sub-017",
+  "sub-025"
+ ]
+}
