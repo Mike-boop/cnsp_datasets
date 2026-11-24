@@ -219,7 +219,8 @@ wav and EEG lengths match exactly (125 audio samples per EEG sample) in every tr
 ## 8. Decision and adaptor (user, 2026-11-24)
 **Alignment grade: poor.** The shipped timing fails validation in 17/21 subjects. The only usable timing is the
 brain-derived DNN pair offsets. In the repo run they pass for 16 pairs, against 1 of 626 null pairs, and they raise
-the cross-fitted TRF r from -0.010 to 0.032.
+the cross-fitted TRF r from -0.010 to 0.032. The user kept all 16 (2026-11-24): the 14 first approved, with
+identical offsets, plus S10 11+12 and S16 9+10 from the seeded (reproducible) rerun.
 
 Options considered: discard; S18-S21 only; as shipped; confident pairs only. The user chose to provide both:
 - **`pairs="all"` (default): every shipped trial as shipped.** 666 trials (S18 trials 9 and 22 are empty and
