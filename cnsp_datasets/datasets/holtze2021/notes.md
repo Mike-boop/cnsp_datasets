@@ -406,6 +406,17 @@ channels. Scripts `scripts/holtze2021_v2/{validate.py, backward.py, validation_s
 - **Tier: low** for both halves; `GRID_VALIDATION_TIER = "low"` in the adaptor (the 175 cEEGrid files were
   re-written with it after validation, provenance only).
 
+## Related work: Mirkovic et al. (2016), not available
+- Mirkovic B, Bleichner MG, De Vos M, Debener S (2016). Target speaker detection with concealed EEG around the ear.
+  Front. Neurosci. 10:349, doi:10.3389/fnins.2016.00349 (`data_campaign/papers/mirkovic2016.pdf`).
+- 20 participants recruited, 2 excluded (technical problems, poor results): 18 analysed. 84 channels of an
+  equidistant 96-channel Easycap cap (BrainAmp, nose reference, 5000 Hz, 0.0153-250 Hz) plus two cEEGrids (SMARTING,
+  500 Hz, ground R4a, reference R4b), recorded together.
+- Same Oldenburg stories as this entry: ds004015 names its envelopes `Mirkovic2016_{story}_{block}.mat`.
+  Different participants from Holtze (2021) and Jaeger (2020).
+- No data released: the paper has no data availability statement and none was found online. This note replaces
+  the spreadsheet's candidate row (removed 2026-11-24). If the data surface, the audio is already held here.
+
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides); scalp accepted by the user 2026-11-24, cEEGrid (v2) accepted
 2026-11-24. **medium** for both montages.
