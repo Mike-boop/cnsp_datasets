@@ -1,8 +1,11 @@
 # kulasingham2020: high-gamma TRFs in younger and older listeners, KIT MEG, two 60 s stories in quiet (DRUM)
 
-Explorer notes (2026-11-24). Scripts: `tmp/review/scripts/kulasingham2020/` (named per finding); outputs and
+Explorer notes (2026-11-24); adaptor, full standardisation and validation the same day (sections 10-11). Scripts: `tmp/review/scripts/kulasingham2020/` (named per finding); outputs and
 figures in `tmp/review/kulasingham2020/` (`survey_{younger,older}.tsv`, `submap_{younger,older}.tsv`, `figures/`).
-No adaptor yet: the structural choice (separate dataset or a source inside presacco2016) is the user's (section 8).
+**User decision (2026-11-24): separate dataset**, all 40 participants by default; option `subjects="unique"` keeps
+only the 8 not in presacco2016; the map in `subject_map.tsv` and the sidecar (`overlaps_with`); denoised flag in
+the sidecar and README; the defaults of section 9 (onset edge, 6 x 60 s, drift documented only, MISC dropped, bads
+as in question 4, no licence stated).
 
 ## 1. Source
 - DRUM (University of Maryland) item `da9293b8-cc3c-4965-8b4f-dd1bc91daca5`, hdl 1903/25332, DOI
@@ -159,13 +162,48 @@ use these fifs' KIT device geometry for presacco2016's 32 shared subjects (presa
 7. Data-size note: 40 x 6 min = 4.0 h of stimulus-locked data (5.57 h recorded); conditions: quiet only
    (`Trial1` = story segment H, `Trial2` = segment L).
 
+## 10. Adaptor and standardisation (2026-11-24)
+- `adaptor.py` (`simon_base.common`: `read_raw`, `stim_events`, `rms_bads`, `crop_meg`, `audio_loader`): per
+  participant and block, the three STI 014 onsets (code 166 / 171; equal to the MISC falling edges in all 240
+  trials) -> trials of 60,000 samples from the edge; trials 1-3 Trial1, 4-6 Trial2, condition `quiet`, session 1,
+  subject = R-number. Channels MEG 001-157 (`mag`) + MEG 158-160 (`ref_meg`), T, 1000 Hz, sensor positions as
+  shipped. Stimuli `Trial1` / `Trial2` (44.1 kHz float32).
+- Bads per block: `bad_channels.txt` + `rms_bads` (rms < median / 20; catches all-zero channels and R2281 MEG 056)
+  + `REFILLED` (dead in both of presacco2016's raw quiet blocks, SNS-refilled here; marked in both blocks).
+- Sidecar (`onset_only`, trigger type unknown, `drift_ppm` null): participant, age_group, hearing, file, block,
+  repetition, onset/offset trigger codes, onset_s, block_recorded (`meas_date`), stimulus_file,
+  identical_stimulus (presacco2016 wav), overlaps_with (presacco2016 S-number or null), units, reference,
+  preprocessing (denoised: TSPCA + SNS).
+- Checks: dry parse 240 trials (48 with `subjects="unique"`); one written trial equals the source exactly (bads
+  MEG 062, 157 for R2201); 38.4 MB per trial. Full run (`R/scripts/kulasingham2020/run_all.sh`): 240 trials, 9.4 GB,
+  0 errors, ~10 min. A re-parse after the review changes gives the same descriptions and bads (`reparse_check.py`).
+
+## 11. Validation (2026-11-24; `validation.json`, `R/kulasingham2020/validation.png`, `validation/new8/`)
+Basis: standardised data, axial gradiometers (`--picks mag`, bads excluded), no re-reference; tiers low, mlr,
+brainstem.
+
+| set | low r (sig.) | low p_circ | mlr SNR (p) | 30-250 Hz SNR (p, sig.) |
+|---|---|---|---|---|
+| all 40 | 0.038 (35/40) | 0.020 | 0.97 (0.23) fail | 1.34 (0.0099, 29/40) pass |
+| 8 not in presacco2016 | 0.042 (7/8) | 0.020 | 1.01 (0.16) fail | 1.33 (0.0099, 7/8) pass |
+
+- low-frequency TRF peaks ~60 and ~190 ms; 30-250 Hz TRF a sharp peak at ~40 ms (all) / ~41 ms (new 8), flat at
+  negative lags; 30-60 Hz peaks at ~62 ms, outside the 18-45 ms window (as presacco2016: SNR 0.97).
+- Validator tier `low` (mlr fails), the 30-250 Hz tier passes as well. Comparable with presacco2016's pilot (low r
+  0.035, 30-250 Hz SNR 1.75 over all 10 conditions; quiet only 1.26).
+- R2342 (new) is not significant at low; it passes 30-250 Hz.
+
+## Data size (recorded)
+40 participants x 6 trials x 60 s = **6.0 min each, 4.0 h in total** (younger 1.7 h, older 2.3 h; the 8 unique
+0.8 h). Continuous recordings 5.57 h. Standardised 9.4 GB.
+
 ## Upstream issues
 - Readme says saturating channels were "removed", but they are present as all-zero channels; SNS refilled
   channels that are dead in presacco2016's raw recordings (7 subjects) without listing them; R2084 Trial1 MEG 099
   zero but unlisted.
 - No licence; the zips store an absolute author path (`/Volumes/JOSHUA/...`).
 
-## Alignment grade (proposed)
-**medium**: onset-trigger edges (type unknown), no stimtrack; for the 32 shared subjects presacco2016's validation
-applies (same samples, lag 0); -37.5 ppm drift-or-early-end documented, not applied. To be confirmed by the
-validator on this dataset (8 new subjects).
+## Alignment grade
+**medium**: onset-trigger edges (type unknown), no stimtrack; validation confirms the timing (30-250 Hz TRF peak
+~40 ms, flat at negative lags, also in the 8 new participants alone); -37.5 ppm drift-or-early-end documented, not
+applied.

@@ -1,0 +1,41 @@
+participant	age_group	presacco2016_subject	evidence
+R2130	younger	S01 Younger	epoch correlation r >= 0.98
+R2135	younger	S02 Younger	block lengths
+R1801	younger	S03 Younger	block lengths
+R2148	younger	S04 Younger	block lengths
+R2085	younger	S05 Younger	block lengths
+R2153	younger	S06 Younger	block lengths
+R2196	younger	S07 Younger	block lengths
+R2185	younger	S08 Younger	block lengths
+R2079	younger	S09 Younger	block lengths
+R2217	younger	S10 Younger	block lengths
+R2223	younger	S11 Younger	block lengths
+R2201	younger	S12 Younger	epoch correlation r >= 0.98
+R2230	younger	S13 Younger	block lengths
+R2244	younger	S14 Younger	epoch correlation r >= 0.98
+R2246	younger	S15 Younger	block lengths
+R2256	younger	S16 Younger	block lengths
+R2281	younger	S17 Younger	block lengths
+R2092	older	S21 Older_Normal_Hearing	epoch correlation r >= 0.98
+R0840	older	S22 Older_Normal_Hearing	block lengths
+R2084	older	S23 Older_Normal_Hearing	epoch correlation r >= 0.98
+R2086	older	S24 Older_Normal_Hearing	block lengths
+R2145	older	S25 Older_Normal_Hearing	block lengths
+R2154	older	S26 Older_Normal_Hearing	block lengths
+R2197	older	S27 Older_Normal_Hearing	block lengths
+R2210	older	S28 Older_Normal_Hearing	block lengths
+R2093	older	S29 Older_Normal_Hearing	epoch correlation r >= 0.98
+R2107	older	S30 Older_Normal_Hearing	block lengths
+R2247	older	S31 Older_Normal_Hearing	block lengths
+R2083	older	S32 Older_Normal_Hearing	block lengths
+R2254	older	S33 Older_Normal_Hearing	block lengths
+R2263	older	S34 Older_Normal_Hearing	block lengths
+R2094	older	S35 Older_Normal_Hearing	block lengths
+R2338	older		not in presacco2016
+R2342	older		not in presacco2016
+R2354	older		not in presacco2016
+R2363	older		not in presacco2016
+R2396	older		not in presacco2016
+R2408	older		not in presacco2016
+R2409	older		not in presacco2016
+R2428	older		not in presacco2016
