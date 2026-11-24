@@ -21,11 +21,7 @@ Explorer notes (2026-11-22). Evidence scripts and plots: `/data_storage/gu08wuvu
   block), `bjh_05_add_control_events.m` / `bjh_06_create_struct_seg_xcorr_name.m` (which name table goes with which
   attended side).
 - Narratives previously used in Mirkovic et al. (2016) and Jaeger et al. (2020) (paper, "Narratives").
-- Related, not incorporable: Mirkovic B, Bleichner MG, De Vos M, Debener S (2016), *Front. Neurosci.* 10:349,
-  doi:10.3389/fnins.2016.00349 (`data_campaign/papers/mirkovic2016.pdf`): 20 recruited (~18 analysed), 84-ch cap at
-  5000 Hz + 2 cEEGrids at 500 Hz, the same Oldenburg stories (ds004015 names its envelopes `Mirkovic2016_{story}_{block}`),
-  different participants. No data released (no availability statement; none found online). Its sheet entry was
-  removed on 2026-11-24 (user); this note replaces it.
+- Related: Mirkovic et al. (2016), no data released; see "Related work" below.
 
 ## 2. Layout
 - `sub-0NN/eeg/sub-0NN_task-AttendedSpeakerParadigmOwnName_eeg.{set,fdt}`: **the raw data** (EEGLAB, one
