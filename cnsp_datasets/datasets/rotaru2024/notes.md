@@ -162,7 +162,14 @@ audio copy or stimtrack to verify them; in 12 of 99 trials the decoder shows the
 - First-buffer playback stalls (sub04, sub07): shipped epochs misaligned by ~20-130 ms, varying within the trial.
 - README: data "first 64 channels are EEG", but sub16 has 63 (no P9).
 
-## Decisions and open questions (recommended defaults)
+## Possible overlap with rotaru2026 (user, 2026-11-24)
+- Same lab (KU Leuven), same Flemish podcast source, and 10 of rotaru2024's 30 podcasts are also SparrKULee
+  (accou2023) podcasts that rotaru2026 uses (intro-cut, silence-trimmed versions there). Stimulus overlap is
+  therefore likely beyond these 10; participant overlap cannot be checked (anonymised per-study ids) but is possible
+  (same lab, overlapping years). Treat rotaru2024 and rotaru2026 as possibly sharing listeners and stimuli in pooled
+  analyses; not yet resolved (would need the authors or a podcast-by-podcast envelope match against rotaru2026).
+
+## Decisions and open questions (defaults accepted by the user, 2026-11-24)
 1. Timing-flagged trials (11 stall trials + sub04 MovingTargetNoise2): keep with the flag (default), or exclude by
    default / apply the decoder's -1 s to sub04 MovingTargetNoise2 (brain-based; would need a trial-specific
    stimulus cut). Recommended: keep, flagged; users filter on `timing_flag`.

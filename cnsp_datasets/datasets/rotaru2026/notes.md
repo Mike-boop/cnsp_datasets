@@ -51,8 +51,9 @@ figures: `/data_storage/gu08wuvu/datasets/tmp/review/rotaru2026/` (`agent_log.md
   Hoe_moeilijk_is_het_om_de_trein = 1, Hoe_onterf_je_je_kind = 23, Hoe_word_ik_fit = 28,
   Waarom_gebruiken_we_drugs = 32, Waarom_herinneren_mensen_met_dementie = 20, Wat_kan_je_terugvinden = 25,
   Zijn_led-schermen_gevaarlijk = 19, Zorgt_Waze = 35 (rotaru versions are intro-cut and silence-trimmed). No match
-  for the other 21. das2019 uses its own story recordings (no overlap). rotaru2024 (candidate, not downloaded) also
-  used Flemish podcasts; unchecked.
+  for the other 21. das2019 uses its own story recordings (no overlap). rotaru2024 (now incorporated) also
+  used Flemish podcasts from the same source; 10 of its 30 are SparrKULee ones too, so stimulus (and possibly
+  participant) overlap with rotaru2024 is likely; see rotaru2024/notes.md (user, 2026-11-24).
 - **Participant overlap** cannot be checked: all KUL releases use anonymised per-study IDs. The BDFs date from
   Aug 2024; sex/age are in the participants sheet only.
 
