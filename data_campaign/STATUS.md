@@ -39,7 +39,7 @@ Last updated: 2026-11-24.
 | stoll2025 (+ _cortex) | stoll2025 | dev | brainstem (cortex weakly) | good | deleted | |
 | harshaiyahav2025 | harshaiyahav2025 | dev | low | medium | deleted | CND envelopes only; DNN -15.6 ms |
 | herrmann2025 | herrmann2025 | dev | mlr | medium | deleted | |
-| holtze2021 | holtze2021 | dev | low | medium | deleted | v1.1.1 audio; **being rebuilt (user 2026-11-24)**: combined with OpenNeuro ds004015 cEEGrid (21 Holtze subj + 15 Jaeger 2020 subj), scalp and cEEGrid in separate files |
+| holtze2021 | holtze2021 | dev | low | medium | deleted | v1.1.1 audio; **being rebuilt (user 2026-11-24)**: combined with OpenNeuro ds004015 cEEGrid (21 Holtze subj + 15 Jaeger 2020 subj), scalp and cEEGrid in separate files; cEEGrid onset = scalp-file cross-correlation lag (-37 ms; Jaeger -35 ms), approved by the user 2026-11-24; validation: cEEGrid low tier Holtze 21/21, Jaeger 14/15, attended > ignored 20/21 and 15/15; commit pending |
 | momenian2024 | momenian2024 | dev | low | poor | deleted | stimulus rebuilt per participant |
 | habersetzer2025 | habersetzer2025 | dev | brainstem (tSSS) | good | deleted | +485 ppm corrected |
 | pkueeg2025 | pkueeg2025 | dev | low (pilot 12 subj) | poor | deleted | drift 76.8 ppm kept; alternatives 47/27 ppm; DNN -75/-42 ms documented |
