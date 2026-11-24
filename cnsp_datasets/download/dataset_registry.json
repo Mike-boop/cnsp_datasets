@@ -502,6 +502,12 @@
       "identifiers": ["10.5281/zenodo.8082867"],
       "description": "Nguyen, Mikkelsen & Kidmose (2025, Front Hum Neurosci) event-based AAD: Danish Google-TTS speech from two loudspeakers (+-60 deg), 24 participants (sub-001..025 without 013), four paradigms (word oddball, competing word streams, competing story snippets with targets (20 x ~20 s), competing stories (40 x ~30 s)) plus spontaneous EEG; scalp (32, Fpz reference) and ear-EEG (12 in-ear + EOG, cRef reference) from two TMSi Mobita amplifiers at 1 kHz, EEGLAB .set in BIDS, one zip per participant (~0.7-0.9 GB); stimuli.zip (89 MB) with the played wavs, audio-trigger wavs and word timings; version 8082867 pinned; CC BY 4.0",
       "url": "https://zenodo.org/records/8082867"
+    },
+    "zhang2023": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.7253438"],
+      "description": "Zhang, Yuan & Lu (Zenodo 2022; ICASSP 2023) NJU auditory attention detection: two Mandarin news talkers over a loudspeaker array (14 azimuths, some moving), 21 participants x 28-32 trials; Emotiv EPOC Flex 32 ch, authors' preprocessed EEG only (1-32 Hz, 128 Hz, ICA, artefact segments spliced out of EEG and wavs together) with per-trial 16 kHz wavs, envelopes and a MATLAB table expinfo, one v7.3 .mat per participant (NJUNCA_preprocessed_arte_removed.zip, 11.0 GB) plus script.zip; shipped timing shows no envelope tracking in 17/21 (see datasets/zhang2023/notes.md); CC BY 4.0",
+      "url": "https://zenodo.org/records/7253438"
     }
   }
 }
