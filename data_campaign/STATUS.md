@@ -19,6 +19,7 @@ Last updated: 2026-11-24.
 | das2019 | biesmans2017 | main | low | poor | deleted | DNN -81 ms (documented); size from EEG (~1.3 h/subject) |
 | etard2019 | etard2019 | main | brainstem | good | BIDS in user's folder | BIDS re-upload pending (licence) |
 | fuglsang2018 | fuglsang2017 | main | low (mlr without reverb) | medium | deleted | |
+| gao2024 | gao2024 | dev (a80b901) | low (48/48 subj, median r 0.049; 100 Hz data, no higher tier possible) | medium | download 31 + extracted 31 + standardised_v2 19 GB (79 GB; delete pending; woody copy, no vault backup) | authors' tSSS 100 Hz MEG; +490 ppm trigger-derived drift corrected by default; condition labels verified vs authors' Fig2/3 data (27/27, exp3 21/21); exp2 echo-250 TRF on the mixture peaks early by the echo delay (direct-sound TRF clean); 3 experiments, 48 participants |
 | guilleminot2021 | guilleminot2022 | main | mlr | good | deleted | ~7 ppm, not corrected |
 | jehn2025_nh / _hi / _ci | jehn2025-nh / -ha / -ci | main | mlr / mlr / brainstem | good | deleted | drift correction optional, off; user to decide |
 | narayanan2021 | narayanan2021 | main | low | medium | deleted (vault backup) | drift correction on |
