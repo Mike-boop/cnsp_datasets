@@ -428,6 +428,12 @@
       "description": "Miran et al. (2020, PLoS Comput Biol) instructed attention switching: KIT MEG, 7 subjects, DSS-denoised sensor epochs at 200 Hz (2 conditions x 3 x 60 s), Sp1/Sp2 talker wavs (diotic mixture); one uncompressed zip",
       "url": "https://drum.lib.umd.edu/items/d935265d-895c-4fc7-aec2-36dc7682d87d"
     },
+    "miran2020": {
+      "source": "drum",
+      "identifiers": ["36f86b13-fefe-41b2-b6e6-236f87b170e3"],
+      "description": "Miran et al. (2020, PLoS Comput Biol) at-will attention switching: KIT MEG, 1 subject (R2082), 3 x 90 s raw sensor epochs at 2 kHz (v7.3 mat), two Sleepy Hollow wavs",
+      "url": "https://drum.lib.umd.edu/items/36f86b13-fefe-41b2-b6e6-236f87b170e3"
+    },
     "presacco2016": {
       "source": "drum",
       "identifiers": ["79afc7aa-560d-442d-b201-ab63e7f1e69f"],
