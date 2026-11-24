@@ -389,6 +389,13 @@
       "description": "Kulasingham et al. (2021, J Neurosci) MEG (KIT), 22 participants, two-talker mixtures of isochronous spoken sentences and arithmetic equations, attend one stream",
       "url": "https://drum.lib.umd.edu/items/93067450-51d7-43c6-bb8f-53d4195db334"
     },
+    "kulasingham2020": {
+      "source": "drum",
+      "identifiers": ["da9293b8-cc3c-4965-8b4f-dd1bc91daca5"],
+      "description": "Kulasingham et al. (2020, NeuroImage) continuous raw MEG (KIT), 17 younger and 23 older adults, two 60 s stories x 3 in quiet (32 subjects overlap presacco2016); split zips younger_meg/older (.z01-.z03 + .zip) are joined on extraction",
+      "url": "https://drum.lib.umd.edu/items/da9293b8-cc3c-4965-8b4f-dd1bc91daca5",
+      "exclude": ["ico-4.zip", "vol-7-*.zip"]
+    },
     "presacco2016": {
       "source": "drum",
       "identifiers": ["79afc7aa-560d-442d-b201-ab63e7f1e69f"],
@@ -508,6 +515,12 @@
       "identifiers": ["10.5281/zenodo.7253438"],
       "description": "Zhang, Yuan & Lu (Zenodo 2022; ICASSP 2023) NJU auditory attention detection: two Mandarin news talkers over a loudspeaker array (14 azimuths, some moving), 21 participants x 28-32 trials; Emotiv EPOC Flex 32 ch, authors' preprocessed EEG only (1-32 Hz, 128 Hz, ICA, artefact segments spliced out of EEG and wavs together) with per-trial 16 kHz wavs, envelopes and a MATLAB table expinfo, one v7.3 .mat per participant (NJUNCA_preprocessed_arte_removed.zip, 11.0 GB) plus script.zip; shipped timing shows no envelope tracking in 17/21 (see datasets/zhang2023/notes.md); CC BY 4.0",
       "url": "https://zenodo.org/records/7253438"
+    },
+    "rogachev2024": {
+      "source": "osf",
+      "identifiers": ["c3agw"],
+      "description": "Rogachev et al. (2024) neural tracking in children: 52 children aged 3-8, 32-ch actiCHamp EEG shipped as the authors' preprocessed CND (1-15 Hz, bad channels interpolated, average reference), 4 Russian story wavs; no licence stated",
+      "url": "https://osf.io/c3agw/"
     }
   }
 }
