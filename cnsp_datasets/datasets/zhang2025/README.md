@@ -39,7 +39,7 @@
 - The sound itself was not recorded, so the loudspeaker latency relative to the flash, and so to t=0, is unknown.
   Clock drift could not be measured (LSL timestamps too jittery); for 30-s trials it should be <= ~3 ms. No
   correction is applied.
-- **Alignment grade: medium**: onset from the authors' photodiode-based cut, not verified against audio; confirmed by
+- **Alignment grade: medium** (under review: the forward TRF is weak and stays inside the null band): onset from the authors' photodiode-based cut, not verified against audio; confirmed by
   validation (forward-TRF peak 156 ms, nothing at negative lags, backward lag sweep peaking at 0, attended >
   ignored).
 

@@ -143,7 +143,9 @@ the low tier (mlr/brainstem need >= 500 Hz).
 Per task 3.9 h (task 3: 3.7 h; task 4: 4.3 h). Standardised: 3287 fif (~245 kB) + 126 audio npz, 1.5 GB.
 
 ## Alignment grade
-**medium** (proposed). The onset is the authors' cut, fixed 1.02 s after a screen photodiode (hardware, but a
+**medium** (not confirmed by the user, 2026-11-24: the forward TRF looks poor; it peaks at 156 ms but stays
+inside the null band, and only 14/66 subjects track individually, so the low-tier pass rests on the pooled
+statistic; revisit the grade, e.g. with a DNN check if a 16-channel ear model becomes available). The onset is the authors' cut, fixed 1.02 s after a screen photodiode (hardware, but a
 visual trigger on a separate LSL stream; the sound itself is not recorded, so the onset is not verified against
 audio); validation confirms it at the low tier (pooled pass, forward-TRF peak 156 ms, nothing at negative lags,
 attended > ignored p 0.008, backward lag sweep peaking at 0); no correction applied. Not `good`: no audio copy, and
