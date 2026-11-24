@@ -496,6 +496,12 @@
       "identifiers": ["10.5281/zenodo.20442638"],
       "description": "Rotaru et al. (2026) KUL-AAD-NFB: closed-loop auditory attention decoding with neurofeedback, two competing Flemish podcasts over two loudspeakers (+-14 deg), conditions OL/CLV/CLA/psCLA (+ OL-CAL calibration for sub-11..19), 1 or 3 cued attention switches per 8-min trial; 11 of 19 participants shared (sub-09 two sessions); BioSemi 64-ch BDF at 1024 Hz with a 1-s sound-card pulse train in Status, authors' 64 Hz preprocessed .mat per trial (also holds stimulus names and attention labels; ~275 MB each), 33 wavs (stimuli.zip); eeg.zip 15.4 GB; version 20442638 pinned; CC BY 4.0 (audio: non-commercial use only)",
       "url": "https://zenodo.org/records/20442638"
+    },
+    "nguyen2025": {
+      "source": "zenodo",
+      "identifiers": ["10.5281/zenodo.8082867"],
+      "description": "Nguyen, Mikkelsen & Kidmose (2025, Front Hum Neurosci) event-based AAD: Danish Google-TTS speech from two loudspeakers (+-60 deg), 24 participants (sub-001..025 without 013), four paradigms (word oddball, competing word streams, competing story snippets with targets (20 x ~20 s), competing stories (40 x ~30 s)) plus spontaneous EEG; scalp (32, Fpz reference) and ear-EEG (12 in-ear + EOG, cRef reference) from two TMSi Mobita amplifiers at 1 kHz, EEGLAB .set in BIDS, one zip per participant (~0.7-0.9 GB); stimuli.zip (89 MB) with the played wavs, audio-trigger wavs and word timings; version 8082867 pinned; CC BY 4.0",
+      "url": "https://zenodo.org/records/8082867"
     }
   }
 }
