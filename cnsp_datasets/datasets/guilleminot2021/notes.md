@@ -14,7 +14,7 @@ audio-tactile), Delay (tactile relative to speech, ms) and Correlated.
   its length** (`np.roll(x, len(x) // 4)`; the wrapped part matches too, r 0.95-0.99). This answers the earlier
   question about the incongruent tactile stimulus.
 
-## Timing (`timing.py` -> `trial_timing.csv`)
+## Timing (`alignment/timing.py` -> `alignment/trial_timing.csv`)
 - Buffer onset is 1-3 ms (mostly 2 ms) after the `R3` marker, except zartan session 2 row 0 (marker 2.39 s late).
 - `timing.py` measures every onset from the Sound channel near its marker (567 trials), falls back to the marker
   + 2 ms where Sound is saturated (6), and flags trials it cannot use:
@@ -41,3 +41,11 @@ audio-tactile), Delay (tactile relative to speech, ms) and Correlated.
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **good**: Onset per trial from the EEG Sound channel (567 trials; 6 marker+2 ms fallbacks); standardised check 0 ms lag; ~7 ppm not corrected; DNN ~-15 ms = response latency in noise; mlr tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor subclasses BaseAdaptor. timing.py and trial_timing.csv moved to `alignment/` (`python -m
+  cnsp_datasets.datasets.guilleminot2021.alignment.timing`). Speech wav now float32 scaled to [-1, 1) via
+  iohelpers.read_wav (was the raw int16 sample values as float64; first channel kept as before); tactile signal stored
+  as float32 (values unchanged). Tactile TextGrids written by iohelpers.textgrid (same intervals, checked on a
+  synthetic TextGrid; times no longer rounded to 6 decimals, quotes escaped); the speech TextGrid is still passed
+  through as shipped.

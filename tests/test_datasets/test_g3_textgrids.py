@@ -13,3 +13,54 @@ def test_nguyen2025_textgrid(tmp_path):
     assert "intervals: size = 6" in words and 'text = "r\xf8d"' in words and 'text = "-"' not in words
     targets = tg.split('name = "targets"')[1]
     assert 'text = "human_name"' in targets and 'text = "color"' in targets and "xmax = 2.3" in targets
+
+
+SPEECH_TG = """File type = "ooTextFile"
+Object class = "TextGrid"
+
+xmin = 0
+xmax = 4
+tiers? <exists>
+size = 1
+item []:
+    item [1]:
+        class = "IntervalTier"
+        name = "words"
+        xmin = 0
+        xmax = 4
+        intervals: size = 3
+        intervals [1]:
+            xmin = 0
+            xmax = 0.5
+            text = ""
+        intervals [2]:
+            xmin = 0.5
+            xmax = 1.5
+            text = "hej"
+        intervals [3]:
+            xmin = 1.5
+            xmax = 4
+            text = "da"
+"""
+
+
+def test_guilleminot2021_tactile_textgrid_and_audio(tmp_path):
+    import numpy as np
+    import soundfile
+
+    from cnsp_datasets.datasets.guilleminot2021.adaptor import Guilleminot2021Adaptor
+    stim = tmp_path / "Stimuli"
+    stim.mkdir()
+    soundfile.write(stim / "Odin_1.wav", np.full(44100 * 4, 16384, np.int16), 44100, subtype="PCM_16")
+    np.save(stim / "Odin_1_phone_.npy", np.zeros(int(39062.5 * 6)))
+    (stim / "Odin_1.TextGrid").write_text(SPEECH_TG)
+    adaptor = Guilleminot2021Adaptor.__new__(Guilleminot2021Adaptor)
+    adaptor.root = str(tmp_path)
+    tg = adaptor._make_tactile_tg_loader("1", str(stim / "Odin_1.wav"), 300, True)()
+    # shifted by +0.3 s, clipped at the wav's 4 s, gap before the first word filled
+    assert "intervals: size = 3" in tg and "xmin = 0.8" in tg and 'text = "hej"' in tg and "xmax = 4.0" in tg
+    audio = adaptor._make_audio_loader(str(stim / "Odin_1.wav"))()
+    assert audio["data"].dtype == np.float32 and audio["data"].shape == (1, 44100 * 4)
+    assert audio["data"].max() == 0.5  # scaled by 32768 (was the raw int16 values)
+    tactile = adaptor._make_tactile_loader("1", str(stim / "Odin_1.wav"), 300, True)()
+    assert tactile["data"].dtype == np.float32 and tactile["data"].shape == (1, 44100 * 4)

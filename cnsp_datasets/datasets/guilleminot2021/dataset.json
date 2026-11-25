@@ -1,6 +1,6 @@
 {
   "name": "guilleminot2021",
-  "title": "Guilleminot et al. (2021) dataset",
+  "title": "Guilleminot & Reichenbach (2022, PNAS) audio-tactile speech in noise: 18 participants x 2 sessions x 16 story parts, 64-ch EEG at 1 kHz with a Sound channel",
   "visibility": "public",
   "downloads": {
     "guilleminot2021": {
@@ -20,5 +20,6 @@
   "stimuli": "degraded (speech in noise, plus vibrotactile stimulation)",
   "alignment_quality": "good",
   "validation_tier": "mlr",
+  "participants": 18,
   "listening_hours": 25.3
 }
