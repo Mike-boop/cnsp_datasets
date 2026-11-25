@@ -1,6 +1,6 @@
 {
   "name": "fuglsang2018",
-  "title": "Fuglsang et al. (2018) dataset",
+  "title": "Fuglsang et al. (2017/2018) EEG (BioSemi 64 ch, 512 Hz): attend one of two talkers (male/female, left/right) in three reverberation conditions, 18 participants",
   "visibility": "public",
   "downloads": {
     "fuglsang2018": {
@@ -20,6 +20,6 @@
   "stimuli": "competing speakers",
   "alignment_quality": "medium",
   "validation_tier": "low (mlr without reverb)",
-  "participants": 29,
-  "listening_hours": 17.0
+  "participants": 18,
+  "listening_hours": 17.5
 }
