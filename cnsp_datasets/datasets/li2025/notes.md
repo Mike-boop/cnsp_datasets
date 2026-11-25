@@ -89,7 +89,7 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
   variable amount (LESSONS: 40-500 ms).
 - **Adopted: brain-based onset correction per subject, on by default** (user decisions 2026-11-23: group delays
   first, then "try it out" for per-subject delays, adopted after the held-out test in section 7). The trial starts
-  the subject's delay into the shipped file (`onset.csv`, written by `alignment/subject_delays.py`; 0.39-1.26 s, whole
+  the subject's delay into the shipped file (`alignment/onset.csv`, written by `alignment/subject_delays.py`; 0.39-1.26 s, whole
   ms at 1000 Hz, so the correction is a crop, no resampling). `Li2025Adaptor(onset=...)`: `"subject"` (default),
   `"group"` (`ONSET_DELAY_S`: 0.80 s sub-31..47, 0.42 s sub-48..60; the previous default) or `"none"` (shipped
   first sample). Native 1000 Hz kept; the audio (1519.235 s) is longer than the remaining recording and is not
@@ -457,3 +457,9 @@ Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026
 - sub-44/45/46 MEG derivatives are near-empty (0.1-0.6 MB).
 - The paper says sensor positions were not digitised; the fifs contain head-shape points and placeholder fiducials
   with an identity device-to-head transform.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor subclasses BaseAdaptor; onset checked with choice(). onset.csv moved to `alignment/onset.csv`
+  (subject_delays.py writes it there through ONSET_CSV). Bads via iohelpers.mark_bads (strict). The ffmpeg reader is
+  kept (float32 f32le, full scale +-1, not clipped) and so is raw._raw_extras (tests/test_mne_private_api.py). No
+  change to the onsets or the drift.

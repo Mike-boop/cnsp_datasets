@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import glob
 import os
 import subprocess
 from functools import lru_cache
@@ -10,7 +9,9 @@ import mne
 import numpy as np
 import pandas as pd
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
+from cnsp_datasets.standardise.iohelpers import mark_bads
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -24,8 +25,9 @@ PAPER_BADS = ["MEG019", "MEG048"]
 EXTRA_BADS = {"sub-34": ["MEG023", "MEG040"], "sub-42": ["MEG005"], "sub-47": ["MEG005"], "sub-48": ["MEG040"]}
 # Sound onset after the first sample of the shipped file (brain-based, notes.md section 7; applied by default, user
 # decisions 2026-11-23). Whole ms at 1000 Hz, so the correction is a crop. "subject" (default): per-subject delays in
-# onset.csv (alignment/subject_delays.py); "group": one delay per recording group; "none": the shipped first sample.
-ONSET_CSV = os.path.join(os.path.dirname(__file__), "onset.csv")
+# alignment/onset.csv (alignment/subject_delays.py); "group": one delay per recording group; "none": the shipped first
+# sample.
+ONSET_CSV = os.path.join(os.path.dirname(__file__), "alignment", "onset.csv")
 ONSET_DELAY_S = {"A": 0.80, "B": 0.42}
 GROUP_LABEL = {"A": "sub-31..47", "B": "sub-48..60"}  # recording periods (spectra and sound delay differ)
 ONSET_METHOD = {
@@ -35,9 +37,9 @@ ONSET_METHOD = {
          "0.41-0.80 s, skewed; user's reading 0.41 s) -> 0.42 s; a component at ~-40 ms remains unexplained "
          "(alignment/match_groups.py)"}
 # keep the thresholds in sync with alignment/subject_delays.py (MIN_R, MAX_MAD, AMBIG_R, AMBIG_S, PART_WINDOW)
-SUBJECT_METHOD = ("brain-based, per subject (alignment/subject_delays.py, onset.csv): shift (0..1.9 s) at which the "
-                  "subject's uncorrected 0.5-8 Hz envelope TRF (lags -1.5..2.5 s) best matches group A's corrected "
-                  "TRF (space-time r, lags -0.2..0.6 s); group delay if the match r < 0.15 or the 5 parts' delays "
+SUBJECT_METHOD = ("brain-based, per subject (alignment/subject_delays.py, alignment/onset.csv): shift (0..1.9 s) "
+                  "at which the subject's uncorrected 0.5-8 Hz envelope TRF (lags -1.5..2.5 s) best matches group A's "
+                  "corrected TRF (space-time r, lags -0.2..0.6 s); group delay if the match r < 0.15 or the 5 parts' delays "
                   "(each matched within +-0.3 s of the whole-recording delay) scatter (MAD > 50 ms); "
                   "onset_ambiguous if a second match peak > 100 ms away comes within 0.15 of the best r. "
                   "Circular (template from the same data); held-out test in notes.md section 7.")
@@ -67,7 +69,7 @@ VALIDATION_NOTE = ("low tier (0.5-8 Hz, HFC in the validation only; per-subject 
                    "wrong offset).")
 
 
-class Li2025Adaptor:
+class Li2025Adaptor(BaseAdaptor):
     """
     BABA (Li et al. 2025, OpenNeuro ds005346): 30 participants (sub-31..60) watched a 25 min excerpt of the Chinese
     reality show "Where Are We Going, Dad?" in an OPM-MEG (Quanmag, 64 magnetometers, 1000 Hz). One trial per
@@ -75,7 +77,7 @@ class Li2025Adaptor:
     sub-54's upload is truncated after 698 s (both baba and replay).
 
     Neural data: the shipped baba file (the authors' crop from the video trigger), from the brain-based sound onset
-    (onset="subject", default: per-subject delay from onset.csv; "group": 0.80 s for sub-31..47, 0.42 s for
+    (onset="subject", default: per-subject delay from alignment/onset.csv; "group": 0.80 s for sub-31..47, 0.42 s for
     sub-48..60; "none": from the first sample), on the audio clock: the brain-based drift (drift_ppm, default
     DRIFT_PPM = -16.7, MEG samples per audio sample - 1; 0 = off) is corrected in the crop, which then starts at the
     delay minus the drift accumulated by the session midpoint (the delays are whole-recording estimates).
@@ -85,10 +87,9 @@ class Li2025Adaptor:
     """
 
     def __init__(self, download_dir: str, onset: str = "subject", drift_ppm: float = DRIFT_PPM):
-        if onset not in ("subject", "group", "none"):
-            raise ValueError(f"onset must be 'subject', 'group' or 'none', not {onset!r}")
+        super().__init__(download_dir)
         self.root = download_dir
-        self.onset = onset
+        self.onset = self.choice("onset", onset, ("subject", "group", "none"))
         self.drift_ppm = float(drift_ppm)
 
     def parse(self) -> Iterable[TrialRecord]:
@@ -97,7 +98,7 @@ class Li2025Adaptor:
         stimuli = [StimulusRecord("audio", NAME, _audio_loader(video), True, "audio")]
         stimuli += [StimulusRecord("audio", NAME, _text_loader(os.path.join(self.root, "sourcedata", "annotation", f)),
                                    True, feature) for feature, f in ANNOTATIONS.items()]
-        for fif in sorted(glob.glob(os.path.join(self.root, "sub-*", "meg", "sub-*_task-baba_meg.fif"))):
+        for fif in self.sorted_glob(self.root, "sub-*/meg/sub-*_task-baba_meg.fif"):
             sub = os.path.basename(fif).split("_")[0]
             subject = int(sub[4:])
             bads = (PAPER_BADS if 32 <= subject <= 47 else []) + EXTRA_BADS.get(sub, [])
@@ -142,7 +143,7 @@ def readable(fif: str) -> mne.io.BaseRaw:
 
 @lru_cache
 def onset_table() -> pd.DataFrame:
-    """onset.csv (alignment/subject_delays.py), indexed by subject."""
+    """alignment/onset.csv (alignment/subject_delays.py), indexed by subject."""
     return pd.read_csv(ONSET_CSV, index_col="subject", keep_default_na=False)
 
 
@@ -157,7 +158,7 @@ def _meg_loader(fif: str, bads: list[str], group: str, alignment: str, onset: di
         start = estimate - drift * raw.n_times / 2 / sfreq if midpoint else estimate
         info = {**onset, "onset_correction_s": round(start, 6), "onset_estimate_s": estimate}
         raw = crop_on_audio_clock(raw, start * sfreq, int(np.ceil(raw.n_times / (1 + drift))), drift, picks="mag")
-        raw.info["bads"] = bads
+        mark_bads(raw, bads)
         raw.info["description"] = provenance(
             alignment, "unknown (not documented; inferred software: the sound starts after it). Onset = the STI1 "
             "code on the first sample of the authors' crop + onset_correction_s", NOTES, drift_ppm=DRIFT_PPM,
@@ -173,7 +174,10 @@ def _meg_loader(fif: str, bads: list[str], group: str, alignment: str, onset: di
 
 @lru_cache(maxsize=1)
 def _decode(video: str) -> np.ndarray:
-    """Audio track as float32 (2, n) at its 44.1 kHz; ffmpeg honours the mp4 edit list (AAC priming removed)."""
+    """
+    Audio track as float32 (2, n) at its 44.1 kHz, full scale +-1 (ffmpeg's f32le; decoded AAC is not clipped);
+    ffmpeg honours the mp4 edit list (AAC priming removed).
+    """
     pcm = subprocess.run(["ffmpeg", "-nostdin", "-v", "error", "-i", video, "-map", "0:a:0", "-f", "f32le",
                           "-c:a", "pcm_f32le", "-"], capture_output=True, check=True).stdout
     return np.frombuffer(pcm, dtype="<f4").reshape(-1, 2).T.copy()

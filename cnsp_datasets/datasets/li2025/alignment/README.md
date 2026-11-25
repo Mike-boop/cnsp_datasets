@@ -2,7 +2,7 @@
 
 The shipped files start at the video's start trigger, but the sound starts later. No audio copy or end trigger exists,
 so the delays were estimated from the MEG itself (circular). The adaptor applies per-subject delays by default
-(`../onset.csv`, from `subject_delays.py`); `onset="group"` gives the earlier per-group delays (`ONSET_DELAY_S`) and
+(`onset.csv`, from `subject_delays.py`); `onset="group"` gives the earlier per-group delays (`ONSET_DELAY_S`) and
 `onset="none"` the shipped onset. Details: `../notes.md` section 7.
 
 Run from the repository with the download as input (each script reads it through the adaptor without onset or drift correction):
@@ -14,7 +14,7 @@ python -m $M.trf_weights <download> <out>/trf_weights         # per-subject TRFs
 python -m $M.match_groups <out>/trf_weights <out>/match       # group B matched to group A: 0.44 s (CI 0.41-0.80)
 python -m $M.butterfly   <out>/trf_weights <out>/butterfly_topo.png
 python -m $M.subject_delays <download> <out>/trf_weights <out>/subject_delays
-                                                              # per-subject delays -> ../onset.csv (adaptor default)
+                                                              # per-subject delays -> onset.csv (adaptor default)
 python -m $M.drift       <out>/subject_delays/part_delays.json <out>/drift   # pooled drift; Theil-Sen -> DRIFT_PPM
 python -m $M.heldout     <download> <out>/subject_delays/heldout_delays.json <out>/heldout   # per subject vs group
 python -m $M.poptrf      <download> <out>/poptrf 0.80,0.42    # check: both groups peak near +0.1 s

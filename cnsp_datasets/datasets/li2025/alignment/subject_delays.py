@@ -1,5 +1,5 @@
 """
-li2025: per-subject onset delay by template match; writes the adaptor's default table (../onset.csv).
+li2025: per-subject onset delay by template match; writes the adaptor's default table (alignment/onset.csv).
 
 usage: python -m cnsp_datasets.datasets.li2025.alignment.subject_delays <download dir> <trf_weights dir> <out dir>
 Template: group A's onset-corrected TRF (trf_weights.py, mean over subjects, channels good in all subjects, lags
