@@ -10,9 +10,9 @@ before closing a dataset. Add new lessons here, not in the handover.
     7086168, 7086209).
   - Shipped onsets can be wrong: gwilliams2023 events were 44 ms early, with jitter.
 - **Drift fit.** Use a Theil-Sen or linear fit through positive-peak lags in ~10 s windows
-  (`yang2026_base/drift.py:window_fit`).
+  (`jehn2025_base/alignment/xcorr.py:window_fit`).
   - Two endpoint windows are fragile: periodic side peaks give ms-sized jumps.
-  - `jehn2025_base/drift.py:trial_drift` takes the |xcorr| peak and can lock onto an inverted side lobe (yang2026:
+  - `jehn2025_base/alignment/drift.py:trial_drift` takes the |xcorr| peak and can lock onto an inverted side lobe (yang2026:
     41/222 presentations ~2.4 samples off). Don't reuse it.
 - **Authors rarely correct drift.** Examples: jehn2025 26.7 ppm, bentum2023 33.6 ppm, habersetzer2025 +485 ppm,
   yang2026 TRIUX +538 ppm. Plot drift per subject: clusters differ (jehn2025 ~18 ppm for a run of subjects).

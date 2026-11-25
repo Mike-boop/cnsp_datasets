@@ -51,4 +51,17 @@ revised adaptors; the "Deferred" list is work agreed but not yet done.
 - A shared "basename -> path index that raises on duplicates" helper (das2019 and fuglsang2018 have the same code).
 - Second pass: overlapping word timings (upstream; Broderick trio, nguyen2025, guilleminot2021, ...) are clipped
   with a warning in standardise.log (iohelpers.textgrid default, user 2026-11-25); look at those warnings.
+- Second pass (user, 2026-11-25):
+  - Montage files: jehn2024/jehn2025 (and any other dataset) ship `info_*.fif` only for channel names and
+    positions. Store these in a lighter, readable format instead (e.g. BrainVision `.bvef`, or a small tsv/json
+    of names + coordinates), read into an `mne` montage by the adaptor.
+  - fuglsang2018: the `expinfos/*.mat` tables were pre-extracted (with `get_expinfos.m`) because scipy could not
+    read the shipped FieldTrip/MATLAB files when the adaptor was written. Read them from the original release
+    instead (pymatreader / h5py / scipy now), and drop the pre-stored tables.
+  - schueller2024: process all three Zenodo sets (~58 participants), not just Set1 (see its notes.md).
+  - Overlap trimming is written twice (bentum2023 `trim_overlaps`, momenian2024 `_trim`) and the {stem: path}
+    index that raises on duplicates four times (das2019, fuglsang2018, bentum2023 `wav_index`, wang2022
+    `annotation_files`): move to iohelpers. `jehn2025_base/alignment/xcorr.py` (used by five datasets) could move
+    to a shared torch-free module.
+  - wang2025 `alignment/onsets.csv` has no generator script in the repo (see its notes.md).
 - Keep for now: `datasets.tsv`, `urls.txt`, README to-do list.

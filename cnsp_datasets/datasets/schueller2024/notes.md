@@ -108,3 +108,9 @@ Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026
   `str(meas_date)`); raw folders with the same date must hold identical fits (P42 / `P42_zweiter Versuch` do; one
   is kept), otherwise it raises. The fallback to the dataset median (participant 15, no raw data) is logged.
 - `drift.py` and `drift.csv` moved to `alignment/` (`python -m cnsp_datasets.datasets.schueller2024.alignment.drift`).
+- **Second pass (user, 2026-11-25): process all three sets.** About 60 participants are released, spread over
+  three Zenodo records (Set1 12793944: participants 1-19 + `Audio/` + `Participants_Overview.pdf`; Set2 12794769:
+  20-38; Set3 12794808: 39-58). The first pass downloaded and standardised only Set1 (22 incl. the Set1 audio
+  check), hence the earlier counts. `dataset.json` already lists all three records under the one download key
+  (each unpacks to its own `Set<n>.zip`; the overview pdf is the same name in all three). Copies of all three are
+  on woody (zenodo_slowpull). Validate Sets 2/3 in the second pass; the tier `brainstem` is Set1 only so far.

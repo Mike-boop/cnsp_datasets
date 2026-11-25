@@ -5,8 +5,8 @@ from cnsp_datasets.datasets.bentum2023.drift import (
     BlockTiming,
     estimate_drift,
     estimate_marker_offset,
-    to_audio_clock,
 )
+from cnsp_datasets.standardise.clock import to_audio_clock
 
 
 def _synthetic_timings(offset=-1.5, n_recordings=60, seed=0):

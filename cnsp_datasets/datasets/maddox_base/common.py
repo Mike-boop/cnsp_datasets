@@ -8,7 +8,7 @@ expyfun hdf5 files (`read_hdf5`: datasets under `expyfun/key_<name>`).
 Timing used here:
 - onset = start marker + acoustic tube delay (sound at the eardrum);
 - drift = mean over a recording's trials of (end - start marker) / nominal - 1 (> 0: the EEG counts more samples
-  per audio second; same convention as bentum2023.drift.to_audio_clock);
+  per audio second; same convention as cnsp_datasets.standardise.clock);
 - trials are skipped when a recording pause (New Segment) falls inside them or the recording ends before them;
 - one resample per trial: zero-phase anti-alias FIR at the native rate, then one quintic-spline evaluation on the
   drift-corrected output grid (plain decimation for integer factors without drift).

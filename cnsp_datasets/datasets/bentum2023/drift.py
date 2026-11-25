@@ -32,7 +32,6 @@ import numpy as np
 from scipy import stats
 from scipy.io import wavfile
 
-from cnsp_datasets.standardise.clock import to_audio_clock  # noqa: F401 (re-exported)
 
 # blocks with larger discrepancies have marker problems, not drift
 MAX_INACC_SAMPLES = 1000

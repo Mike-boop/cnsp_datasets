@@ -87,7 +87,7 @@ It ends with **open questions, each with a recommended default**, and a proposed
   standardisation and validation in one go; leading `--adaptor-opt key=value` pairs are passed to the adaptor).
 - **Adaptor options** (e.g. turning off a brain-based onset) are documented in `notes.md` and the README.
 - **Drift.** Always measure it, and record the estimate in `notes.md`:
-  - With an audio copy in the recording, use a positive-peak windowed fit (`yang2026_base/drift.py:window_fit`).
+  - With an audio copy in the recording, use a positive-peak windowed fit (`jehn2025_base/alignment/xcorr.py:window_fit`).
   - Otherwise use the trigger durations across subjects (drift·length + jitter).
   - Apply drift correction automatically only when it comes from hardware triggers or an audio copy, and plot it
     in the review folder.
