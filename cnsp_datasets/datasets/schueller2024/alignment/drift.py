@@ -5,11 +5,12 @@ channel. Writes drift.csv next to this file, which the adaptor reads (notes.md s
 The public release has no audio channel; the non-public raw recordings (BTi `c,rfhp1.0Hz`, branch `internal`
 dataset schuller2022full) record the sound-card output on `EXT 004`. Per raw recording and chapter: the stimtrack is
 resampled 1017.25 -> 1000 Hz (as the authors resampled the MEG), the chapter onset is found by cross-correlating the
-first 60 s of its audio (attended + ignored, each normalised) with the whole stimtrack, and jehn2025_base.alignment.drift
-.trial_drift (2-200 Hz, 10 s windows every 5 s, Theil-Sen) gives onset (ms) and drift (ppm; > 0: MEG clock fast).
+first 60 s of its audio (attended + ignored, each normalised) with the whole stimtrack, and
+jehn2025_base.alignment.drift.trial_drift (2-200 Hz, 10 s windows every 5 s, Theil-Sen) gives onset (ms) and drift
+(ppm; > 0: MEG clock fast).
 Rows carry the recording's meas_date, which equals the meas_date of the participant's runs in the release.
 
-    python -m cnsp_datasets.datasets.schueller2024.alignment.drift <raw dir with P*/raw/c,rfhp1.0Hz> <release download dir>
+    python -m cnsp_datasets.datasets.schueller2024.alignment.drift <raw dir with P*/raw/c,rfhp1.0Hz> <release dir>
 """
 from __future__ import annotations
 

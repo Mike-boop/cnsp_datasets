@@ -42,7 +42,8 @@ class Schueller2024Adaptor(BaseAdaptor):
     matched to the release by meas_date), corrected by resampling each trial onto the audio clock: "subject"
     (default: the participant's median; participants without raw data get the dataset median), "dataset" (median
     over all chapters, +8.5 ppm) or None; a participant without raw data is logged. Stimuli: attended and ignored
-    audio as shipped (44.1 kHz, float32, first channel; the ignored track already holds its ~5 s delayed start). See notes.md.
+    audio as shipped (44.1 kHz, float32, first channel; the ignored track already holds its ~5 s delayed start).
+    See notes.md.
     """
 
     def __init__(self, download_dir: str, tube_delay: bool = True, drift: str | None = "subject"):

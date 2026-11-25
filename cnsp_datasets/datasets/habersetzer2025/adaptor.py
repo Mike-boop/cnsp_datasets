@@ -44,7 +44,8 @@ class Habersetzer2025Adaptor(BaseAdaptor):
     Onset: first audiobook trigger + the run's audio-copy onset (drift.csv) + 0.4 ms acoustic delay. drift_correction:
     "run" (default; the run's drift from drift.csv), "dataset" (median over runs, +485.07 ppm) or None; corrected
     by resampling onto the audio clock. Channels: MEG, EOG, ECG, MISC001/002 (audio copy); MEG2143, MEG1112 and any
-    channel the FIF marks bad are kept and listed in info["bads"]. Stimuli: wav as shipped (44.1 kHz, float32) and the shipped TextGrid (words, phones). See notes.md.
+    channel the FIF marks bad are kept and listed in info["bads"]. Stimuli: wav as shipped (44.1 kHz, float32) and
+    the shipped TextGrid (words, phones). See notes.md.
     """
 
     def __init__(self, download_dir: str, drift_correction: str | None = "run"):
