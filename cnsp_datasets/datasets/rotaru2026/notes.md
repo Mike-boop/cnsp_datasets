@@ -156,7 +156,7 @@ time); in OL-CAL the attended talker.
 - Stimuli: left and right wavs (`audio`), names without the common suffix; `is_attended` only in OL-CAL (no
   switch). Attention spans as annotations `attend/left` / `attend/right` (onset, duration in s).
 - 1024 Hz kept; one spline resample per run for the drift (no rate change). Wavs via
-  `simon_base.common.audio_loader` (checks 44.1 kHz mono int16).
+  `iohelpers.audio_loader` (checks 44.1 kHz; was simon_base, mono int16).
 - Off by default / not applied: DNN offset; nothing brain-based.
 
 ## Alignment grade
@@ -165,3 +165,8 @@ accou2023); onset and drift (+6 ppm) per playback run from hardware, residual ji
 detected; the 30-60 Hz tier passes (Pa ~30 ms), lag sweep at 0 ms, DNN -9.7 ms (two talkers, loudspeakers). No
 audio copy in the EEG to check the pulses against. The stimulus heard in CLA/psCLA differs from the stored wavs by
 the unknown feedback gains (a stimulus-fidelity caveat, not timing).
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor subclasses BaseAdaptor; wavs read with iohelpers.audio_loader (soundfile, float32 in [-1, 1), rate checked
+  against 44.1 kHz; no longer insists on mono int16, so a stereo wav would now pass as two channels); bads set with
+  iohelpers.mark_bads (strict). No change to the alignment.

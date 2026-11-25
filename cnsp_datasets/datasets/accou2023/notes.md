@@ -60,7 +60,7 @@ podcasts), one BIDS run per stimulus. Authors' code: github.com/exporl/auditory-
 
 ## Channels
 - The first 64 channels are named by position (BioSemi 64 order); sub-015..018 files spell PO7/PO3 as P07/P03.
-- EXG1/EXG2 are the mastoids (A1/A2, misc). They are unconnected (0.4 uV noise floor) in sub-061 and sub-064 and
+- EXG1/EXG2 are the mastoids (M1/M2, misc; named A1/A2 before 2026-11-25). They are unconnected (0.4 uV noise floor) in sub-061 and sub-064 and
   missing in one sub-052 file; flat ones go into bads. EXG3-8 are unconnected and dropped.
 
 ## Validation (2026-11-20, average reference, `tmp/review/accou2023/avgref/`)
@@ -76,3 +76,9 @@ podcasts), one BIDS run per stimulus. Authors' code: github.com/exporl/auditory-
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **good**: Trigger track played on a 2nd sound-card channel and recorded in Status (an audio-locked pulse every 1 s); first-to-last pulse resampling removes -34.5 ppm; jitter 0.28 ms; brainstem tier, coherence to 63 Hz.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor subclasses BaseAdaptor. Mastoids renamed A1/A2 -> M1/M2 (repository convention; still misc, flat ones in
+  bads via iohelpers.mark_bads). No mne.set_log_level at import any more. The .npz(.gz) reader closes its NpzFile; a
+  .bdf.gz is decompressed into a TemporaryDirectory removed after reading (was a NamedTemporaryFile). Resampling on
+  the package resampler (above).

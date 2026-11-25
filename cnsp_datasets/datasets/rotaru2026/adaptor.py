@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import csv
-import glob
 import os
 import re
 from typing import Callable, Iterable
@@ -11,8 +10,9 @@ import numpy as np
 import scipy.io as sio
 from mne.channels import make_standard_montage
 
-from cnsp_datasets.datasets.simon_base.common import audio_loader
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
+from cnsp_datasets.standardise.iohelpers import audio_loader, mark_bads
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -42,7 +42,7 @@ NOTES = ("Trial = one BDF (one presentation). Audio-clock timeline from the Stat
          "Reference: BioSemi CMS/DRL, not re-referenced.")
 
 
-class Rotaru2026Adaptor:
+class Rotaru2026Adaptor(BaseAdaptor):
     """
     Rotaru et al. 2026 KUL-AAD-NFB (Zenodo 20442638): closed-loop auditory attention decoding with neurofeedback.
     11 shared participants (sub-09 in two sessions), BioSemi 64-channel EEG at 1024 Hz, two Flemish podcasts from
@@ -51,12 +51,13 @@ class Rotaru2026Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.eeg_dir = os.path.join(download_dir, "eeg")
         self.wav_dir = os.path.join(download_dir, "stimuli")
         self.ratings = _ratings(os.path.join(download_dir, "KUL-AAD-NFB_behavioral_results.csv"))
 
     def parse(self) -> Iterable[TrialRecord]:
-        for bdf in sorted(glob.glob(os.path.join(self.eeg_dir, "sub-*", "*_eeg.bdf"))):
+        for bdf in self.sorted_glob(self.eeg_dir, "sub-*/*_eeg.bdf"):
             mat = bdf[:-4] + "_preprocessed.mat"
             if not os.path.exists(mat):
                 continue  # no stimulus names or attention schedule (notes.md 3)
@@ -74,7 +75,7 @@ class Rotaru2026Adaptor:
             fixed = spans[0][2] if len(spans) == 1 else None
             wavs = [w.strip() for w in p.speakers]  # sub-03 names are space-padded
             stems = [w.removesuffix(SUFFIX) for w in wavs]
-            stimuli = [StimulusRecord("audio", stem, audio_loader(os.path.join(self.wav_dir, wav), WAV_FS),
+            stimuli = [StimulusRecord("audio", stem, audio_loader(os.path.join(self.wav_dir, wav), expect_fs=WAV_FS),
                                       is_attended=side == fixed, feature_name="audio")
                        for stem, wav, side in zip(stems, wavs, "LR")]
             bads = BADS.get((sub, ses), [])
@@ -161,7 +162,7 @@ def _eeg_loader(bdf: str, duration: int, spans: list, bads: list, extra: dict) -
             [a for a, _, _ in spans], [b - a for a, b, _ in spans],
             [f"attend/{'left' if s == 'L' else 'right'}" for _, _, s in spans], orig_time=out.annotations.orig_time))
         out.set_montage(make_standard_montage("biosemi64"), verbose="ERROR")
-        out.info["bads"] = bads
+        mark_bads(out, bads)
         out.info["description"] = provenance(
             "hw_trigger", TRIGGER_TYPE, NOTES, drift_ppm=round(drift * 1e6, 2), jitter_ms=round(jitter, 3),
             validation_tier=VALIDATION_TIER, onset_sample=round(runs[0][1]), n_playback_runs=len(runs),

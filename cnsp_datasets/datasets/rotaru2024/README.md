@@ -53,7 +53,7 @@ The release has envelopes only. The podcasts were matched by envelope against tw
   shows that in these trials the EEG lags the envelope by ~20-130 ms, most at the start, so the pulse train does
   not track the audio there. In sub-04 MovingTargetNoise2 the epoch starts ~1 s into the audio. These 12 trials
   carry a `timing_flag` in the sidecar; filter on it for timing-sensitive work. The offsets are estimated from the
-  EEG and are documented, not corrected (per-trial estimates in `decoder_lags.csv`).
+  EEG and are documented, not corrected (per-trial estimates in `alignment/decoder_lags.csv`).
 - In the other 87 trials the decoder's EEG lag is +3.8 ms (95% CI 0.8-7.0).
 - **Alignment grade: poor.** The onsets come from the authors' epochs, with no audio copy to verify them, and 12 of
   99 trials have a known misalignment that is only estimated from the EEG. The unflagged trials alone would rate
