@@ -1,15 +1,15 @@
 """
 Sound onset after the trigger and audio vs MEG clock drift of every piece, from the audio copy UADC002 (the played
 wav channel 0, inverted, low-passed at 300 Hz; notes.md sections 6-7). Writes audio_fit.csv next to this file, one
-row per UPPT001 trigger, which the adaptor reads.
+row per UPPT001 trigger, which the adaptor reads (it imports torch through align.scan; the adaptor does not).
 
 Pieces (codes 101-119): coarse Theil-Sen fit of the 1-20 Hz envelope of the 30-290 Hz band, then of the inverted
-30-290 Hz waveform on the coarse clock (`yang2026_base.drift.window_fit`, 10000-sample windows). Test snippets
-(codes 1-3, too short for windows): one cross-correlation of the whole waveform. Columns: `delay_ms` (sound onset
-after the trigger), `drift_ppm` (> 0: MEG clock fast), `band_frac` (share of the wav's power in 30-290 Hz; only
-pieces with band_frac >= MIN_BAND_FRAC are `reliable`), `xcorr_r` (test snippets).
+30-290 Hz waveform on the coarse clock (`jehn2025_base.alignment.xcorr.window_fit`, 10000-sample windows). Test
+snippets (codes 1-3, too short for windows): one cross-correlation of the whole waveform. Columns: `delay_ms`
+(sound onset after the trigger), `drift_ppm` (> 0: MEG clock fast), `band_frac` (share of the wav's power in
+30-290 Hz; only pieces with band_frac >= MIN_BAND_FRAC are `reliable`), `xcorr_r` (test snippets).
 
-    python -m cnsp_datasets.datasets.kern2022.drift <kern2022 download dir>
+    python -m cnsp_datasets.datasets.kern2022.alignment.drift <kern2022 download dir>
 """
 from __future__ import annotations
 
@@ -24,10 +24,9 @@ from scipy.io import wavfile
 from scipy.signal import butter, correlate, hilbert, resample_poly, sosfiltfilt
 
 from cnsp_datasets.align.scan import peak_offset
-from cnsp_datasets.datasets.yang2026_base.drift import window_fit
+from cnsp_datasets.datasets.jehn2025_base.alignment.xcorr import window_fit
+from cnsp_datasets.datasets.kern2022.adaptor import AUDIO_FIT as OUT, FS, recording, wav_path
 
-OUT = os.path.join(os.path.dirname(__file__), "audio_fit.csv")
-FS = 1200
 COARSE_LAG, MIN_R_ENV, MIN_COARSE = 360, 0.5, 3  # +-300 ms; envelope r; windows needed for the fine fit
 FINE_LAG, MIN_R, MIN_WINDOWS = 12, 0.3, 5  # +-10 ms; waveform r; windows needed to report a fit
 MIN_BAND_FRAC = 0.005
@@ -35,29 +34,10 @@ _SOS = butter(4, [30, 290], "bp", fs=FS, output="sos")
 _SOS_ENV = butter(4, [1, 20], "bp", fs=FS, output="sos")
 
 
-def wav_path(download_dir: str, code: int) -> str:
-    """Wav played for a UPPT001 code: 101-119 pieces, 1-3 test snippets."""
-    folder = "WavMain" if code > 100 else "WavTest"
-    return os.path.join(download_dir, "Code", "MEGExperiment", folder, f"{code}.wav")
-
-
-def recording(download_dir: str, sub: str) -> str:
-    """The single .ds of a participant (e.g. sub001)."""
-    meg = os.path.join(download_dir, "MEGData", sub, "ses-meg01", "meg")
-    return os.path.join(meg, next(d for d in sorted(os.listdir(meg)) if d.endswith(".ds")))
-
-
 def piece_onsets(trig: np.ndarray) -> list[tuple[int, int]]:
     """(sample, code) of every piece (101-119) and test snippet (1-3) on UPPT001."""
     starts = np.flatnonzero(np.diff(trig) != 0) + 1
     return [(int(s), int(trig[s])) for s in starts if 101 <= trig[s] <= 119 or 1 <= trig[s] <= 3]
-
-
-def _fit(*args) -> tuple[float, float, int]:
-    try:
-        return window_fit(*args)
-    except TypeError:  # no window above threshold
-        return np.nan, np.nan, 0
 
 
 def _whole_xcorr(y: np.ndarray, w: np.ndarray, s: int) -> tuple[float, float]:
@@ -90,12 +70,12 @@ def piece_fits(uadc: np.ndarray, trig: np.ndarray, download_dir: str) -> list[di
             lag, r = _whole_xcorr(y, w, s)
             row.update(delay_ms=lag / FS * 1e3, xcorr_r=r)
         else:
-            ic, d0, row["n_coarse"] = _fit(y_env, _envelope(w), s, COARSE_LAG, MIN_R_ENV)
+            ic, d0, row["n_coarse"] = window_fit(y_env, _envelope(w), s, COARSE_LAG, MIN_R_ENV)
             if row["n_coarse"] >= MIN_COARSE:
                 start = int(s + round(ic))
                 n = int(len(w) * (1 + d0))
                 on_meg_clock = make_interp_spline(np.arange(len(w)), w, k=3)(np.arange(n) / (1 + d0))
-                onset, resid, n_win = _fit(y, on_meg_clock, start, FINE_LAG, MIN_R)
+                onset, resid, n_win = window_fit(y, on_meg_clock, start, FINE_LAG, MIN_R)
                 if n_win >= MIN_WINDOWS:
                     row.update(n_windows=n_win, delay_ms=(start + onset - s) / FS * 1e3,
                                drift_ppm=((1 + d0) * (1 + resid) - 1) * 1e6)

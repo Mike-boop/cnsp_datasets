@@ -1,6 +1,6 @@
 # kern2022: notes
 
-Findings that explain `adaptor.py` and `drift.py`. Review scripts and results: `tmp/review/kern2022/`,
+Findings that explain `adaptor.py` and `alignment/drift.py`. Review scripts and results: `tmp/review/kern2022/`,
 `tmp/review/scripts/kern2022_*.py` (2026-11-23).
 
 ## 1. Source
@@ -167,3 +167,11 @@ the trigger, no drift; `tmp/review/kern2022/validation_uncorrected/`) and with t
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **good**: Software trigger + 4.1 ms measured on audio copy UADC002 (6/19 pieces fit, 210 fits; others get the constant); test snippets measured per trial; drift +6.5 ppm from the audio copy (logs +6.0) corrected; brainstem (pilot 4).
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Stimulus audio: wav channel 0 as float32 in [-1, 1) (`iohelpers.read_wav`; was the raw integer samples).
+- Channels marked bad in the CTF header are kept and listed in `info["bads"]` (`pick_types` dropped them).
+- `drift.py` and `audio_fit.csv` moved to `alignment/` (`python -m cnsp_datasets.datasets.kern2022.alignment.drift`);
+  `FS`, `wav_path`, `recording` now live in the adaptor, which no longer imports torch. The generator's windowed
+  fit is `jehn2025_base/alignment/xcorr.window_fit`, which returns nan for fewer than 2 windows instead of the
+  TypeError the generator caught (same table).

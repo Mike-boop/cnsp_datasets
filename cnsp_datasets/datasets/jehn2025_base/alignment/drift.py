@@ -8,7 +8,7 @@ in 10 s windows every 5 s; a Theil-Sen line through the window lags (sub-sample 
 r >= 0.1) gives the onset (intercept) and drift (slope, ppm; > 0: the EEG clock runs fast). Per subject, the median
 over trials with at least 10 valid windows is used for correction.
 
-    python -m cnsp_datasets.datasets.jehn2025_base.alignment.drift <dir with jehn2025_nh, jehn2025_hi, jehn2025_ci downloads>
+    python -m cnsp_datasets.datasets.jehn2025_base.alignment.drift <dir with the jehn2025_nh, _hi, _ci downloads>
 """
 from __future__ import annotations
 
