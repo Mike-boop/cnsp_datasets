@@ -21,3 +21,10 @@ may estimate and apply such offsets (PLAN.md section 8). Evidence: `tmp/review/t
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **poor**: Authors' 128 Hz preprocessed EEG, no triggers/stimtrack; DNN -81.5 ms in all 16 subj documented, not applied, read as an alignment offset in the release (timing error).
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- BaseAdaptor; sorted globs. The stimulus index covers every wav under `stimuli/` and raises on two files with one
+  basename (was: last one silently won, `*dry.wav` preferred); the per-call fallback search is gone (the index
+  already covers it).
+- A channel-label count that does not match the EEG raises (was: silently renamed EEG01..).
+- Audio through `iohelpers.read_wav` (first channel, float32 scaled to [-1, 1); was unscaled int16 as float64).
