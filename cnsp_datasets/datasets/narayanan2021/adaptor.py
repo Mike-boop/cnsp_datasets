@@ -61,6 +61,7 @@ class Narayanan2021Adaptor(BaseAdaptor):
                 side = p[1]
                 attended = EARS[p][0 if side == "L" else 1]
                 ignored = EARS[p][1 if side == "L" else 0]
+                wav = soundfile.info(self._wav_path(attended))
                 yield TrialRecord(
                     subject=int(base.split("_")[0][1:]),
                     session=1,
@@ -71,13 +72,13 @@ class Narayanan2021Adaptor(BaseAdaptor):
                                              data_fn=audio_loader(self._wav_path(attended), channel=0)),
                               StimulusRecord(modality="audio", name=ignored, is_attended=False,
                                              data_fn=audio_loader(self._wav_path(ignored), channel=0))],
-                    neural_data_fn=self._eeg_loader(dat, soundfile.info(self._wav_path(attended))),
+                    neural_data_fn=self._eeg_loader(dat, wav.frames, wav.samplerate),
                 )
 
     def _wav_path(self, stem: str) -> str:
         return os.path.join(self.download_dir, "stimuli", f"{stem}.wav")
 
-    def _eeg_loader(self, dat: str, wav: soundfile._SoundFileInfo):
+    def _eeg_loader(self, dat: str, wav_frames: int, wav_fs: int):
         montage, correct = self._montage, self.drift_correction
 
         def _loader() -> BaseRaw:
@@ -85,7 +86,7 @@ class Narayanan2021Adaptor(BaseAdaptor):
             sfreq = raw.info["sfreq"]
             trig = raw.get_data(picks=["Trigger"])[0]
             onset = train_onset(trig, sfreq)
-            n = math.ceil(wav.frames * sfreq / wav.samplerate)  # the wav's span (was one sample more)
+            n = math.ceil(wav_frames * sfreq / wav_fs)  # the wav's span (was one sample more)
             margin = int(sfreq) if correct else 0  # resampling onto a faster clock needs a few more EEG samples
             stop = min(onset + n + margin, raw.n_times)
             raw = raw.crop(tmin=raw.times[onset], tmax=raw.times[stop - 1]).load_data()

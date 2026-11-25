@@ -1,7 +1,9 @@
-"""narayanan2021 pulse-train onset and drift (synthetic Trigger channel)."""
+"""narayanan2021 pulse-train onset, drift and trial length (synthetic Trigger channel)."""
+import mne
 import numpy as np
 import pytest
 
+from cnsp_datasets.datasets.narayanan2021 import adaptor as mod
 from cnsp_datasets.datasets.narayanan2021.adaptor import pulse_drift, train_onset
 
 
@@ -29,22 +31,15 @@ def test_no_train_raises():
 
 @pytest.mark.parametrize("correct", [False, True])
 @pytest.mark.parametrize("frames, n", [(44_100 * 5, 5000), (44_100 * 5 + 1, 5001)])
-def test_trial_length(tmp_path, monkeypatch, correct, frames, n):
+def test_trial_length(monkeypatch, correct, frames, n):
     """The EEG trial spans ceil(wav samples * fs_eeg / fs_wav) samples (was one more), starting at the train."""
-    import mne
-    import soundfile
-
-    from cnsp_datasets.datasets.narayanan2021 import adaptor as mod
-
-    wav = tmp_path / "a.wav"
-    soundfile.write(wav, np.zeros(frames), 44_100, subtype="PCM_16")
     onset = 2000
     trig = _trigger(onset + np.arange(12) * 1000, n=12_000)
     eeg = np.arange(12_000, dtype=float)
     info = mne.create_info(["Fz", "XtraL", "XtraR", "Trigger"], 1000.0, ["eeg", "misc", "misc", "stim"])
     monkeypatch.setattr(mod, "read_raw_curry",
                         lambda *a, **k: mne.io.RawArray(np.vstack([eeg, eeg, eeg, trig]), info, verbose="ERROR"))
-    adaptor = mod.Narayanan2021Adaptor.__new__(mod.Narayanan2021Adaptor)
+    adaptor = mod.Narayanan2021Adaptor.__new__(mod.Narayanan2021Adaptor)  # no montage file needed
     adaptor.drift_correction, adaptor._montage = correct, None
-    raw = adaptor._eeg_loader("x.dat", soundfile.info(wav))()
+    raw = adaptor._eeg_loader("x.dat", frames, 44_100)()
     assert raw.ch_names == ["Fz"] and raw.n_times == n and raw.get_data()[0, 0] == onset

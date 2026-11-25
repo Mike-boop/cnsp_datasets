@@ -1,9 +1,12 @@
 """schueller2024 drift rows matched to a run by meas_date (synthetic table)."""
 import datetime as dt
 
+import mne
+import numpy as np
 import pandas as pd
 import pytest
 
+from cnsp_datasets.datasets.schueller2024 import adaptor as mod
 from cnsp_datasets.datasets.schueller2024.adaptor import subject_rows
 
 
@@ -31,11 +34,6 @@ def test_duplicate_folders():
 
 
 def test_fallback_logged(monkeypatch, caplog):
-    import mne
-    import numpy as np
-
-    from cnsp_datasets.datasets.schueller2024 import adaptor as mod
-
     monkeypatch.setattr(mod, "_drift_table", _table)
     mod._log_fallback.cache_clear()
     raw = mne.io.RawArray(np.zeros((1, 10)), mne.create_info(1, 1000.0), verbose="ERROR")
