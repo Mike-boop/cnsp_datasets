@@ -11,8 +11,10 @@ with the stimtrack within 0.1 s wherever both exist). STATUS.md: alignment `good
   clipped to 0, which shifted that trial's EEG against its stimulus. Only software onsets can be negative.
 - A recording that ends before its segment is logged (the trial is still shorter, as before).
 - `raw.info["description"]` is `standardise.provenance` JSON (`stimtrack_xcorr` / `sw_trigger`, xcorr quality,
-  onset) instead of free text.
+  onset, validation_tier brainstem) instead of free text.
+- Segments with neither a stimtrack nor a trusted software onset are logged (info) as well as skipped.
 - TextGrid written by `iohelpers.textgrid` (was `broderick2019_natural.utils.multi_tier_dict_to_textgrid`): long
   text format, xmin 0, xmax = the segment's audio duration (was the last word's offset), gaps filled, quotes
-  escaped. Overlapping words would now raise; not yet checked on the word table.
+  escaped. Overlapping words would be clipped with a logged warning (iohelpers default); not yet checked on the
+  word table.
 - Audio through `iohelpers.read_wav` (float32 / 32768: unchanged values).

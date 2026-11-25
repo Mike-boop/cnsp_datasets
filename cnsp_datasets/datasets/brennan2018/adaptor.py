@@ -74,7 +74,7 @@ class Brennan2018Adaptor(BaseAdaptor):
     after segment 1 and events.tsv labels segment k+1 as segment k, so their software onsets are a segment off. The
     subjects relying on software onsets (sub-005/009/022/023/038) have correctly labelled segments (their onset
     spacing matches the stimtrack-derived spacing to 20 ms).
-    Segments with neither, or whose onset is before the start of the recording, are skipped (logged). The method
+    Segments with neither, or whose onset is before the start of the recording, are skipped and logged. The method
     is stored in raw.info["description"] (standardise.provenance JSON).
 
     Channels: 60 scalp EEG ('eeg', easycap-M10 positions), VEOG ('eog'), the stimtrack ('misc'). Audio: float32.
@@ -143,6 +143,10 @@ class Brennan2018Adaptor(BaseAdaptor):
             software = {}
         for seg, sw in software.items():
             onsets.setdefault(seg, (sw, "software (events.tsv)", None))
+        missing = sorted(set(range(1, 13)) - set(onsets))
+        if missing:
+            log.info("brennan2018: %s segments %s skipped: neither a stimtrack nor a trusted software onset",
+                     os.path.basename(vhdr), missing)
         return dict(sorted(onsets.items()))
 
     def _software_onsets(self, events_tsv: str) -> Dict[int, float]:
@@ -162,7 +166,8 @@ class Brennan2018Adaptor(BaseAdaptor):
             "stimtrack_xcorr" if stimtrack else "sw_trigger",
             "hardware (stimtrack Aux5/AUD)" if stimtrack else "software (E-Prime, via events.tsv word onsets)",
             NOTES, jitter_ms=None if stimtrack else SOFTWARE_JITTER_MS, segment=seg, onset_s=round(onset_s, 4),
-            alignment=method, xcorr_quality=None if quality is None else round(quality, 1))
+            validation_tier="brainstem", alignment=method,
+            xcorr_quality=None if quality is None else round(quality, 1))
 
         def _loader() -> BaseRaw:
             raw = mne.io.read_raw_brainvision(vhdr, preload=False, verbose="ERROR")
