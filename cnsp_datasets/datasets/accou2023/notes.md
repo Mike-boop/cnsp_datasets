@@ -60,22 +60,24 @@ podcasts), one BIDS run per stimulus. Authors' code: github.com/exporl/auditory-
 
 ## Channels
 - The first 64 channels are named by position (BioSemi 64 order); sub-015..018 files spell PO7/PO3 as P07/P03.
-- EXG1/EXG2 are the mastoids (M1/M2, misc; named A1/A2 before 2026-11-25). They are unconnected (0.4 uV noise floor) in sub-061 and sub-064 and
-  missing in one sub-052 file; flat ones go into bads. EXG3-8 are unconnected and dropped.
+- EXG1/EXG2 are the mastoids (M1/M2, misc; named A1/A2 before 2026-11-25). They are unconnected (0.4 uV noise floor)
+  in sub-061 and sub-064 and missing in one sub-052 file; flat ones go into bads. EXG3-8 are unconnected and dropped.
 
 ## Validation (2026-11-20, average reference, `tmp/review/accou2023/avgref/`)
-- 81 participants, 617 trials (before the 3 truncated runs were added), no load errors. Tier **brainstem**: envelope decoding mean r 0.030, 96% of
-  participants significant, broad TRF (about 50-150 ms); MLR SNR 1.52, p = 0.01 (peaks about 25 and 37 ms);
-  30-250 Hz TRF SNR 1.22, p = 0.01 (35% of participants alone), a small bump at 4-9 ms besides the 25-ms MLR peak.
+- 81 participants, 617 trials (before the 3 truncated runs were added), no load errors. Tier **brainstem**: envelope
+  decoding mean r 0.030, 96% of participants significant, broad TRF (about 50-150 ms); MLR SNR 1.52, p = 0.01 (peaks
+  about 25 and 37 ms); 30-250 Hz TRF SNR 1.22, p = 0.01 (35% of participants alone), a small bump at 4-9 ms besides
+  the 25-ms MLR peak.
 - Coherence, natural (554 trials, 81 participants; ratio to null): 0.2-1 Hz 16.0, 1-4 Hz 6.4, 4-8 Hz 6.3, 8-15 Hz
   4.3, 15-30 Hz 1.7, 30-60 Hz 2.2; above the null's 95% at almost every bin to 63 Hz, with a 30-50 Hz hump (the
   envelope-following response): the alignment holds to a few ms across the dataset.
-- Coherence, other conditions (envelope, ratio to null, 1-4 / 4-8 Hz): sin5dB 2.2 / 2.4 (41 trials), av 1.9 / 1.5 (9), sin2.5dB
-  1.3 / 1.3 (5), sin-4dB 1.2 / 1.1 (5); the small conditions are close to the null for want of data.
+- Coherence, other conditions (envelope, ratio to null, 1-4 / 4-8 Hz): sin5dB 2.2 / 2.4 (41 trials), av 1.9 / 1.5 (9),
+  sin2.5dB 1.3 / 1.3 (5), sin-4dB 1.2 / 1.1 (5); the small conditions are close to the null for want of data.
 
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
-**good**: Trigger track played on a 2nd sound-card channel and recorded in Status (an audio-locked pulse every 1 s); first-to-last pulse resampling removes -34.5 ppm; jitter 0.28 ms; brainstem tier, coherence to 63 Hz.
+**good**: Trigger track played on a 2nd sound-card channel and recorded in Status (an audio-locked pulse every 1 s);
+first-to-last pulse resampling removes -34.5 ppm; jitter 0.28 ms; brainstem tier, coherence to 63 Hz.
 
 ## Restructure 2026-11-25 (not yet re-validated on data)
 - Adaptor subclasses BaseAdaptor. Mastoids renamed A1/A2 -> M1/M2 (repository convention; still misc, flat ones in

@@ -1,4 +1,4 @@
-"""deoisres2023, vanheusden2020, peng2026: duplicate recordings and a missing meas_date raise clear errors."""
+"""deoisres2023, vanheusden2020: duplicate recordings and a missing meas_date raise clear errors."""
 from types import SimpleNamespace
 
 import pytest

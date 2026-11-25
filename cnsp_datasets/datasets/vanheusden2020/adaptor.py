@@ -40,10 +40,9 @@ PAPER_ID = {s: i + 1 for i, s in enumerate([1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
 PAPER_EXCLUDED = {16}  # paper subject 13, removed from the EEG analysis ("technical issue")
 NOTES = ("BioSemi ActiveTwo at 2048 Hz (DC, 417 Hz hardware low-pass), decimated to 1024 Hz (anti-alias FIR); "
          "32 scalp channels plus the mastoids EXG1 (right, as M2) and EXG2 (left, as M1; sides inferred) as misc, "
-         "original CMS/DRL "
-         "reference (no re-referencing; the paper used the average reference), "
-         "template positions. Onset = rising edge of Status bit 1 (one pulse per segment onset, no offset marker); "
-         "no drift correction (not measurable); EEG checks place the pulses at the sound onset to within ~10-20 ms. "
+         "original CMS/DRL reference (no re-referencing; the paper used the average reference), template "
+         "positions. Onset = rising edge of Status bit 1 (one pulse per segment onset, no offset marker); no drift "
+         "correction (not measurable); EEG checks place the pulses at the sound onset to within ~10-20 ms. "
          "Stimulus = the shipped wav (band-limited at ~4.05 kHz, the paper says 3 kHz), played by a loudspeaker at "
          "1.2 m; in the aided condition the participant's own hearing aid processed the sound (gain, compression, "
          "delay of a few ms; not shipped, not corrected).")
@@ -141,14 +140,11 @@ def _onsets(bdf: str) -> np.ndarray:
     return status_edges(_read(bdf).get_data(picks=["Status"])[0], mask=TRIGGER_BIT, kind="rise", idle=0)
 
 
-def _read_wav(path: str, mmap: bool = False) -> tuple[int, np.ndarray]:
-    with warnings.catch_warnings():  # odin_4_* carry a harmless chunk after the data chunk
-        warnings.simplefilter("ignore", wavfile.WavFileWarning)
-        return wavfile.read(path, mmap=mmap)
-
-
 def _n_audio(path: str) -> int:
-    return len(_read_wav(path, mmap=True)[1])
+    """Samples of a wav (odin_4_* carry a harmless chunk after the data chunk: warning silenced)."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", wavfile.WavFileWarning)
+        return len(wavfile.read(path, mmap=True)[1])
 
 
 ADAPTOR = Vanheusden2020Adaptor

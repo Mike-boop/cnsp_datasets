@@ -240,8 +240,8 @@ class Guilleminot2021Adaptor(BaseAdaptor):
     @staticmethod
     def _make_audio_loader(wav_path: str) -> Callable[[], Dict[str, Any]]:
         def _loader() -> Dict[str, Any]:
-            x, fs = read_wav(wav_path)  # float32 in [-1, 1) (was the raw samples as float64)
-            return {"fs": fs, "data": x[:1]}  # first channel of a multichannel file, as before
+            x, fs = read_wav(wav_path, channel=0)
+            return {"fs": fs, "data": x}
         return _loader
 
     def _make_tactile_loader(self, file_token: str, wav_path: str, delay_ms: int,
@@ -257,10 +257,10 @@ class Guilleminot2021Adaptor(BaseAdaptor):
             buf = resample_poly(buf, ratio.numerator, ratio.denominator)
             # speech onset is PAD_S into its buffer; the tactile buffer starts delay_ms later (mismatched: 0)
             start = int(round((PAD_S - (delay_ms if correlated else 0) / 1000) * fs))
-            out = np.zeros(n)
+            out = np.zeros(n, np.float32)
             seg = buf[max(start, 0):max(start, 0) + n - max(-start, 0)]
             out[max(-start, 0):max(-start, 0) + len(seg)] = seg
-            return {"fs": int(fs), "data": out[None, :].astype(np.float32)}
+            return {"fs": int(fs), "data": out[None, :]}
         return _loader
 
     def _make_tactile_tg_loader(self, file_token: str, wav_path: str, delay_ms: int,

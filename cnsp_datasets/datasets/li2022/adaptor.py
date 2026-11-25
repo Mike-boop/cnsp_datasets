@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 import os
 import re
 from functools import lru_cache
@@ -17,8 +16,6 @@ from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.iohelpers import mark_bads, read_wav
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
-
-log = logging.getLogger(__name__)
 
 EEG_FS = 1000.0
 EEG = ['Fp1', 'Fp2', 'F3', 'F4', 'C3', 'C4', 'P3', 'P4', 'O1', 'O2', 'F7', 'F8', 'T7', 'T8', 'P7', 'P8', 'Fz', 'Cz',
@@ -89,9 +86,8 @@ class Li2022Adaptor(BaseAdaptor):
                 for e in sio.loadmat(path, variable_names=["Markers"])["Markers"][0]:
                     desc = str(np.ravel(e["Description"])[0]) if np.size(e["Description"]) else ""
                     if mk := re.fullmatch(r"trail(\d+)S", desc):
-                        if int(mk[1]) in markers:  # not seen in the release; the later file's marker is used
-                            log.warning("S%d: trail%sS marker in %s and %s", subject, mk[1], markers[int(mk[1])][0],
-                                        path)
+                        if int(mk[1]) in markers:
+                            raise ValueError(f"S{subject}: trail{mk[1]}S marker in {markers[int(mk[1])][0]} and {path}")
                         markers[int(mk[1])] = (path, int(np.ravel(e["Position"])[0]) - 1, n)  # 1-based
             if len(markers) != 32:
                 raise ValueError(f"S{subject}: {len(markers)} trial start markers, expected 32")

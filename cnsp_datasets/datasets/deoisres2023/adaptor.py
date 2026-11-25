@@ -163,7 +163,7 @@ def _eeg_loader(bdf: str, onset: float, n_out: int, drift: float, correct: bool,
 def _audio_loader(path: str, start: int = 0, stop: int | None = None) -> Callable[[], dict]:
     def _loader() -> dict:
         x, _ = read_wav(path, channel=0, expect_fs=AUDIO_FS)  # channel 1 is the trigger track
-        return {"fs": AUDIO_FS, "data": np.ascontiguousarray(x[:, start:stop])}
+        return {"fs": AUDIO_FS, "data": x[:, start:stop].copy()}
     return _loader
 
 

@@ -112,8 +112,8 @@ Scratch: `R=/data_storage/gu08wuvu/datasets/tmp/review/rotaru2024/` (scripts in 
     the shipped epoch starts ~1 s into the audio (one pulse late).
   - Most other trials have too little decoder SNR (z < 4) for a single-trial lag; their peaks scatter at
     +-0.5..1.5 s by chance (no consistency across halves).
-  - Per-trial estimates: `alignment/decoder_lags.csv` (first pulse-interval deviation, whole-trial and half-trial lag, r, z).
-    Brain-based: documented only. Trials flagged in the provenance (`timing_flag`): the 11 positive-stall trials
+  - Per-trial estimates: `alignment/decoder_lags.csv` (first pulse-interval deviation, whole-trial and half-trial lag,
+    r, z). Brain-based: documented only. Trials flagged in the provenance (`timing_flag`): the 11 positive-stall trials
     (sub04, sub07) and sub04 MovingTargetNoise2.
 - Insert-phone tube delay unknown (ER10: no tube; the paper gives none). No stimtrack.
 - Proposed alignment: shipped timing (`alignment_method` `onset_only`), no drift correction.

@@ -48,8 +48,8 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
 - `word_information.csv`: 2930 words (Whisper large-v3 timestamps, manually reviewed), with speaker (13 labels),
   onset/offset/duration (s from the start of the audio), log frequency, POS, top-down/left-corner/bottom-up parse
   counts. 16 word pairs overlap in time (simultaneous speakers), so it is stored verbatim as a CSV text feature
-  (`words_csv`) rather than as a single-tier TextGrid. `transcripts.csv`: 738 sentences (`transcript`). Both are stored as `.txt` files holding the CSV (UTF-8; the
-  shipped files start with a BOM, which the loader strips).
+  (`words_csv`) rather than as a single-tier TextGrid. `transcripts.csv`: 738 sentences (`transcript`). Both are
+  stored as `.txt` files holding the CSV (UTF-8; the shipped files start with a BOM, which the loader strips).
 - `wav_acoustics.csv` (f0, intensity, speaker-switch flag at 10 ms) is model/derived and not stored (recomputable
   from the audio and the word table).
 
@@ -89,12 +89,12 @@ scripts in `/data_storage/gu08wuvu/datasets/tmp/review/scripts/li2025_*.py`.
   variable amount (LESSONS: 40-500 ms).
 - **Adopted: brain-based onset correction per subject, on by default** (user decisions 2026-11-23: group delays
   first, then "try it out" for per-subject delays, adopted after the held-out test in section 7). The trial starts
-  the subject's delay into the shipped file (`alignment/onset.csv`, written by `alignment/subject_delays.py`; 0.39-1.26 s, whole
-  ms at 1000 Hz, so the correction is a crop, no resampling). `Li2025Adaptor(onset=...)`: `"subject"` (default),
-  `"group"` (`ONSET_DELAY_S`: 0.80 s sub-31..47, 0.42 s sub-48..60; the previous default) or `"none"` (shipped
-  first sample). Native 1000 Hz kept; the audio (1519.235 s) is longer than the remaining recording and is not
-  cut. Sidecar (user decision 2026-11-23): `alignment_method = brain_trf` with the onset correction (`"subject"` and
-  `"group"`; `onset_only` with `onset="none"`), `trigger_type` "unknown (inferred software ...) +
+  the subject's delay into the shipped file (`alignment/onset.csv`, written by `alignment/subject_delays.py`;
+  0.39-1.26 s, whole ms at 1000 Hz, so the correction is a crop, no resampling). `Li2025Adaptor(onset=...)`:
+  `"subject"` (default), `"group"` (`ONSET_DELAY_S`: 0.80 s sub-31..47, 0.42 s sub-48..60; the previous default) or
+  `"none"` (shipped first sample). Native 1000 Hz kept; the audio (1519.235 s) is longer than the remaining recording
+  and is not cut. Sidecar (user decision 2026-11-23): `alignment_method = brain_trf` with the onset correction
+  (`"subject"` and `"group"`; `onset_only` with `onset="none"`), `trigger_type` "unknown (inferred software ...) +
   onset_correction_s", plus `onset_correction_s`, `onset_correction_method`, `recording_group` and, only with
   `onset="subject"`, `onset_match_r`, `onset_parts_mad_ms`, `onset_fallback`, `onset_ambiguous`. Drift:
   `drift_ppm` = the brain-based pooled Theil-Sen estimate (-16.7 ppm, section 7), `drift_source` (method, CIs, OLS
@@ -411,9 +411,9 @@ significant. These segments are not held out from the delay estimate; the held-o
 Wide window vs narrow (re-standardised 2026-11-23, all 30; `alignment_v4/validation_subject/`, comparison
 `alignment_v4/validation/before_after.png` + `.md`): mean r 0.0238 -> 0.0242 (11/30 higher), group A max GFP ratio
 2.75 -> 2.97. **sub-35 0.0276 -> 0.0386** (0.80 -> 1.256 s); sub-47 0.0494 -> 0.0465 (0.834 -> 0.977 s; within the
-noise below); sub-52 0.0212 -> 0.0225 and sub-55 0.0275 -> 0.0280 (now fallbacks at 0.42 s). Subjects whose delay moved by only
-1-2 ms change by up to +-0.003 (e.g. sub-31 +0.0019, sub-34 -0.0022, sub-36 +0.0017, sub-50 -0.0028, sub-58
--0.0020), so that is the noise floor of this comparison.
+noise below); sub-52 0.0212 -> 0.0225 and sub-55 0.0275 -> 0.0280 (now fallbacks at 0.42 s). Subjects whose delay
+moved by only 1-2 ms change by up to +-0.003 (e.g. sub-31 +0.0019, sub-34 -0.0022, sub-36 +0.0017, sub-50 -0.0028,
+sub-58 -0.0020), so that is the noise floor of this comparison.
 
 Restricted part matching (v5; re-standardised 2026-11-23, all 30; `alignment_v5/validation_subject/`, same settings
 as `alignment_v4/validation_subject/`): only sub-52 and sub-55 change. **sub-52 0.0225 -> 0.0212** (0.42 -> 0.553 s;
@@ -448,7 +448,11 @@ latencies in both groups; the HF tiers again "pass" nominally (p 0.01) but are t
 
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
-**poor**: no usable hardware timing (one trigger at sample 0, no audio copy, no end trigger); per-subject brain-based onset delays (template match to group A's TRF, wide search 0-1.9 s; 0.39-1.26 s; fallbacks sub-37/40; ambiguous sub-33/39/47/53/55) and a pooled brain-based Theil-Sen drift of -16.7 ppm, both applied by default (`brain_trf`, user decisions 2026-11-23); low tier only (mean r 0.0245, 90 % of subjects); circular (estimated and validated on the same MEG).
+**poor**: no usable hardware timing (one trigger at sample 0, no audio copy, no end trigger); per-subject brain-based
+onset delays (template match to group A's TRF, wide search 0-1.9 s; 0.39-1.26 s; fallbacks sub-37/40; ambiguous
+sub-33/39/47/53/55) and a pooled brain-based Theil-Sen drift of -16.7 ppm, both applied by default (`brain_trf`, user
+decisions 2026-11-23); low tier only (mean r 0.0245, 90 % of subjects); circular (estimated and validated on the same
+MEG).
 
 ## Upstream issues
 - sub-54 `task-baba` and `task-replay` fifs are truncated in v1.0.5 (181857342 / 181501853 bytes, last data buffer
@@ -463,3 +467,5 @@ Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026
   (subject_delays.py writes it there through ONSET_CSV). Bads via iohelpers.mark_bads (strict). The ffmpeg reader is
   kept (float32 f32le, full scale +-1, not clipped) and so is raw._raw_extras (tests/test_mne_private_api.py). No
   change to the onsets or the drift.
+- Bads: iohelpers.mark_bads adds the adaptor's list to any bads stored in the shipped fif (the old code replaced
+  them); the second pass should check whether the fifs carry their own bads.

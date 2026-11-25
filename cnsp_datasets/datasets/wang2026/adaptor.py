@@ -64,8 +64,8 @@ class Wang2026Adaptor(BaseAdaptor):
         # code -> (wav stem, ear condition); MixFile mix_NNN.wav is shipped as mixed_NNN.wav
         self.stim = {}
         for r in rows:
-            code, entry = int(r[col["Trigger"]]), (r[col["MixFile"]].replace("mix_", "mixed_")[:-4],
-                                                   r[col["EarCondition"]])
+            code = int(r[col["Trigger"]])
+            entry = (r[col["MixFile"]].replace("mix_", "mixed_")[:-4], r[col["EarCondition"]])
             if self.stim.setdefault(code, entry) != entry:
                 raise ValueError(f"StimList.xlsx: trigger {code} listed as {self.stim[code]} and {entry}")
 

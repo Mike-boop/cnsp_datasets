@@ -201,6 +201,6 @@ Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026
 ## Restructure 2026-11-25 (not yet re-validated on data)
 - Adaptor subclasses BaseAdaptor; drift_correction checked with choice(). Sorted globs; two BDFs of the same subject
   and kind (anywhere under the download) raise instead of one silently replacing the other. A BDF without meas_date
-  raises a clear ValueError (the recording order comes from it). Wav channel 1 read with iohelpers.read_wav(channel=0)
+  raises a clear ValueError (the recording order comes from it). The speech channel (0; channel 1 is the trigger track) read with iohelpers.read_wav(channel=0)
   (float32 /32768 as before). Status bit-0 rises through iohelpers.status_edges (same edges). Bads via
   iohelpers.mark_bads (none listed).

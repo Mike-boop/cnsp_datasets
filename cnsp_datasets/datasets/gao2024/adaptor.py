@@ -70,11 +70,10 @@ class Gao2024Adaptor(BaseAdaptor):
         names, types = _channels()
         for exp in CONDITIONS:
             behave = self._find_one(f"**/exp{exp}_behave_result")
-            paths = self.sorted_glob(self.root, f"**/exp{exp}_PreData_*/sub*_*.mat")
-            keys = [_sub_seg(p) for p in paths]
-            if len(set(keys)) != len(keys):
+            paths = sorted(self.sorted_glob(self.root, f"**/exp{exp}_PreData_*/sub*_*.mat"), key=_sub_seg)
+            if len({_sub_seg(p) for p in paths}) != len(paths):
                 raise ValueError(f"experiment {exp}: a subject-segment file appears twice under {self.root}")
-            for path in sorted(paths, key=_sub_seg):
+            for path in paths:
                 sub, seg = _sub_seg(path)
                 cond = int(_order(os.path.join(behave, f"sub_{sub}.mat"))[seg - 1])
                 for i in range(N_CHUNKS):

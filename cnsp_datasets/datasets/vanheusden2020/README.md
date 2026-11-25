@@ -43,9 +43,9 @@ These hours are computed from the stimulus durations. The 40 BDF recordings, inc
     positions are **template positions**. Neither the label mapping nor the positions are documented: they are
     inferred from neighbour correlations. There is no digitisation.
 - **External sensors:** `EXG1` and `EXG2` are the mastoids, stored as `misc` channels `M2` (EXG1) and `M1`
-  (EXG2). The paper says only "either mastoid". The sides are **inferred: EXG1 = right, EXG2 = left**. This is the reverse of the
-  usual BioSemi convention. The inference comes from EXG1 correlating more with T8 and EXG2 more with T7, in 35 of
-  40 files. Use them for a linked-mastoid reference if wanted.
+  (EXG2). The paper says only "either mastoid". The sides are **inferred: EXG1 = right, EXG2 = left**. This is the
+  reverse of the usual BioSemi convention. The inference comes from EXG1 correlating more with T8 and EXG2 more with
+  T7, in 35 of 40 files. Use them for a linked-mastoid reference if wanted.
 - **Dropped:** `EXG3`, which is active but has an unknown role (EOG? nose?). Also `EXG4-8` (unconnected), the
   `GSR`/`Erg`/`Resp`/`Plet`/`Temp` channels (constant) and `Status`. **No EOG or ECG** channel is identified, and
   there is no stimtrack or audio channel.

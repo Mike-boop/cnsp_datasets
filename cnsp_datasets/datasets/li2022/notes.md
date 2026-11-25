@@ -199,6 +199,6 @@ both onsets (`R/li2022/pilot_{dnn,marker}/`), validator tiers low, mlr, brainste
 ## Restructure 2026-11-25 (not yet re-validated on data)
 - Adaptor subclasses BaseAdaptor; onset checked with choice(). Download walked in sorted order (directories and files;
   S<k>_1.mat before S<k>_2.mat); two copies of one Trail<k>.wav (clean or HRTF) raise; a trial-start marker found
-  twice for one subject is logged (the later file wins, as the list is now ordered). Clean talkers still read as the
-  left (0) / right (1) channel of the clean wav, now through iohelpers.read_wav(channel=...) (float32, unchanged
-  values; synthetic test). Bads via iohelpers.mark_bads (strict).
+  twice for one subject raises (was: the later file in walk order won). Clean talkers still read as the left (0) /
+  right (1) channel of the clean wav, now through iohelpers.read_wav(channel=...) (float32, unchanged values;
+  synthetic test). Bads via iohelpers.mark_bads (strict).

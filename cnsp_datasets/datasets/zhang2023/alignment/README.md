@@ -8,7 +8,7 @@ download (the folder holding `NJUNCA_preprocessed_arte_removed/`) as input:
 ```
 M=cnsp_datasets.datasets.zhang2023.alignment
 python -m $M.make_maps    <download>              # -> pieces.csv, source_cover.csv (~5 min)
-ZHANG2023_DNN=<classifier.pt> python -m $M.dnn_scan <download> <out>/scan  # per-trial lag scans, cached (~2 h, small GPU)
+ZHANG2023_DNN=<classifier.pt> python -m $M.dnn_scan <download> <out>/scan  # per-trial lag scans (~2 h, GPU)
 python -m $M.pair_offsets <out>/scan [fig.png]    # -> pair_offsets.csv (confident = adaptor pairs="confident")
 ```
 

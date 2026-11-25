@@ -29,8 +29,8 @@ Download (`/data_storage/gu08wuvu/datasets/vanheusden2020/download/`, read-only)
 Subjects: **20 with data** (S_001, 002, 004-014, 016-020, 024, 027), both conditions each, 40 files. The paper has
 17 (Table 1, IDs 01-17; subject 13 then removed from the EEG analysis for a "technical issue"; two subjects did not
 complete the BKB test). Which 3 of the 20 recorded subjects are not in the paper, and how the paper's IDs 01-17 map
-to S_xxx, is not documented (inferred mapping in section 3). The xlsx lists all 20 (its row numbers 1-20 are not the paper's IDs: e.g. row 5 is
-S_001, F, 65; paper ID 01 is F, 65).
+to S_xxx, is not documented (inferred mapping in section 3). The xlsx lists all 20 (its row numbers 1-20 are not the
+paper's IDs: e.g. row 5 is S_001, F, 65; paper ID 01 is F, 65).
 
 ## 3. Stimulus <-> trial mapping
 - Each BDF is one condition block: the 8 audiobook segments in a row, one Status pulse at each segment onset
@@ -74,8 +74,8 @@ S_001, F, 65; paper ID 01 is F, 65).
 - Paper IDs (Table 1, 17 subjects): matching age and gender in S-number order gives an exact match for
   01-17 = S_001, 004, 005, 006, 007, 008, 009, 010, 011, 012, 013, 014, 016, 017, 018, 024, 027 (all 17 age/gender
   pairs agree, 11 M / 6 F as in the readme; inferred, not documented). Not in the paper: **S_002** (4-segment
-  "Rep" files), **S_019** (F53), **S_020** (F55). Paper subject 13 (removed for a "technical issue" seen in the power spectrum) would then be
-  **S_016**; its tracking here is normal (z 12.2 aided / 8.6 unaided), so the issue is unknown.
+  "Rep" files), **S_019** (F53), **S_020** (F55). Paper subject 13 (removed for a "technical issue" seen in the power
+  spectrum) would then be **S_016**; its tracking here is normal (z 12.2 aided / 8.6 unaided), so the issue is unknown.
 
 ## 4. Speech features available
 - Audio: 8 wavs, 44.1 kHz mono int16 (scipy warns about a non-data chunk: the `odin_4_*` files have ~2.8 kB
@@ -315,7 +315,8 @@ results `tmp/review/vanheusden2020/dnn_offsets/offsets.json`):
 
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
-**medium**: Status-bit trigger (type unknown), no stimtrack; shift peaks within ~10-20 ms; DNN +4.4/+5.1 ms documented (within band); drift not measurable; segment order partly EEG-inferred; mlr tier.
+**medium**: Status-bit trigger (type unknown), no stimtrack; shift peaks within ~10-20 ms; DNN +4.4/+5.1 ms documented
+(within band); drift not measurable; segment order partly EEG-inferred; mlr tier.
 
 ## Restructure 2026-11-25 (not yet re-validated on data)
 - Adaptor subclasses BaseAdaptor. Mastoids renamed EXG1 -> M2 (right) and EXG2 -> M1 (left), sides inferred as before

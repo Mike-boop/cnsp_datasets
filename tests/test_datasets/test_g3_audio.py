@@ -52,8 +52,10 @@ def test_geirnaert2025_skips_the_prelisten(tmp_path):
     assert d["fs"] == 48000 and d["data"].shape == (2, 48000)
 
 
-def test_mono_loaders_reject_stereo(tmp_path):
-    from cnsp_datasets.datasets.nguyen2025.adaptor import _audio_loader
+@pytest.mark.parametrize("name", ["nguyen2025", "thornton2025", "zhang2025"])
+def test_mono_loaders_reject_stereo(tmp_path, name):
+    import importlib
+    loader = importlib.import_module(f"cnsp_datasets.datasets.{name}.adaptor")._audio_loader
     _stereo(tmp_path / "x.wav")
     with pytest.raises(ValueError, match="expected mono"):
-        _audio_loader(str(tmp_path / "x.wav"))()
+        loader(str(tmp_path / "x.wav"))()
