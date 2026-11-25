@@ -6,9 +6,10 @@ from typing import Iterable
 
 import h5py
 import numpy as np
-from scipy.io import wavfile
 
 from cnsp_datasets.datasets.maddox_base.common import bits_to_ints, load_trial, read_recording, recording_sfreq
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import read_wav
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 FS_AUDIO = 48000
@@ -21,9 +22,10 @@ DRIFT_EXP1_06 = 24.8e-6        # sub-diotic06 has no S 2: median of sub-diotic01
 DRIFT_EXP2 = -5e-6             # no S 2 in exp2: from the ER-2 artefact (notes section 8)
 EXP3_REVERSED = {17}           # polarity of repetitions 1/3 vs 2/4 reversed (notes section 10)
 TALKERS = {"alc": "alchemyst", "wri": "wrinkle"}
+MONTAGES = ("subcortex", "cortex")
 
 
-class Stoll2025Adaptor:
+class Stoll2025Adaptor(BaseAdaptor):
     """
     Stoll et al. 2025 (OpenNeuro ds006434): attention to one of two audiobooks (Wrinkle in Time, female; The
     Alchemyst, male) and passive listening; the subcortical montage by default (montage="cortex": the 32-channel
@@ -46,10 +48,10 @@ class Stoll2025Adaptor:
 
     def __init__(self, download_dir: str, sfreq: float | None = 1000, drift_correction: bool = True,
                  montage: str = "subcortex", save_anm: bool = False):
-        self.download_dir = download_dir
+        super().__init__(download_dir)
         self.sfreq = sfreq
         self.drift_correction = drift_correction
-        self.montage = montage
+        self.montage = self.choice("montage", montage, MONTAGES)
         self.save_anm = save_anm
         self._stim1 = os.path.join(download_dir, "stimuli", "exp1Diotic", "stim+pulses+silences.hdf5")
 
@@ -171,9 +173,10 @@ def _pulse_loader(path: str, key: str, n_times: int):
 
 
 def _wav_loader(path: str, column: int):
+    """One channel of a dichotic wav as float32 (1, n); fs = FS_TDT (the header says 24414 Hz)."""
     def _loader() -> dict:
-        _, x = wavfile.read(path)  # the header says 24414 Hz; the TDT rate is 24414.0625 Hz
-        return {"fs": FS_TDT, "data": (x[:, column] / 32768.0).astype(np.float32)[None, :]}
+        data, _ = read_wav(path, channel=column)
+        return {"fs": FS_TDT, "data": data}
 
     return _loader
 

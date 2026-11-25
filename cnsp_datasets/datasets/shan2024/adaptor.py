@@ -4,11 +4,11 @@ import glob
 import os
 from typing import Iterable
 
-import numpy as np
 import pandas as pd
-from scipy.io import wavfile
 
 from cnsp_datasets.datasets.maddox_base.common import TUBE_DELAY, bits_to_ints, load_trial, read_recording
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import audio_loader
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 DURATION = 12.0
@@ -18,7 +18,7 @@ TYPES = ["click", "acoustic", "classical", "hiphop", "jazz", "metal", "pop",
 MUSIC = {"acoustic", "classical", "hiphop", "jazz", "metal", "pop"}
 
 
-class Shan2024Adaptor:
+class Shan2024Adaptor(BaseAdaptor):
     """
     Shan et al. 2024 (NEMAR on004356, mirror of OpenNeuro ds004356): 22 subjects, 32 scalp channels + EP1/EP2 (FCz
     minus each earlobe, EP-PreAmp) at 10 kHz; passive listening to 12 s clips: six music genres and six types of
@@ -33,7 +33,7 @@ class Shan2024Adaptor:
     """
 
     def __init__(self, download_dir: str, sfreq: float | None = 1000, drift_correction: bool = True):
-        self.download_dir = download_dir
+        super().__init__(download_dir)
         self.sfreq = sfreq
         self.drift_correction = drift_correction
 
@@ -63,15 +63,7 @@ class Shan2024Adaptor:
                     )
 
     def _audio_loader(self, kind: str, name: str):
-        path = os.path.join(self.download_dir, "stimuli", kind, f"{name}.wav")
-
-        def _loader() -> dict:
-            fs, x = wavfile.read(path)
-            if x.dtype == np.int16:
-                x = x / 32768.0
-            return {"fs": int(fs), "data": np.asarray(x, np.float32)[None, :]}
-
-        return _loader
+        return audio_loader(os.path.join(self.download_dir, "stimuli", kind, f"{name}.wav"))
 
     def _eeg_loader(self, vhdr: str, onset: float, drift: float):
         sfreq = self.sfreq

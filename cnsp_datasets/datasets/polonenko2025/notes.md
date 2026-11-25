@@ -104,3 +104,6 @@ inverted, which cancels part of it in the pooled TRF.
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **good**: Sound-card triggers + 0.81 ms; polarity-following ER-2 artefact exactly at -0.81 ms confirms the onset to one 10 kHz sample; drift 24-26 ppm corrected; brainstem tier.
+
+## Restructure 2026-11-25
+- Restructure 2026-11-25 (not yet re-validated on data): adaptor on `BaseAdaptor`. No other change.

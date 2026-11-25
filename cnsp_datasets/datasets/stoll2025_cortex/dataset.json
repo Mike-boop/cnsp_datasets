@@ -1,6 +1,12 @@
 {
   "name": "stoll2025_cortex",
-  "title": "stoll2025_cortex",
+  "title": "Stoll et al. (2025) selective attention, cortical montage (32 channels; exp1 and exp2)",
   "visibility": "public",
+  "modality": "EEG",
+  "system": "Brain Products actiCHamp",
+  "stimuli": "competing speakers",
+  "alignment_quality": "good",
+  "validation_tier": "brainstem (weak 8 ms peak)",
+  "participants": 52,
   "notes": "variant of stoll2025: downloaded with download_dataset('stoll2025')"
 }

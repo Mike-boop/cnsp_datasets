@@ -11,6 +11,7 @@ import pandas as pd
 
 from cnsp_datasets.datasets.maddox_base.common import (TUBE_DELAY, bits_to_ints, load_trial, read_expyfun,
                                                        read_recording)
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 FS_AUDIO = 48000
@@ -44,7 +45,7 @@ TASKS = {
 }
 
 
-class Polonenko2026Adaptor:
+class Polonenko2026Adaptor(BaseAdaptor):
     """
     Polonenko & Eisenreich 2026 (OpenNeuro ds008065): multiband peaky speech (dichotic, 5 audiological bands per
     ear), passive listening, 10 s trials, 3-channel subcortical EEG at 10 kHz. Three experiments (participants
@@ -66,7 +67,7 @@ class Polonenko2026Adaptor:
     """
 
     def __init__(self, download_dir: str, sfreq: float | None = 1000, drift_correction: bool = True):
-        self.download_dir = download_dir
+        super().__init__(download_dir)
         self.sfreq = sfreq
         self.drift_correction = drift_correction
 

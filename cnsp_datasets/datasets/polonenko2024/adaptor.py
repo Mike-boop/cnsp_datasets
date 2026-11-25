@@ -9,6 +9,7 @@ import pandas as pd
 
 from cnsp_datasets.datasets.maddox_base.common import (TUBE_DELAY, expyfun_loader, load_trial, pulse_loader,
                                                        read_recording)
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 FS_AUDIO = 48000
@@ -17,7 +18,7 @@ DURATION = 10.0     # every speech file is 480000 samples
 END_MARKER = 0.02   # S 2 is stamped 20 ms before the end (authors' dur_stamp = 9.98)
 
 
-class Polonenko2024Adaptor:
+class Polonenko2024Adaptor(BaseAdaptor):
     """
     Polonenko & Maddox 2024 (OpenNeuro ds005340, "peaky_pitchshift"): 15 subjects, 2-channel subcortical EEG
     (FCz minus left/right earlobe, 10 kHz), 720 x 10 s peaky-speech trials per subject: male/female narrator at
@@ -34,7 +35,7 @@ class Polonenko2024Adaptor:
 
     def __init__(self, download_dir: str, sfreq: float | None = 1000, drift_correction: bool = True,
                  save_anm: bool = False):
-        self.download_dir = download_dir
+        super().__init__(download_dir)
         self.sfreq = sfreq
         self.drift_correction = drift_correction
         self.save_anm = save_anm

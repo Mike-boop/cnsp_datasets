@@ -4,11 +4,11 @@ import glob
 import os
 from typing import Iterable
 
-import numpy as np
 import pandas as pd
 
 from cnsp_datasets.datasets.maddox_base.common import (TUBE_DELAY, expyfun_loader, load_trial, pulse_loader,
                                                        read_recording)
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 FS_AUDIO = 48000
@@ -21,7 +21,7 @@ CONDITIONS = {"clean": "talkers1-clean", "0 dB": "talkers2-snr0dB", "-3 dB": "ta
 N_ID_BITS_FLIP = 49  # 1 stimulus + 2 SNR + 5 x 9 token bits + 1 polarity bit (sub-07 onwards)
 
 
-class Polonenko2025Adaptor:
+class Polonenko2025Adaptor(BaseAdaptor):
     """
     Polonenko & Maddox 2025 (OpenNeuro ds005408, "peaky_snr"): 25 subjects, 2-channel subcortical EEG (FCz minus
     left/right earlobe, 10 kHz), passive listening to 720 x 10 s trials of peaky speech from 1, 2, 3 or 5
@@ -41,7 +41,7 @@ class Polonenko2025Adaptor:
 
     def __init__(self, download_dir: str, sfreq: float | None = 1000, drift_correction: bool = True,
                  save_anm: bool = False):
-        self.download_dir = download_dir
+        super().__init__(download_dir)
         self.sfreq = sfreq
         self.drift_correction = drift_correction
         self.save_anm = save_anm

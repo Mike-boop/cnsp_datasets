@@ -9,6 +9,7 @@ import h5py
 import numpy as np
 
 from cnsp_datasets.datasets.maddox_base.common import Recording, bits_to_ints, load_trial, read_recording
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 FS_AUDIO = 44100
@@ -42,7 +43,7 @@ def start_drift(rec: Recording) -> float | None:
     return float(np.mean(diffs) / nominal - 1) if diffs else None
 
 
-class Polonenko2021Adaptor:
+class Polonenko2021Adaptor(BaseAdaptor):
     """
     Polonenko & Maddox 2021 (eLife, Dryad doi:10.5061/dryad.12jm63xwd): 64 s peaky-speech trials, 2-channel
     subcortical EEG (A1, A2: earlobes referenced to FCz, 10 kHz), three experiments with different participants:
@@ -61,7 +62,7 @@ class Polonenko2021Adaptor:
     """
 
     def __init__(self, download_dir: str, sfreq: float | None = 1000, drift_correction: bool = True):
-        self.download_dir = download_dir
+        super().__init__(download_dir)
         self.sfreq = sfreq
         self.drift_correction = drift_correction
 
@@ -99,9 +100,14 @@ class Polonenko2021Adaptor:
 
     def _stimulus_files(self) -> Dict[Tuple[str, str, int], str]:
         files = {}
-        for path in glob.glob(os.path.join(self.download_dir, "Exp*_Stimuli_*_Narrator_*", "*Narrator*.hdf5")):
+        for path in self.sorted_glob(self.download_dir, "Exp*_Stimuli_*_Narrator_*/*Narrator*.hdf5"):
             m = re.match(r"(Male|Female)Narrator(\d{3})_bands", os.path.basename(path))
-            files[os.path.basename(os.path.dirname(path))[:4], m.group(1), int(m.group(2))] = path
+            if not m:
+                raise ValueError(f"unexpected stimulus file {path}")
+            key = os.path.basename(os.path.dirname(path))[:4], m.group(1), int(m.group(2))
+            if key in files:
+                raise ValueError(f"two stimulus files for {key}: {files[key]}, {path}")
+            files[key] = path
         return files
 
     def _stimuli(self, exp: str, path: str, narrator: str, kind: str, chapter: int) -> List[StimulusRecord]:
