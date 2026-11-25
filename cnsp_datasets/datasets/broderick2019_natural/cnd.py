@@ -65,4 +65,6 @@ def words_textgrid(mat_path: str, reverse_duration: float | None = None) -> str:
     if reverse_duration is not None:
         words = words[::-1]
         onsets, offsets = reverse_duration - offsets[::-1], reverse_duration - onsets[::-1]
-    return textgrid({"words": list(zip(onsets, offsets, words))})
+    # xmin 0, or the first onset if earlier (a last word ending after the reversed envelope's end)
+    xmin = min(0.0, float(onsets.min())) if len(onsets) else 0.0
+    return textgrid({"words": list(zip(onsets, offsets, words))}, xmin=xmin)

@@ -116,7 +116,8 @@ def run(bjh, ds003516, ds004015, work):
                                   line_ppm=float(ls), line_coh=coh, line_phase_sd=float(np.std(pu - np.polyval(np.polyfit(tq, pu, 1), tq)))))
         print(bjh, res["blocks"][-1]["block"], {k_: (round(v, 3) if isinstance(v, float) else v) for k_, v in res["blocks"][-1].items() if not k_.startswith("win")}, flush=True)
     os.makedirs(out, exist_ok=True)
-    json.dump(res, open(cf + ".tmp", "w"))
+    with open(cf + ".tmp", "w") as f:
+        json.dump(res, f)
     os.replace(cf + ".tmp", cf)
 
 

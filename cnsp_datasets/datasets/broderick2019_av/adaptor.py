@@ -36,9 +36,8 @@ class Broderick2019AVAdapter(BaseAdaptor):
             condition = _COND_MAP[cond_code]
             neural_fn = self._make_eeg_loader(path)
 
-            stim_run = run%15
-            if stim_run == 0:
-                stim_run = 15  # participants were stimulated with 15 trials each of a, v, av. So repeat stimuli 1-15 for these three conditions.
+            # 15 runs each of a, v and av, all with stimuli 1-15
+            stim_run = run % 15 or 15
             stim_path = os.path.join(self.root, "Stimuli", f"Run{stim_run}.mat")
             stim = StimulusRecord(
                 modality="audio" if cond_code in ("a", "av") else "visual",
@@ -73,14 +72,11 @@ class Broderick2019AVAdapter(BaseAdaptor):
         Extract (subject, cond_code, run) from path like:
           .../EEG/sub7/sub7_<cond>_3.mat  -> (7, 'av', 3)
         """
-        subdir = os.path.basename(os.path.dirname(path))   # 'sub7'
-        subject = int(subdir.replace("sub", ""))
-
         stem = os.path.splitext(os.path.basename(path))[0] # 'sub7_<cond>_3.mat'
         parts = stem.split("_")
         if len(parts) != 3:
             raise ValueError(f"Cannot parse condition/run from filename: {stem}")
-        
+
         subject = int(parts[0].replace("sub", ""))
         cond_code = parts[1]  # 'a', 'av', or 'v'
         run = int(parts[2])   # e.g. '3'

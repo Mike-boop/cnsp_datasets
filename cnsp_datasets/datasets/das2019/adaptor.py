@@ -11,7 +11,7 @@ from mne.io import BaseRaw, RawArray
 from pymatreader import read_mat
 
 from cnsp_datasets.standardise.adaptor import BaseAdaptor
-from cnsp_datasets.standardise.iohelpers import read_wav
+from cnsp_datasets.standardise.iohelpers import audio_loader
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 
@@ -53,7 +53,7 @@ class Das2019Adapter(BaseAdaptor):
     def parse(self) -> Iterable[TrialRecord]:
         for mat_path in self._mat_files:
             subj_num = self._subject_number(mat_path)
-            data = self._read_subject(mat_path) 
+            data = self._read_subject(mat_path)
             trials = data["trials"]  # list of dict-like
 
             for j, tr in enumerate(trials):
@@ -149,13 +149,12 @@ class Das2019Adapter(BaseAdaptor):
         """
         wav_basename = f"{story_name_no_ext}.wav"
         wav_path = self._audio_index.get(wav_basename)  # the index holds every wav under stimuli/
+        if wav_path is not None:
+            return audio_loader(wav_path, channel=0)
 
-        def _loader() -> Dict[str, Any]:
-            if wav_path is None or not os.path.exists(wav_path):
-                raise FileNotFoundError(f"Audio not found for story '{story_name_no_ext}': expected '{wav_basename}'")
-            data, fs = read_wav(wav_path, channel=0)
-            return {"fs": fs, "data": data}
-        return _loader
+        def _missing() -> Dict[str, Any]:
+            raise FileNotFoundError(f"Audio not found for story '{story_name_no_ext}': expected '{wav_basename}'")
+        return _missing
 
     # ----------------------------- Helpers -----------------------------
 

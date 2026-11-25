@@ -12,7 +12,7 @@ from mne.io import BaseRaw, RawArray
 from pymatreader import read_mat
 
 from cnsp_datasets.standardise.adaptor import BaseAdaptor
-from cnsp_datasets.standardise.iohelpers import read_wav
+from cnsp_datasets.standardise.iohelpers import audio_loader
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 
@@ -119,12 +119,7 @@ class Fuglsang2018Adapter(BaseAdaptor):
         return _loader
 
     def _make_audio_loader(self, wav_filename: str) -> Callable[[], Dict[str, Any]]:
-        wav_path = self._wav_path(wav_filename)
-
-        def _loader() -> Dict[str, Any]:
-            data, fs = read_wav(wav_path, channel=0)
-            return {"fs": fs, "data": data}
-        return _loader
+        return audio_loader(self._wav_path(wav_filename), channel=0)
 
     # ------------------------ Helpers ------------------------
 

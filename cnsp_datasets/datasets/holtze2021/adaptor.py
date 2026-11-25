@@ -8,14 +8,16 @@ from typing import Callable, Iterable
 
 import mne
 import numpy as np
+import soundfile
 from mne.io import BaseRaw
 from pymatreader import read_mat
-import soundfile
 
 from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.iohelpers import mark_bads, read_wav
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
+
+log = logging.getLogger(__name__)
 
 TASK = "AttendedSpeakerParadigmOwnName"
 AUDIO_DIR = os.path.join("stimuli_v1.1.1", "stimuli")  # holtze2021_audio (v1.1.1; removed upstream later)
@@ -32,7 +34,8 @@ NOTES = ("Onset = StartTrigger as shipped (LSL marker stream, the authors' const
 # cEEGrid (OpenNeuro ds004015, registry holtze2021_ceegrid): one around-ear file per trial (notes 12-14)
 GRID_TASK = "AttendedSpeakerParadigmcEEGridAttention"
 GRID_NS_TYPE = "around-ear-eeg"
-GRID_ONSETS = os.path.join(os.path.dirname(__file__), "alignment", "ceegrid_onsets.csv")  # Holtze half: lag vs the scalp file
+# Holtze half: lag of the cEEGrid behind the scalp file per block (alignment/scalp_vs_ceegrid*.py)
+GRID_ONSETS = os.path.join(os.path.dirname(__file__), "alignment", "ceegrid_onsets.csv")
 # Jaeger half: Holtze-half median lag + (88 - 54) - (102 - 70) ms (cap delays and the authors' cEEGrid shifts, notes 13)
 JAEGER_EXTRA_MS = (88 - 54) - (102 - 70)
 # block-onset jitter (ms): scalp markers ~7 (notes 7); Jaeger half adds the between-session SD of the transferred lag
@@ -60,8 +63,6 @@ GRID_BADS = {
     "sub-028": {3: ["R07", "L02"]}, "sub-029": {5: ["R01"]}, "sub-031": {b: ["L03"] for b in range(1, 6)},
     "sub-032": {3: ["R05", "R04", "L04b", "L03"], 5: ["L02"]}, "sub-033": {b: ["R01"] for b in range(2, 5)},
 }
-log = logging.getLogger(__name__)
-
 PRESENTATION = {"holtze2021": "earphones, HRIR-spatialised at +-30 deg (beamformer in beam blocks)",
                 "jaeger2020": "free-field loudspeakers at +-45 deg, 1.1 m, 70 dB SPL, equal level"}
 
@@ -278,10 +279,10 @@ def _eeg_loader(path: str, start: float, duration: float, names: np.ndarray, nam
 def _audio_loader(path: str, channel: int) -> Callable[[], dict]:
     """One channel (0 = left story, 1 = right) of a 32 kHz stereo block wav, float32 in [-1, 1)."""
     def _loader() -> dict:
-        if soundfile.info(path).channels != 2:
+        x, fs = read_wav(path, expect_fs=AUDIO_FS)
+        if x.shape[0] != 2:
             raise ValueError(f"{path}: expected stereo")
-        x, fs = read_wav(path, channel=channel, expect_fs=AUDIO_FS)
-        return {"fs": fs, "data": x}
+        return {"fs": fs, "data": x[channel:channel + 1]}
     return _loader
 
 

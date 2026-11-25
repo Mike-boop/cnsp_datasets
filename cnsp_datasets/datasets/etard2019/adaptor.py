@@ -94,7 +94,7 @@ class Etard2019Adaptor(BaseAdaptor):
                 if len(out) < n:
                     out = np.concatenate([out, np.zeros(n - len(out))])
                 out[pad:n] += x
-            return {"fs": int(fs), "data": out[None, :].astype(np.float32)}
+            return {"fs": fs, "data": out[None, :].astype(np.float32)}
 
         return _loader
 

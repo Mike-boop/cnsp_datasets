@@ -107,3 +107,10 @@ def test_cocktail_parse(tmp_path):
         ("20000_2", "envelope", False), ("20000_2", "textgrid", False)]
     assert trial.stimulus[0].stim_data["data"].shape == (1, 50)
     assert len(trial.neural_data.ch_names) == 130
+
+
+def test_words_textgrid_reverse_past_envelope(tmp_path):
+    """Last word ending after the (shorter) envelope: the reversed first onset is negative and becomes xmin."""
+    _words(tmp_path / "Run1.mat")
+    tg = cnd.words_textgrid(str(tmp_path / "Run1.mat"), reverse_duration=2.4)
+    assert tg.splitlines()[3] == f"xmin = {2.4 - 2.5}"
