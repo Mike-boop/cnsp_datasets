@@ -1,6 +1,6 @@
 {
   "name": "weissbart2019",
-  "title": "Weissbart et al. (2019) dataset",
+  "title": "Weissbart et al. (2019) EEG (actiCHamp 63 ch + Sound stimtrack, 1 kHz, BIDS rebuild): 15 English audiobook chapters, 13 participants, word/phone TextGrids",
   "visibility": "public",
   "downloads": {
     "weissbart2019": {
@@ -21,5 +21,5 @@
   "alignment_quality": "good",
   "validation_tier": "brainstem",
   "participants": 13,
-  "listening_hours": 9.0
+  "listening_hours": 8.6
 }
