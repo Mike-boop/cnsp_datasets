@@ -6,13 +6,13 @@ presentation pairs. Details and results: `../notes.md` section 6b. Run from the 
 download (the folder holding `NJUNCA_preprocessed_arte_removed/`) as input:
 
 ```
-M=cnsp_datasets.datasets.zhang2023.timing
-python -m $M.make_maps    <download>              # -> ../pieces.csv, ../source_cover.csv (~5 min)
-python -m $M.dnn_scan     <download> <out>/scan   # per-trial lag scans, cached per trial (~2 h on a small GPU)
-python -m $M.pair_offsets <out>/scan [fig.png]    # -> ../pair_offsets.csv (confident = adaptor pairs="confident")
+M=cnsp_datasets.datasets.zhang2023.alignment
+python -m $M.make_maps    <download>              # -> pieces.csv, source_cover.csv (~5 min)
+ZHANG2023_DNN=<classifier.pt> python -m $M.dnn_scan <download> <out>/scan  # per-trial lag scans, cached (~2 h, small GPU)
+python -m $M.pair_offsets <out>/scan [fig.png]    # -> pair_offsets.csv (confident = adaptor pairs="confident")
 ```
 
-- **`make_maps`** (`../splices.py`) hashes the 125-sample blocks of every shipped wav and chains them into the 33
+- **`make_maps`** (`splices.py`) hashes the 125-sample blocks of every shipped wav and chains them into the 33
   unspliced 115 s sources.
   - `pieces.csv` keeps a trial's piece → source mapping only where its two streams' rebuilds agree.
   - `source_cover.csv` records which shipped wav supplies each source stretch.

@@ -46,8 +46,8 @@
 ## How to get it
 Registry entry `zhang2025` (Zenodo, four zips, 4.5 GB; extract them into one folder with `eeg/`, `meta/`,
 `stimuli/` and `trialinfo/`). Then `python -m cnsp_datasets.standardise.format_dataset zhang2025 <download dir>
-<out dir>` (~5 min, 1.5 GB). `mapping.csv` (which raw recording and start sample each trial uses) and `bads.json`
-are committed; rebuild them with `python -m cnsp_datasets.datasets.zhang2025.make_mapping <download dir>` (~40 min)
+<out dir>` (~5 min, 1.5 GB). `alignment/mapping.csv` (which raw recording and start sample each trial uses) and `bads.json`
+are committed; rebuild them with `python -m cnsp_datasets.datasets.zhang2025.alignment.make_mapping <download dir>` (~40 min)
 and `python -m cnsp_datasets.datasets.zhang2025.bads <download dir>`.
 
 ## Validation

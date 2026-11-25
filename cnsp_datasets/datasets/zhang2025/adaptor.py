@@ -8,16 +8,17 @@ from typing import Callable, Iterable
 
 import mne
 import numpy as np
-import soundfile as sf
 from mne.io import BaseRaw
 from pymatreader import read_mat
 
 from cnsp_datasets.datasets.zhang2025.trialinfo import read_trial_info, stem
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import mark_bads, read_wav
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 FS, N = 125, 3750  # 30-s trials at 125 Hz
-MAPPING = os.path.join(os.path.dirname(__file__), "mapping.csv")
+MAPPING = os.path.join(os.path.dirname(__file__), "alignment", "mapping.csv")  # alignment/make_mapping.py
 BADS_JSON = os.path.join(os.path.dirname(__file__), "bads.json")
 CHANNELS = ["R1", "R2", "R3", "R4", "R7", "R8", "R9", "R10", "L10", "L9", "L8", "L7", "L4", "L3", "L2", "L1"]
 TASKS = {1: "sustained", 2: "cued-switch", 3: "free-switch", 4: "stop-attending", 5: "switch-to-new",
@@ -35,7 +36,7 @@ NOTES = ("Raw OpenBCI EEG (uV -> V), original reference (unused left-ear cEEGrid
          "annotations, not applied to the audio. Bad (dead) channels per participant in info['bads'] (bads.json).")
 
 
-class Zhang2025Adaptor:
+class Zhang2025Adaptor(BaseAdaptor):
     """
     Zhang et al. 2025 (Zenodo 17393865, NJU cEEGrid dataset): two cEEGrids (8 channels per ear, R1-R10/L1-L10
     subset), OpenBCI Cyton+Daisy at 125 Hz, 30-s trials, three (task 6: two) Mandarin news talkers from loudspeakers
@@ -49,6 +50,7 @@ class Zhang2025Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = download_dir
         with open(os.path.join(download_dir, "meta", "publish_metadata.pkl"), "rb") as f:
             self.meta = _NumpyUnpickler(f).load()
@@ -109,7 +111,7 @@ def _eeg_loader(mat: str, start: int, bads: list[str], events: dict, description
         if eeg.shape[1] != N:
             raise ValueError(f"{mat}: only {eeg.shape[1]} samples from {start}")
         raw = mne.io.RawArray(eeg, mne.create_info(CHANNELS, FS, "eeg"), verbose="ERROR")
-        raw.info["bads"] = list(bads)
+        mark_bads(raw, bads)
         raw.set_annotations(mne.Annotations(list(events.values()), 0.0, list(events)))
         raw.info["description"] = description
         return raw
@@ -118,10 +120,10 @@ def _eeg_loader(mat: str, start: int, bads: list[str], events: dict, description
 
 def _audio_loader(path: str) -> Callable[[], dict]:
     def _loader() -> dict:
-        x, fs = sf.read(path, dtype="float32")
-        if x.ndim != 1:
-            raise ValueError(f"{path}: expected mono")
-        return {"fs": int(fs), "data": x[None, :]}
+        x, fs = read_wav(path)
+        if x.shape[0] != 1:
+            raise ValueError(f"{path}: expected mono, got {x.shape[0]} channels")
+        return {"fs": fs, "data": x}
     return _loader
 
 
