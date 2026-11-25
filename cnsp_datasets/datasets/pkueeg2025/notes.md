@@ -507,3 +507,9 @@ excluded because they do not track (backward r ~0). Scripts, caches and figures:
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **poor**: Markers (not sample-locked, ~2 ms jitter) + 23 ms inferred shift; 2 sessions get decoder-measured offsets; drift 76.8 ppm from markers kept (DNN says 47); DNN -74/-42 ms documented as timing error; low tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- TextGrid written by `iohelpers.textgrid` (was the `textgrid` library; the MFA TextGrid is still read with it):
+  same intervals, long text format, gaps filled up to the MFA end time.
+- Bad channels from `bad_channels.tsv` marked with `iohelpers.mark_bads` (strict: a name missing from the
+  recording raises a ValueError, as the old lookup raised a KeyError). Audio unchanged (ffmpeg float32 decode).

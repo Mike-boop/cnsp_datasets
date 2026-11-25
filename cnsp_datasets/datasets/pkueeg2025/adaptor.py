@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import glob
-import io
 import math
 import os
 import subprocess
@@ -14,7 +13,9 @@ import pandas as pd
 import textgrid
 from mne.channels import make_standard_montage
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
+from cnsp_datasets.standardise.iohelpers import mark_bads, textgrid as write_textgrid
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -47,7 +48,7 @@ NOTES = ("Onset = start marker (events.tsv) + onset_shift_ms: the player kept th
          "code/preprocessing/config/bad_channels.tsv.")
 
 
-class Pkueeg2025Adaptor:
+class Pkueeg2025Adaptor(BaseAdaptor):
     """
     PKUEEG (OpenNeuro ds008834): 25 Mandarin listeners, 50 synthesised Three Kingdoms stories (1-25 female voice,
     26-50 male) over three days (17/16/17 stories), one continuous BrainVision file per day at 1000 Hz: NeuroScan
@@ -64,13 +65,13 @@ class Pkueeg2025Adaptor:
 
     def __init__(self, download_dir: str, onset_shift_s: float = ONSET_SHIFT_S,
                  drift_correction: str | None = "system"):
-        if drift_correction not in ("system", None):
-            raise ValueError(f"drift_correction must be 'system' or None, not {drift_correction!r}")
+        super().__init__(download_dir)
+        self.choice("drift_correction", drift_correction, ("system", None))
         self.root = download_dir
         self.onset_shift_s = onset_shift_s
         self.drift_correction = drift_correction
-        bads = pd.read_csv(os.path.join(download_dir, "code", "preprocessing", "config", "bad_channels.tsv"),
-                           sep="\t", keep_default_na=False)
+        bads = pd.read_csv(self.path("code", "preprocessing", "config", "bad_channels.tsv"), sep="\t",
+                           keep_default_na=False)
         self.bads = {(r.participant_id, r.session_id): [] if r.bad_channels == "n/a" else r.bad_channels.split()
                      for r in bads.itertuples()}
         stimuli = os.path.join(download_dir, "stimuli", "stimuli.tsv")
@@ -140,26 +141,12 @@ class Pkueeg2025Adaptor:
                                  sep="\t", dtype=str, keep_default_na=False)
             if [s.mark for s in syl] != hanzi.pinyin.tolist():
                 raise ValueError(f"story {story}: MFA syllables differ from the Pinyin boundary table")
-            out = textgrid.TextGrid(maxTime=mfa.maxTime)
-            for tier, items in (("words", _words(syl, hanzi.hanzi.tolist(), legacy.word.tolist())),
-                                ("syllables", [(s.minTime, s.maxTime, s.mark) for s in syl]),
-                                ("phones", [(p.minTime, p.maxTime, p.mark) for p in phones if p.mark])):
-                t = textgrid.IntervalTier(tier, 0, mfa.maxTime)
-                for a, b, mark in items:
-                    t.add(a, b, mark)
-                out.append(t)
-            f = _Buffer()
-            out.write(f)
-            return f.getvalue()
+            return write_textgrid({"words": _words(syl, hanzi.hanzi.tolist(), legacy.word.tolist()),
+                                   "syllables": [(s.minTime, s.maxTime, s.mark) for s in syl],
+                                   "phones": [(p.minTime, p.maxTime, p.mark) for p in phones if p.mark]},
+                                  xmax=mfa.maxTime)
 
         return _loader
-
-
-class _Buffer(io.StringIO):
-    """StringIO that survives TextGrid.write closing it."""
-
-    def close(self):
-        pass
 
 
 def _words(syl: list, hanzi: list, words: list) -> list:
@@ -248,7 +235,7 @@ def _eeg_loader(vhdr: str, onset: float, mp3: str, tg: str, drift: float, bads: 
             raise ValueError(f"{vhdr}: recording ends {n_out - out.n_times} samples before the stimulus")
         out.set_montage(make_standard_montage("standard_1005"), verbose="ERROR")
         upper = {c.upper(): c for c in out.ch_names}
-        out.info["bads"] = [upper[b.upper()] for b in bads]
+        mark_bads(out, [upper.get(b.upper(), b) for b in bads])  # Day-3 labels are upper case in the table
         out.info["description"] = description
         return out
 
