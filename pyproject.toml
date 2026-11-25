@@ -6,7 +6,8 @@ authors = ["Mike Thornton <mike.d.thornton@fau.de>"]
 readme = "README.md"
 license = "MIT"
 packages = [{ include = "cnsp_datasets" }]
-include = ["cnsp_datasets/datasets/*/dataset.json", "cnsp_datasets/datasets/*/*.csv"]
+include = ["cnsp_datasets/datasets/*/dataset.json", "cnsp_datasets/datasets/*/*.csv", "cnsp_datasets/datasets/*/*.json",
+           "cnsp_datasets/datasets/*/*.tsv", "cnsp_datasets/datasets/*/alignment/*"]
 
 [tool.poetry.dependencies]
 python = ">=3.10.12"  # tarfile filter="data"

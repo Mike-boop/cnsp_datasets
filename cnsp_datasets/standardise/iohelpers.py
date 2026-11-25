@@ -180,12 +180,15 @@ def _quote(text: str) -> str:
 
 
 def textgrid(tiers: Mapping[str, Sequence[Tuple[float, float, str]]], xmax: float | None = None,
-             xmin: float = 0.0, fill_gaps: bool = True) -> str:
+             xmin: float = 0.0, fill_gaps: bool = True, on_overlap: str = "raise") -> str:
     """
     A Praat TextGrid (long text format) of interval tiers {name: [(onset_s, offset_s, label), ...]}. Gaps between
     intervals (and before the first / after the last, up to xmin / xmax) are filled with empty intervals, as
-    Praat requires; overlapping intervals raise. xmax defaults to the latest offset.
+    Praat requires. xmax defaults to the latest offset. on_overlap: "raise" (default) or "clip" (an interval that
+    starts before the previous one ends starts at that end instead; logged), for hand-made word timings.
     """
+    if on_overlap not in ("raise", "clip"):
+        raise ValueError(f"on_overlap={on_overlap!r}: expected 'raise' or 'clip'")
     xmax = max(off for ivs in tiers.values() for _, off, _ in ivs) if xmax is None else xmax
     lines = ['File type = "ooTextFile"', 'Object class = "TextGrid"', "", f"xmin = {xmin}", f"xmax = {xmax}",
              "tiers? <exists>", f"size = {len(tiers)}", "item []:"]
@@ -195,7 +198,13 @@ def textgrid(tiers: Mapping[str, Sequence[Tuple[float, float, str]]], xmax: floa
         t = xmin
         for a, b, label in ivs:
             if a < t - 1e-9:
-                raise ValueError(f"tier {name!r}: interval ({a}, {b}) overlaps the previous one")
+                if on_overlap == "raise":
+                    raise ValueError(f"tier {name!r}: interval ({a}, {b}) overlaps the previous one")
+                log.info("tier %r: interval (%s, %s) %r clipped to start at %s", name, a, b, label, t)
+                a = t
+                if b <= a:
+                    log.warning("tier %r: interval %r lies inside the previous one; dropped", name, label)
+                    continue
             if fill_gaps and a > t + 1e-9:
                 filled.append((t, a, ""))
             filled.append((a, b, label))

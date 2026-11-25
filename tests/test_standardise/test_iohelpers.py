@@ -98,3 +98,8 @@ def test_sorted_glob_skips_hidden(tmp_path):
     names = [p.rsplit("/", 1)[1] for p in BaseAdaptor.sorted_glob(tmp_path, "**/*.wav")]
     assert names == ["a.wav", "b.wav"]
     assert len(BaseAdaptor.sorted_glob(tmp_path, "**/*.wav", hidden=True)) == 4
+
+
+def test_textgrid_clip_overlaps():
+    text = io.textgrid({"w": [(0, 1, "a"), (0.5, 2, "b"), (1.2, 1.5, "inside")]}, on_overlap="clip")
+    assert "xmin = 1.0" in text and "inside" not in text
