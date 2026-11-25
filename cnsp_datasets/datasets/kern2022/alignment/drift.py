@@ -1,7 +1,7 @@
 """
 Sound onset after the trigger and audio vs MEG clock drift of every piece, from the audio copy UADC002 (the played
 wav channel 0, inverted, low-passed at 300 Hz; notes.md sections 6-7). Writes audio_fit.csv next to this file, one
-row per UPPT001 trigger, which the adaptor reads (it imports torch through align.scan; the adaptor does not).
+row per UPPT001 trigger, which the adaptor reads (this script imports torch through align.scan; the adaptor does not).
 
 Pieces (codes 101-119): coarse Theil-Sen fit of the 1-20 Hz envelope of the 30-290 Hz band, then of the inverted
 30-290 Hz waveform on the coarse clock (`jehn2025_base.alignment.xcorr.window_fit`, 10000-sample windows). Test

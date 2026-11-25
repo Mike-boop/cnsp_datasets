@@ -1,6 +1,7 @@
 """
-Windowed cross-correlation shared by the audio-copy drift scripts (jehn2025, yang2026, kern2022): 10 s windows
-every 5 s at 1 kHz, a 2-200 Hz band-pass and a Theil-Sen line through the window lags.
+Windowed cross-correlation of the audio-copy drift scripts: 10 s windows every 5 s at 1 kHz, a 2-200 Hz
+band-pass and a Theil-Sen line through the window lags (window_fit: yang2026, kern2022; constants and band-pass
+also jehn2025, schueller2024, habersetzer2025).
 """
 from __future__ import annotations
 

@@ -171,8 +171,6 @@ class Jehn2025Adaptor(BaseAdaptor):
         feature: 'audio' (wav) | 'env' (envelope)
         Returns dict {"fs": <int>, "data": float32 np.ndarray[1, T]} (integer samples scaled to [-1, 1)).
         """
-        self.choice("role", role, ("attended", "distractor"))
-        self.choice("feature", feature, ("audio", "env"))
         ds_key = f"stimulus_files/{stim_code}/{role}_{'wav' if feature == 'audio' else 'env'}"
 
         fs = self.FS_AUDIO if feature == "audio" else self.FS_ENV
