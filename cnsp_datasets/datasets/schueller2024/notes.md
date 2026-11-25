@@ -60,7 +60,7 @@ Audio only (as shipped). No transcripts or word alignments in the release.
 - Drift (sound card vs MEG clock): no audio channel in the release, so it cannot be estimated from the release
   itself; see section 7.
 
-## 7. Drift (drift.py, drift.csv)
+## 7. Drift (alignment/drift.py, alignment/drift.csv)
 - Measured on the non-public raw recordings (`drift.py`: stimtrack `EXT 004` resampled to 1 kHz, chapter onset by
   cross-correlation, `jehn2025_base.drift.trial_drift`: 2-200 Hz, 10 s windows every 5 s, Theil-Sen). `drift.csv`:
   one row per raw recording x chapter (61 recordings, 610 chapters; `trial` as in the adaptor), with the recording's
@@ -99,3 +99,10 @@ All tiers pass (p <= 0.02); **validation tier: brainstem** (for MEG: the 30-250 
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **good**: Authors' cut by xcorr with the MEG audio channel; release onset within 0.2-1.1 ms of the raw stimtrack (participant 1); drift +8.46 ppm from the stimtrack, per participant; +6 ms tube delay (Zenodo text) applied; brainstem tier (Set1).
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Stimulus audio as float32 in [-1, 1) (`iohelpers.read_wav`, first channel as before; was the raw int16 samples).
+- Drift rows are matched to a run by meas_date compared as UTC timestamps (was string equality of
+  `str(meas_date)`); raw folders with the same date must hold identical fits (P42 / `P42_zweiter Versuch` do; one
+  is kept), otherwise it raises. The fallback to the dataset median (participant 15, no raw data) is logged.
+- `drift.py` and `drift.csv` moved to `alignment/` (`python -m cnsp_datasets.datasets.schueller2024.alignment.drift`).

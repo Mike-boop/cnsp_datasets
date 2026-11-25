@@ -8,15 +8,18 @@ from typing import Iterable
 
 import mne
 import pandas as pd
-from scipy.io import wavfile
+import soundfile
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
+from cnsp_datasets.standardise.iohelpers import audio_loader, mark_bads
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 RUNS = [("audiobook1", 1), ("audiobook1", 2), ("audiobook2", 1), ("audiobook2", 2)]  # presentation order
 STORIES = {"audiobook1": "Das schwatzende Herz (Poe)", "audiobook2": "Die Maske des roten Todes (Poe)"}
-DRIFT_CSV = os.path.join(os.path.dirname(__file__), "drift.csv")  # from drift.py (MISC001 vs wav, per run)
+# from alignment/drift.py (MISC001 vs wav, per run)
+DRIFT_CSV = os.path.join(os.path.dirname(__file__), "alignment", "drift.csv")
 ACOUSTIC_DELAY_MS = 0.4  # authors' 3 ms after the trigger minus the 2.6 ms of MISC001 (notes.md, open question 3)
 BADS = ["MEG2143", "MEG1112"]  # always marked bad by the authors (scan protocols)
 AUDIO_COPY = {"MISC001": "audio copy, left channel (V)", "MISC002": "audio copy, right channel (V)"}
@@ -30,7 +33,7 @@ VALIDATION_NOTE = ("brainstem tier with tSSS (Maxwell filtering, applied by the 
                    "raw data reach mlr")
 
 
-class Habersetzer2025Adaptor:
+class Habersetzer2025Adaptor(BaseAdaptor):
     """
     MEG-SCANS (Habersetzer et al. 2025, OpenNeuro ds006468): 24 subjects, MEGIN TRIUX 306-channel MEG at 1000 Hz,
     raw (no SSS). Two German Poe audiobooks (conditions audiobook1, audiobook2), two runs each; one trial per run
@@ -40,14 +43,13 @@ class Habersetzer2025Adaptor:
 
     Onset: first audiobook trigger + the run's audio-copy onset (drift.csv) + 0.4 ms acoustic delay. drift_correction:
     "run" (default; the run's drift from drift.csv), "dataset" (median over runs, +485.07 ppm) or None; corrected
-    by resampling onto the audio clock. Channels: MEG, EOG, ECG, MISC001/002 (audio copy); MEG2143 and MEG1112 bad.
-    Stimuli: wav as shipped (44.1 kHz) and the shipped TextGrid (words, phones). See notes.md.
+    by resampling onto the audio clock. Channels: MEG, EOG, ECG, MISC001/002 (audio copy); MEG2143, MEG1112 and any
+    channel the FIF marks bad are kept and listed in info["bads"]. Stimuli: wav as shipped (44.1 kHz, float32) and the shipped TextGrid (words, phones). See notes.md.
     """
 
     def __init__(self, download_dir: str, drift_correction: str | None = "run"):
-        if drift_correction not in ("run", "dataset", None):
-            raise ValueError(f"drift_correction must be 'run', 'dataset' or None, not {drift_correction!r}")
-        self.download_dir = download_dir
+        super().__init__(download_dir)
+        self.choice("drift_correction", drift_correction, ("run", "dataset", None))
         self.drift_correction = drift_correction
         self.table = pd.read_csv(DRIFT_CSV).set_index("file")
 
@@ -79,7 +81,7 @@ class Habersetzer2025Adaptor:
                     chpi="continuous HPI, 5 coils at 261, 278, 295, 311, 328 Hz, not removed")
                 yield TrialRecord(
                     subject=int(sub[4:]), session=1, trial=trial, condition=task, ns_type="meg",
-                    stimulus=[StimulusRecord("audio", name, _audio_loader(wav), True, "audio"),
+                    stimulus=[StimulusRecord("audio", name, audio_loader(wav), True, "audio"),
                               StimulusRecord("audio", name, _text_loader(wav[:-4] + ".TextGrid"), True, "textgrid")],
                     neural_data_fn=_meg_loader(fif, onset, wav, drift * 1e-6, description),
                 )
@@ -99,24 +101,16 @@ def _read(fif: str) -> mne.io.BaseRaw:
 def _meg_loader(fif: str, onset: float, wav: str, drift: float, description: str):
     def _loader():
         raw = _read(fif)
-        fs, x = wavfile.read(wav, mmap=True)
-        n_out = math.ceil(len(x) * 1000 / fs)
-        picks = mne.pick_types(raw.info, meg=True, eog=True, ecg=True).tolist() + \
+        info = soundfile.info(wav)
+        n_out = math.ceil(info.frames * 1000 / info.samplerate)
+        picks = mne.pick_types(raw.info, meg=True, eog=True, ecg=True, exclude=[]).tolist() + \
             [raw.ch_names.index(c) for c in AUDIO_COPY]
         out = crop_on_audio_clock(raw, onset, n_out, drift, picks=picks, sfreq_out=1000)
         if out.n_times != n_out:
             raise ValueError(f"{fif}: recording ends {n_out - out.n_times} samples before the stimulus")
-        out.info["bads"] = BADS
+        mark_bads(out, BADS)
         out.info["description"] = description
         return out
-
-    return _loader
-
-
-def _audio_loader(path: str):
-    def _loader():
-        fs, x = wavfile.read(path)
-        return {"fs": fs, "data": x[None, :]}
 
     return _loader
 

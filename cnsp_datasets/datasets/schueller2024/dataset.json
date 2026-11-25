@@ -21,6 +21,7 @@
   "stimuli": "competing speakers",
   "alignment_quality": "good",
   "validation_tier": "brainstem (MEG, Set1 only)",
-  "participants": 22,
-  "listening_hours": 6.8
+  "participants": 58,
+  "listening_hours": 35.6,
+  "system": "4D Neuroimaging Magnes 3600 WH (248 magnetometers)"
 }
