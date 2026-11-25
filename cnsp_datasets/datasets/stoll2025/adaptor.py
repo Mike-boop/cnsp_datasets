@@ -89,7 +89,8 @@ class Stoll2025Adaptor(BaseAdaptor):
                 yield TrialRecord(
                     subject=100 + label, session=1, trial=i,
                     condition=f"diotic-attend-{('female', 'male')[attend]}", ns_type="eeg",
-                    stimulus=[s for k in ("wri", "alc") for s in self._exp1_stimuli(k, ch, k == ("wri", "alc")[attend])],
+                    stimulus=[s for k in ("wri", "alc")
+                              for s in self._exp1_stimuli(k, ch, k == ("wri", "alc")[attend])],
                     neural_data_fn=self._neural(vhdr, t.start / rec.sfreq, DUR_EXP12, drift))
 
     def _exp1_stimuli(self, key: str, ch: int, attended: bool) -> list:

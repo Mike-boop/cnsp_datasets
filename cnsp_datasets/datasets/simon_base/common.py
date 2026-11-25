@@ -52,10 +52,10 @@ def check_unique_subjects(pids: Iterable[str]) -> None:
 
 
 def read_wav(path: str, fs: int) -> np.ndarray:
-    """Mono PCM wav at `fs` as float32 (n_times,) in [-1, 1) (`iohelpers.read_wav`; kept for its 1-D result)."""
+    """Mono wav at `fs` as float32 (n_times,) in [-1, 1) (`iohelpers.read_wav`; kept for its 1-D result)."""
     x, _ = iohelpers.read_wav(path, expect_fs=fs)
     if x.shape[0] != 1:
-        raise ValueError(f"{path}: expected {fs} Hz mono, got {x.shape[0]} channels")
+        raise ValueError(f"{path}: expected mono, got {x.shape[0]} channels")
     return x[0]
 
 

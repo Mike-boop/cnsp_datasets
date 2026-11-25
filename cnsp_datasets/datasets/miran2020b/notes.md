@@ -147,8 +147,7 @@ Sibling dataset: `miran2020` (at-will switching, one subject, raw). Scratch: `tm
   in the wavs.
 - Original R-numbers not shipped (participant overlap with other Simon-lab datasets cannot be checked).
 
-## Restructure 2026-11-25
-- Restructure 2026-11-25 (not yet re-validated on data): adaptor on `BaseAdaptor`; sorted .mat glob; bads set with
-  `iohelpers.mark_bads` (same list); stimulus wavs read with soundfile through `simon_base.read_wav`
-  (`iohelpers.read_wav`): float32 in [-1, 1), any PCM width; the same values as before for the shipped int16 wavs;
-  dataset.json: paper DOI.
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor on `BaseAdaptor`; sorted .mat glob; bads set with `iohelpers.mark_bads` (same list); stimulus wavs read with
+  soundfile through `simon_base.read_wav` (`iohelpers.read_wav`): float32 in [-1, 1), any PCM width; the same values as
+  before for the shipped int16 wavs; dataset.json: paper DOI.

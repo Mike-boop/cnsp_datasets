@@ -208,9 +208,9 @@ brainstem.
 ~40 ms, flat at negative lags, also in the 8 new participants alone); -37.5 ppm drift-or-early-end documented, not
 applied.
 
-## Restructure 2026-11-25
-- Restructure 2026-11-25 (not yet re-validated on data): adaptor on `BaseAdaptor`; `subjects` checked with `choice`;
-  bads computed by the adaptor are now added to the recording's own `info['bads']` (`iohelpers.mark_bads`, strict)
-  instead of replacing them; any bads the shipped fifs list (not checked in these notes) are now kept; stimulus wavs
-  read with soundfile through `simon_base.read_wav` (`iohelpers.read_wav`): float32 in [-1, 1), any PCM width; the same
-  values as before for the shipped int16 wavs; dataset.json: paper DOI.
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor on `BaseAdaptor`; `subjects` checked with `choice`; bads computed by the adaptor are now added to the
+  recording's own `info['bads']` (`iohelpers.mark_bads`, strict) instead of replacing them; any bads the shipped fifs
+  list (not checked in these notes) are now kept; stimulus wavs read with soundfile through `simon_base.read_wav`
+  (`iohelpers.read_wav`): float32 in [-1, 1), any PCM width; the same values as before for the shipped int16 wavs;
+  dataset.json: paper DOI.

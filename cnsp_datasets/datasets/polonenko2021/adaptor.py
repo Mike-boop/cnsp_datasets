@@ -100,8 +100,8 @@ class Polonenko2021Adaptor(BaseAdaptor):
 
     def _stimulus_files(self) -> Dict[Tuple[str, str, int], str]:
         files = {}
-        for path in self.sorted_glob(self.download_dir, "Exp*_Stimuli_*_Narrator_*/*Narrator*.hdf5"):
-            m = re.match(r"(Male|Female)Narrator(\d{3})_bands", os.path.basename(path))
+        for path in sorted(glob.glob(os.path.join(self.download_dir, "Exp*_Stimuli_*_Narrator_*", "*Narrator*.hdf5"))):
+            m = re.fullmatch(r"(Male|Female)Narrator(\d{3})_bands\.hdf5", os.path.basename(path))
             if not m:
                 raise ValueError(f"unexpected stimulus file {path}")
             key = os.path.basename(os.path.dirname(path))[:4], m.group(1), int(m.group(2))

@@ -103,7 +103,7 @@ Onset = S 1 + tube delay; drift correction (default on); 1000 Hz by default. Sti
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **medium**: Sound-card triggers (expyfun) + 0.81 ms tube delay; no ER-2 artefact visible, so only the brain check (ANM wave V 7.3 ms) confirms it; drift 25-31 ppm from triggers corrected; mlr tier.
 
-## Restructure 2026-11-25
-- Restructure 2026-11-25 (not yet re-validated on data): adaptor on `BaseAdaptor`; stimulus audio through
-  `iohelpers.audio_loader` (the float64 wavs become float32 as before; int16 would be scaled); `anm_regressors.py`
-  raises instead of asserting the rate; dataset.json: participants 22 (24 labels, 2 missing).
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor on `BaseAdaptor`; stimulus audio through `iohelpers.audio_loader` (the float64 wavs become float32 as before;
+  int16 would be scaled); `anm_regressors.py` raises instead of asserting the rate; dataset.json: participants 22 (24
+  labels, 2 missing).

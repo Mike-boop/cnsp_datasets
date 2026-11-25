@@ -194,7 +194,6 @@ the data are 100 Hz and 1-40 Hz filtered, so mlr (30-60 Hz) and brainstem (30-25
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **medium**: Authors' 100 Hz epochs at the (software) onset trigger, no audio copy; decoder lag 0 ms in 25/26; drift < ~80 ppm not corrected; low tier.
 
-## Restructure 2026-11-25
-- Restructure 2026-11-25 (not yet re-validated on data): adaptor on `BaseAdaptor`; stimulus wavs read with soundfile
-  through `simon_base.read_wav` (`iohelpers.read_wav`): float32 in [-1, 1), any PCM width; the same values as before for
-  the shipped int16 wavs; dataset.json: paper DOI.
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor on `BaseAdaptor`; stimulus wavs read with soundfile through `simon_base.read_wav` (`iohelpers.read_wav`):
+  float32 in [-1, 1), any PCM width; the same values as before for the shipped int16 wavs; dataset.json: paper DOI.

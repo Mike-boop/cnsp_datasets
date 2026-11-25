@@ -116,8 +116,8 @@ class Karunathilake2023AgingAdaptor(BaseAdaptor):
 
     def _foreground(self) -> dict:
         """Derived babble foreground: mixture minus BABBLE_GAIN times the babble track (notes.md section 3)."""
-        mix, babble = (read_wav(self._wav(n), AUDIO_FS).astype(np.float64)  # float64 difference, as before
-                       for n in ("babb_mix_F08_BF08", "babb_singleQ_BF08"))
+        mix = read_wav(self._wav("babb_mix_F08_BF08"), AUDIO_FS).astype(np.float64)  # one rounding, at the end
+        babble = read_wav(self._wav("babb_singleQ_BF08"), AUDIO_FS).astype(np.float64)
         return {"fs": AUDIO_FS, "data": (mix - BABBLE_GAIN * babble).astype(np.float32)[None, :]}
 
     def _wav(self, name: str) -> str:

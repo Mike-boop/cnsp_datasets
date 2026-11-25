@@ -185,9 +185,8 @@ Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026
 - stoll2025: **good**: Sound-card / TDT triggers (tube delay included); ER-2 artefact at -0.8 ms (exp1, exp2 all subj, exp3 per trial); drift from S 2 markers or, in exp2, -5 ppm from the artefact; brainstem tier.
 - stoll2025_cortex: **good**: Same recordings and markers as stoll2025 (artefact-verified); low TRF 109 ms; 'brainstem' tier from a weak 8 ms peak.
 
-## Restructure 2026-11-25
-- Restructure 2026-11-25 (not yet re-validated on data): adaptor on `BaseAdaptor`; `montage` checked with `choice`
-  (subcortex, cortex); exp2 wavs read with `iohelpers.read_wav(channel=...)` (same float32 values for the int16 wavs; fs
-  stays FS_TDT = 24414.0625 Hz); `stoll2025_cortex` is a subclass fixing montage='cortex' (no longer a
-  functools.partial, so montage can no longer be overridden there); dataset.json of both filled (modality, system,
-  participants, grade, tier).
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor on `BaseAdaptor`; `montage` checked with `choice` (subcortex, cortex); exp2 wavs read with
+  `iohelpers.read_wav(channel=...)` (same float32 values for the int16 wavs; fs stays FS_TDT = 24414.0625 Hz);
+  `stoll2025_cortex` is a subclass fixing montage='cortex' (no longer a functools.partial, so montage can no longer be
+  overridden there); dataset.json of both filled (modality, system, participants, grade, tier).

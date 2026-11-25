@@ -1,4 +1,4 @@
-"""Group 1 restructure (2026-11-25): Simon-lab and Maddox-lab adaptors on BaseAdaptor, audio via iohelpers."""
+"""Simon-lab and Maddox-lab adaptors: BaseAdaptor classes, option checks, audio readers, bads, stimulus files."""
 import importlib
 
 import numpy as np
@@ -6,6 +6,7 @@ import pytest
 import soundfile
 
 from cnsp_datasets.datasets.karunathilake2023_aging import adaptor as k23a
+from cnsp_datasets.datasets.kulasingham2020 import adaptor as k20
 from cnsp_datasets.datasets.polonenko2021 import adaptor as p21
 from cnsp_datasets.datasets.shan2024 import adaptor as shan
 from cnsp_datasets.datasets.simon_base import common
@@ -22,13 +23,11 @@ GROUP = ["brodbeck2018", "brodbeck2022", "kulasingham2020", "kulasingham2021", "
 @pytest.mark.parametrize("name", GROUP)
 def test_adaptor_is_base_adaptor(name, tmp_path):
     cls = importlib.import_module(f"cnsp_datasets.datasets.{name}.adaptor").ADAPTOR
-    assert isinstance(cls, type) and issubclass(cls, BaseAdaptor)
+    assert issubclass(cls, BaseAdaptor)
     assert cls(str(tmp_path)).download_dir == str(tmp_path)
 
 
 def test_option_checks(tmp_path):
-    from cnsp_datasets.datasets.kulasingham2020 import adaptor as k20
-
     assert k20.ADAPTOR(str(tmp_path), subjects="unique").subjects == "unique"
     with pytest.raises(ValueError, match="subjects="):
         k20.ADAPTOR(str(tmp_path), subjects="Unique")
@@ -121,6 +120,7 @@ def test_polonenko2021_stimulus_files_sorted_and_unique(tmp_path):
                          ("Exp1_Stimuli_Male_Narrator_1", "MaleNarrator000_bands.hdf5")):
         (tmp_path / folder).mkdir(exist_ok=True)
         (tmp_path / folder / name).touch()
+    (tmp_path / "Exp1_Stimuli_Male_Narrator_1" / "._MaleNarrator000_bands.hdf5").touch()  # AppleDouble: ignored
     files = p21.ADAPTOR(str(tmp_path))._stimulus_files()
     assert list(files) == [("Exp1", "Male", 0), ("Exp2", "Female", 1), ("Exp2", "Female", 3)]
     (tmp_path / "Exp2_Stimuli_Female_Narrator_2" / "FemaleNarrator001_bands.hdf5").touch()
