@@ -48,4 +48,7 @@ revised adaptors; the "Deferred" list is work agreed but not yet done.
   readers that assume parse order; find a better way to share heavy loading/preprocessing between trials.
 - maddox_base `load_trial` drops channel info (all channels typed "eeg", no montage); revisit with the family.
 - Remaining duplicated loaders (CND `.mat` readers, Broderick trio) beyond what the restructure migrated.
+- A shared "basename -> path index that raises on duplicates" helper (das2019 and fuglsang2018 have the same code).
+- Second pass, Broderick trio: word TextGrids now raise on overlapping intervals; check
+  `np.any(onset[1:] < offset[:-1])` in the Run*.mat files first, and pass `on_overlap="clip"` if needed.
 - Keep for now: `datasets.tsv`, `urls.txt`, README to-do list.
