@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import re
 from functools import lru_cache
@@ -12,8 +13,12 @@ from mne import create_info
 from mne.channels import make_standard_montage
 from mne.io import BaseRaw, RawArray
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import mark_bads, read_wav
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
+
+log = logging.getLogger(__name__)
 
 EEG_FS = 1000.0
 EEG = ['Fp1', 'Fp2', 'F3', 'F4', 'C3', 'C4', 'P3', 'P4', 'O1', 'O2', 'F7', 'F8', 'T7', 'T8', 'P7', 'P8', 'Fz', 'Cz',
@@ -42,7 +47,7 @@ NOTES = ("Software markers (trial<k>D/S/E, k = wav number) on BrainVision 20 ms 
          "EEG channels (they sum to zero); FCz is a channel. Clean channel 0 is the left talker (+-90 deg HRTF).")
 
 
-class Li2022Adaptor:
+class Li2022Adaptor(BaseAdaptor):
     """
     Li et al. 2022 ESAA (Zenodo 7795585): 17 listeners (S1-S17 as shipped), 32 trials of 55-93 s, two Mandarin
     stories (male and female talker) HRTF-filtered to +-90 deg over insert phones; attend one. BrainAmp 64 EEG + ECG
@@ -55,19 +60,22 @@ class Li2022Adaptor:
     """
 
     def __init__(self, download_dir: str, onset: str = "dnn"):
-        if onset not in ("dnn", "marker"):
-            raise ValueError(f"onset must be 'dnn' or 'marker', not {onset!r}")
+        super().__init__(download_dir)
+        self.choice("onset", onset, ("dnn", "marker"))
         self.method = "dnn" if onset == "dnn" else "sw_trigger"
         self.onset = (dict(onset_correction_s=ONSET_CORRECTION_S, onset_correction_method=DNN_METHOD)
                       if onset == "dnn" else dict(onset_correction_s=0.0, onset_correction_method="none (S marker)"))
         self.mats, self.clean, self.hrtf = {}, {}, {}
-        for dirpath, _, files in os.walk(download_dir):
+        for dirpath, dirs, files in os.walk(download_dir):
+            dirs.sort()  # deterministic walk; S<k>_1.mat before S<k>_2.mat
             # hrtf.zip unpacks to the download root (repo downloader) or to hrtf/ (per-zip extraction)
             wavs = self.clean if os.path.basename(dirpath) == "clean" else self.hrtf
-            for f in files:
+            for f in sorted(files):
                 if m := re.fullmatch(r"S(\d+)(?:_\d)?\.mat", f):
                     self.mats.setdefault(int(m[1]), []).append(os.path.join(dirpath, f))
                 elif m := re.fullmatch(r"Trail(\d+)\.wav", f):
+                    if int(m[1]) in wavs:
+                        raise ValueError(f"two copies of {f}: {wavs[int(m[1])]}, {os.path.join(dirpath, f)}")
                     wavs[int(m[1])] = os.path.join(dirpath, f)
         if len(self.clean) != 32 or len(self.hrtf) != 32 or sorted(self.mats) != list(range(1, 18)):
             raise FileNotFoundError(f"expected S1-S17 *.mat and 32 clean + 32 HRTF Trail*.wav under {download_dir!r}")
@@ -81,6 +89,9 @@ class Li2022Adaptor:
                 for e in sio.loadmat(path, variable_names=["Markers"])["Markers"][0]:
                     desc = str(np.ravel(e["Description"])[0]) if np.size(e["Description"]) else ""
                     if mk := re.fullmatch(r"trail(\d+)S", desc):
+                        if int(mk[1]) in markers:  # not seen in the release; the later file's marker is used
+                            log.warning("S%d: trail%sS marker in %s and %s", subject, mk[1], markers[int(mk[1])][0],
+                                        path)
                         markers[int(mk[1])] = (path, int(np.ravel(e["Position"])[0]) - 1, n)  # 1-based
             if len(markers) != 32:
                 raise ValueError(f"S{subject}: {len(markers)} trial start markers, expected 32")
@@ -129,17 +140,20 @@ def _eeg_loader(path: str, onset: int, stop: int, bads: list, description: str) 
         x = 1e-6 * np.array([m[c][onset:stop, 0] for c in EEG + ["ECG"]])  # microvolts as shipped
         raw = RawArray(x, create_info(EEG + ["ECG"], EEG_FS, ["eeg"] * 64 + ["ecg"]), verbose="ERROR")
         raw.set_montage(make_standard_montage("standard_1020"), verbose="ERROR")
-        raw.info["bads"] = list(bads)
+        mark_bads(raw, bads)
         raw.info["description"] = description
         return raw
     return _loader
 
 
 def _audio_loader(path: str, channel: int | None) -> Callable[[], dict]:
-    """Clean talker `channel` (mono) or both HRTF ears (channel None); 44.1 kHz as shipped."""
+    """
+    Clean talker `channel` of the stereo clean wav (0 = left talker, 1 = right talker; one mono channel) or both
+    HRTF ears (channel None); 44.1 kHz as shipped, float32.
+    """
     def _loader() -> dict:
-        x, fs = sf.read(path, dtype="float32")
-        return {"fs": fs, "data": x.T if channel is None else x[None, :, channel]}
+        x, fs = read_wav(path, channel=channel)
+        return {"fs": fs, "data": x}
     return _loader
 
 
