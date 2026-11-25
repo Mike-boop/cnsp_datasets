@@ -13,6 +13,7 @@
     }
   },
   "paper": {
+    "doi": "10.1177/23312165261465722",
     "url": "https://journals.sagepub.com/doi/10.1177/23312165261465722"
   },
   "modality": "EEG",
@@ -20,5 +21,6 @@
   "stimuli": "natural",
   "alignment_quality": "good",
   "validation_tier": "brainstem",
-  "listening_hours": 130.0
+  "participants": 62,
+  "listening_hours": 129.5
 }

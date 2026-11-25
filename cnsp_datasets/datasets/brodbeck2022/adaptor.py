@@ -11,6 +11,7 @@ import pandas as pd
 
 from cnsp_datasets.datasets.brodbeck2022 import ndvar
 from cnsp_datasets.datasets.simon_base.common import REFERENCE, crop_meg, read_raw
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -36,7 +37,7 @@ FLAGS = {
 }
 
 
-class Brodbeck2022Adaptor:
+class Brodbeck2022Adaptor(BaseAdaptor):
     """
     Appleseed audiobook MEG (Brodbeck et al. 2022, OpenNeuro ds007870): 12 subjects, 11 consecutive excerpts of
     "The Botany of Desire" in one KIT 157-channel recording each (1000 Hz, T); sub-04/05 heard excerpt 11b
@@ -46,7 +47,7 @@ class Brodbeck2022Adaptor:
     """
 
     def __init__(self, download_dir: str):
-        self.download_dir = download_dir
+        super().__init__(download_dir)
 
     def parse(self) -> Iterable[TrialRecord]:
         for meg_dir in sorted(glob.glob(os.path.join(self.download_dir, "sub-[0-9]*", "meg"))):

@@ -9,6 +9,7 @@ import numpy as np
 
 from cnsp_datasets.datasets.simon_base.common import (REFERENCE, audio_loader, check_unique_subjects, epoch_raw,
                                                       find_one, read_epochs, subject_number)
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -35,7 +36,7 @@ NOTES = ("Authors' preprocessed KIT 157-channel MEG epochs (DRUM): tSSS (mne-pyt
          "for its first 1.000 s, `<name>_from1s`).")
 
 
-class Brodbeck2018Adaptor:
+class Brodbeck2018Adaptor(BaseAdaptor):
     """
     Brodbeck, Hong & Simon 2018 (DRUM 10.13016/M2ZC7RZ0F): 26 listeners, KIT MEG, Dickens audiobook (LibriVox),
     one male and one female talker. Per subject 24 one-minute trials in presentation order: 4 two-talker mixtures
@@ -45,6 +46,7 @@ class Brodbeck2018Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = download_dir
 
     def parse(self) -> Iterable[TrialRecord]:

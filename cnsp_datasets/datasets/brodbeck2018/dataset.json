@@ -12,6 +12,9 @@
       "url": "https://drum.lib.umd.edu/items/6ce1b090-3446-46d8-9582-f689afcd23de"
     }
   },
+  "paper": {
+    "doi": "10.1016/j.cub.2018.10.042"
+  },
   "modality": "MEG",
   "system": "KIT (157 ch)",
   "stimuli": "competing speakers",

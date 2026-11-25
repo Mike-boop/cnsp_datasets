@@ -232,3 +232,8 @@ re-referencing (MEG), attended stream as the stimulus (`--first-attended`). Only
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **medium**: Authors' 200 Hz epochs cut 18 s before the end pulse; t=0 supported by evoked onset responses; TRF rise from -40 ms attributed to stimulus periodicity; low tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor on `BaseAdaptor`; stimulus wavs read with soundfile through `simon_base.read_wav` (`iohelpers.read_wav`):
+  float32 in [-1, 1), any PCM width; the same values as before for the shipped int16 wavs (also for `mix_gain`);
+  dataset.json: paper DOI.

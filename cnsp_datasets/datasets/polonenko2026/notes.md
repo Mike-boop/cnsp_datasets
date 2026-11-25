@@ -106,3 +106,6 @@ Chirp > zero phase and shifted (lower f0) > original, as in the paper.
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **good**: Sound-card triggers + 0.81 ms; replicating ER-2 artefact ('markers at the transducer', polonenko2021 notes sect. 9); drift 9.6 ppm corrected; brainstem tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor on `BaseAdaptor`; dataset.json: participants 62, listening hours 129.5, paper DOI. No other change.

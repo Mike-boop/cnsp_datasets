@@ -109,3 +109,6 @@ reference would leave (A1 - A2) / 2 and remove the common FCz response.
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **good**: Sound-card triggers + 0.81 ms; ER-2 electrical artefact at about -3..+1 ms in the 30-250 Hz TRF; drift 25.2 ppm from triggers corrected; brainstem tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor on `BaseAdaptor`; dataset.json: participants 15, paper DOI. No other change.

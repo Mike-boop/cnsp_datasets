@@ -15,6 +15,9 @@
       ]
     }
   },
+  "paper": {
+    "doi": "10.1523/JNEUROSCI.1143-24.2025"
+  },
   "modality": "MEG",
   "system": "KIT (157 ch)",
   "stimuli": "degraded (noise, non-word, scrambled); natural",

@@ -111,3 +111,8 @@ narrator (80-150 Hz: 4.8x the null in exp1-broadband, 2.8x exp2-male-broadband),
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **medium**: Sound-card triggers (README: tube delay already included); ER-2 artefact not confirmable; only the wave V latency (7.35 ms) supports onset = S 1; start-start drift corrected; brainstem tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor on `BaseAdaptor`; stimulus files from a sorted glob, a duplicate (experiment, narrator, chapter) or an
+  unexpected file name raises instead of being overwritten or failing obscurely; dataset.json: title (the pilot is not
+  included), participants 44, listening hours 93.9 (README), paper DOI.

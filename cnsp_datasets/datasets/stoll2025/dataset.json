@@ -11,5 +11,12 @@
       "description": "Stoll et al. (2025) selective attention, subcortical and cortical EEG (3 experiments)",
       "url": "https://openneuro.org/datasets/ds006434/versions/1.2.0"
     }
-  }
+  },
+  "modality": "EEG",
+  "system": "Brain Products actiCHamp + EP-Preamp",
+  "stimuli": "competing speakers",
+  "alignment_quality": "good",
+  "validation_tier": "brainstem",
+  "participants": 66,
+  "listening_hours": 99.0
 }

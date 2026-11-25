@@ -112,3 +112,8 @@ dataset: `miran2020b` (instructed switching, 7 subjects, DSS-denoised). Scratch:
 ## 10. Upstream issues
 - No switch times or button-press events are shipped, although the paper's analysis uses them; the MISC lines carry
   no presses either. Worth asking the authors for the button-press times (`R/upstream_issues.md`).
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor on `BaseAdaptor`; bads set with `iohelpers.mark_bads` (same list); stimulus wavs read with soundfile through
+  `simon_base.read_wav` (`iohelpers.read_wav`): float32 in [-1, 1), any PCM width; the same values as before for the
+  shipped int16 wavs; dataset.json: paper DOI.

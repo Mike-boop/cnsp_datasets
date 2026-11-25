@@ -36,7 +36,7 @@ def test_audio_loader_scales_and_mutes(tmp_path):
     muted = common.audio_loader(path, 22050, mute=3)()["data"][0]
     np.testing.assert_array_equal(muted[:3], 0)
     np.testing.assert_array_equal(muted[3:], out["data"][0, 3:])
-    with pytest.raises(ValueError, match="44100 Hz mono int16"):
+    with pytest.raises(ValueError, match="expected 44100 Hz"):
         common.read_wav(path, 44100)
     stereo = write_wav(tmp_path / "st.wav", 22050, np.zeros((4, 2)))
     with pytest.raises(ValueError):

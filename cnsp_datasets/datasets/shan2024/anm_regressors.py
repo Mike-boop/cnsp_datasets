@@ -42,7 +42,8 @@ def clip(args):
     if os.path.exists(dest):
         return dest
     fs, x = wavfile.read(wav)
-    assert fs == FS_IN
+    if fs != FS_IN:
+        raise ValueError(f"{wav}: {fs} Hz, expected {FS_IN} Hz")
     x = np.asarray(x, float)
     x = x[:, 0] if x.ndim > 1 else x
     np.savez(dest + ".part.npz", pos=anm(x), neg=anm(-x), fs=FS_OUT)

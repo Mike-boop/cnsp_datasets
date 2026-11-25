@@ -10,7 +10,9 @@ import numpy as np
 from mne.io.constants import FIFF
 
 from cnsp_datasets.datasets.simon_base.common import REFERENCE, audio_loader, find_one, subject_number
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
+from cnsp_datasets.standardise.iohelpers import mark_bads
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -35,7 +37,7 @@ NOTES = ("Raw KIT 157-channel MEG (axial gradiometers as `mag`, 3 reference magn
          "False for both talkers.")
 
 
-class Miran2020Adaptor:
+class Miran2020Adaptor(BaseAdaptor):
     """
     At-will attention switching experiment of Miran et al. (2020, PLoS Comput Biol; DRUM hdl 1903/26351; from
     Presacco et al. 2019, EMBC): KIT MEG of one subject (R2082), 3 trials of the same 90 s mixture of a male and a
@@ -43,7 +45,7 @@ class Miran2020Adaptor:
     """
 
     def __init__(self, download_dir: str):
-        self.download_dir = download_dir
+        super().__init__(download_dir)
 
     def parse(self) -> Iterable[TrialRecord]:
         mat = find_one(os.path.join(self.download_dir, "**", f"{PARTICIPANT}_Cocktail_*.mat"))
@@ -101,7 +103,7 @@ def _meg_loader(mat: str, rep: int, description: str) -> Callable[[], mne.io.Bas
         raw = mne.io.RawArray(x[:N_MEG + N_REF] * UNIT, _info(), verbose="ERROR")
         out = crop_on_audio_clock(raw, ONSET, N_OUT, sfreq_out=FS)
         flat = np.flatnonzero(x[:N_MEG].std(axis=1) == 0).tolist()
-        out.info["bads"] = [out.ch_names[i] for i in sorted(set(listed) | set(flat))]
+        mark_bads(out, [out.ch_names[i] for i in sorted(set(listed) | set(flat))])
         out.info["description"] = description
         out.set_annotations(mne.Annotations([0.0], [0.0], [f"attend_start/{MALE}"]))
         return out

@@ -13,6 +13,7 @@ import numpy as np
 
 from cnsp_datasets.datasets.simon_base.common import (REFERENCE, audio_loader, check_unique_subjects, epoch_raw,
                                                       find_one, read_epochs, read_wav, subject_number)
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -43,7 +44,7 @@ NOTES = ("Authors' preprocessed KIT 157-channel MEG epochs (DRUM): TSPCA, SNS, F
          "(bg); fg/bg are unscaled, the mixture = mix_gain x (fg + bg).")
 
 
-class Kulasingham2021Adaptor:
+class Kulasingham2021Adaptor(BaseAdaptor):
     """
     Kulasingham, Joshi, Rezaeizadeh & Simon 2021 (DRUM 10.13016/xd2i-vyke): 22 listeners, KIT MEG, synthesised
     isochronous 4-word sentences and 5-symbol equations (voices "james" and "kate"), 18 s trials. Per subject 40
@@ -52,6 +53,7 @@ class Kulasingham2021Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = download_dir
 
     def parse(self) -> Iterable[TrialRecord]:

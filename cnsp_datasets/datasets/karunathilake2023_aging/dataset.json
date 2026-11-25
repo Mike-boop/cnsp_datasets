@@ -1,6 +1,6 @@
 {
   "name": "karunathilake2023_aging",
-  "title": "Karunathilake et al. (2023) MEG (KIT), younger and older adults, continuous speech",
+  "title": "Karunathilake et al. (2023, J Neurophysiol) MEG (KIT, 6 DSS components), younger and older adults, continuous speech in quiet, with a competing talker and in babble",
   "visibility": "public",
   "downloads": {
     "karunathilake2023_aging": {
@@ -11,6 +11,9 @@
       "description": "Karunathilake et al. (2023) MEG (KIT), younger and older adults, continuous speech",
       "url": "https://drum.lib.umd.edu/items/91b2c409-8659-40fe-87dd-b701599b4841"
     }
+  },
+  "paper": {
+    "doi": "10.1152/jn.00356.2022"
   },
   "modality": "MEG",
   "system": "KIT (157 ch)",

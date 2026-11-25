@@ -1,6 +1,6 @@
 {
   "name": "polonenko2021",
-  "title": "Polonenko & Maddox (2021) eLife peaky speech dataset (pilot + 3 experiments",
+  "title": "Polonenko & Maddox (2021) eLife peaky speech dataset (3 experiments; the pilot is not included)",
   "visibility": "public",
   "downloads": {
     "polonenko2021": {
@@ -13,6 +13,7 @@
     }
   },
   "paper": {
+    "doi": "10.7554/eLife.62329",
     "url": "https://elifesciences.org/articles/62329"
   },
   "modality": "EEG",
@@ -20,6 +21,6 @@
   "stimuli": "natural",
   "alignment_quality": "medium",
   "validation_tier": "brainstem",
-  "participants": 22,
-  "listening_hours": 100.0
+  "participants": 44,
+  "listening_hours": 93.9
 }

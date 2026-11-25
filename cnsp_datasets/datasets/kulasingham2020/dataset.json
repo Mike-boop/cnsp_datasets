@@ -16,6 +16,9 @@
       ]
     }
   },
+  "paper": {
+    "doi": "10.1016/j.neuroimage.2020.117291"
+  },
   "modality": "MEG",
   "system": "KIT (157 ch)",
   "stimuli": "natural",

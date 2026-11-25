@@ -8,9 +8,11 @@ from typing import Callable, Iterable
 import mne
 import numpy as np
 from mne.io.constants import FIFF
-from scipy.io import loadmat, wavfile, whosmat
+from scipy.io import loadmat, whosmat
 
-from cnsp_datasets.datasets.simon_base.common import check_unique_subjects, subject_number
+from cnsp_datasets.datasets.simon_base.common import (audio_loader, check_unique_subjects, read_wav,
+                                                      subject_number)
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -50,7 +52,7 @@ BABBLE_NOTE = (f" Attended stimulus `{FOREGROUND}` is derived: babb_mix_F08_BF08
                "babb_singleQ_BF08 (the played foreground; not sample-identical to pass_single_F08).")
 
 
-class Karunathilake2023AgingAdaptor:
+class Karunathilake2023AgingAdaptor(BaseAdaptor):
     """
     Karunathilake et al. 2023 (DRUM 10.13016/4goq-vs0z): 18 younger + 16 older listeners, Sleepy Hollow passages
     in quiet, with a competing talker at 0 / -6 dB SNR (attended talker 6 dB softer; the paper says "6 dB") and in
@@ -64,6 +66,7 @@ class Karunathilake2023AgingAdaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = os.path.join(download_dir, "Data")
 
     def parse(self) -> Iterable[TrialRecord]:
@@ -109,22 +112,16 @@ class Karunathilake2023AgingAdaptor:
                 StimulusRecord("audio", unattended, self._audio(unattended), is_attended=False)]
 
     def _audio(self, name: str) -> Callable[[], dict]:
-        return lambda: {"fs": AUDIO_FS, "data": _read_wav(self._wav(name)).astype(np.float32)[None, :]}
+        return audio_loader(self._wav(name), AUDIO_FS)
 
     def _foreground(self) -> dict:
         """Derived babble foreground: mixture minus BABBLE_GAIN times the babble track (notes.md section 3)."""
-        mix, babble = _read_wav(self._wav("babb_mix_F08_BF08")), _read_wav(self._wav("babb_singleQ_BF08"))
+        mix = read_wav(self._wav("babb_mix_F08_BF08"), AUDIO_FS).astype(np.float64)  # one rounding, at the end
+        babble = read_wav(self._wav("babb_singleQ_BF08"), AUDIO_FS).astype(np.float64)
         return {"fs": AUDIO_FS, "data": (mix - BABBLE_GAIN * babble).astype(np.float32)[None, :]}
 
     def _wav(self, name: str) -> str:
         return os.path.join(self.root, "stimuli", f"{name}.wav")
-
-
-def _read_wav(path: str) -> np.ndarray:
-    fs, x = wavfile.read(path)
-    if fs != AUDIO_FS or x.dtype != np.int16 or x.ndim != 1:
-        raise ValueError(f"{path}: expected {AUDIO_FS} Hz mono int16")
-    return x / 32768.0
 
 
 @lru_cache(maxsize=1)

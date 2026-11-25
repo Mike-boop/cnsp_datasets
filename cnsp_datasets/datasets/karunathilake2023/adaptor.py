@@ -10,6 +10,7 @@ import openpyxl
 from cnsp_datasets.datasets.simon_base.common import (REFERENCE, audio_loader, check_unique_subjects, crop_meg,
                                                       find_one, read_raw, rms_bads, stim_events, subject_number,
                                                       wav_samples)
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -38,7 +39,7 @@ AUTHORS_MAIN_ANALYSED = {
     "R2854", "R2859", "R2865", "R2866", "R2877", "R2876", "R2881", "R2882", "R2883", "R2885", "R2886"}
 
 
-class Karunathilake2023Adaptor:
+class Karunathilake2023Adaptor(BaseAdaptor):
     """
     Clear vs noise-vocoded audiobook passages (Karunathilake, Kulasingham & Simon 2023, PNAS; Dryad
     doi:10.5061/dryad.sbcc2frd6): KIT 157-channel MEG at 1 kHz, one recording per participant. Main study (27
@@ -48,6 +49,7 @@ class Karunathilake2023Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = download_dir
 
     def parse(self) -> Iterable[TrialRecord]:

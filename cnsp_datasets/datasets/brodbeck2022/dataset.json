@@ -23,6 +23,9 @@
       "url": "https://datadryad.org/dataset/doi:10.5061/dryad.nvx0k6dv0"
     }
   },
+  "paper": {
+    "doi": "10.7554/eLife.72056"
+  },
   "modality": "MEG",
   "system": "KIT (157 ch)",
   "stimuli": "natural",
