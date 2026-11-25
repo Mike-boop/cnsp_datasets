@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import glob
-import io
 import math
 import os
 from typing import Iterable
@@ -9,10 +8,12 @@ from typing import Iterable
 import mne
 import numpy as np
 import pandas as pd
-import textgrid
-from scipy.io import loadmat, wavfile
+import soundfile
+from scipy.io import loadmat
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
+from cnsp_datasets.standardise.iohelpers import audio_loader, textgrid
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -40,7 +41,7 @@ VALIDATION_NOTE = ("mlr tier in all 6 validated participants (sub-01..06), data 
                    "Maxwell filtering), 102 magnetometers; brainstem tier not reached (30-250 Hz SNR 0.37-0.88)")
 
 
-class Wang2022Adaptor:
+class Wang2022Adaptor(BaseAdaptor):
     """
     SMN4Lang MEG (Wang et al. 2022, OpenNeuro ds004078): 12 subjects, Elekta TRIUX 306-channel MEG at 1000 Hz,
     tSSS by the authors. 60 Mandarin stories (story_N.wav, 16 kHz), one run per story (run N = story N), six
@@ -48,15 +49,15 @@ class Wang2022Adaptor:
     sound onset and as long as the wav.
 
     drift_correction: clock drift corrected by resampling (default +500 ppm), None to disable. Channels: MEG and
-    BIO001 (misc). Stimuli: wav as shipped and a TextGrid (words, characters) from the authors' alignment.
+    BIO001 (misc); channels the FIF marks bad are kept and listed. Stimuli: wav as shipped (float32) and a TextGrid
+    (words, characters) from the authors' alignment.
     sub-06 runs 58-60 are skipped (copies of sub-05's). See notes.md.
     """
 
     def __init__(self, download_dir: str, drift_correction: float | None = DRIFT):
-        self.download_dir = download_dir
+        super().__init__(download_dir)
         self.drift = drift_correction or 0.0
-        ann = os.path.join(download_dir, "derivatives", "annotations")  # files misplaced upstream: find by name
-        self.annotations = {os.path.basename(p): p for p in glob.glob(f"{ann}/**/story_*_time.mat", recursive=True)}
+        self.annotations = annotation_files(os.path.join(download_dir, "derivatives", "annotations"))
 
     def parse(self) -> Iterable[TrialRecord]:
         for sub_dir in sorted(glob.glob(os.path.join(self.download_dir, "sub-*"))):
@@ -73,14 +74,15 @@ class Wang2022Adaptor:
                                  file=os.path.basename(fif))
                     yield TrialRecord(
                         subject=int(sub), session=session, trial=run, condition="story", ns_type="meg",
-                        stimulus=[StimulusRecord("audio", name, _audio_loader(wav), True, "audio"),
+                        stimulus=[StimulusRecord("audio", name, audio_loader(wav), True, "audio"),
                                   StimulusRecord("audio", name, self._textgrid_loader(run, wav), True, "textgrid")],
                         neural_data_fn=_meg_loader(fif, wav, self.drift, interval, extra))
 
     def _median_interval(self, run: int) -> float:
         """Median End - Beg (samples) of a run over the other subjects' events.tsv."""
         d = []
-        for f in glob.glob(os.path.join(self.download_dir, "sub-*", "meg", f"sub-*_task-RDR_run-{run}_events.tsv")):
+        for f in sorted(glob.glob(os.path.join(self.download_dir, "sub-*", "meg",
+                                               f"sub-*_task-RDR_run-{run}_events.tsv"))):
             sub = os.path.basename(f)[4:6]
             if (sub, run) in NO_BEG | SKIP:
                 continue
@@ -93,28 +95,41 @@ class Wang2022Adaptor:
     def _textgrid_loader(self, story: int, wav: str):
         """Tiers words and characters, wav time; zero-length tokens dropped, identical intervals merged."""
         def _loader() -> str:
-            fs, x = wavfile.read(wav, mmap=True)
-            tg = textgrid.TextGrid(maxTime=len(x) / fs)
+            info = soundfile.info(wav)
+            tiers = {}
             for tier, level in (("words", "word"), ("characters", "char")):
                 m = loadmat(self.annotations[f"story_{story}_{level}_time.mat"])
                 start = np.round(m["start"][0] - FMRI_OFFSET_S, 3)
                 end = np.round(m["end"][0] - FMRI_OFFSET_S, 3)
-                t = textgrid.IntervalTier(tier, 0, len(x) / fs)
-                prev = None
-                for a, b, mark in zip(start, end, (str(w).strip() for w in m[level])):
-                    if b <= a:
-                        continue
-                    if prev is not None and (prev.minTime, prev.maxTime) == (a, b):
-                        prev.mark += mark  # several punctuation marks share one pause
-                        continue
-                    t.add(float(a), float(b), mark)
-                    prev = t.intervals[-1]
-                tg.append(t)
-            f = _Buffer()
-            tg.write(f)
-            return f.getvalue()
+                tiers[tier] = merged_intervals(start, end, (str(w).strip() for w in m[level]))
+            return textgrid(tiers, xmax=info.frames / info.samplerate)
 
         return _loader
+
+
+def annotation_files(root: str) -> dict:
+    """{file name: path} of the story_*_time.mat files anywhere under root (misplaced upstream); duplicates raise."""
+    out: dict = {}
+    for p in sorted(glob.glob(os.path.join(glob.escape(root), "**", "story_*_time.mat"), recursive=True)):
+        name = os.path.basename(p)
+        if name in out:
+            raise ValueError(f"{name} found twice: {out[name]}, {p}")
+        out[name] = p
+    return out
+
+
+def merged_intervals(start, end, labels) -> list:
+    """(onset, offset, label) with zero-length tokens dropped and identical consecutive intervals merged (several
+    punctuation marks share one pause)."""
+    out: list = []
+    for a, b, mark in zip(start, end, labels):
+        if b <= a:
+            continue
+        if out and out[-1][:2] == (float(a), float(b)):
+            out[-1] = (out[-1][0], out[-1][1], out[-1][2] + mark)
+            continue
+        out.append((float(a), float(b), mark))
+    return out
 
 
 def beg_end(raw: mne.io.BaseRaw) -> tuple[int | None, int]:
@@ -141,10 +156,10 @@ def _meg_loader(fif: str, wav: str, drift: float, interval: float | None, extra:
                 raise ValueError(f"{fif}: Beg trigger {'present' if beg is not None else 'missing'} unexpectedly")
             beg = end - interval
             note += " Beg trigger missing (README): reconstructed as End - median End-Beg of the story."
-        fs, x = wavfile.read(wav, mmap=True)
-        n_out = math.ceil(len(x) * 1000 / fs)
+        info = soundfile.info(wav)
+        n_out = math.ceil(info.frames * 1000 / info.samplerate)
         onset = beg + SOUND_DELAY_MS
-        picks = mne.pick_types(raw.info, meg=True).tolist() + [raw.ch_names.index(c) for c in BIO]
+        picks = mne.pick_types(raw.info, meg=True, exclude=[]).tolist() + [raw.ch_names.index(c) for c in BIO]
         out = crop_on_audio_clock(raw, onset, n_out, drift, picks=picks, sfreq_out=1000)
         if out.n_times != n_out:
             raise ValueError(f"{fif}: recording ends {n_out - out.n_times} samples before the stimulus")
@@ -171,21 +186,6 @@ def _meg_loader(fif: str, wav: str, drift: float, interval: float | None, extra:
         return out
 
     return _loader
-
-
-def _audio_loader(path: str):
-    def _loader():
-        fs, x = wavfile.read(path)
-        return {"fs": fs, "data": x[None, :]}
-
-    return _loader
-
-
-class _Buffer(io.StringIO):
-    """StringIO that survives TextGrid.write closing it."""
-
-    def close(self):
-        pass
 
 
 ADAPTOR = Wang2022Adaptor
