@@ -23,6 +23,8 @@ revised adaptors; the "Deferred" list is work agreed but not yet done.
   `to_audio_clock`): quintic spline after an anti-alias FIR; a recording that ends before its trial is logged.
 - **Bad channels** stay in the data and are listed in `info["bads"]`: never `pick(..., exclude="bads")` or
   `pick_types` without `exclude=[]` in an adaptor.
+  Bads a release already marks are kept: a dataset's own list is merged with them (`iohelpers.mark_bads`), never
+  replaces them (user, 2026-11-25, for simon_base.crop_meg and in general).
 - **Logging.** Library code logs through `logging.getLogger(__name__)`; `format_dataset` writes
   `<out>/standardise.log` (failed trials with tracebacks, truncated trials) and raises at the end if any trial
   failed. Adaptors never change MNE's log level; users set `MNE_LOGGING_LEVEL`.
