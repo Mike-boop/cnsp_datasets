@@ -11,6 +11,7 @@ import mne
 from cnsp_datasets.datasets.simon_base.common import (REFERENCE, audio_loader, check_unique_subjects, crop_meg,
                                                       find_one, read_raw, rms_bads, stim_events, subject_number,
                                                       wav_samples)
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -38,7 +39,7 @@ NOTES = ("Continuous KIT 157-channel MEG (axial gradiometers as `mag`, 3 referen
          "SNS here. 32 of the 40 participants are presacco2016's quiet blocks (same recordings): see overlaps_with.")
 
 
-class Kulasingham2020Adaptor:
+class Kulasingham2020Adaptor(BaseAdaptor):
     """
     High-gamma TRF dataset of Kulasingham et al. (2020, NeuroImage; DRUM doi:10.13016/33pk-ltqh): KIT MEG of 17
     younger and 23 older normal-hearing adults listening to two 60 s audiobook segments in quiet, each repeated 3
@@ -47,10 +48,9 @@ class Kulasingham2020Adaptor:
     """
 
     def __init__(self, download_dir: str, subjects: str = "all"):
-        if subjects not in SUBJECTS:
-            raise ValueError(f"subjects must be one of {SUBJECTS}, got {subjects!r}")
+        super().__init__(download_dir)
         self.root = download_dir
-        self.subjects = subjects
+        self.subjects = self.choice("subjects", subjects, SUBJECTS)
 
     def parse(self) -> Iterable[TrialRecord]:
         stim_dir = os.path.dirname(find_one(os.path.join(self.root, "**", "Trial1.wav")))

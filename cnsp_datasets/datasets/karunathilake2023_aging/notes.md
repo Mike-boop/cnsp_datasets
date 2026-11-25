@@ -258,3 +258,8 @@ trials) being as high as the attended ones is not evidence against attention eff
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **medium**: Authors' DSS epochs; 1.5 s causal-FIR delay removed (from the authors' code and envelope match, not a TRF fit); trigger type unknown; low tier, no subject peaks at a negative lag.
+
+## Restructure 2026-11-25
+- Restructure 2026-11-25 (not yet re-validated on data): adaptor on `BaseAdaptor`; its own scipy wav reader replaced by
+  `simon_base.read_wav`/`audio_loader` (same float32 values for the int16 wavs; the derived babble foreground is still
+  computed in float64); dataset.json: title, paper DOI.

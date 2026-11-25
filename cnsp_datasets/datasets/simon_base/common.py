@@ -4,7 +4,7 @@ karunathilake2025, kulasingham2021).
 
 All were recorded on the lab's KIT 157-channel system: MEG 001-157 axial gradiometers (MNE type `mag`) and
 MEG 158-160 reference magnetometers (`ref_meg`), in T, plus MISC TTL/idle lines and STI 014, which the adaptors
-drop. Participants are R-numbers (R2262); R2262 -> subject 2262. Stimuli are mono int16 wavs.
+drop. Participants are R-numbers (R2262); R2262 -> subject 2262. Stimuli are mono PCM wavs (int16 as shipped).
 
 - Shipped epochs (brodbeck2018, kulasingham2021): `read_epochs`, `epoch_raw` (one epoch as Raw, shipped bads plus
   zero-variance channels).
@@ -21,8 +21,8 @@ from typing import Callable, Iterable, Sequence
 
 import mne
 import numpy as np
-from scipy.io import wavfile
 
+from cnsp_datasets.standardise import iohelpers
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
 
 REFERENCE = "not applicable (MEG)"
@@ -52,11 +52,11 @@ def check_unique_subjects(pids: Iterable[str]) -> None:
 
 
 def read_wav(path: str, fs: int) -> np.ndarray:
-    """Mono int16 wav at `fs` as float32 in [-1, 1)."""
-    rate, x = wavfile.read(path)
-    if rate != fs or x.dtype != np.int16 or x.ndim != 1:
-        raise ValueError(f"{path}: expected {fs} Hz mono int16")
-    return (x / 32768.0).astype(np.float32)
+    """Mono PCM wav at `fs` as float32 (n_times,) in [-1, 1) (`iohelpers.read_wav`; kept for its 1-D result)."""
+    x, _ = iohelpers.read_wav(path, expect_fs=fs)
+    if x.shape[0] != 1:
+        raise ValueError(f"{path}: expected {fs} Hz mono, got {x.shape[0]} channels")
+    return x[0]
 
 
 def audio_loader(path: str, fs: int, mute: int = 0) -> Callable[[], dict]:
@@ -71,11 +71,13 @@ def audio_loader(path: str, fs: int, mute: int = 0) -> Callable[[], dict]:
 
 @lru_cache(maxsize=None)
 def wav_samples(path: str, audio_fs: int, fs: int) -> int:
-    """Length of a wav at `audio_fs` in samples at `fs`."""
-    rate, x = wavfile.read(path, mmap=True)
-    if rate != audio_fs:
+    """Length of a wav at `audio_fs` in samples at `fs` (header only)."""
+    import soundfile
+
+    info = soundfile.info(path)
+    if info.samplerate != audio_fs:
         raise ValueError(f"{path}: expected {audio_fs} Hz")
-    return round(len(x) * fs / audio_fs)
+    return round(info.frames * fs / audio_fs)
 
 
 def meg_picks(info: mne.Info) -> np.ndarray:
@@ -140,10 +142,10 @@ def crop_meg(raw: mne.io.BaseRaw, onset: float, n_out: int, description: str,
              bads: Sequence[str] | None = None) -> mne.io.BaseRaw:
     """
     `n_out` samples of `meg_picks` from `onset` (samples from the first sample, may be fractional;
-    `crop_on_audio_clock`); bads replaced if given.
+    `crop_on_audio_clock`); `bads` added to the recording's own (`iohelpers.mark_bads`, strict).
     """
     out = crop_on_audio_clock(raw, onset, n_out, picks=meg_picks(raw.info))
     if bads is not None:
-        out.info["bads"] = list(bads)
+        iohelpers.mark_bads(out, bads)
     out.info["description"] = description
     return out

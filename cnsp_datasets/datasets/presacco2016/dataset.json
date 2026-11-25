@@ -1,6 +1,6 @@
 {
   "name": "presacco2016",
-  "title": "Presacco et al. (2016) MEG (KIT) and EEG, younger and older adults, speech in quiet and noise",
+  "title": "Presacco et al. (2016) MEG (KIT), younger and older adults, speech in quiet and noise (the adaptor reads the MEG part only)",
   "visibility": "public",
   "downloads": {
     "presacco2016": {
@@ -16,8 +16,11 @@
       ]
     }
   },
+  "paper": {
+    "doi": "10.1152/jn.00372.2016"
+  },
   "modality": "MEG",
-  "system": "KIT (157 ch) + EEG",
+  "system": "KIT (157 ch)",
   "stimuli": "natural",
   "alignment_quality": "medium",
   "validation_tier": "brainstem (30-250 Hz); mlr fails",

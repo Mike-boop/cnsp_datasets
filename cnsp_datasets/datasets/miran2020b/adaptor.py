@@ -12,6 +12,8 @@ from mne.io.constants import FIFF
 from scipy.io import loadmat
 
 from cnsp_datasets.datasets.simon_base.common import REFERENCE, audio_loader, find_one
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import mark_bads
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -40,7 +42,7 @@ NOTES = ("KIT 157-channel MEG as shipped by the authors: DSS-denoised (10 compon
          "switches within every trial. Presentation order unknown: trials 1-3 are file 5, 4-6 file 6.")
 
 
-class Miran2020bAdaptor:
+class Miran2020bAdaptor(BaseAdaptor):
     """
     Instructed attention switching experiment of Miran et al. (2020, PLoS Comput Biol; DRUM hdl 1903/26352; data
     of Akram et al. 2016): KIT MEG of 7 subjects (S8-S11, S14-S16) listening to a male (Sp1) and a female (Sp2)
@@ -49,13 +51,13 @@ class Miran2020bAdaptor:
     """
 
     def __init__(self, download_dir: str):
-        self.download_dir = download_dir
+        super().__init__(download_dir)
 
     def parse(self) -> Iterable[TrialRecord]:
         speech = os.path.dirname(find_one(os.path.join(self.download_dir, "**", "Speech", "Sp1.wav")))
         stimulus = [StimulusRecord("audio", w, audio_loader(os.path.join(speech, f"{w}.wav"), AUDIO_FS),
                                    is_attended=False) for w in ("Sp1", "Sp2")]
-        paths = glob.glob(os.path.join(self.download_dir, "**", "ssbj*_epochData*_DSSed.mat"), recursive=True)
+        paths = sorted(glob.glob(os.path.join(self.download_dir, "**", "ssbj*_epochData*_DSSed.mat"), recursive=True))
         files = {}
         for path in paths:
             m = re.fullmatch(r"ssbj(\d+)_epochData(\d)_DSSed\.mat", os.path.basename(path))
@@ -119,7 +121,7 @@ def _meg_loader(path: str, missing: Sequence[int], rep: int, spans: Sequence[tup
         data = np.zeros((N_MEG, N_TIMES))
         data[keep] = x[:, :, rep].T * SCALE
         raw = mne.io.RawArray(data, _info(), verbose="ERROR")
-        raw.info["bads"] = [raw.ch_names[c] for c in missing0]
+        mark_bads(raw, [raw.ch_names[c] for c in missing0])
         raw.info["description"] = description
         onsets, durations, labels = zip(*spans)
         raw.set_annotations(mne.Annotations(onsets, durations, labels))

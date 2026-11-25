@@ -9,6 +9,7 @@ import mne
 from cnsp_datasets.datasets.simon_base.common import (REFERENCE, audio_loader, check_unique_subjects, crop_meg,
                                                       find_one, read_raw, rms_bads, stim_events, subject_number,
                                                       wav_samples)
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -31,7 +32,7 @@ NOTES = ("Onset = trigger (one TTL code per passage onset, no offset codes), no 
          "saturated channels in info['bads']. Each passage is played twice in a row; gTTS speech.")
 
 
-class Karunathilake2025Adaptor:
+class Karunathilake2025Adaptor(BaseAdaptor):
     """
     Speech-modulated noise, nonwords, scrambled words and narrative passages (Karunathilake, Brodbeck, Bhattasali,
     Resnik & Simon 2025, J Neurosci; Dryad doi:10.5061/dryad.ht76hdrpf): KIT 157-channel MEG at 1 kHz, one
@@ -40,6 +41,7 @@ class Karunathilake2025Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = download_dir
 
     def parse(self) -> Iterable[TrialRecord]:

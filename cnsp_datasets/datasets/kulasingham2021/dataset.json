@@ -12,6 +12,9 @@
       "url": "https://drum.lib.umd.edu/items/93067450-51d7-43c6-bb8f-53d4195db334"
     }
   },
+  "paper": {
+    "doi": "10.1523/JNEUROSCI.0269-21.2021"
+  },
   "modality": "MEG",
   "system": "KIT (157 ch)",
   "stimuli": "natural (artificial isochronous sentences)",

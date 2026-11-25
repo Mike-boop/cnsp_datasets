@@ -92,3 +92,7 @@ both single-trial data and audio, and its averaged segments are joined at unmark
 ## Alignment grade
 `none`: not assessable; the release holds only repetition-averaged DSS components and envelopes, no recording,
 triggers or audio.
+
+## Restructure 2026-11-25
+- Restructure 2026-11-25 (not yet re-validated on data): dataset.json only: title completed, paper DOI, modality and
+  system. Still no adaptor.

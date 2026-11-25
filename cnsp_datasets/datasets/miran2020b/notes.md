@@ -146,3 +146,9 @@ Sibling dataset: `miran2020` (at-will switching, one subject, raw). Scratch: `tm
   the README's Sp1 + Sp2 in both conditions (the MEG agrees with the README); a 2 s pause cue at 28-30 s that is not
   in the wavs.
 - Original R-numbers not shipped (participant overlap with other Simon-lab datasets cannot be checked).
+
+## Restructure 2026-11-25
+- Restructure 2026-11-25 (not yet re-validated on data): adaptor on `BaseAdaptor`; sorted .mat glob; bads set with
+  `iohelpers.mark_bads` (same list); stimulus wavs read with soundfile through `simon_base.read_wav`
+  (`iohelpers.read_wav`): float32 in [-1, 1), any PCM width; the same values as before for the shipped int16 wavs;
+  dataset.json: paper DOI.

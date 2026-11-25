@@ -12,6 +12,8 @@ import numpy as np
 from mne.io.constants import FIFF
 
 from cnsp_datasets.datasets.simon_base.common import REFERENCE, audio_loader, find_one
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import mark_bads
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -49,7 +51,7 @@ NOTES = ("Raw KIT 157-channel MEG (axial gradiometers as `mag`, 3 reference magn
          "Presentation order unknown: trial numbers follow condition order, 3 repetitions each.")
 
 
-class Presacco2016Adaptor:
+class Presacco2016Adaptor(BaseAdaptor):
     """
     Presacco et al. 2016 (DRUM 10.13016/M2599Z52H), MEG part only: 17 younger and 15 older normal-hearing listeners
     plus 14 older hearing-impaired listeners, KIT 157-channel MEG at 1000 Hz. A male talker (Sleepy Hollow,
@@ -60,7 +62,7 @@ class Presacco2016Adaptor:
     """
 
     def __init__(self, download_dir: str):
-        self.download_dir = download_dir
+        super().__init__(download_dir)
 
     def parse(self) -> Iterable[TrialRecord]:
         stim_dir = os.path.dirname(find_one(os.path.join(self.download_dir, "**", "High Context")))
@@ -98,7 +100,7 @@ def _find_mat(sdir: str, tag: str) -> str:
     """The file of one condition. Names vary in the hearing-impaired group (S01HL_M3H, S01HL_M3_H, S01_HL_M3H,
     S04HL_M6L_II; notes.md section 2): match the tag without underscores, allowing an `II` suffix."""
     want = tag.replace("_", "")
-    stems = {p: os.path.splitext(os.path.basename(p))[0] for p in glob.glob(os.path.join(sdir, "*.mat"))}
+    stems = {p: os.path.splitext(os.path.basename(p))[0] for p in sorted(glob.glob(os.path.join(sdir, "*.mat")))}
     hits = [p for p, stem in stems.items()
             if re.sub(r"^S\d\d_?(HL)?_", "", stem).replace("_", "") in (want, want + "II")]
     if len(hits) != 1:
@@ -153,7 +155,7 @@ def _meg_loader(mat: str, rep: int, line: int, description: str) -> Callable[[],
         data = x[: N_MEG + N_REF, ONSET:] * UNIT
         raw = mne.io.RawArray(np.ascontiguousarray(data), _info(), verbose="ERROR")
         bads = set(listed) | set(np.flatnonzero(data[:N_MEG].std(1) == 0).tolist())  # authors' list + zeroed/dead
-        raw.info["bads"] = [raw.ch_names[i] for i in sorted(bads)]
+        mark_bads(raw, [raw.ch_names[i] for i in sorted(bads)])
         raw.info["description"] = description
         return raw
 
