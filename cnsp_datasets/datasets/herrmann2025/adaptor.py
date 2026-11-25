@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import glob
 import os
 import re
 from typing import Callable, Iterable, List
@@ -12,6 +11,8 @@ from mne.channels import make_standard_montage
 from mne.io import BaseRaw
 from scipy.io import loadmat, wavfile
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import read_wav, rename_channels
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -29,11 +30,12 @@ NOTES = ("Onset = Status marker rising edge (254 -> 255), inferred software mark
 WEAK_NOTE = "No clear speech tracking under the logged story mapping (cause unknown; notes 3)."
 
 
-class Herrmann2025Adaptor:
+class Herrmann2025Adaptor(BaseAdaptor):
     """
     Herrmann 2025 (OSF p8nxq): younger (na01-na26) and older (na40-na65) adults listen to 20 stories (~1.7 min),
     4 in clear and one at each of 16 SNRs (57 to -6 dB) in 12-talker babble; 5 BioSemi blocks of 4 stories.
-    16 scalp channels + M1/M2 (mastoids, EXG1/EXG2 as recorded, `misc`) at 1024 Hz, as recorded (CMS/DRL, no re-referencing).
+    16 scalp channels + M1/M2 (mastoids, EXG1/EXG2 as recorded, `misc`) at 1024 Hz, as recorded (CMS/DRL, no
+    re-referencing).
 
     Only blocks with a MATLAB log are used (146 of 260): the log names the wav of each story; unlogged blocks have
     unknown story and SNR (18 participants have none). Trial = 4 * (block - 1) + position (1-20).
@@ -44,12 +46,13 @@ class Herrmann2025Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = download_dir
         self.demographics = _table(os.path.join(download_dir, "demographics.xlsx"), "ParticipantID")
         self.audiometry = _table(os.path.join(download_dir, "audiometry.xlsx"), "PID")
 
     def parse(self) -> Iterable[TrialRecord]:
-        for log in sorted(glob.glob(os.path.join(self.root, "logfiles", "na*a[1-5].mat"))):
+        for log in self.sorted_glob(self.root, "logfiles/na*a[1-5].mat"):
             stem = os.path.basename(log)[:-4]  # naNNa<block>
             pid, block = stem[:4], int(stem[5])
             bdf = os.path.join(self.root, "rawdata", stem + ".bdf")
@@ -69,7 +72,8 @@ class Herrmann2025Adaptor:
                     NOTES + (" " + WEAK_NOTE if pid in WEAK_TRACKING else ""),
                     story=title, wav=wav, snr_db=None if clear else float(snr),
                     block=block, position_in_block=pos + 1, marker_sample=int(onset),
-                    reference="CMS/DRL (as recorded)", external_sensors={"M1": "left mastoid (EXG1)", "M2": "right mastoid (EXG2)"},
+                    reference="CMS/DRL (as recorded)",
+                    external_sensors={"M1": "left mastoid (EXG1)", "M2": "right mastoid (EXG2)"},
                     weak_tracking=pid in WEAK_TRACKING, **self._subject_info(pid), **babble,
                     validation_tier="low" if not clear and float(snr) <= LOW_TIER_MAX_SNR else "mlr",
                 )
@@ -106,8 +110,7 @@ class Herrmann2025Adaptor:
             raw.drop_channels(["Status"])
             start = onset / raw.info["sfreq"]
             raw.crop(start, start + duration, include_tmax=False).load_data(verbose="ERROR")
-            raw.rename_channels(MASTOIDS)
-            raw.set_channel_types({c: "misc" for c in MASTOIDS.values()}, verbose="ERROR")
+            rename_channels(raw, MASTOIDS)  # typed misc
             raw.set_montage(make_standard_montage("standard_1020"))
             raw.info["description"] = description
             return raw
@@ -127,19 +130,20 @@ def _wav_duration(path: str) -> float:
 
 
 def _read_wav(path: str) -> np.ndarray:
-    fs, x = wavfile.read(path)
-    if fs != AUDIO_FS or x.dtype != np.int16 or x.ndim != 1:
-        raise ValueError(f"{path}: expected 44.1 kHz mono int16")
-    return x / 32768.0
+    """A mono 44.1 kHz wav as float32 (1, n) in [-1, 1)."""
+    x, _ = read_wav(path, expect_fs=AUDIO_FS)
+    if x.shape[0] != 1:
+        raise ValueError(f"{path}: expected mono, got {x.shape[0]} channels")
+    return x
 
 
 def _audio_loader(path: str) -> Callable[[], dict]:
-    return lambda: {"fs": AUDIO_FS, "data": _read_wav(path).astype(np.float32)[None, :]}
+    return lambda: {"fs": AUDIO_FS, "data": _read_wav(path)}
 
 
 def _babble_loader(mix_path: str, clean_path: str) -> Callable[[], dict]:
     def _loader() -> dict:
-        mix, clean = _read_wav(mix_path), _read_wav(clean_path)
+        mix, clean = _read_wav(mix_path)[0].astype(np.float64), _read_wav(clean_path)[0].astype(np.float64)
         babble = mix - np.dot(mix, clean) / np.dot(clean, clean) * clean
         return {"fs": AUDIO_FS, "data": babble.astype(np.float32)[None, :]}
     return _loader

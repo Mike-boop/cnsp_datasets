@@ -94,3 +94,7 @@ re-verified from the release; the low tier passes with a plausible TRF latency a
 ## Upstream issues
 - The record calls `eeg_data.h5` "unprocessed EEG", but every trial is z-scored per channel.
 - 19 subjects in the release vs 18 in the paper; sub-002 trial_01 is empty.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor subclasses BaseAdaptor; h5 subjects and trials iterated in sorted order; wavs read with iohelpers.read_wav
+  (float32 as stored, mono checked).

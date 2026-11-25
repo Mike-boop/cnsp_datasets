@@ -5,10 +5,10 @@ from typing import Callable, Iterable
 
 import h5py
 import mne
-import numpy as np
 from mne.io import BaseRaw
-from scipy.io import wavfile
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import read_wav
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -21,7 +21,7 @@ NOTES = ("EEG and audio cut by the authors so that sample 0 of both coincides (o
          "to FT7 (lower left forehead), ground on the right earlobe. Drift not estimated.")
 
 
-class Thornton2025Adaptor:
+class Thornton2025Adaptor(BaseAdaptor):
     """
     Thornton, Mandic & Reichenbach 2025 (IEEE Access; Zenodo 10260082): dry-contact in-ear EEG (two channels,
     `left_ear` and `right_ear`, each referenced to FT7), 256 Hz, 19 subjects (sub-000..sub-018) x 16 trials of
@@ -33,13 +33,14 @@ class Thornton2025Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = os.path.join(download_dir, ROOT)
 
     def parse(self) -> Iterable[TrialRecord]:
         h5 = os.path.join(self.root, "eeg_data.h5")
         with h5py.File(h5, "r") as f:
             names = [c.decode() for c in f["channels"][()]]
-            trials = [(s, t, f["eeg"][s][t].shape[1]) for s in f["eeg"] for t in f["eeg"][s]]
+            trials = [(s, t, f["eeg"][s][t].shape[1]) for s in sorted(f["eeg"]) for t in sorted(f["eeg"][s])]
         for sub, key, n in trials:
             if n == 0:
                 continue
@@ -73,10 +74,10 @@ def _eeg_loader(h5: str, key: str, names: list[str], description: str) -> Callab
 
 def _audio_loader(path: str) -> Callable[[], dict]:
     def _loader() -> dict:
-        fs, x = wavfile.read(path)
-        if x.dtype != np.float32 or x.ndim != 1:
-            raise ValueError(f"{path}: expected mono float32")
-        return {"fs": int(fs), "data": x[None, :]}
+        x, fs = read_wav(path)  # float32 as stored
+        if x.shape[0] != 1:
+            raise ValueError(f"{path}: expected mono, got {x.shape[0]} channels")
+        return {"fs": fs, "data": x}
     return _loader
 
 

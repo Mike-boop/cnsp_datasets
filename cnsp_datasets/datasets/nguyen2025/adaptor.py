@@ -10,9 +10,9 @@ from typing import Callable, Iterable
 import mne
 import numpy as np
 from mne.io import BaseRaw
-from scipy.io import wavfile
 
-from cnsp_datasets.datasets.broderick2019_natural.utils import multi_tier_dict_to_textgrid
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import mark_bads, read_wav, textgrid
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -42,7 +42,7 @@ NOTES = ("Trial = the authors' shipped block, from the trial-start event (the au
          "corrected). Stimuli: both Danish TTS wavs as shipped (attended first), word timings as TextGrids.")
 
 
-class Nguyen2025Adaptor:
+class Nguyen2025Adaptor(BaseAdaptor):
     """
     Nguyen, Mikkelsen & Kidmose 2025 (Zenodo 8082867): two competing Danish TTS talkers (+-60 deg), simultaneous
     scalp and in-ear EEG on two TMSi Mobita amplifiers at 1 kHz, 24 participants. Yields the continuous-speech
@@ -51,6 +51,7 @@ class Nguyen2025Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = download_dir
         with open(os.path.join(download_dir, "participants.tsv"), newline="", encoding="utf-8-sig") as f:
             self.participants = [p for p in csv.DictReader(f, delimiter="\t")
@@ -145,19 +146,19 @@ def _eeg_loader(path: str, start: int, end: int, chans: slice | list[str], ref: 
             raise ValueError(f"{path}: reference channel {ref} is not all zeros")
         if electrodes:
             raw.set_montage(_electrodes(electrodes), verbose="ERROR")
-        raw.info["bads"] = [ref] + bads
+        mark_bads(raw, [ref, *bads])
         raw.info["description"] = description
         return raw
     return _loader
 
 
 def _audio_loader(path: str) -> Callable[[], dict]:
-    """Loader of one mono int16 wav as shipped (24 kHz)."""
+    """Loader of one mono wav as shipped (24 kHz), float32 in [-1, 1)."""
     def _loader() -> dict:
-        fs, x = wavfile.read(path)
-        if x.dtype != np.int16 or x.ndim != 1:
-            raise ValueError(f"{path}: expected mono int16")
-        return {"fs": int(fs), "data": (x / 32768.0).astype(np.float32)[None, :]}
+        x, fs = read_wav(path)
+        if x.shape[0] != 1:
+            raise ValueError(f"{path}: expected mono, got {x.shape[0]} channels")
+        return {"fs": fs, "data": x}
     return _loader
 
 
@@ -165,16 +166,17 @@ def _textgrid_loader(path: str) -> Callable[[], str]:
     """TextGrid of a stimulus' word timings (trigger_<n>.txt: code, onset ms, 0, offset ms, word; Latin-1).
 
     Tier `words` holds every word, tier `targets` (paradigm 3 only) the target words (codes 1-6) labelled by
-    category. Rows ending before they start (two "-" rows in paradigm 4) are dropped.
+    category. Rows ending before they start (two "-" rows in paradigm 4) are dropped. Long-format TextGrid from 0 s,
+    gaps filled with empty intervals.
     """
     def _loader() -> str:
         with open(path, encoding="latin-1") as f:
             rows = [line.rstrip("\r\n").split("\t") for line in f if line.strip()]
         words = [r for r in rows if r[2] == "0" and int(r[3]) > int(r[1])]
         tiers = {"words": words, "targets": [r for r in words if int(r[0]) in TARGETS]}
-        return multi_tier_dict_to_textgrid({
-            name: {"item": [TARGETS[int(r[0])] if name == "targets" else r[4] for r in tier],
-                   "onset_s": [int(r[1]) / 1000 for r in tier], "offset_s": [int(r[3]) / 1000 for r in tier]}
+        return textgrid({
+            name: [(int(r[1]) / 1000, int(r[3]) / 1000, TARGETS[int(r[0])] if name == "targets" else r[4])
+                   for r in tier]
             for name, tier in tiers.items() if tier})
     return _loader
 

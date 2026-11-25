@@ -1,6 +1,6 @@
 {
   "name": "thornton2025",
-  "title": "Thornton et al. (2025) ear-EEG, attended stories",
+  "title": "Thornton et al. (2025, IEEE Access) dry-contact in-ear EEG (2 ch, 256 Hz), two competing audiobook talkers, 19 subjects x 16 trials",
   "visibility": "public",
   "downloads": {
     "thornton2025": {
@@ -16,6 +16,7 @@
     "url": "https://ieeexplore.ieee.org/abstract/document/11084763"
   },
   "modality": "EEG",
+  "system": "dry-contact in-ear EEG (2 ch)",
   "stimuli": "competing speakers",
   "alignment_quality": "medium",
   "validation_tier": "low",

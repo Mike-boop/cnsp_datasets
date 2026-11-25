@@ -5,10 +5,10 @@ import os
 from typing import Callable, Iterable
 
 import mne
-import numpy as np
 from mne.io import BaseRaw
-from scipy.io import wavfile
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import mark_bads, read_wav
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -47,7 +47,7 @@ NOTES = ("Trial = the authors' 600 s epoch, cut at the 2-bit audio trigger that 
          "with ~15 ms steps in a few trials (amplifier_steps). Bads per subject (notes 5).")
 
 
-class Geirnaert2025Adaptor:
+class Geirnaert2025Adaptor(BaseAdaptor):
     """
     Geirnaert, Kappel & Kidmose 2025 (Zenodo 16536441, Ear-SAAD): attend one of two Danish talkers (+-60 deg,
     HRTF), 15 subjects x 6 trials of 10 min, video of the attended talker in half the trials. Simultaneous scalp
@@ -59,6 +59,7 @@ class Geirnaert2025Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = os.path.join(download_dir, "bids_dataset")
         with open(os.path.join(self.root, "participants.tsv"), newline="") as f:
             self.participants = list(csv.DictReader(f, delimiter="\t"))
@@ -103,16 +104,15 @@ class Geirnaert2025Adaptor:
                     )
 
 
-
 def _audio_loader(root: str, name: str) -> Callable[[], dict]:
-    """Loader of one stereo wav from the end of the 5 s prelisten on (int16 -> float32)."""
+    """Loader of one stereo wav from the end of the 5 s prelisten on (float32 in [-1, 1))."""
     path = os.path.join(root, "stimuli", f"{name}.wav")
 
     def _loader() -> dict:
-        fs, x = wavfile.read(path, mmap=True)
-        if x.dtype != np.int16 or x.ndim != 2:
-            raise ValueError(f"{path}: expected stereo int16")
-        return {"fs": fs, "data": (x[round(PRELISTEN_S * fs):].T / 32768.0).astype(np.float32)}
+        x, fs = read_wav(path)
+        if x.shape[0] != 2:
+            raise ValueError(f"{path}: expected stereo, got {x.shape[0]} channels")
+        return {"fs": fs, "data": x[:, round(PRELISTEN_S * fs):].copy()}
     return _loader
 
 
@@ -129,7 +129,7 @@ def _eeg_loader(path: str, onset: float, duration: float, chans: slice, montage:
         raw.set_channel_types({c: "misc" for c in MISC if c in raw.ch_names}
                               | {c: "eog" for c in raw.ch_names if c.startswith("EOG")}, on_unit_change="ignore")
         raw.set_montage(montage, on_missing="ignore")  # the .set has no positions (all NaN)
-        raw.info["bads"] = list(raw.ch_names) if bads is None else bads
+        mark_bads(raw, raw.ch_names if bads is None else bads)
         raw.info["description"] = description
         return raw
     return _loader

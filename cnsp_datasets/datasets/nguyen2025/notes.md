@@ -179,3 +179,9 @@ excluded), attended stream, `validate_ns.py` (the validator on one ns_type).
 (trigger channel not shipped, no audio copy, end events design-derived, so no drift estimate); shipped onsets kept,
 low tier passes on scalp (TRF 188 ms, nothing at negative lags) and in-ear, speech-shift sweep and decoder lag
 sweeps (scalp and in-ear) peak at 0 ms; inter-amplifier steps of ~10-16 ms in 8 trials documented, not corrected.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor subclasses BaseAdaptor; wavs read with iohelpers.read_wav (float32, same /32768 scaling, mono checked); bads
+  (reference channel + bads.json) set with iohelpers.mark_bads (strict). TextGrids now written by iohelpers.textgrid:
+  long format, xmin 0 s (was the first word onset), gaps between words filled with empty intervals, quotes escaped;
+  overlapping words would now raise (none expected, not checked on data).
