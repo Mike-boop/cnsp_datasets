@@ -73,3 +73,6 @@ Recorded for a future search for the raw data; from `maj_preprocessing_lambda.m`
 
 ## Alignment grade
 `none`: not assessable; there is no neural time series or stimulus in the release.
+
+## Restructure 2026-11-25
+- No adaptor (nothing to standardise); no change.
