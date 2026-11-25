@@ -11,20 +11,34 @@ import h5py
 import mne
 import numpy as np
 import pandas as pd
-from scipy.io import wavfile
 
-from cnsp_datasets.datasets.broderick2019_natural.utils import multi_tier_dict_to_textgrid
-from cnsp_datasets.datasets.libribrain100 import segalign, wavmap
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
+from cnsp_datasets.standardise.iohelpers import read_wav, textgrid
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 STEP = 0.004       # s: a jump in timemeg - source time larger than this starts a new segment
 MIN_AUDIO = 60.0   # s: shorter verified stretches are not split off as a trial of their own
 SOURCE = {"TheMoth": "timepodcast", "MOCHATIMIT": "timesentence", "TIMIT": "timesentence"}  # else timechapter
 NO_AUDIO = {"TIMIT": "TIMIT audio not redistributed (LDC licence)", "Sherlock8": "no Sherlock8 audio released"}
+ALIGNMENT = os.path.join(os.path.dirname(__file__), "alignment")
+WAVMAP_CSV = os.path.join(ALIGNMENT, "wavmap.csv")  # from alignment/wavmap.py
+SEGMAP_CSV = os.path.join(ALIGNMENT, "segmap.csv")  # from alignment/segalign.py
 
 
-class LibriBrain100Adaptor:
+def read_wavmap() -> pd.DataFrame:
+    """Linear wav map per (task, session)."""
+    return pd.read_csv(WAVMAP_CSV).set_index(["task", "session"])
+
+
+def read_segmap() -> pd.DataFrame:
+    """Per-segment wav starts, indexed by (task, session); empty if not generated."""
+    d = pd.read_csv(SEGMAP_CSV) if os.path.exists(SEGMAP_CSV) else pd.DataFrame(columns=["task", "session",
+                                                                                         "src_start"])
+    return d.set_index(["task", "session"]).sort_index()
+
+
+class LibriBrain100Adaptor(BaseAdaptor):
     """
     LibriBrain100 (pnpl/LibriBrain + pnpl/LibriBrain2, Hugging Face): MEGIN 306-channel MEG. sub-0: raw FIF
     (1000 Hz) of Sherlock1-9, TheMoth, TIMIT and MOCHA-TIMIT, one session per chapter/story block; sub-1 to sub-32:
@@ -32,18 +46,19 @@ class LibriBrain100Adaptor:
 
     The audio was played in sentence-sized segments with short gaps, so the stimulus is rebuilt per session: each
     segment of the source audio is placed at its MEG time (`timemeg`), zeros in between. Sherlock chapters come from
-    the release's wavs through wavmap.csv (which wav, its offset, and how far the linear match holds) or, where the
-    wav does not follow the events linearly, segmap.csv (per-segment alignment, segalign.py). Consecutive segments
-    without audio (no wav, or a stretch the alignment could not place) become trials of their own (MEG + TextGrid);
-    trials are numbered in order (`_part-N` stimulus names after the first).
+    the release's wavs through alignment/wavmap.csv (which wav, its offset, and how far the linear match holds) or,
+    where the wav does not follow the events linearly, alignment/segmap.csv (per-segment alignment, segalign.py).
+    Consecutive segments without audio (no wav, or a stretch the alignment could not place) become trials of their
+    own (MEG + TextGrid); trials are numbered in order (`_part-N` stimulus names after the first).
     TheMoth audio comes from OpenNeuro ds003020 (`<download>/ds003020/stimuli`), MOCHA-TIMIT from its sentence wavs;
-    TIMIT and Sherlock8 have no audio. Every trial has a words/phones TextGrid on the trial's time axis. See notes.md.
+    TIMIT and Sherlock8 have no audio. Every trial has a words/phones TextGrid on the trial's time axis. Audio is
+    float32 (first channel); channels the FIF marks bad are kept and listed in info["bads"]. See notes.md.
     """
 
     def __init__(self, download_dir: str):
-        self.download_dir = download_dir
-        self.wavmap = wavmap.read()
-        self.segmap = segalign.read().set_index(["task", "session"]).sort_index()
+        super().__init__(download_dir)
+        self.wavmap = read_wavmap()
+        self.segmap = read_segmap()
 
     def parse(self) -> Iterable[TrialRecord]:
         for events in sorted(glob.glob(os.path.join(self.download_dir, "LibriBrain*", "*", "derivatives", "events",
@@ -72,8 +87,10 @@ class LibriBrain100Adaptor:
                                                  "*_meg.fif")))
             splits = [f for f in fifs if "_split-" in f]
             return "|".join(splits) if splits else (fifs[0] if fifs else None)  # see _read_fif
-        h5 = glob.glob(os.path.join(self.download_dir, repo, task, "derivatives", "serialised*",
-                                    f"sub-{sub}_ses-{ses}_*.h5"))
+        h5 = sorted(glob.glob(os.path.join(self.download_dir, repo, task, "derivatives", "serialised*",
+                                           f"sub-{sub}_ses-{ses}_*.h5")))
+        if len(h5) > 1:
+            raise ValueError(f"sub-{sub} ses-{ses} ({repo}/{task}): several h5 files {h5}")
         return h5[0] if h5 else None
 
     @lru_cache(maxsize=1)
@@ -97,12 +114,12 @@ class LibriBrain100Adaptor:
             return segs.assign(wav=self.download_dir + "/ds003020/stimuli/" + story + ".wav", wav_start=segs.src_start)
         if task == "MOCHATIMIT":
             return segs.assign(wav=audio + "/" + segs.wavile.map(os.path.basename), wav_start=0.0, whole=True)
-        if (task, ses) in self.segmap.index:  # per-segment alignment (segalign.py)
+        if (task, ses) in self.segmap.index:  # per-segment alignment (alignment/segalign.py)
             m = self.segmap.loc[(task, ses)]
             start = pd.Series(m.wav_start_s.values, index=m.src_start.round(3).values)
             segs["wav_start"] = segs.src_start.round(3).map(start)
             segs.loc[segs.wav_start.notna(), "wav"] = audio + "/" + m.wav.iloc[0]
-        elif (task, ses) in self.wavmap.index:  # one linear map, valid up to valid_until_s (wavmap.py)
+        elif (task, ses) in self.wavmap.index:  # one linear map, valid up to valid_until_s (alignment/wavmap.py)
             row = self.wavmap.loc[(task, ses)]
             ok = segs.src_start < row.valid_until_s
             segs.loc[ok, "wav"] = audio + "/" + row.wav
@@ -129,7 +146,7 @@ def _audio_loader(part: pd.DataFrame, t0: float, t1: float):
         for seg in part.itertuples():
             fs, x = _wav(seg.wav)
             if out is None:
-                fs_out, out = fs, np.zeros(math.ceil((t1 - t0) * fs), dtype=x.dtype)
+                fs_out, out = fs, np.zeros(math.ceil((t1 - t0) * fs), dtype=np.float32)
             a = int(round(seg.wav_start * fs))
             b = len(x) if seg.whole else a + int(round((seg.src_end - seg.src_start) * fs))  # sentence wavs: whole
             o = int(round((seg.meg_start - t0) * fs))
@@ -172,24 +189,26 @@ def _textgrid_loader(ev: pd.DataFrame, part: pd.DataFrame, t0: float):
         tiers = {}
         for kind, tier in (("word", "words"), ("phoneme", "phones")):
             r = rows[rows.kind == kind]
-            tiers[tier] = dict(item=r.segment.astype(str).tolist(), onset_s=(r.timemeg - t0).round(4).tolist(),
-                               offset_s=(r.timemeg - t0 + r.duration).round(4).tolist())
-        return multi_tier_dict_to_textgrid(tiers)
+            # rows are taken from 1 ms before the trial (timing jitter): onsets clipped at the trial start
+            tiers[tier] = list(zip((r.timemeg - t0).round(4).clip(lower=0.0), (r.timemeg - t0 + r.duration).round(4),
+                                   r.segment.astype(str)))
+        return textgrid(tiers)
 
     return _loader
 
 
 @lru_cache(maxsize=2)
 def _wav(path: str):
-    fs, x = wavfile.read(path)
-    return fs, (x[:, 0] if x.ndim == 2 else x)
+    """(rate, first channel as float32)."""
+    x, fs = read_wav(path, channel=0)
+    return fs, x[0]
 
 
 @lru_cache(maxsize=1)
 def _read(path: str, reference: str) -> mne.io.BaseRaw:
     if path.endswith(".fif"):
         raw = _read_fif(path.split("|"))
-        return raw.pick(mne.pick_types(raw.info, meg=True, eog=True, ecg=True, emg=True))
+        return raw.pick(mne.pick_types(raw.info, meg=True, eog=True, ecg=True, emg=True, exclude=[]))
     with h5py.File(path) as f:
         names = [c.strip() for c in f.attrs["channel_names"].split(",")]
         info = mne.pick_info(mne.io.read_info(reference, verbose="ERROR"),

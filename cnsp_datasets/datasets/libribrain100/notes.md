@@ -73,7 +73,7 @@ Findings that explain `adaptor.py`. Review scripts and results: `tmp/review/libr
   segment's first event) is placed at its `timemeg`, with zeros in the gaps. The stimulus is named per subject and
   session because the gaps differ between sessions.
 
-## 5. Sherlock wavs vs the events: wavmap.py / wavmap.csv
+## 5. Sherlock wavs vs the events: alignment/wavmap.py / wavmap.csv
 - Content match (`wavmap.py`, run on the sub-0 events of every Sherlock session): the 100 Hz log-energy envelope of each
   candidate wav, read on the `timechapter` axis, against the events' word mask; then 60 s windows every 30 s and a
   Theil-Sen line through the window lags give wav_time = k * timechapter + c and the range where the match holds.
@@ -94,7 +94,7 @@ Findings that explain `adaptor.py`. Review scripts and results: `tmp/review/libr
   ses-14.
 - These sessions are handled by the per-segment alignment (section 5b).
 
-## 5b. Per-segment alignment: segalign.py / segmap.csv
+## 5b. Per-segment alignment: alignment/segalign.py / segmap.csv
 - Tracking the lag (30 s windows every 10 s, each searched near the previous lag) shows that the wavs of these
   sessions are the right recordings throughout (window r 0.6-0.8) but drift against the events: Sherlock3 ses-3
   reaches -15.5 s after 2550 s (-0.6%, unevenly), Sherlock4 ses-2 is at 0 up to ~945 s, then drifts ~-1% to -17.4 s.
@@ -197,3 +197,14 @@ the annotation TRF test, the artefact at 0 ms and the low tier.
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **medium**: Authors' events from software segment triggers (PsychoPy), no audio channel; segment starts within 3 ms; raw sub-0 shows a stimulus artefact at 0 ms; drift not measurable; low tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- `wavmap.py`, `segalign.py` and their tables `wavmap.csv`, `segmap.csv` moved to `alignment/`
+  (`python -m cnsp_datasets.datasets.libribrain100.alignment.wavmap` / `.segalign`); the adaptor reads the tables
+  itself (`read_wavmap`, `read_segmap`).
+- Stimulus audio as float32 in [-1, 1) (first channel, `iohelpers.read_wav`; was the raw int16 samples).
+- Channels the FIF marks bad are kept and listed in `info["bads"]` (`pick_types` dropped them).
+- More than one h5 file for a subject and session raises (was: the first of an unsorted glob).
+- TextGrid written by `iohelpers.textgrid` (was `broderick2019_natural.utils.multi_tier_dict_to_textgrid`): long
+  text format, xmin 0, gaps filled, quotes escaped; onsets of rows taken from 1 ms before the trial start are
+  clipped to 0. Overlapping events within a tier now raise; not yet checked on the events.

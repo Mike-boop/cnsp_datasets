@@ -40,7 +40,7 @@ MEG of one participant (sub-0) listening to the whole Sherlock Holmes canon, TIM
   chapter wav is not what was heard. The adaptor rebuilds the played audio: every segment is cut from the source
   wav and placed at its trigger-based time in the MEG.
 - Where the release's wav does not follow the authors' chapter timeline (Sherlock 3; parts of Sherlock 4 and 6:
-  pauses differ), each segment is located in the wav individually (`segalign.py`).
+  pauses differ), each segment is located in the wav individually (`alignment/segalign.py`).
 - The Moth stories are not redistributed by LibriBrain; they are taken from OpenNeuro ds003020 (same stories; word
   timings agree within ~10 ms).
 - Checked by fitting a TRF from the authors' word and phoneme onsets to the envelope of the rebuilt audio: the same
