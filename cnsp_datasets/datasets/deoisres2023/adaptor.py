@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import glob
 import math
 import os
 import re
@@ -13,7 +12,9 @@ from mne.io import BaseRaw
 from openpyxl import load_workbook
 from scipy.io import wavfile
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
+from cnsp_datasets.standardise.iohelpers import mark_bads, read_wav, status_edges
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -40,7 +41,7 @@ NOTES = ("BioSemi ActiveTwo 32 ch at 2048 Hz (417 Hz hardware bandwidth), decima
          "speech-shaped noise (not shipped) set the SNR: the stored stimulus is the target only.")
 
 
-class Deoisres2023Adaptor:
+class Deoisres2023Adaptor(BaseAdaptor):
     """
     Deoisres (2023) Southampton thesis dataset (doi:10.5258/SOTON/D2578): 22 normal-hearing adults ignore a story
     (The Children of Odin) while watching a muted documentary. Per subject three BDFs: ~15 min speech and ~15 min
@@ -51,12 +52,16 @@ class Deoisres2023Adaptor:
     """
 
     def __init__(self, download_dir: str, drift_correction: bool = True):
-        self.drift_correction = drift_correction
+        super().__init__(download_dir)
+        self.drift_correction = self.choice("drift_correction", drift_correction, (True, False))
         self.files = {}
-        for path in glob.glob(os.path.join(download_dir, "**", "SIN_S*_*.bdf"), recursive=True):
+        for path in self.sorted_glob(download_dir, "**/SIN_S*_*.bdf"):
             m = re.fullmatch(r"SIN_S(\d\d)_(speech|noise|MixedSpeechNoise)\.bdf", os.path.basename(path))
             if m:
-                self.files.setdefault(int(m.group(1)), {})[m.group(2)] = path
+                files = self.files.setdefault(int(m.group(1)), {})
+                if m.group(2) in files:
+                    raise ValueError(f"two {os.path.basename(path)} under {download_dir}: {files[m.group(2)]}, {path}")
+                files[m.group(2)] = path
         self.stim_dir = _find_dir(download_dir, "SIN_Stimuli")
         wb = load_workbook(os.path.join(_find_dir(download_dir, "SIN_Stimuli_Order"),
                                         "Subject_SNRpresent_order_speech_and_noise.xlsx"), read_only=True)
@@ -65,7 +70,7 @@ class Deoisres2023Adaptor:
 
     def parse(self) -> Iterable[TrialRecord]:
         for sub in sorted(self.files):
-            dates = {kind: _read(bdf).info["meas_date"] for kind, bdf in self.files[sub].items()}
+            dates = {kind: _meas_date(bdf) for kind, bdf in self.files[sub].items()}
             trial = 0
             for kind in sorted(dates, key=dates.get):
                 if (sub, kind) in SKIP:
@@ -88,7 +93,7 @@ class Deoisres2023Adaptor:
         rise, fs = _status_rises(bdf), _read(bdf).info["sfreq"]
         target = KIND_TARGET[kind]
         hits = []
-        for w in sorted(glob.glob(os.path.join(self.stim_dir, f"odin_04*_{WAV_STEM[target]}_full_65dB_trig.wav"))):
+        for w in self.sorted_glob(self.stim_dir, f"odin_04*_{WAV_STEM[target]}_full_65dB_trig.wav"):
             ws = _wav_rises(w) / AUDIO_FS
             for k in range(len(ws) - len(rise) + 1):  # S11 noise misses the first pulse
                 if np.abs(np.diff(rise) / fs - np.diff(ws[k:k + len(rise)])).max() < 0.01:
@@ -145,7 +150,7 @@ def _eeg_loader(bdf: str, onset: float, n_out: int, drift: float, correct: bool,
         montage = mne.channels.make_standard_montage("biosemi32")
         raw.rename_channels(dict(zip(SCALP, montage.ch_names)))
         raw.set_montage(montage)
-        raw.info["bads"] = list(bads)
+        mark_bads(raw, bads)
         short = bool(raw.n_times < n_out)
         raw.info["description"] = provenance(
             "hw_trigger", "hardware (inferred: TTL from the wav trigger track, notes.md 6)", NOTES,
@@ -157,15 +162,13 @@ def _eeg_loader(bdf: str, onset: float, n_out: int, drift: float, correct: bool,
 
 def _audio_loader(path: str, start: int = 0, stop: int | None = None) -> Callable[[], dict]:
     def _loader() -> dict:
-        fs, x = wavfile.read(path, mmap=True)
-        if fs != AUDIO_FS or x.dtype != np.int16 or x.ndim != 2 or x.shape[1] != 2:
-            raise ValueError(f"{path}: expected 44.1 kHz stereo int16")
-        return {"fs": AUDIO_FS, "data": (x[start:stop, 0] / 32768.0).astype(np.float32)[None, :]}
+        x, _ = read_wav(path, channel=0, expect_fs=AUDIO_FS)  # channel 1 is the trigger track
+        return {"fs": AUDIO_FS, "data": np.ascontiguousarray(x[:, start:stop])}
     return _loader
 
 
 def _find_dir(root: str, name: str) -> str:
-    hits = glob.glob(os.path.join(root, "**", name), recursive=True)
+    hits = BaseAdaptor.sorted_glob(root, f"**/{name}")
     if len(hits) != 1:
         raise FileNotFoundError(f"{name} under {root}: {hits}")
     return hits[0]
@@ -176,11 +179,18 @@ def _read(bdf: str) -> BaseRaw:
     return mne.io.read_raw_bdf(bdf, preload=False, verbose="ERROR")
 
 
+def _meas_date(bdf: str):
+    """The BDF's start time (orders a subject's recordings); ValueError if the header has none."""
+    date = _read(bdf).info["meas_date"]
+    if date is None:
+        raise ValueError(f"{bdf}: no meas_date in the header, so the recording order is unknown")
+    return date
+
+
 @lru_cache(maxsize=None)
 def _status_rises(bdf: str) -> np.ndarray:
     """Samples where Status bit 0 rises (MNE leaves Status as integers)."""
-    bit = (_read(bdf).get_data(picks=["Status"])[0].astype(np.int64) & 1) > 0
-    return np.flatnonzero(~bit[:-1] & bit[1:]) + 1
+    return status_edges(_read(bdf).get_data(picks=["Status"])[0], mask=1, kind="rise", idle=0)
 
 
 @lru_cache(maxsize=None)

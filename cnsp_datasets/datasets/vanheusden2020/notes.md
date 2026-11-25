@@ -229,7 +229,8 @@ Implemented in `adaptor.py`.
    `4_4`; S_019 unaided `4_3`, `4_4`; listed in `missing_segments`). `order_ambiguous=True` for S_004 (both files),
    S_008 aided, S_011 aided, S_017 unaided and S_019 unaided slots 2 and 5.
 3. Channels: the 32 scalp channels, renamed to the biosemi32 template (A1-A32 mapping inferred, section 5), plus
-   the mastoids EXG1 (right) / EXG2 (left; sides inferred) as `misc` under their own names. EXG3 (role unknown;
+   the mastoids EXG1 (right) / EXG2 (left; sides inferred) as `misc`, named M2 / M1 since 2026-11-25 (repository
+   convention; were EXG1/EXG2). EXG3 (role unknown;
    user's choice), EXG4-8 and the aux channels are dropped. Reference: CMS/DRL as recorded, not re-referenced
    (repo convention; the paper used the average). Units V (MNE scales the BDF's µV).
 4. Stimulus: the wavs as shipped (44.1 kHz), the same wav for both conditions; condition `aided` / `unaided`.
@@ -315,3 +316,10 @@ results `tmp/review/vanheusden2020/dnn_offsets/offsets.json`):
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **medium**: Status-bit trigger (type unknown), no stimtrack; shift peaks within ~10-20 ms; DNN +4.4/+5.1 ms documented (within band); drift not measurable; segment order partly EEG-inferred; mlr tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor subclasses BaseAdaptor. Mastoids renamed EXG1 -> M2 (right) and EXG2 -> M1 (left), sides inferred as before
+  (repository convention; supersedes "under their own names" in Decisions 3), misc via iohelpers.rename_channels. A
+  BDF without meas_date raises a clear ValueError (order and session come from it). Wavs read with
+  iohelpers.audio_loader (soundfile, float32 /32768 as before; rate checked, mono no longer enforced). Status bit-1
+  rises through iohelpers.status_edges (same edges). Sorted globs; two files for one subject and condition raise.

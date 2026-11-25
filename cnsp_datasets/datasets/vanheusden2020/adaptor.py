@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import glob
 import math
 import os
 import re
@@ -13,7 +12,9 @@ import numpy as np
 from mne.io import BaseRaw
 from scipy.io import wavfile
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
+from cnsp_datasets.standardise.iohelpers import audio_loader, rename_channels, status_edges
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -23,7 +24,8 @@ TRIGGER_BIT = 2  # Status bit 1, one pulse at each segment onset (notes.md 6)
 SCALP = [f"A{i}" for i in range(1, 33)]  # BioSemi-32 ABC labels; biosemi32 template order (inferred, notes.md 5)
 DROPPED = ["EXG3", "EXG4", "EXG5", "EXG6", "EXG7", "EXG8",
            "GSR1", "GSR2", "Erg1", "Erg2", "Resp", "Plet", "Temp", "Status"]
-MASTOIDS = {"EXG1": "right mastoid (inferred, notes.md 5)", "EXG2": "left mastoid (inferred)"}  # kept as misc
+MASTOIDS = {"EXG1": "M2", "EXG2": "M1"}  # right / left mastoid (sides inferred, notes.md 5), misc
+EXTERNAL = {"M2": "EXG1, right mastoid (side inferred, notes.md 5)", "M1": "EXG2, left mastoid (side inferred)"}
 FIXED = ["odin_1_1", "odin_1_2", "odin_1_3", "odin_1_4", "odin_4_1", "odin_4_2", "odin_4_3", "odin_4_4"]
 # (subject, condition) -> segment order where it differs from FIXED (notes.md 3); missing segments are left out
 ORDERS = {(2, "aided"): FIXED[:4], (2, "unaided"): ["odin_1_3", "odin_1_4", "odin_1_1", "odin_1_2"],
@@ -37,7 +39,8 @@ EXTRA_PULSES = {(27, "aided")}  # 120 pulses at 1-s spacing after the audiobook:
 PAPER_ID = {s: i + 1 for i, s in enumerate([1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 24, 27])}
 PAPER_EXCLUDED = {16}  # paper subject 13, removed from the EEG analysis ("technical issue")
 NOTES = ("BioSemi ActiveTwo at 2048 Hz (DC, 417 Hz hardware low-pass), decimated to 1024 Hz (anti-alias FIR); "
-         "32 scalp channels plus the mastoids EXG1 (right) and EXG2 (left; sides inferred) as misc, original CMS/DRL "
+         "32 scalp channels plus the mastoids EXG1 (right, as M2) and EXG2 (left, as M1; sides inferred) as misc, "
+         "original CMS/DRL "
          "reference (no re-referencing; the paper used the average reference), "
          "template positions. Onset = rising edge of Status bit 1 (one pulse per segment onset, no offset marker); "
          "no drift correction (not measurable); EEG checks place the pulses at the sound onset to within ~10-20 ms. "
@@ -46,7 +49,7 @@ NOTES = ("BioSemi ActiveTwo at 2048 Hz (DC, 417 Hz hardware low-pass), decimated
          "delay of a few ms; not shipped, not corrected).")
 
 
-class Vanheusden2020Adaptor:
+class Vanheusden2020Adaptor(BaseAdaptor):
     """
     Vanheusden et al. 2020 (Southampton doi:10.5258/SOTON/D1140): 20 mild-to-moderately hearing-impaired listeners
     hear 8 audiobook segments (The Children of Odin, 2.4-4 min) with and without their hearing aids. One BDF per
@@ -57,22 +60,26 @@ class Vanheusden2020Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         pattern = re.compile(r"S_(\d{3})_(aided|unaided)_speech(-deci|_rep)\.bdf", re.IGNORECASE)
         self.files = {}
-        for path in glob.glob(os.path.join(download_dir, "S_*.bdf")):
+        for path in self.sorted_glob(download_dir, "S_*.bdf"):
             m = pattern.fullmatch(os.path.basename(path))  # the loose S_001 "_Deci" duplicate does not match
             if m:
-                self.files.setdefault(int(m.group(1)), {})[m.group(2).lower()] = path
+                files = self.files.setdefault(int(m.group(1)), {})
+                if m.group(2).lower() in files:
+                    raise ValueError(f"two recordings for one condition: {files[m.group(2).lower()]}, {path}")
+                files[m.group(2).lower()] = path
         self.wavs = {name: os.path.join(download_dir, f"{name}.wav") for name in FIXED}
         self.n_audio = {name: _n_audio(path) for name, path in self.wavs.items()}
 
     def parse(self) -> Iterable[TrialRecord]:
         for sub in sorted(self.files):
-            recs = sorted(self.files[sub].items(), key=lambda kv: _read(kv[1]).info["meas_date"])
-            days = sorted({_read(bdf).info["meas_date"].date() for _, bdf in recs})
+            recs = sorted(self.files[sub].items(), key=lambda kv: _meas_date(kv[1]))
+            days = sorted({_meas_date(bdf).date() for _, bdf in recs})
             trial = 0
             for rank, (cond, bdf) in enumerate(recs):
-                session = days.index(_read(bdf).info["meas_date"].date()) + 1  # S_017/020/024: 2 days
+                session = days.index(_meas_date(bdf).date()) + 1  # S_017/020/024: 2 days
                 order = ORDERS.get((sub, cond), FIXED)
                 onsets = _onsets(bdf)
                 if (sub, cond) in EXTRA_PULSES:
@@ -84,29 +91,19 @@ class Vanheusden2020Adaptor:
                     trial += 1
                     extra = dict(
                         wav=name, bdf=os.path.basename(bdf), slot_in_recording=slot, onset_sample_2048=int(onset),
-                        recording_rank=rank + 1, meas_date=str(_read(bdf).info["meas_date"]),
+                        recording_rank=rank + 1, meas_date=str(_meas_date(bdf)),
                         order_source="eeg" if (sub, cond) in EEG_ORDER else "fixed",
                         order_ambiguous=(sub, cond) in AMBIGUOUS and (ambiguous is None or slot in ambiguous),
                         missing_segments=[w for w in (FIXED[:4] if sub == 2 else FIXED) if w not in order],
                         paper_id_inferred=PAPER_ID.get(sub), excluded_in_paper=sub in PAPER_EXCLUDED,
-                        reference="CMS/DRL (BioSemi, as recorded)", external_sensors=MASTOIDS, dropped=DROPPED,
+                        reference="CMS/DRL (BioSemi, as recorded)", external_sensors=EXTERNAL, dropped=DROPPED,
                         units_as_shipped="uV", positions="template (biosemi32; A1-A32 mapping inferred)")
                     yield TrialRecord(
                         subject=sub, session=session, trial=trial, condition=cond, ns_type="eeg",
-                        stimulus=StimulusRecord("audio", name, self._audio_loader(name), is_attended=True,
-                                                feature_name="audio"),
+                        stimulus=StimulusRecord("audio", name, audio_loader(self.wavs[name], expect_fs=AUDIO_FS),
+                                                is_attended=True, feature_name="audio"),
                         neural_data_fn=_eeg_loader(bdf, onset, math.ceil(self.n_audio[name] * FS / AUDIO_FS), extra),
                     )
-
-    def _audio_loader(self, name: str) -> Callable[[], dict]:
-        path = self.wavs[name]
-
-        def _loader() -> dict:
-            fs, x = _read_wav(path)
-            if fs != AUDIO_FS or x.dtype != np.int16 or x.ndim != 1:
-                raise ValueError(f"{path}: expected 44.1 kHz mono int16")
-            return {"fs": AUDIO_FS, "data": (x / 32768.0).astype(np.float32)[None, :]}
-        return _loader
 
 
 def _eeg_loader(bdf: str, onset: int, n_out: int, extra: dict) -> Callable[[], BaseRaw]:
@@ -114,7 +111,7 @@ def _eeg_loader(bdf: str, onset: int, n_out: int, extra: dict) -> Callable[[], B
         raw = crop_on_audio_clock(_read(bdf), onset, n_out, picks=SCALP + list(MASTOIDS), sfreq_out=FS)
         montage = mne.channels.make_standard_montage("biosemi32")
         raw.rename_channels(dict(zip(SCALP, montage.ch_names)))
-        raw.set_channel_types(dict.fromkeys(MASTOIDS, "misc"), verbose="ERROR")
+        rename_channels(raw, MASTOIDS)  # typed misc
         raw.set_montage(montage)
         short = bool(raw.n_times < n_out)
         notes = NOTES + (f" The recording ends {(n_out - raw.n_times) / FS:.3f} s before the stimulus." if short
@@ -131,10 +128,17 @@ def _read(bdf: str) -> BaseRaw:
     return mne.io.read_raw_bdf(bdf, preload=False, verbose="ERROR")
 
 
+def _meas_date(bdf: str):
+    """The BDF's start time (recording order and day); ValueError if the header has none."""
+    date = _read(bdf).info["meas_date"]
+    if date is None:
+        raise ValueError(f"{bdf}: no meas_date in the header, so the recording order and session are unknown")
+    return date
+
+
 def _onsets(bdf: str) -> np.ndarray:
     """Samples where Status bit 1 rises (MNE scales the 24-bit BDF data to V; Status is left as integers)."""
-    bit = (_read(bdf).get_data(picks=["Status"])[0].astype(np.int64) & TRIGGER_BIT) > 0
-    return np.flatnonzero(~bit[:-1] & bit[1:]) + 1
+    return status_edges(_read(bdf).get_data(picks=["Status"])[0], mask=TRIGGER_BIT, kind="rise", idle=0)
 
 
 def _read_wav(path: str, mmap: bool = False) -> tuple[int, np.ndarray]:

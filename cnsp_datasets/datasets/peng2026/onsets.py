@@ -30,7 +30,10 @@ def _seconds(line: str) -> float:
 
 def log_arrivals(mff: str) -> np.ndarray:
     """Net Station log times (s since EEG START, Mac clock) at which TBEG events arrived from E-Prime."""
-    with open(glob.glob(f"{mff}/log_*.txt")[0], encoding="utf-8", errors="ignore") as f:
+    logs = sorted(glob.glob(f"{glob.escape(mff)}/log_*.txt"))
+    if not logs:
+        raise FileNotFoundError(f"{mff}: no Net Station log_*.txt")
+    with open(logs[0], encoding="utf-8", errors="ignore") as f:
         lines = f.read().splitlines()
     start = next(_seconds(ln) for ln in lines if "EEG START RECORDING" in ln)
     return np.array([_seconds(ln) - start for ln in lines

@@ -42,8 +42,8 @@ These hours are computed from the stimulus durations. The 40 BDF recordings, inc
   - Channels are renamed from the BioSemi `A1-A32` labels to the `biosemi32` template (Fp1 ... Cz), and the
     positions are **template positions**. Neither the label mapping nor the positions are documented: they are
     inferred from neighbour correlations. There is no digitisation.
-- **External sensors:** `EXG1` and `EXG2` are the mastoids, stored as `misc` under their own names. The paper
-  says only "either mastoid". The sides are **inferred: EXG1 = right, EXG2 = left**. This is the reverse of the
+- **External sensors:** `EXG1` and `EXG2` are the mastoids, stored as `misc` channels `M2` (EXG1) and `M1`
+  (EXG2). The paper says only "either mastoid". The sides are **inferred: EXG1 = right, EXG2 = left**. This is the reverse of the
   usual BioSemi convention. The inference comes from EXG1 correlating more with T8 and EXG2 more with T7, in 35 of
   40 files. Use them for a linked-mastoid reference if wanted.
 - **Dropped:** `EXG3`, which is active but has an unknown role (EOG? nose?). Also `EXG4-8` (unconnected), the
@@ -150,7 +150,7 @@ forward model, 32 scalp channels, average reference.
 
 ## Caveats
 - **Re-reference before use.** The EEG has the BioSemi CMS/DRL reference as recorded. Use the average reference
-  (as the paper did) or the mastoids `EXG1`/`EXG2`. The mastoid sides are inferred.
+  (as the paper did) or the mastoids `M1`/`M2`. The mastoid sides are inferred.
 - **Subjects vs the paper.** The paper has 17 subjects. The release has 20. S_002, S_019 and S_020 are not in the
   paper. The paper removed its subject 13 from the EEG analysis for a "technical issue". By an age/gender match,
   that subject is **S_016** (inferred; see `paper_id_inferred` and `excluded_in_paper`). S_016 is kept here because
