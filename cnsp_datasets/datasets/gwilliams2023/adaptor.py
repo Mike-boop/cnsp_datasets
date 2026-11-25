@@ -11,12 +11,11 @@ import mne
 import numpy as np
 import pandas as pd
 import soundfile
-from scipy.io import wavfile
 from scipy.signal import butter, correlate, hilbert, resample_poly, sosfiltfilt
 
 from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
-from cnsp_datasets.standardise.iohelpers import audio_loader, textgrid
+from cnsp_datasets.standardise.iohelpers import audio_loader, read_wav, textgrid
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 FS_MEG = 1000
@@ -118,9 +117,8 @@ def _audio_channel_envelope(con: str) -> np.ndarray:
 
 @lru_cache(maxsize=64)
 def _wav_envelope(path: str) -> np.ndarray:
-    fs, x = wavfile.read(path)
-    x = x[:, 0] if x.ndim == 2 else x
-    return sosfiltfilt(_ENV, np.abs(hilbert(resample_poly(x.astype(float), FS_MEG, fs))))
+    x, fs = read_wav(path, channel=0)  # scaled to [-1, 1): the lag (argmax) is unchanged
+    return sosfiltfilt(_ENV, np.abs(hilbert(resample_poly(x[0].astype(float), FS_MEG, fs))))
 
 
 def _wav_info(path: str):
