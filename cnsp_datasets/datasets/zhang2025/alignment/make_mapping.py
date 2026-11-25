@@ -8,7 +8,7 @@ initial attended direction (`meta/publish_metadata.pkl` vs the trialinfo object)
 r > 0.3 and beats the runner-up by >= 0.15, and no other trial claims the same recording.
 Takes ~1 h on 2 threads.
 
-    python -m cnsp_datasets.datasets.zhang2025.make_mapping DOWNLOAD_DIR [OUT_CSV]
+    python -m cnsp_datasets.datasets.zhang2025.alignment.make_mapping DOWNLOAD_DIR [OUT_CSV]
 """
 import csv
 import glob

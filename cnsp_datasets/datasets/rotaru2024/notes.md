@@ -92,7 +92,7 @@ Scratch: `R=/data_storage/gu08wuvu/datasets/tmp/review/rotaru2024/` (scripts in 
 - The authors cut each 600-s epoch, presumably at the first pulse; the cut sample is not shipped.
 - **First-buffer stalls** (`stalls.py`, `R/stalls.log`): in 25 trials the first pulse interval deviates from 1 s:
   +380/570/760/950 samples at 8192 Hz (+46.4/69.6/92.8/116 ms, multiples of one 1024-sample block at 44.1 kHz; 11
-  trials, all in sub04 and sub07) or -4..-191 samples (14 trials; `decoder_lags.csv`). Mid-trial, almost all
+  trials, all in sub04 and sub07) or -4..-191 samples (14 trials; `alignment/decoder_lags.csv`). Mid-trial, almost all
   deviations are single displaced pulses (+x then -x); net stalls only in sub04 MovingVideo2 (+46 and +70 ms at
   490/494 s).
 - **The pulses do not follow the audio after a stall.** Backward decoder (64 ch average reference, 1-9 Hz, EEG
@@ -112,8 +112,8 @@ Scratch: `R=/data_storage/gu08wuvu/datasets/tmp/review/rotaru2024/` (scripts in 
     the shipped epoch starts ~1 s into the audio (one pulse late).
   - Most other trials have too little decoder SNR (z < 4) for a single-trial lag; their peaks scatter at
     +-0.5..1.5 s by chance (no consistency across halves).
-  - Per-trial estimates: `decoder_lags.csv` (first pulse-interval deviation, whole-trial and half-trial lag, r, z).
-    Brain-based: documented only. Trials flagged in the provenance (`timing_flag`): the 11 positive-stall trials
+  - Per-trial estimates: `alignment/decoder_lags.csv` (first pulse-interval deviation, whole-trial and half-trial lag,
+    r, z). Brain-based: documented only. Trials flagged in the provenance (`timing_flag`): the 11 positive-stall trials
     (sub04, sub07) and sub04 MovingTargetNoise2.
 - Insert-phone tube delay unknown (ER10: no tube; the paper gives none). No stimtrack.
 - Proposed alignment: shipped timing (`alignment_method` `onset_only`), no drift correction.
@@ -175,3 +175,8 @@ audio copy or stimtrack to verify them; in 12 of 99 trials the decoder shows the
    stimulus cut). Recommended: keep, flagged; users filter on `timing_flag`.
 2. Audio of the 20 non-SparrKULee podcasts: shipped envelopes (default) vs a rebuild from rotaru2026's trimmed
    wavs (not done).
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor subclasses BaseAdaptor; bads set with iohelpers.mark_bads (strict); `decoder_lags.csv` moved to `alignment/`
+  (documentation only, the adaptor does not read it; its script is in tmp/review/scripts/rotaru2024/). SparrKULee
+  excerpts read with the fixed accou2023 `_load_npz` (closes the file). EOG names (VEOG_high, ...) unchanged.

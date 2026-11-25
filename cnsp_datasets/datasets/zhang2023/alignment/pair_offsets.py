@@ -1,12 +1,12 @@
 """
-Per-pair DNN offsets from the dnn_scan caches -> ../pair_offsets.csv.
+Per-pair DNN offsets from the dnn_scan caches -> pair_offsets.csv.
 
 A pair is the two presentations of one stimulus pair (the same two files) in one subject. Each
 presentation is a separate EEG recording; its curve is the mean window score per lag (lags with >= 50% of the
 windows valid). Pooled over both presentations, the peak z (peak minus median, over the SD across lags) is compared
 with null pairs (the same computed with the mismatched-source scores, pairs with window counts within x0.5-2).
 Confident: pooled p < 0.01 and the two presentations' own peaks within 0.25 s.
-Usage: python -m cnsp_datasets.datasets.zhang2023.timing.pair_offsets <scan_dir> [figure.png]
+Usage: python -m cnsp_datasets.datasets.zhang2023.alignment.pair_offsets <scan_dir> [figure.png]
 """
 import collections
 import csv
@@ -16,7 +16,7 @@ import sys
 
 import numpy as np
 
-from cnsp_datasets.datasets.zhang2023.splices import FS_EEG as FS, HERE
+from cnsp_datasets.datasets.zhang2023.alignment.splices import FS_EEG as FS, HERE
 
 P_MAX, AGREE_S = 0.01, 0.25
 

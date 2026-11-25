@@ -39,16 +39,16 @@
 - The sound itself was not recorded, so the loudspeaker latency relative to the flash, and so to t=0, is unknown.
   Clock drift could not be measured (LSL timestamps too jittery); for 30-s trials it should be <= ~3 ms. No
   correction is applied.
-- **Alignment grade: medium** (under review: the forward TRF is weak and stays inside the null band): onset from the authors' photodiode-based cut, not verified against audio; confirmed by
-  validation (forward-TRF peak 156 ms, nothing at negative lags, backward lag sweep peaking at 0, attended >
-  ignored).
+- **Alignment grade: medium** (under review: the forward TRF is weak and stays inside the null band): onset from the
+  authors' photodiode-based cut, not verified against audio; confirmed by validation (forward-TRF peak 156 ms, nothing
+  at negative lags, backward lag sweep peaking at 0, attended > ignored).
 
 ## How to get it
 Registry entry `zhang2025` (Zenodo, four zips, 4.5 GB; extract them into one folder with `eeg/`, `meta/`,
 `stimuli/` and `trialinfo/`). Then `python -m cnsp_datasets.standardise.format_dataset zhang2025 <download dir>
-<out dir>` (~5 min, 1.5 GB). `mapping.csv` (which raw recording and start sample each trial uses) and `bads.json`
-are committed; rebuild them with `python -m cnsp_datasets.datasets.zhang2025.make_mapping <download dir>` (~40 min)
-and `python -m cnsp_datasets.datasets.zhang2025.bads <download dir>`.
+<out dir>` (~5 min, 1.5 GB). `alignment/mapping.csv` (which raw recording and start sample each trial uses) and
+`bads.json` are committed; rebuild them with `python -m cnsp_datasets.datasets.zhang2025.alignment.make_mapping
+<download dir>` (~40 min) and `python -m cnsp_datasets.datasets.zhang2025.bads <download dir>`.
 
 ## Validation
 - Low tier (0.5-8 Hz forward model, average reference, all 66 participants, attended talker at trial start):

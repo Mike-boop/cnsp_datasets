@@ -242,3 +242,8 @@ Data size: 16 participants x 100 evaluation trials x 30 s = 13.3 h (0.83 h each)
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **poor**: DNN-derived onset +0.718 s applied by default (unusable without it; option off); software unix-clock anchors; devices 1/2 agree within 0.5 ms; low tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor subclasses BaseAdaptor; onset checked with choice(). FLACs read with iohelpers.read_wav (float32 as before;
+  rate and mono checked); bads from bads.json via iohelpers.mark_bads (strict). The DNN onset constant stays in the
+  adaptor (no alignment table).

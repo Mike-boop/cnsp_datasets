@@ -181,3 +181,9 @@ peng2026_events_fit.py (onset vs OnsetTime slopes), peng2026_clocks.py (log vs s
 (first reconstruction + sub-09 check, figure R/peng2026/timing/onset_reconstruction_sub01-09.png),
 peng2026_pipeline.sh (bads, standardise, validate, AAD), peng2026_validate_subsets.py, peng2026_aad.py /
 _aad_plot.py, peng2026_dnn.py / _dnn_plot.py. Logs and outputs next to the results in R/peng2026/.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor subclasses BaseAdaptor; onset checked with choice(). Sorted globs (subjects, runs, Net Station log). A run
+  without meas_date raises a clear ValueError (run order comes from it). Audio through iohelpers.audio_loader (same
+  float32 stereo as the old soundfile reader). Bads from bads.json via iohelpers.mark_bads (strict: a stale name
+  raises).

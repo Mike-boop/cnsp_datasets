@@ -192,3 +192,9 @@ peak 172 ms, nothing at negative lags on the direct sound.
    in the sidecar says movie]
 4. Store the exp2 `clean-1` file at its shipped amplitude with `direct_gain` 0.5 in the sidecar. [yes]
 5. Gradiometer pair order within a triplet (xxx2, xxx3) unverified. [keep; documented]
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor subclasses BaseAdaptor; drift_correction checked with choice(). No longer imports simon_base (REFERENCE and
+  find_one are local; wavs through iohelpers.audio_loader: float32 /32768 as before, rate checked, mono no longer
+  enforced). Sorted globs; a subject-segment .mat found twice raises. Zero-variance channels set as bads with
+  iohelpers.mark_bads after building the Raw (same list).

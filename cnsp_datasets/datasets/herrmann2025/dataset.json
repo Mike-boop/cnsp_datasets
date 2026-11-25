@@ -1,6 +1,6 @@
 {
   "name": "herrmann2025",
-  "title": "Herrmann (2025) dataset",
+  "title": "Herrmann (2025): younger and older adults hear 20 stories in clear and in 12-talker babble at 16 SNRs, BioSemi EEG (16 scalp + mastoids)",
   "visibility": "public",
   "downloads": {
     "herrmann2025": {
@@ -16,7 +16,7 @@
     "url": "https://www.sciencedirect.com/science/article/pii/S019745802500096X"
   },
   "modality": "EEG",
-  "system": "BioSemi",
+  "system": "BioSemi (16 ch + mastoids)",
   "stimuli": "degraded (speech in noise); natural",
   "alignment_quality": "medium",
   "validation_tier": "mlr",

@@ -194,3 +194,7 @@ Figures in `tmp/review/geirnaert2025/`.
 copy); shipped onsets kept, low tier passes on both amplifiers, TRF peak ~190 ms with nothing at negative lags, DNN
 -10 ms, both streams confirmed at wav 5 s; no drift estimate; inter-amplifier steps of ~15 ms in 4 trials
 documented, not corrected.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor subclasses BaseAdaptor; stereo wavs read with iohelpers.read_wav (float32, same /32768 scaling; both
+  channels kept); bads (and the all-bad saturated trials) set with iohelpers.mark_bads (strict: a stale name raises).

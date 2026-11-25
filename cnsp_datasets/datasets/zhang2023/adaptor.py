@@ -10,9 +10,10 @@ import mne
 import numpy as np
 from mne.io import BaseRaw
 
+from cnsp_datasets.datasets.zhang2023.alignment.splices import (FS_AUDIO, FS_EEG, SIDES, mat_files, read_csv,
+                                                                read_wav, realigned, source_audio, trial_lengths)
 from cnsp_datasets.datasets.zhang2023.expinfo import channel_names, read_expinfo
-from cnsp_datasets.datasets.zhang2023.splices import (FS_AUDIO, FS_EEG, SIDES, mat_files, read_csv, read_wav, realigned,
-                                                      source_audio, trial_lengths)
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -25,7 +26,7 @@ NOTES = ("Authors' preprocessed EEG (EEGLAB: 1-32 Hz, 128 Hz, ICA, interpolated 
          "DNN offsets of ~1-3 s per presentation pair were found where estimable (notes 6b).")
 
 
-class Zhang2023Adaptor:
+class Zhang2023Adaptor(BaseAdaptor):
     """
     Zhang, Yuan & Lu (Zenodo 7253438; ICASSP 2023) NJU auditory attention detection: two Mandarin news talkers over
     a loudspeaker array, attend one (static azimuths, or moving in trials 25-32 of S01-S15); 21 participants x
@@ -33,16 +34,15 @@ class Zhang2023Adaptor:
 
     pairs="all" (default): every shipped trial as shipped (spliced EEG, shipped timing, shipped per-trial wavs).
     This timing fails validation in 17 of 21 subjects.
-    pairs="confident": only the 16 presentation pairs (32 trials) with a confident DNN offset (pair_offsets.csv,
-    timing/), each stimulus rebuilt from its unspliced source at the trial's splice map + the pair's offset
-    (splices.py); grade poor (brain-based). See notes.md 6b and README.md.
+    pairs="confident": only the 16 presentation pairs (32 trials) with a confident DNN offset (precomputed:
+    alignment/pair_offsets.csv), each stimulus rebuilt from its unspliced source at the trial's splice map + the
+    pair's offset (alignment/splices.py); grade poor (brain-based). See notes.md 6b and README.md.
     """
 
     def __init__(self, download_dir: str, pairs: str = "all"):
-        if pairs not in PAIRS:
-            raise ValueError(f"pairs must be one of {PAIRS}, not {pairs!r}")
+        super().__init__(download_dir)
         self.root = download_dir
-        self.pairs = pairs
+        self.pairs = self.choice("pairs", pairs, PAIRS)
         self.pieces = collections.defaultdict(list)
         for p in read_csv("pieces.csv"):
             self.pieces[(p["subject"], p["trial"])].append(p)

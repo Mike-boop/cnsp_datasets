@@ -29,3 +29,6 @@ BrainVision recordings. Alignment would then follow li2022 (software `trail<k>S/
 playback latency, cf. li2022's 0.216 s).
 
 Scratch scripts (deleted with tmp): `tmp/review/scripts/lin2024/inspect_fif.py`, `trial_table.py`.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- No adaptor (dropped). dataset.json: title and a `notes` entry saying it is not incorporated.

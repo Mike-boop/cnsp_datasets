@@ -129,7 +129,7 @@ offsets as an option; grade poor (section 8).**
 
 ## 6b. DNN rescue attempt (2026-11-24, per-trial and per-pair offsets)
 Scripts: `tmp/review/scripts/zhang2023/` (`rebuild_sources.py`, `dnn_scan.py`, `dnn_analyse.py`, `dnn_pairs.py`,
-`dnn_trf_check.py`; repo versions in `timing/`). Results: `R/zhang2023/dnn_scan/` (`dnn_trials.csv`, `dnn_pairs.csv`,
+`dnn_trf_check.py`; repo versions in `alignment/`). Results: `R/zhang2023/dnn_scan/` (`dnn_trials.csv`, `dnn_pairs.csv`,
 per-trial caches); the repo rerun writes `pair_offsets.csv`.
 Logs: `R/zhang2023/dnn_analyse.log`, `dnn_pairs.log`, `dnn_trf_pairs.log`. Figures: `R/zhang2023/figures/dnn_*`.
 
@@ -203,7 +203,7 @@ Figures: `dnn_trf_before_after_pairs.png`, `dnn_trf_before_after_pairs_pooled.pn
 - Brain-derived offsets estimated from the same EEG are circular. The cross-fitting between presentations removes
   the direct circularity, not the selection.
 
-### Repo rerun (`timing/`, the reproducible version; `pair_offsets.csv`)
+### Repo rerun (`alignment/`, the reproducible version; `pair_offsets.csv`)
 - The scratch scan chose its null sources with Python's salted `hash()`; the repo scan seeds with crc32. Maps
   come from `pieces.csv`: 3205 pieces, which differ from the scratch maps in 271 of 6.36 M samples.
 - **Result: 16 of 313 pairs confident (0.84 h) against 1 of 626 null pairs.** All 14 scratch pairs are kept with
@@ -226,7 +226,7 @@ Options considered: discard; S18-S21 only; as shipped; confident pairs only. The
 - **`pairs="all"` (default): every shipped trial as shipped.** 666 trials (S18 trials 9 and 22 are empty and
   skipped), shipped timing, shipped per-trial wavs. It fails validation in 17/21 subjects, which the README says.
   `alignment_method` "onset_only".
-- **`pairs="confident"`: the 16 DNN-confident pairs, 32 trials, 0.84 h** (`pair_offsets.csv`, from `timing/`).
+- **`pairs="confident"`: the 16 DNN-confident pairs, 32 trials, 0.84 h** (`pair_offsets.csv`, from `alignment/`).
   `alignment_method` "dnn", with `dnn_offset_s` / `dnn_offset_samples` and `dnn_pair` in the sidecar.
   - Each stimulus is rebuilt from the unspliced source at the trial's splice map plus the pair offset
     (`splices.realigned`), and named `..._dnn`.
@@ -244,7 +244,7 @@ Design:
 - stimuli: two 16 kHz mono `audio` per trial, `S<ss>_t<tt>_<l|r>_<eeg_NN_mono>[_dnn]`;
 - sidecar: `protocol` (A/B), `azimuth_deg` (static: per stream; moving: the shipped trajectory), `uncleaned`
   (S06 t1-10), `splice_pieces` and `mapped_fraction`;
-- the splice maps are derived from the download by `timing/make_maps.py` (`splices.py`): `pieces.csv` (3205
+- the splice maps are derived from the download by `alignment/make_maps.py` (`splices.py`): `pieces.csv` (3205
   pieces) and `source_cover.csv` (735 rows);
 - `expinfo.py` decodes the MATLAB table.
 
@@ -288,3 +288,10 @@ Not used: the authors' envelopes and `recordWav` (a room recording not on the EE
 - The S01 table has 4 empty rows.
 - Trials are spliced without boundary markers.
 - `script.zip` contains a compiled `.pyc`.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor subclasses BaseAdaptor; pairs checked with choice(). `timing/` renamed `alignment/`, and pieces.csv,
+  source_cover.csv, pair_offsets.csv and splices.py moved into it (run the scripts as `python -m
+  cnsp_datasets.datasets.zhang2023.alignment.<script>`). The adaptor reads the precomputed tables only (no torch /
+  cnsp_datasets.align at import). dnn_scan takes the classifier path from $ZHANG2023_DNN only (no machine default; a
+  clear error if unset). No change to the data.

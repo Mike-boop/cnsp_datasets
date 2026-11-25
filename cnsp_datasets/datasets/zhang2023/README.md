@@ -83,7 +83,7 @@ in trials 25-32 of S01-S15.
   - **Provenance:** `alignment_method` "dnn", plus `dnn_offset_s` and `dnn_pair`.
   - **Circularity:** the offsets come from the same EEG; cross-fitting between presentations reduces this but does
     not remove it.
-  - Scripts: `timing/`. Values: `pair_offsets.csv` (all 313 pairs).
+  - Scripts: `alignment/`. Values: `pair_offsets.csv` (all 313 pairs).
 - **Grade: poor.** The shipped timing fails validation, and the only usable timing (`pairs="confident"`) is
   brain-derived.
 - No drift can be measured: the trials are cut, and the rate is 128 Hz.
@@ -108,4 +108,4 @@ python -m cnsp_datasets.standardise.format_dataset zhang2023 <download> <out>   
 python -m cnsp_datasets.standardise.format_dataset zhang2023 <download> <out> --adaptor-opt pairs=confident
 ```
 `<download>` is the folder that holds the extracted `NJUNCA_preprocessed_arte_removed/`. `pieces.csv`,
-`source_cover.csv` and `pair_offsets.csv` are derived from the download by the scripts in `timing/`.
+`source_cover.csv` and `pair_offsets.csv` are derived from the download by the scripts in `alignment/`.

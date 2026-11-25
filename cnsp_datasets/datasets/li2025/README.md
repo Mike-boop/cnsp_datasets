@@ -70,8 +70,8 @@ the per-condition figures are the same. The stimulus is 1519.2 s long. Before th
   +0.5-0.66 s in sub-48..60. In the validation, the TRF peaks at the edge of the window (0.48 s) when the shipped
   onset is used.
 - **Onset correction (brain-based, applied by default; user decisions 2026-11-23).** Each subject gets its own
-  delay, taken from `onset.csv` (written by `alignment/subject_delays.py`). The delay is 0.39-1.26 s in whole ms, so
-  the crop needs no resampling of its own.
+  delay, taken from `alignment/onset.csv` (written by `alignment/subject_delays.py`). The delay is 0.39-1.26 s in
+  whole ms, so the crop needs no resampling of its own.
   - **Method:** each subject's uncorrected 0.5-8 Hz envelope TRF (lags -1.5..+2.5 s) is matched to group A's
     corrected TRF. The match is a space-time correlation over lags -0.2..0.6 s on 58 channels, and the search covers
     shifts of 0-1.9 s. The delay is cross-checked against five parts of the recording.

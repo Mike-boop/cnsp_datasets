@@ -229,3 +229,10 @@ folder) unless marked otherwise.
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **medium**: Status marker (software inferred), no stimtrack; P1/N1 match weissbart2019 to ~1 ms; DNN +5 ms, no correction; drift not measurable; mlr tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor subclasses BaseAdaptor; sorted log glob; mastoids renamed EXG1/EXG2 -> M1/M2 through
+  iohelpers.rename_channels (misc, as before). Wavs read with iohelpers.read_wav (float32, same /32768 scaling; rate
+  and mono checked); the derived babble is still computed in float64 from the float32 samples (was float64 throughout;
+  differences ~1e-8). The 254 -> 255 marker decoder is kept (a code transition, not a plain rise of
+  iohelpers.status_edges).

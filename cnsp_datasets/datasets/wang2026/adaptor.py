@@ -9,9 +9,10 @@ import mne
 import numpy as np
 import openpyxl
 from mne.channels import make_standard_montage
-from scipy.io import wavfile
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
+from cnsp_datasets.standardise.iohelpers import mark_bads, read_wav
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -41,7 +42,7 @@ PASSIVE_NOTE = (" Passive block: the audio played is not listed in StimList.xlsx
                 "the EEG among the shipped wavs (notes.md 3), so no stimulus is attached.")
 
 
-class Wang2026Adaptor:
+class Wang2026Adaptor(BaseAdaptor):
     """
     Wang et al. 2026 AASD (Zenodo 17413336): 18 Mandarin listeners (S1-S18), one Neuroscan Curry CNT each (64 EEG
     incl. M1/M2, 500 Hz kept, original reference). Two AISHELL-1 talkers (one male, one female), one per ear;
@@ -53,6 +54,7 @@ class Wang2026Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = os.path.join(download_dir, "Original EEG")
         self.wav_dir = os.path.join(download_dir, "Stimuli Audio")
         wb = openpyxl.load_workbook(os.path.join(self.root, "StimList.xlsx"), read_only=True)
@@ -60,8 +62,12 @@ class Wang2026Adaptor:
         wb.close()
         col = {h.strip(): i for i, h in enumerate(header)}
         # code -> (wav stem, ear condition); MixFile mix_NNN.wav is shipped as mixed_NNN.wav
-        self.stim = {int(r[col["Trigger"]]): (r[col["MixFile"]].replace("mix_", "mixed_")[:-4], r[col["EarCondition"]])
-                     for r in rows}
+        self.stim = {}
+        for r in rows:
+            code = int(r[col["Trigger"]])
+            entry = (r[col["MixFile"]].replace("mix_", "mixed_")[:-4], r[col["EarCondition"]])
+            if self.stim.setdefault(code, entry) != entry:
+                raise ValueError(f"StimList.xlsx: trigger {code} listed as {self.stim[code]} and {entry}")
 
     def parse(self) -> Iterable[TrialRecord]:
         for subject in range(1, 19):
@@ -168,7 +174,7 @@ def _eeg_loader(cnt: str, onset: int, presses: list, spans: bool, bads: list,
         out.set_montage(make_standard_montage("standard_1005"), match_case=False, on_missing="ignore",
                         verbose="ERROR")
         out.set_annotations(_annotations(presses, spans))
-        out.info["bads"] = list(bads)
+        mark_bads(out, bads)
         out.info["description"] = description
         return out
 
@@ -178,11 +184,10 @@ def _eeg_loader(cnt: str, onset: int, presses: list, spans: bool, bads: list,
 def _audio_loader(path: str, channel: int | None) -> Callable[[], dict]:
     """The stereo wav (channel None) or one of its channels, as float32 at 16 kHz."""
     def _loader() -> dict:
-        fs, x = wavfile.read(path)
-        if fs != AUDIO_FS or x.dtype != np.int16 or x.shape != (TRIAL_S * AUDIO_FS, 2):
-            raise ValueError(f"{path}: expected 60 s of 16 kHz stereo int16")
-        x = (x.T / 32768.0).astype(np.float32)
-        return {"fs": AUDIO_FS, "data": x if channel is None else x[channel:channel + 1]}
+        x, _ = read_wav(path, expect_fs=AUDIO_FS)
+        if x.shape != (2, TRIAL_S * AUDIO_FS):
+            raise ValueError(f"{path}: expected 60 s of 16 kHz stereo, got {x.shape}")
+        return {"fs": AUDIO_FS, "data": x if channel is None else x[channel:channel + 1].copy()}
 
     return _loader
 

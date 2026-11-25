@@ -6,12 +6,13 @@ from typing import Callable, Iterable, List
 
 import numpy as np
 import pandas as pd
-import soundfile as sf
 from mne import create_info
 from mne.channels import make_standard_montage
 from mne.io import BaseRaw, RawArray
 
 from cnsp_datasets.datasets.hassan2026.bads import BADS_JSON
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import mark_bads, read_wav
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -39,7 +40,7 @@ DNN_METHOD = ("brain-based, constant: accou2023 match-mismatch DNN offset of the
 COMPREHENSION_NOTE = "comprehension_correct is False for all 1,600 evaluation trials as shipped (upstream issue)"
 
 
-class Hassan2026Adaptor:
+class Hassan2026Adaptor(BaseAdaptor):
     """
     Hassan 2026 MAESTRO (Hugging Face aspire-osu/maestro-eeg-dataset): 16 listeners (S01-S16), 5 training + 100
     evaluation trials of 30 s, 4 LibriSpeech talkers (speakers 1-4, attendable) + 2 CHiME-Home noise sources
@@ -53,8 +54,8 @@ class Hassan2026Adaptor:
     """
 
     def __init__(self, download_dir: str, onset: str = "dnn"):
-        if onset not in ("dnn", "none"):
-            raise ValueError(f"onset must be 'dnn' or 'none', not {onset!r}")
+        super().__init__(download_dir)
+        self.choice("onset", onset, ("dnn", "none"))
         self.method = "dnn" if onset == "dnn" else "sw_trigger"
         self.onset = (dict(onset_correction_s=ONSET_CORRECTION_S, onset_correction_method=DNN_METHOD) if onset == "dnn"
                       else dict(onset_correction_s=0.0, onset_correction_method="none (earliest playback timestamp)"))
@@ -132,7 +133,7 @@ class Hassan2026Adaptor:
             x = df[[f"ch_{c}" for c in self.channels]].to_numpy(np.float64).T[:, onset:]  # volts as shipped
             raw = RawArray(x, create_info(self.channels, EEG_FS, self.types), verbose="ERROR")
             raw.set_montage(make_standard_montage("standard_1020"), verbose="ERROR")
-            raw.info["bads"] = list(self.bads.get(subject, []))
+            mark_bads(raw, self.bads.get(subject, []))
             raw.info["description"] = description
             return raw
         return _loader
@@ -140,10 +141,10 @@ class Hassan2026Adaptor:
 
 def _audio_loader(path: str) -> Callable[[], dict]:
     def _loader() -> dict:
-        x, fs = sf.read(path, dtype="float32")
-        if fs != AUDIO_FS or x.ndim != 1:
-            raise ValueError(f"{path}: expected 16 kHz mono")
-        return {"fs": AUDIO_FS, "data": x[None, :]}
+        x, _ = read_wav(path, expect_fs=AUDIO_FS)  # FLAC
+        if x.shape[0] != 1:
+            raise ValueError(f"{path}: expected mono, got {x.shape[0]} channels")
+        return {"fs": AUDIO_FS, "data": x}
     return _loader
 
 

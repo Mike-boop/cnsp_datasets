@@ -4,26 +4,25 @@ Note: trigger handling and drift correction adapted from the original code by Bo
 '''
 from __future__ import annotations
 
-import glob
 import gzip
 import os
 import re
 import shutil
 import tempfile
 import xml.etree.ElementTree as ET
-from typing import Iterable
+from contextlib import contextmanager
+from typing import Iterable, Iterator
 
-import mne
 import numpy as np
 import pandas as pd
 from mne import create_info
 from mne.channels import make_standard_montage
 from mne.io import BaseRaw, RawArray, read_raw_bdf
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.clock import resample_on_audio_clock
+from cnsp_datasets.standardise.iohelpers import mark_bads
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
-
-mne.set_log_level("CRITICAL")
 
 # The release README calls these unalignable (too few triggers). They are truncated: the EEG pulses are the first N
 # of the stimulus' (decoder trained on the participant's other runs: r 0.09-0.14 vs <= 0.03 shifted by 1-3 pulses).
@@ -122,13 +121,13 @@ def apr_snr(apr_path: str) -> float | None:
 
 # ------------------------------- Adaptor ------------------------------------
 
-class Accou2023Adaptor:
+class Accou2023Adaptor(BaseAdaptor):
     """
     SparrKULee (Accou et al. 2024, KU Leuven RDR doi:10.48804/K3VSND): 64-channel BioSemi EEG at 1024 Hz, 85
     participants (sub-019..022 and sub-026 are restricted), one session each, one BIDS run per stimulus.
 
     - EEG: sub-*/ses-*/eeg/*task-listeningActive*_eeg.bdf (or .bdf.gz), channels named by position (some files
-      spell PO7/PO3 as P07/P03). EXG1/EXG2 are the mastoids (A1/A2, misc); flat (unconnected) ones go into bads.
+      spell PO7/PO3 as P07/P03). EXG1/EXG2 are the mastoids (M1/M2, misc); flat (unconnected) ones go into bads.
       Runs without EEG in the release (7) are skipped. The three runs the README calls unalignable (TRUNCATED) are
       aligned on their EEG pulses, matched to the stimulus' first pulses; their EEG ends at the last pulse.
     - Alignment: the stimulus' trigger track (stimuli/eeg/t_<stim>.npz, a pulse every second from the first sample,
@@ -148,9 +147,8 @@ class Accou2023Adaptor:
     """
 
     def __init__(self, download_dir: str):
-        self.download_dir = download_dir
-        self._events = sorted(glob.glob(os.path.join(download_dir, "sub-*", "ses-*", "eeg",
-                                                     "*task-listeningActive*_events.tsv")))
+        super().__init__(download_dir)
+        self._events = self.sorted_glob(download_dir, "sub-*/ses-*/eeg/*task-listeningActive*_events.tsv")
 
     def parse(self) -> Iterable[TrialRecord]:
         for events_path in self._events:
@@ -221,11 +219,11 @@ class Accou2023Adaptor:
                 stimulus_fs=int(ref["fs"]),
             )
             mastoids = [raw.ch_names.index(c) for c in ("EXG1", "EXG2") if c in raw.ch_names]
-            names = CH_NAMES + ["A1", "A2"][: len(mastoids)]
+            names = CH_NAMES + ["M1", "M2"][: len(mastoids)]
             info = create_info(names, raw.info["sfreq"], ["eeg"] * 64 + ["misc"] * len(mastoids))
             out = RawArray(corrected[list(range(64)) + mastoids], info, verbose="ERROR")
             out.set_montage(make_standard_montage("biosemi64"), on_missing="ignore")
-            out.info["bads"] = [n for n, i in zip(["A1", "A2"], mastoids) if np.std(np.diff(corrected[i])) < 1e-6]
+            mark_bads(out, [n for n, i in zip(["M1", "M2"], mastoids) if np.std(np.diff(corrected[i])) < 1e-6])
             return out
 
         return _loader
@@ -237,30 +235,22 @@ def _stem(bids_path: str) -> str:
 
 
 def _load_npz(path: str) -> dict:
-    if path.endswith(".gz"):
-        with gzip.open(path) as f:
-            return dict(np.load(f))
-    return dict(np.load(path))
+    """The arrays of a .npz (or .npz.gz), read into memory; the file is closed."""
+    with (gzip.open(path) if path.endswith(".gz") else open(path, "rb")) as f, np.load(f) as npz:
+        return {k: npz[k] for k in npz.files}
 
 
-class _plain_file:
-    """Context manager: the path itself, or a temporary decompressed copy of a .gz file."""
-
-    def __init__(self, path: str):
-        self.path, self._tmp = path, None
-
-    def __enter__(self) -> str:
-        if not self.path.endswith(".gz"):
-            return self.path
-        self._tmp = tempfile.NamedTemporaryFile(suffix=".bdf", delete=False)
-        with gzip.open(self.path) as src:
-            shutil.copyfileobj(src, self._tmp)
-        self._tmp.close()
-        return self._tmp.name
-
-    def __exit__(self, *exc):
-        if self._tmp is not None:
-            os.unlink(self._tmp.name)
+@contextmanager
+def _plain_file(path: str) -> Iterator[str]:
+    """The path itself, or a decompressed copy of a .gz file in a temporary directory removed on exit."""
+    if not path.endswith(".gz"):
+        yield path
+        return
+    with tempfile.TemporaryDirectory(prefix="accou2023_") as tmp:
+        plain = os.path.join(tmp, os.path.basename(path)[: -len(".gz")])
+        with gzip.open(path) as src, open(plain, "wb") as dst:
+            shutil.copyfileobj(src, dst)
+        yield plain
 
 
 ADAPTOR = Accou2023Adaptor

@@ -2,31 +2,19 @@ from __future__ import annotations
 
 import os
 from fractions import Fraction
-from typing import Iterable, Dict, Callable, Any
+from typing import Any, Callable, Dict, Iterable
 
 import numpy as np
 import pandas as pd
 import textgrid
+from mne.io import BaseRaw, read_raw_brainvision
 from scipy.io import wavfile
 from scipy.signal import resample_poly
 
-from mne.io import read_raw_brainvision, BaseRaw
-
-from cnsp_datasets.standardise.trial_record import TrialRecord, StimulusRecord
-from cnsp_datasets.datasets.guilleminot2021.timing import BUFFER_FS, OUT as TIMING_CSV, PAD_S, tactile_buffer
-
-
-def _textgrid_text(tiers: list, xmax: float) -> str:
-    """Praat long-format TextGrid from [(tier name, [(xmin, xmax, text), ...]), ...] (contiguous intervals)."""
-    out = ['File type = "ooTextFile"', 'Object class = "TextGrid"', "", "xmin = 0", f"xmax = {xmax}",
-           "tiers? <exists>", f"size = {len(tiers)}", "item []:"]
-    for i, (name, intervals) in enumerate(tiers, 1):
-        out += [f"    item [{i}]:", '        class = "IntervalTier"', f'        name = "{name}"', "        xmin = 0",
-                f"        xmax = {xmax}", f"        intervals: size = {len(intervals)}"]
-        for j, (a, b, text) in enumerate(intervals, 1):
-            out += [f"        intervals [{j}]:", f"            xmin = {a:.6f}", f"            xmax = {b:.6f}",
-                    f'            text = "{text}"']
-    return "\n".join(out) + "\n"
+from cnsp_datasets.datasets.guilleminot2021.alignment.timing import BUFFER_FS, OUT as TIMING_CSV, PAD_S, tactile_buffer
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import read_wav, textgrid as textgrid_text
+from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 
 EEG_FNAME_DICT = {
@@ -153,7 +141,7 @@ SESSIONS = [1, 2]
 _SUB_INDEX = {p: i + 1 for i, p in enumerate(PARTICIPANTS)}
 
 
-class Guilleminot2021Adaptor:
+class Guilleminot2021Adaptor(BaseAdaptor):
     """
     Adaptor for the Guilleminot 2021 audio-tactile speech-in-noise dataset (1 kHz EEG).
 
@@ -164,11 +152,12 @@ class Guilleminot2021Adaptor:
              ├─ *.vhdr (no standardised naming scheme, see EEG_FNAME_DICT)
              └─ <participant>_EEG_<session>.csv  (columns: File, Type, Delay, Correlated)
 
-    Timing (see timing.py, which writes trial_timing.csv from the EEG 'Sound' channel):
+    Timing (see alignment/timing.py, which writes alignment/trial_timing.csv from the EEG 'Sound' channel):
       - Each trial plays a 39062.5 Hz buffer: 1 s silence, the story part (Odin_<File>.wav), 1 s silence. The buffer
         starts 1-3 ms after the R3 marker; trial_timing.csv gives each trial's measured buffer onset (and drops the
-        few trials without a usable marker, cut by a recording pause or running past its end), and the EEG is cropped from buffer onset + 1 s for the
-        duration of the wav. Condition 'T' (tactile only) has no speech; its EEG is cropped the same way.
+        few trials without a usable marker, cut by a recording pause or running past its end), and the EEG is
+        cropped from buffer onset + 1 s for the duration of the wav. Condition 'T' (tactile only) has no speech; its
+        EEG is cropped the same way.
       - Tactile stimulus: Odin_<File>_phone_.npy (the vibrotactile signal, ~100 Hz carrier), started `Delay` ms
         after the speech (negative: tactile first). Mismatched trials (Correlated = 0) used the same buffer
         circularly shifted by a quarter of its length. It is resampled to the wav's rate and cut to the trial.
@@ -176,6 +165,7 @@ class Guilleminot2021Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = download_dir
         self.timing = pd.read_csv(TIMING_CSV)
 
@@ -227,7 +217,8 @@ class Guilleminot2021Adaptor:
                                            data_fn=self._make_tactile_loader(file_token, wav_path, delay, correlated),
                                            is_attended=True, feature_name="audio"),
                             StimulusRecord(modality="tactile", name=f"Odin_{file_token}_{suffix}",
-                                           data_fn=self._make_tactile_tg_loader(file_token, wav_path, delay, correlated),
+                                           data_fn=self._make_tactile_tg_loader(file_token, wav_path, delay,
+                                                                                correlated),
                                            is_attended=True, feature_name="textgrid"),
                         ]
 
@@ -249,10 +240,8 @@ class Guilleminot2021Adaptor:
     @staticmethod
     def _make_audio_loader(wav_path: str) -> Callable[[], Dict[str, Any]]:
         def _loader() -> Dict[str, Any]:
-            fs, x = wavfile.read(wav_path)
-            if x.ndim == 2:
-                x = x[:, 0]
-            return {"fs": int(fs), "data": np.asarray(x, dtype=float)[None, :]}
+            x, fs = read_wav(wav_path, channel=0)
+            return {"fs": fs, "data": x}
         return _loader
 
     def _make_tactile_loader(self, file_token: str, wav_path: str, delay_ms: int,
@@ -268,7 +257,7 @@ class Guilleminot2021Adaptor:
             buf = resample_poly(buf, ratio.numerator, ratio.denominator)
             # speech onset is PAD_S into its buffer; the tactile buffer starts delay_ms later (mismatched: 0)
             start = int(round((PAD_S - (delay_ms if correlated else 0) / 1000) * fs))
-            out = np.zeros(n)
+            out = np.zeros(n, np.float32)
             seg = buf[max(start, 0):max(start, 0) + n - max(-start, 0)]
             out[max(-start, 0):max(-start, 0) + len(seg)] = seg
             return {"fs": int(fs), "data": out[None, :]}
@@ -276,9 +265,11 @@ class Guilleminot2021Adaptor:
 
     def _make_tactile_tg_loader(self, file_token: str, wav_path: str, delay_ms: int,
                                 correlated: bool) -> Callable[[], str]:
-        """The speech TextGrid moved to where its events fall in the tactile signal (as _make_tactile_loader plays it):
+        """
+        The speech TextGrid moved to where its events fall in the tactile signal (as _make_tactile_loader plays it):
         shifted by delay_ms, or, for mismatched trials, rolled by a quarter of the tactile buffer (intervals that wrap
-        are split); clipped to the wav's duration, gaps filled with empty intervals."""
+        are split); clipped to the wav's duration, gaps filled with empty intervals (iohelpers.textgrid).
+        """
         stimuli_dir = os.path.join(self.root, "Stimuli")
 
         def _loader() -> str:
@@ -295,20 +286,13 @@ class Guilleminot2021Adaptor:
                 def moved(t0, t1):  # buffer time b = t + PAD_S moves to (b + quarter) mod length
                     a, b = ((t + PAD_S + quarter) % length - PAD_S for t in (t0, t1))
                     return [(a, b)] if a < b else [(a, length - PAD_S), (-PAD_S, b)]
-            tiers = []
+            tiers = {}
             for tier in tg.tiers:
-                spans = sorted((max(a, 0.0), min(b, duration), iv.mark) for iv in tier if iv.mark.strip()
-                               for a, b in moved(iv.minTime, iv.maxTime) if min(b, duration) > max(a, 0.0))
-                intervals, t = [], 0.0
-                for a, b, mark in spans:
-                    if a > t:
-                        intervals.append((t, a, ""))
-                    intervals.append((a, b, mark))
-                    t = b
-                if t < duration:
-                    intervals.append((t, duration, ""))
-                tiers.append((tier.name, intervals))
-            return _textgrid_text(tiers, duration)
+                if tier.name in tiers:
+                    raise ValueError(f"{wav_path}: TextGrid has two tiers named {tier.name!r}")
+                tiers[tier.name] = sorted((max(a, 0.0), min(b, duration), iv.mark) for iv in tier if iv.mark.strip()
+                                          for a, b in moved(iv.minTime, iv.maxTime) if min(b, duration) > max(a, 0.0))
+            return textgrid_text(tiers, xmax=duration)
         return _loader
 
     @staticmethod
@@ -326,7 +310,8 @@ class Guilleminot2021Adaptor:
             raw = read_raw_brainvision(vhdr_path, preload=False, verbose="ERROR")
             tmax = onset_s + x.shape[0] / fs
             if tmax > raw.times[-1]:
-                raise ValueError(f"{vhdr_path}: trial ends at {tmax:.1f} s, after the recording ({raw.times[-1]:.1f} s)")
+                raise ValueError(f"{vhdr_path}: trial ends at {tmax:.1f} s, after the recording "
+                                 f"({raw.times[-1]:.1f} s)")
             return raw.crop(tmin=onset_s, tmax=tmax)
         return _loader
 

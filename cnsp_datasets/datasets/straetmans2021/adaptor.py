@@ -8,6 +8,8 @@ import mne
 from mne.io import BaseRaw
 from pymatreader import read_mat
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import mark_bads
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import TrialRecord
 
@@ -24,7 +26,7 @@ NOTES = ("Trial = narrative, from its start to its stop marker as shipped (softw
          "No stimulus: see stimulus_unavailable; validation_tier null = untestable. Raw DC data.")
 
 
-class Straetmans2021Adaptor:
+class Straetmans2021Adaptor(BaseAdaptor):
     """
     Straetmans et al. 2021 (OpenNeuro ds003801): mobile EEG, attend one of two talkers while sitting or walking.
     20 subjects x 6 narratives (~5 min), SMARTING 24 channels at 250 Hz.
@@ -34,6 +36,7 @@ class Straetmans2021Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = download_dir
         with open(os.path.join(download_dir, "participants.tsv"), newline="") as f:
             self.participants = list(csv.DictReader(f, delimiter="\t"))
@@ -85,7 +88,7 @@ def _eeg_loader(path: str, start: float, stop: float, bads: list[str], descripti
         i0, i1 = round(start * sfreq), round(stop * sfreq)
         raw.crop(i0 / sfreq, i1 / sfreq, include_tmax=False).load_data(verbose="ERROR")
         raw.set_annotations(None)  # marker times are in the sidecar
-        raw.info["bads"] = bads
+        mark_bads(raw, bads)
         raw.info["description"] = description
         return raw
     return _loader

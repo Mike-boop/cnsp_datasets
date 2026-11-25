@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import glob
 import os
 import unicodedata
 from datetime import datetime
@@ -13,6 +12,8 @@ from mne.channels import make_standard_montage
 from pymatreader import read_mat
 
 from cnsp_datasets.datasets.accou2023.adaptor import _load_npz
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import mark_bads
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -34,7 +35,7 @@ SPARRKULEE = {
     "Zijn_led-schermen_gevaarlijk": ("podcast_19", 18.0),
     "Zorgt_Waze_voor_meer_sluipverkeer": ("podcast_35", 17.964),
 }
-# timing problems seen in the EEG only (backward decoder, decoder_lags.csv; documented, not corrected)
+# timing problems seen in the EEG only (backward decoder, alignment/decoder_lags.csv; documented, not corrected)
 LATE_CUT = {(4, "MovingTargetNoise2"): "epoch starts ~1 s into the audio (decoder lag -994 ms, z 6.4)"}
 TRIGGER_TYPE = ("hardware (inferred: 1-s square pulses recorded by the EEG (paper 2.3), quantisation-level jitter; "
                 "the pulse grid does not follow the audio after a first-buffer stall, notes.md 6)")
@@ -48,7 +49,7 @@ NOTES = ("Authors' preprocessed trials (README): BioSemi 8192 Hz -> 256 Hz, 1-40
          "(attend/left, attend/right annotations). Visual stimuli are not standardised.")
 
 
-class Rotaru2024Adaptor:
+class Rotaru2024Adaptor(BaseAdaptor):
     """
     Rotaru et al. 2024 AV-GC-AAD (Zenodo 11058711): 13 participants (sub01, 03, 04, 07-16), two competing Flemish
     podcasts over insert phones, conditions MovingVideo, MovingTargetNoise (not sub01, 03), NoVisuals and FixedVideo
@@ -58,7 +59,8 @@ class Rotaru2024Adaptor:
     """
 
     def __init__(self, download_dir: str, sparrkulee_dir: str | None = None):
-        self.files = sorted(glob.glob(os.path.join(download_dir, "2024-AV-GC-AAD-sub*_preprocessed.mat")))
+        super().__init__(download_dir)
+        self.files = self.sorted_glob(download_dir, "2024-AV-GC-AAD-sub*_preprocessed.mat")
         self.sparrkulee_dir = sparrkulee_dir
 
     def parse(self) -> Iterable[TrialRecord]:
@@ -165,7 +167,7 @@ def _eeg_loader(path: str, idx: int, sub: int, first: str, extra: dict) -> Calla
                                ["eeg"] * (len(labels) - 4) + ["eog"] * 4)
         raw = mne.io.RawArray(data, info, verbose="ERROR")
         raw.set_montage(make_standard_montage("biosemi64"))
-        raw.info["bads"] = list(BADS.get(sub, []))
+        mark_bads(raw, BADS.get(sub, []))
         side = {"L": "attend/left", "R": "attend/right"}
         raw.set_annotations(mne.Annotations([0.0, SWITCH], [SWITCH, raw.n_times / FS - SWITCH],
                                             [side[first], side["R" if first == "L" else "L"]]))

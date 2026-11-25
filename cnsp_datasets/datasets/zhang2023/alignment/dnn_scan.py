@@ -4,10 +4,11 @@ Per-trial DNN lag scan against the rebuilt sources (accou2023 match-mismatch cla
 EEG: the shipped trial (Emotiv 32 at template standard_1020 positions) through the classifier's own steps (0.5 Hz
 high-pass, spherical-spline interpolation onto the BioSemi-32 layout, average reference), z-scored per channel.
 Stimulus: Hilbert envelope of the rebuilt 115 s source at 128 Hz, z-scored. 5 s windows (1 s hop) inside each
-splice piece (../pieces.csv); the window at trial EEG sample j is scored against source position map[j] + lag for
+splice piece (pieces.csv); the window at trial EEG sample j is scored against source position map[j] + lag for
 lags of +-12 s. Stimuli: attended, ignored and two mismatched sources (null; chosen by a crc32 seed per trial).
 Sign: negative lag = the EEG is later than the shipped pairing. One cache file per trial (resumable).
-Usage: python -m cnsp_datasets.datasets.zhang2023.timing.dnn_scan <download_dir> <out_dir>
+Usage: ZHANG2023_DNN=<classifier.pt> python -m cnsp_datasets.datasets.zhang2023.alignment.dnn_scan <download_dir> \
+    <out_dir>
 """
 import os
 import sys
@@ -21,10 +22,10 @@ import torch.nn.functional as F
 from cnsp_datasets.align.specs import load_classifier
 from cnsp_datasets.datasets.zhang2023.expinfo import channel_names, read_expinfo
 from cnsp_datasets.datasets.zhang2023.adaptor import _eeg_loader
-from cnsp_datasets.datasets.zhang2023.splices import FS_AUDIO, mat_files, read_csv, source_audio, trial_lengths
+from cnsp_datasets.datasets.zhang2023.alignment.splices import (FS_AUDIO, mat_files, read_csv, source_audio,
+                                                                trial_lengths)
 
-MODEL = os.environ.get("ZHANG2023_DNN", "/home/gu08wuvu/cnsp_datasets/playground/accou2023/classifiers/"
-                                        "fs128_1020-32_broadband.pt")
+MODEL_ENV = "ZHANG2023_DNN"  # path of the accou2023 classifier fs128_1020-32_broadband.pt (no default)
 LAG_S, HOP = 12.0, 128
 
 
@@ -54,10 +55,20 @@ def scan(model, ew, u, s_windows, lags, device):
     return out
 
 
+def model_path() -> str:
+    """The classifier's path from $ZHANG2023_DNN; a clear error if it is not set."""
+    path = os.environ.get(MODEL_ENV)
+    if not path:
+        raise RuntimeError(f"set {MODEL_ENV} to the accou2023 classifier fs128_1020-32_broadband.pt "
+                           "(cnsp_datasets.align.train_cli)")
+    return path
+
+
 def main(root, out):
+    model_file = model_path()
     os.makedirs(out, exist_ok=True)
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model, spec, _ = load_classifier(MODEL, device)
+    model, spec, _ = load_classifier(model_file, device)
     fs, seg = spec.fs, round(spec.segment_length * spec.fs)
     lags = np.arange(-round(LAG_S * fs), round(LAG_S * fs) + 1)
     win = tower(model, np.zeros((1, seg)), False, device).shape[-1]  # feature samples per segment

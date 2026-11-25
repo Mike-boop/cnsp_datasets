@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import glob
 import json
 import os
 import re
@@ -13,6 +12,8 @@ from mne.io import BaseRaw
 
 from cnsp_datasets.datasets.peng2026.bads import BADS_JSON
 from cnsp_datasets.datasets.peng2026.onsets import eci_offset, log_arrivals, log_offset, tbeg_markers
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import audio_loader, mark_bads
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -35,7 +36,7 @@ NOTES = ("Trial = one 126-s binaural scene (mixture of both talkers and backgrou
          "Positions: the MFF coordinates.xml (HydroCel GSN 128 template).")
 
 
-class Peng2026Adaptor:
+class Peng2026Adaptor(BaseAdaptor):
     """
     Peng et al. 2026 SoundBubble-EEG (Zenodo 19610628, BIDS): 30 listeners (sub-01..30), EGI HydroCel GSN 128 at
     250 Hz (Net Station MFF, raw), 25 binaural scenes of two competing Mandarin conversations (AISHELL4) plus scene
@@ -50,23 +51,22 @@ class Peng2026Adaptor:
     """
 
     def __init__(self, download_dir: str, onset: str = "corrected"):
-        if onset not in ("corrected", "authors"):
-            raise ValueError(f"onset must be 'corrected' or 'authors', not {onset!r}")
-        self.root, self.onset = download_dir, onset
+        super().__init__(download_dir)
+        self.root, self.onset = download_dir, self.choice("onset", onset, ("corrected", "authors"))
         with open(BADS_JSON) as f:
             self.bads = json.load(f)
 
     def parse(self) -> Iterable[TrialRecord]:
-        for sub_dir in sorted(glob.glob(os.path.join(self.root, "sub-*", ""))):
-            sub = os.path.basename(sub_dir[:-1])
-            runs = sorted((self._run_trials(sub, mff) for mff in glob.glob(os.path.join(sub_dir, "eeg", "*_eeg.mff"))),
+        for sub_dir in filter(os.path.isdir, self.sorted_glob(self.root, "sub-*")):
+            sub = os.path.basename(sub_dir)
+            runs = sorted((self._run_trials(sub, mff) for mff in self.sorted_glob(sub_dir, "eeg/*_eeg.mff")),
                           key=lambda x: x[0])  # presentation order (meas_date)
             rows = [row for _, rows in runs for row in rows]
             for trial, row in enumerate(rows, 1):
                 stim = os.path.join(self.root, "stimuli", SCENES[row["run"]], f"{row['stimulus']}.wav")
                 yield TrialRecord(
                     subject=int(sub[4:]), session=1, trial=trial, condition=SCENES[row["run"]], ns_type="eeg",
-                    stimulus=StimulusRecord("audio", row["stimulus"], _audio_loader(stim)),
+                    stimulus=StimulusRecord("audio", row["stimulus"], audio_loader(stim)),  # (2, n): left, right
                     neural_data_fn=self._eeg_loader(row["mff"], row["onset"], sf.info(stim).duration, self.bads[sub],
                                                     self._description(sub, row)),
                 )
@@ -90,6 +90,8 @@ class Peng2026Adaptor:
                      cue=r["direction_str"].split(".")[0], t_ep=t, onset=o, authors_onset=r["onset"], source=source,
                      bids_run=os.path.basename(mff)[:-len("_eeg.mff")])
                 for (_, r), t, o in zip(ev.iterrows(), t_ep, onsets)]
+        if raw.info["meas_date"] is None:
+            raise ValueError(f"{mff}: no meas_date, so the presentation order of the runs is unknown")
         return raw.info["meas_date"], rows
 
     def _description(self, sub: str, row: dict) -> str:
@@ -113,7 +115,7 @@ class Peng2026Adaptor:
             raw.drop_channels(STIM_CHANNELS)
             raw.set_annotations(None)
             raw.set_meas_date(None)
-            raw.info["bads"] = list(bads)
+            mark_bads(raw, bads)
             raw.info["description"] = description
             return raw
         return _loader
@@ -129,13 +131,6 @@ def _eprime_log(path: str) -> dict[int, str]:
         if wav and onset:
             out[int(onset.group(1))] = os.path.basename(wav.group(1).replace("\\", "/"))[:-4]
     return out
-
-
-def _audio_loader(path: str) -> Callable[[], dict]:
-    def _loader() -> dict:
-        x, fs = sf.read(path, dtype="float32")
-        return {"fs": fs, "data": x.T}  # (2, n): left, right ear
-    return _loader
 
 
 ADAPTOR = Peng2026Adaptor

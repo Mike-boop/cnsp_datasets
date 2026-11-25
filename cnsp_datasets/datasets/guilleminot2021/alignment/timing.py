@@ -1,6 +1,6 @@
 """
 Trial timing for guilleminot2021 from the EEG 'Sound' channel, which records both the speech and the vibrotactile
-signal. Writes trial_timing.csv (shipped next to the adaptor), which the adaptor reads.
+signal. Writes alignment/trial_timing.csv (next to this script), which the adaptor reads.
 
 What was played (established from the Sound channel, see the review notes):
   - Each trial plays one stimulus buffer at 39062.5 Hz: 1 s of silence, the story part (Odin_X.wav), 1 s of silence.
@@ -18,7 +18,7 @@ contain a recording pause ("segment_break": MNE joins the segments without a gap
 started during a pause, so their marker was never recorded). The adaptor uses stimtrack and marker rows without an
 issue.
 
-    python -m cnsp_datasets.datasets.guilleminot2021.timing <download_dir>
+    python -m cnsp_datasets.datasets.guilleminot2021.alignment.timing <download_dir>
 """
 from __future__ import annotations
 
@@ -63,7 +63,8 @@ def _match(sound: np.ndarray, template: np.ndarray) -> tuple[int, float]:
 
 def session_timing(root: str, participant: str, session: int, vhdrs: list[str]) -> pd.DataFrame:
     stim_dir = os.path.join(root, "Stimuli")
-    info = pd.read_csv(os.path.join(root, participant, f"{participant}_EEG_{session}", f"{participant}_EEG_{session}.csv"))
+    session_dir = os.path.join(root, participant, f"{participant}_EEG_{session}")
+    info = pd.read_csv(os.path.join(session_dir, f"{participant}_EEG_{session}.csv"))
     raws = [mne.io.read_raw_brainvision(v, preload=False, verbose="ERROR") for v in vhdrs]
     sounds = [sosfiltfilt(_SOS, r.get_data(picks=["Sound"])[0]).astype(np.float32) for r in raws]
     marks = [(f, a["onset"]) for f, r in enumerate(raws) for a in r.annotations if a["description"] == MARKER]

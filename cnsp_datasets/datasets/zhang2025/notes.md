@@ -28,7 +28,7 @@ progress log `R/zhang2025/agent_log.md`.
 - `stimuli/speaker_<k>_segment_<n>.wav`: 126 dry 30.0-s mono wavs, 48 kHz int16 (6 talkers; CCTV news) + 2 Adobe
   `.pkf` peak files (ignored).
 
-## 3. Stimulus <-> trial mapping (mapping.csv, make_mapping.py)
+## 3. Stimulus <-> trial mapping (alignment/mapping.csv, alignment/make_mapping.py)
 - **The trialinfo file names do not follow the shipped subject/trial ids.** The trials of one recording session
   (one MCOS `subject_id`, consecutive LSL timestamps) are scattered over several `S<ss>` names (e.g. S01_T05..T63
   are mostly MCOS id 74). By name, only ~5% of shipped trials match their raw file.
@@ -167,9 +167,15 @@ attended > ignored p 0.008, backward lag sweep peaking at 0); no correction appl
 3. Shift the third talker's wav to `interferer_onset` in tasks 5/7? Default: no (unknown), annotation only.
 
 ## Reproduction
-- `python -m cnsp_datasets.datasets.zhang2025.make_mapping <download dir> [out.csv]` (mapping.csv),
+- `python -m cnsp_datasets.datasets.zhang2025.alignment.make_mapping <download dir> [out.csv]` (mapping.csv),
   `python -m cnsp_datasets.datasets.zhang2025.bads <download dir>` (bads.json), then
   `python -m cnsp_datasets.standardise.format_dataset zhang2025 <download dir> <out dir>`.
 - Scratch (R/scripts/zhang2025/): inventory.py (keys, lengths, photodiode edges, MCOS fields -> inventory.jsonl),
   match*.py (mapping history), sigcmp.py, chanqc.py, clockfit.py, attention.py, validate_tasks.py, pipeline.sh,
   run_dev.py (runs a dev-worktree module under `python -I`).
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor subclasses BaseAdaptor. mapping.csv (trial -> raw recording and start sample, found by EEG
+  cross-correlation) and make_mapping.py moved to `alignment/` (`python -m
+  cnsp_datasets.datasets.zhang2025.alignment.make_mapping`); bads.json/bads.py stay. Wavs read with iohelpers.read_wav
+  (float32 as before, mono checked); bads via iohelpers.mark_bads (strict).
