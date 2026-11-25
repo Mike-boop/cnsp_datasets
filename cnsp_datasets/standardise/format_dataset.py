@@ -7,9 +7,14 @@ import argparse
 import ast
 from importlib import import_module
 
+import logging
+
 from cnsp_datasets import registry
+from cnsp_datasets.log import standardise_log
 
 from cnsp_datasets.standardise.flat_sink import FlatSinkV1
+
+log = logging.getLogger(__name__)
 
 
 def get_adaptor_class(dataset_name):
@@ -47,16 +52,23 @@ def format_dataset(
     adaptor_kwargs=None,
 ):
     """Run the dataset's adaptor (constructed with `adaptor_kwargs`) and save every record with the sink."""
-    Adaptor = get_adaptor_class(dataset_name)
-    adaptor = Adaptor(download_dir=download_dir, **(adaptor_kwargs or {}))
+    with standardise_log(standardised_dir) as log_path:
+        log.info("standardise %s from %s with %s (options %s)", dataset_name, download_dir,
+                 sinker_handle.__name__, adaptor_kwargs or {})
+        Adaptor = get_adaptor_class(dataset_name)
+        adaptor = Adaptor(download_dir=download_dir, **(adaptor_kwargs or {}))
+        sinker = sinker_handle(save_directory=standardised_dir)
 
-    sinker = sinker_handle(save_directory=standardised_dir)
+        for record in adaptor.parse():
+            sinker.save_record(record)
 
-    for record in adaptor.parse():
-        sinker.save_record(record)
+        if hasattr(sinker, "finalize"):
+            sinker.finalize()
 
-    if hasattr(sinker, "finalize"):
-        sinker.finalize()
+        failed = getattr(sinker, "failed", [])
+        log.info("done: %s trials saved, %s failed", getattr(sinker, "n_saved", "?"), len(failed))
+    if failed:
+        raise RuntimeError(f"{len(failed)} trials could not be saved; tracebacks in {log_path}")
 
 
 def main(argv=None):

@@ -1,13 +1,17 @@
+import logging
 import re
 import mne
 import numpy as np
 
 from abc import ABC, abstractmethod
 from functools import partial
+from glob import escape as glob_escape
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, Iterator, List, Tuple
 
 from cnsp_datasets.standardise.trial_record import TrialRecord, StimulusRecord
+
+log = logging.getLogger(__name__)
 
 
 def save_textfile(full_path: Path, text: str):
@@ -43,13 +47,20 @@ class BaseSink(ABC):
         self.save_directory = save_directory
         self.fname_separator = fname_separator
         self.overwrite = overwrite
+        self.n_saved = 0
+        self.failed: List[str] = []  # repr of every record that could not be saved
 
-    def save_record(self, record: TrialRecord):
+    def save_record(self, record: TrialRecord) -> bool:
+        """Save one trial; a failure is logged with its traceback (standardisation log) and counted, not raised."""
         try:
             self._save_neural_data(record)
             self._save_stimuli(record)
-        except Exception as e:
-            print(f"Error saving record {record}: {e}")
+        except Exception:
+            log.exception("could not save %r", record)
+            self.failed.append(repr(record))
+            return False
+        self.n_saved += 1
+        return True
 
     @abstractmethod
     def _get_ns_relative_path(self, record: TrialRecord) -> Tuple[Path, str]:
@@ -96,7 +107,7 @@ class BaseSink(ABC):
                 candidates = [save_dir / f"{fname}.TextGrid"]
             else:
                 candidates = [save_dir / f"{fname}.txt", save_dir / f"{fname}.npz"]
-            if any(path.exists() for path in candidates):
+            if not self.overwrite and any(path.exists() for path in candidates):
                 continue
 
             data = stim.data_fn()
@@ -129,11 +140,11 @@ class BaseSource(ABC):
     # -----------------------
 
     def iter_trials(self) -> Iterator[TrialRecord]:
-        for fif_path in self._find_fif_files():
+        for fif_path in sorted(self._find_fif_files()):
             try:
                 yield self._trial_from_fif_path(fif_path)
-            except Exception as e:
-                print(f"[{type(self).__name__}] Skipping {fif_path} due to error: {e}")
+            except Exception:
+                log.exception("[%s] skipping %s", type(self).__name__, fif_path)
 
     # -----------------------
     # Subclass contract
@@ -230,7 +241,7 @@ class BaseSource(ABC):
         mod_dir = self.root / "stimuli" / modality
         if not mod_dir.exists():
             return out
-        for f in mod_dir.glob(f"{name}{self.sep}*"):
+        for f in sorted(mod_dir.glob(f"{glob_escape(name)}{self.sep}*")):
             if not f.is_file():
                 continue
             feature = f.stem.split(self.sep, 1)[1] if self.sep in f.stem else f.stem

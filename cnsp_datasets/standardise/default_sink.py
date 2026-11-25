@@ -15,13 +15,13 @@ class DefaultSinkv1(BaseSink):
 class DefaultSourceV1(BaseSource):
     def _find_fif_files(self) -> Iterable[Path]:
         # sub-xxx/<ns_type>/ses-yyy/*.fif
-        for sub_dir in self.root.glob("sub-*"):
+        for sub_dir in sorted(self.root.glob("sub-*")):
             if not sub_dir.is_dir():
                 continue
-            for ns_dir in sub_dir.iterdir():
+            for ns_dir in sorted(sub_dir.iterdir()):
                 if not ns_dir.is_dir():
                     continue
-                for ses_dir in ns_dir.glob("ses-*"):
+                for ses_dir in sorted(ns_dir.glob("ses-*")):
                     if not ses_dir.is_dir():
                         continue
-                    yield from ses_dir.glob("*.fif")
+                    yield from sorted(ses_dir.glob("*.fif"))

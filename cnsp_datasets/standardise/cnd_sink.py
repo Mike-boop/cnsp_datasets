@@ -33,7 +33,8 @@ Usage:
 
 from __future__ import annotations
 
-import traceback
+import logging
+
 import numpy as np
 
 from dataclasses import dataclass, field
@@ -42,6 +43,8 @@ from scipy.io import savemat
 from typing import Any, Dict, List, Optional
 
 from cnsp_datasets.standardise.trial_record import TrialRecord
+
+log = logging.getLogger(__name__)
 
 CND_VERSION = "1.0"
 
@@ -187,25 +190,29 @@ class CNDSinkV1:
         self.save_directory = Path(save_directory)
         self.save_directory.mkdir(parents=True, exist_ok=True)
         self._subjects: Dict[int, _SubjectBuf] = {}
+        self.n_saved = 0
+        self.failed: List[str] = []
 
     # ── Public API ─────────────────────────────────────────────────────────────
 
     def save_record(self, record: TrialRecord):
         try:
             self._accumulate(record)
-        except Exception as e:
-            print(f"[CNDSinkV1] Error buffering record (sub={record.subject}, "
-                  f"trial={record.trial}): {e}")
-            traceback.print_exc()
+        except Exception:
+            log.exception("[CNDSinkV1] could not buffer %r", record)
+            self.failed.append(repr(record))
+            return False
+        self.n_saved += 1
+        return True
 
     def finalize(self):
         """Write all buffered data to disk. Call once after all records have been added."""
         for subject, buf in self._subjects.items():
             try:
                 self._write_subject(subject, buf)
-            except Exception as e:
-                print(f"[CNDSinkV1] Error writing subject {subject}: {e}")
-                traceback.print_exc()
+            except Exception:
+                log.exception("[CNDSinkV1] could not write subject %s", subject)
+                self.failed.append(f"subject {subject}")
         self._subjects.clear()
 
     def __enter__(self):
@@ -261,5 +268,4 @@ class CNDSinkV1:
             out["stim"] = _build_stim_struct_array(buf.features)
         path = self.save_directory / f"dataSub{subject:03d}.mat"
         savemat(str(path), out)
-        print(f"[CNDSinkV1] Wrote {path} "
-              f"({len(buf.eeg_data)} trials, {len(buf.features)} feature(s))")
+        log.info("[CNDSinkV1] wrote %s (%d trials, %d feature(s))", path, len(buf.eeg_data), len(buf.features))

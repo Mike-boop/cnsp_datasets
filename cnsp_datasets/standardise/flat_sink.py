@@ -1,3 +1,4 @@
+from glob import escape as glob_escape
 from pathlib import Path
 from typing import Iterable, Iterator, List, Tuple
 
@@ -54,9 +55,9 @@ class FlatSinkV1(BaseSink):
 class FlatSourceV1(BaseSource):
     def _find_fif_files(self) -> Iterable[Path]:
         # Flat layout: <root>/<ns_type>/*.fif
-        for ns_dir in self.root.iterdir():
+        for ns_dir in sorted(self.root.iterdir()):
             if ns_dir.is_dir():
-                yield from ns_dir.glob("*.fif")
+                yield from sorted(ns_dir.glob("*.fif"))
 
     def _find_feature_files(self, modality: str, name: str) -> List[Tuple[Path, str]]:
         # Flat layout: <root>/<modality>/ (no 'stimuli' subdirectory)
@@ -64,7 +65,7 @@ class FlatSourceV1(BaseSource):
         mod_dir = self.root / modality
         if not mod_dir.exists():
             return out
-        for f in mod_dir.glob(f"{name}{self.sep}*"):
+        for f in sorted(mod_dir.glob(f"{glob_escape(name)}{self.sep}*")):
             if not f.is_file():
                 continue
             feature = f.stem.split(self.sep, 1)[1] if self.sep in f.stem else f.stem

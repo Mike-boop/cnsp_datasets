@@ -51,3 +51,33 @@ def test_main_reports_malformed_adaptor_opt_as_usage_error():
     with pytest.raises(SystemExit) as e:
         fd.main(["x", "dl", "out", "--adaptor-opt", "onset"])
     assert e.value.code == 2
+
+
+def test_failed_trials_are_logged_and_raise(tmp_path, monkeypatch):
+    import mne
+    import numpy as np
+    import pytest
+    from cnsp_datasets.standardise import format_dataset as fd
+    from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
+
+    def broken():
+        raise OSError("disk on fire")
+
+    def good():
+        return mne.io.RawArray(np.zeros((1, 10)), mne.create_info(1, 100.0, "eeg"), verbose="ERROR")
+
+    stim = StimulusRecord("audio", "s1", lambda: {"fs": 100, "data": np.zeros(10)})
+
+    class Adaptor:
+        def __init__(self, download_dir):
+            pass
+
+        def parse(self):
+            yield TrialRecord(1, 1, 1, "c", "eeg", stim, good)
+            yield TrialRecord(1, 1, 2, "c", "eeg", stim, broken)
+
+    monkeypatch.setattr(fd, "get_adaptor_class", lambda name: Adaptor)
+    with pytest.raises(RuntimeError, match="1 trials could not be saved"):
+        fd.format_dataset("x", str(tmp_path), str(tmp_path / "out"))
+    text = (tmp_path / "out" / "standardise.log").read_text()
+    assert "disk on fire" in text and "trial=2" in text and "1 trials saved, 1 failed" in text

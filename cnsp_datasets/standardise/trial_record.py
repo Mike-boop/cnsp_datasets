@@ -72,6 +72,11 @@ class TrialRecord:
         self._structural_data_fn = structural_data_fn
         self._behavioural_data_fn = behavioural_data_fn
 
+    def __repr__(self) -> str:
+        stims = ", ".join(f"{s.modality}:{s.name}:{s.feature_name}{'*' if s.is_attended else ''}" for s in self.stimulus)
+        return (f"TrialRecord(subject={self.subject}, session={self.session}, trial={self.trial}, "
+                f"condition={self.condition!r}, ns_type={self.ns_type!r}, stimuli=[{stims}])")
+
     @property
     def neural_data_fn(self) -> Callable[[], BaseRaw]:
         return self._neural_data_fn
