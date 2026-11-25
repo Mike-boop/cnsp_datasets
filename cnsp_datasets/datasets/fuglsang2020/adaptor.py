@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import csv
-import glob
 import os
 import re
 from functools import lru_cache
@@ -12,6 +11,8 @@ import numpy as np
 from mne.channels import make_standard_montage
 from pymatreader import read_mat
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import mark_bads
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -55,7 +56,7 @@ NOTES = ("Trial = target-onset trigger (Status, = events.tsv sample - 1) for the
          "between listeners: loudness matching, side, CamEQ). ER-3 insert earphones (tube delay not corrected).")
 
 
-class Fuglsang2020Adaptor:
+class Fuglsang2020Adaptor(BaseAdaptor):
     """
     Fuglsang et al. 2020 (Zenodo 3618205, ds-eeg-snhl): selective attention to one of two audiobooks (male/female,
     +-90 deg HRTF, insert earphones) or one talker in quiet; 44 older listeners (22 hearing-impaired, 22
@@ -64,6 +65,7 @@ class Fuglsang2020Adaptor:
     """
 
     def __init__(self, download_dir: str, subjects: list | None = None):
+        super().__init__(download_dir)
         self.subjects = subjects  # participant numbers to yield (all if None)
         nested = os.path.join(download_dir, "ds-eeg-snhl")
         self.root = nested if os.path.isdir(nested) else download_dir
@@ -74,7 +76,7 @@ class Fuglsang2020Adaptor:
                              for r in csv.DictReader(f)}
 
     def parse(self) -> Iterable[TrialRecord]:
-        for bdf in sorted(glob.glob(os.path.join(self.root, "sub-*", "eeg", "*_task-selectiveattention*_eeg.bdf"))):
+        for bdf in self.sorted_glob(self.root, "sub-*/eeg/*_task-selectiveattention*_eeg.bdf"):
             participant = os.path.basename(bdf)[:7]
             if self.subjects is not None and int(participant[4:]) not in self.subjects:
                 continue
@@ -187,7 +189,7 @@ def _eeg_loader(bdf: str, onset: int, n_times: int, ns_type: str, channels: list
         raw.set_channel_types({c[1]: c[2] for c in channels}, verbose="ERROR")
         if ns_type == "eeg":
             raw.set_montage(MONTAGE, on_missing="ignore", verbose="ERROR")
-        raw.info["bads"] = list(bads)
+        mark_bads(raw, bads)
         raw.info["description"] = provenance(
             "sw_trigger", TRIGGER_TYPE, NOTES, drift_ppm=0.0, jitter_ms=1.2, validation_tier=VALIDATION_TIER[ns_type],
             bad_channels=bads, montage="biosemi64 template (no digitisation)" if ns_type == "eeg" else

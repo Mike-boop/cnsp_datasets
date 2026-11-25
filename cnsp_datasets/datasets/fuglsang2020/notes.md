@@ -196,3 +196,6 @@ Population p (circular shift) 0.02 (the floor with 50 shifts) in every run; all 
 correction; validation confirms it (low tier 44/44, TRF peak 172 ms, MLR at 18-45 ms in 34/44, lag-sweep peak at
 +0.7 ms for the target and -1.7 ms for the per-listener masker, nothing at negative lags). The masker delay is
 hardware (trigger-derived), not brain-based.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- BaseAdaptor; bads through `iohelpers.mark_bads` (strict: a name missing from the recording raises).
