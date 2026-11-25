@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import glob
-import io
 import math
 import os
 import re
@@ -11,14 +10,16 @@ from typing import Iterable
 import mne
 import numpy as np
 import pandas as pd
-import textgrid
-from scipy.io import wavfile
+import soundfile
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
+from cnsp_datasets.standardise.iohelpers import audio_loader, mark_bads, textgrid
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
-DRIFT_CSV = os.path.join(os.path.dirname(__file__), "drift.csv")  # from drift.py (audio copy vs wav, per presentation)
+# from alignment/drift.py (audio copy vs wav, per presentation)
+DRIFT_CSV = os.path.join(os.path.dirname(__file__), "alignment", "drift.csv")
 ACOUSTIC_DELAY_MS = 7.3  # assumed: 2.5 m ER3 tubes at 343 m/s; not in the (electrical) audio copy (notes.md, 9.4)
 FIT_END_S = {("sub-E12_task-en_run-1_meg.fif", 2): 351.0}  # playback glitch (+15 ms) at wav ~352 s (notes.md, 9.6)
 SITES = {
@@ -44,7 +45,7 @@ VALIDATION_NOTE = ("brainstem tier with tSSS (Maxwell filtering with the site's 
                    "applied by the user; standardised data are raw); raw data reach no tier (low forward tier fails)")
 
 
-class Yang2026Adaptor:
+class Yang2026Adaptor(BaseAdaptor):
     """
     Kymata SOTO language dataset (Yang et al. 2026, OSF qdzgh): native listeners hear one ~400 s BBC podcast excerpt
     in runs of 2 presentations (English 8, sub-E1 4, sub-E8 6; Russian 4), MEG at 1000 Hz, raw. site "en": 20 English
@@ -59,9 +60,9 @@ class Yang2026Adaptor:
     """
 
     def __init__(self, download_dir: str, site: str, drift_correction: str | None = "presentation"):
-        if drift_correction not in ("presentation", "site", None):
-            raise ValueError(f"drift_correction must be 'presentation', 'site' or None, not {drift_correction!r}")
-        self.cfg = SITES[site]
+        super().__init__(download_dir)
+        self.choice("drift_correction", drift_correction, ("presentation", "site", None))
+        self.cfg = SITES[self.choice("site", site, SITES)]
         self.site = site
         self.root = os.path.join(download_dir, self.cfg["folder"])
         self.drift_correction = drift_correction
@@ -71,10 +72,11 @@ class Yang2026Adaptor:
 
     def parse(self) -> Iterable[TrialRecord]:
         name = f"conversation_{self.site}"
-        fs, x = wavfile.read(self.wav, mmap=True)
-        n_wav = math.ceil(len(x) * 1000 / fs)
-        stimulus = [StimulusRecord("audio", name, _audio_loader(self.wav), True, "audio"),
-                    StimulusRecord("audio", name, self._textgrid_loader(len(x) / fs), True, "textgrid")]
+        wav = soundfile.info(self.wav)
+        n_wav = math.ceil(wav.frames * 1000 / wav.samplerate)
+        stimulus = [StimulusRecord("audio", name, audio_loader(self.wav, channel=0), True, "audio"),
+                    StimulusRecord("audio", name, self._textgrid_loader(wav.frames / wav.samplerate), True,
+                                   "textgrid")]
         site_drift = self.table.drift_ppm.median()
         for (fname, pres), m in self.table.iterrows():
             sub, run = re.match(rf"sub-(\w+?)_task-{self.cfg['task']}_run-(\d)_meg.fif", fname).groups()
@@ -105,28 +107,24 @@ class Yang2026Adaptor:
         audio = os.path.join(self.root, "stimuli", "audio")
 
         def _loader() -> str:
-            tg = textgrid.TextGrid(maxTime=xmax)
+            tiers = {}
             for tier, stem in (("words", "mfa_word"), ("phones", self.cfg["phones"])):
                 with open(os.path.join(audio, f"{stem}.txt"), encoding="utf-8") as f:
                     labels = f.read().splitlines()
                 starts = np.loadtxt(os.path.join(audio, f"{stem}_stime.txt"))
                 if len(labels) != len(starts):
                     raise ValueError(f"{stem}: {len(labels)} labels, {len(starts)} start times")
-                t = textgrid.IntervalTier(tier, 0, xmax)
-                for a, b, mark in zip(starts, np.r_[starts[1:], xmax], labels):
-                    t.add(float(a), float(b), "" if mark == "<sp>" else mark)
-                tg.append(t)
-            f = _Buffer()
-            tg.write(f)
-            return f.getvalue()
+                tiers[tier] = [(a, b, "" if mark == "<sp>" else mark)
+                               for a, b, mark in zip(starts, np.r_[starts[1:], xmax], labels)]
+            return textgrid(tiers, xmax=xmax)
 
         return _loader
 
 
 def _find(root: str, sub: str, fname: str) -> str:
     """The run file in sub-X/meg/ or, for sub-R6, sub-X/."""
-    paths = glob.glob(os.path.join(root, f"sub-{sub}", fname)) + \
-        glob.glob(os.path.join(root, f"sub-{sub}", "meg", fname))
+    paths = sorted(glob.glob(os.path.join(root, f"sub-{sub}", fname)) +
+                   glob.glob(os.path.join(root, f"sub-{sub}", "meg", fname)))
     if len(paths) != 1:
         raise FileNotFoundError(f"{fname}: found {paths}")
     return paths[0]
@@ -162,7 +160,7 @@ def _meg_loader(fif: str, onset: float, n_out: int, drift: float, cfg: dict, ext
             sd = out._data[idx].std(axis=1)
             dead += [out.ch_names[i] for i, s in zip(idx, sd)
                      if s < 1e-6 * np.median(sd) and out.ch_names[i] not in out.info["bads"]]
-        out.info["bads"] = out.info["bads"] + dead
+        mark_bads(out, dead)
         info = dict(extra, trial_s=out.n_times / 1000, truncated_s=round((n_out - out.n_times) / 1000, 3),
                     bads=out.info["bads"], bads_added_flat=dead)
         notes = NOTES + (" The recording stopped before the end of the wav (truncated_s)." if out.n_times < n_out
@@ -172,18 +170,3 @@ def _meg_loader(fif: str, onset: float, n_out: int, drift: float, cfg: dict, ext
         return out
 
     return _loader
-
-
-def _audio_loader(path: str):
-    def _loader():
-        fs, x = wavfile.read(path)
-        return {"fs": fs, "data": x[None, :, 0]}
-
-    return _loader
-
-
-class _Buffer(io.StringIO):
-    """StringIO that survives TextGrid.write closing it."""
-
-    def close(self):
-        pass

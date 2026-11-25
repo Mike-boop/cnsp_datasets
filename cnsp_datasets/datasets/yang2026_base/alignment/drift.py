@@ -5,12 +5,13 @@ MISC005). Writes drift.csv next to this file, which the adaptor reads (notes.md 
 Per run: code 3 (STI101 & 0xFF) locates each presentation. Coarse: the wav's 1-20 Hz envelope is cross-correlated
 with the audio copy's in 10 s windows every 5 s (+-600 ms around code 3; the English clocks differ by ~540 ppm, i.e.
 216 ms at the end), Theil-Sen line -> coarse onset and drift. Fine: the wav (1 kHz, 2-200 Hz) is put on the coarse
-clock and cross-correlated with the audio copy (10 s windows, +-30 ms, r > 0.3). Both use the positive xcorr peak:
-the |xcorr| peak of jehn2025_base.drift.trial_drift picks the inverted side lobe (~2.4 ms off) in some windows.
+clock and cross-correlated with the audio copy (10 s windows, +-30 ms, r > 0.3; jehn2025_base.alignment.xcorr).
+Both use the positive xcorr peak: the |xcorr| peak of jehn2025_base.alignment.drift.trial_drift picks the inverted
+side lobe (~2.4 ms off) in some windows.
 `onset_samp` = MEG sample (from the first stored sample, fractional) of wav sample 0; `drift_ppm` > 0: the MEG
 clock runs fast relative to the audio clock. FIT_END_S limits the fit (sub-E12 run-1 presentation 2).
 
-    python -m cnsp_datasets.datasets.yang2026_base.drift <yang2026 download dir>
+    python -m cnsp_datasets.datasets.yang2026_base.alignment.drift <yang2026 download dir>
 """
 from __future__ import annotations
 
@@ -22,42 +23,17 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import make_interp_spline
 from scipy.io import wavfile
-from scipy.signal import butter, correlate, hilbert, resample_poly, sosfiltfilt
-from scipy.stats import theilslopes
+from scipy.signal import butter, hilbert, resample_poly, sosfiltfilt
 
-from cnsp_datasets.datasets.jehn2025_base.drift import _SOS, WIN, HOP, MAX_LAG
-from cnsp_datasets.datasets.yang2026_base.adaptor import FIT_END_S, SITES, code3_samples, run_files
+from cnsp_datasets.datasets.jehn2025_base.alignment.xcorr import MAX_LAG, SOS as _SOS, window_fit
+from cnsp_datasets.datasets.yang2026_base.adaptor import DRIFT_CSV as OUT, FIT_END_S, SITES, code3_samples, run_files
 
-OUT = os.path.join(os.path.dirname(__file__), "drift.csv")
 COARSE_LAG, MIN_R_ENV, MIN_R = 600, 0.5, 0.3
 _SOS_ENV = butter(4, [1, 20], "bp", fs=1000, output="sos")
 
 
 def _envelope(x: np.ndarray) -> np.ndarray:
     return sosfiltfilt(_SOS_ENV, np.abs(hilbert(x)))
-
-
-def window_fit(y: np.ndarray, s: np.ndarray, ref: int, max_lag: int, min_r: float) -> tuple[float, float, int]:
-    """
-    Theil-Sen line through the lags of s in y[ref:] (10 s windows every 5 s, signed normalised xcorr within
-    +-max_lag, sub-sample peak, windows with r > min_r): intercept (samples), slope (fraction), number of windows.
-    """
-    t, lags = [], []
-    for a in range(0, len(s) - WIN + 1, HOP):
-        seg = y[ref + a - max_lag:ref + a + WIN + max_lag]
-        if ref + a < max_lag or len(seg) < WIN + 2 * max_lag:
-            continue
-        w = s[a:a + WIN]
-        energy = np.cumsum(np.r_[0, seg ** 2])
-        c = correlate(seg, w, "valid", method="fft") / np.sqrt(
-            (energy[WIN:] - energy[:-WIN]) * (w ** 2).sum() + 1e-30)
-        k = int(np.argmax(c))
-        if c[k] > min_r:
-            den = c[k - 1] - 2 * c[k] + c[k + 1] if 0 < k < len(c) - 1 else 0
-            t.append(a + WIN / 2)
-            lags.append(k - max_lag + (0.5 * (c[k - 1] - c[k + 1]) / den if den else 0.0))
-    slope, intercept, _, _ = theilslopes(lags, t)
-    return intercept, slope, len(t)
 
 
 def presentation_fits(fif: str, wav: np.ndarray, env_wav: np.ndarray, channel: str) -> list[dict]:

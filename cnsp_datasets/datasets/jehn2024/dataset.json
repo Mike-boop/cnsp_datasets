@@ -11,5 +11,8 @@
       "description": "Jehn et al. (2024) dataset",
       "url": "https://zenodo.org/records/10980117"
     }
-  }
+  },
+  "modality": "EEG",
+  "stimuli": "competing speakers",
+  "notes": "Variant of the jehn2025 adaptor (125 Hz archive); not yet reviewed in the data campaign."
 }

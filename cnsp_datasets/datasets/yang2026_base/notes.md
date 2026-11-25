@@ -346,3 +346,12 @@ validator then kept bad channels in its picks; fixed in `cnsp_datasets/validate/
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 - yang2026_en: **good**: Onset fitted per presentation on the audio copy (MISC006/007; 18.7 ms after software code 3); drift +538 ppm from the audio copy corrected; +7.3 ms tube delay assumed; brainstem (tSSS).
 - yang2026_ru: **good**: Onset fitted on the audio copy MISC005 (9.1 ms after code 3); drift -0.73 ppm corrected; +7.3 ms tube delay assumed; brainstem (tSSS); EEG not validated.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Stimulus audio: wav channel 0 as float32 in [-1, 1) (`iohelpers.read_wav`; was the raw int16 samples).
+- TextGrid written by `iohelpers.textgrid` (same intervals: MFA start times to the next start, `<sp>` empty;
+  long text format) instead of the `textgrid` library.
+- `drift.py` and `drift.csv` moved to `alignment/` (`python -m cnsp_datasets.datasets.yang2026_base.alignment.drift`);
+  the window fit and band-pass shared with jehn2025 and kern2022 are in `jehn2025_base/alignment/xcorr.py`.
+- Variants yang2026_en / yang2026_ru are subclasses; `site` is validated. Flat channels are added with
+  `iohelpers.mark_bads` (same result).

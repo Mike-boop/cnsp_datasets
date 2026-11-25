@@ -1,13 +1,14 @@
 """
 Drift of the Jehn 2025 EEG relative to the stimuli, from the two aux channels (rows 32-33: recordings of the left and
-right loudspeaker signals on the EEG amplifier). Writes drift.csv next to this file, which the adaptor reads.
+right loudspeaker signals on the EEG amplifier). Writes drift.csv next to this file, which the adaptor reads
+(jehn2025_base.adaptor.subject_drift).
 
 Per trial: the aux row carrying the attended stream is cross-correlated with the stimulus (both 2-200 Hz at 1 kHz)
 in 10 s windows every 5 s; a Theil-Sen line through the window lags (sub-sample peaks, |lag| <= 30 ms, windows with
 r >= 0.1) gives the onset (intercept) and drift (slope, ppm; > 0: the EEG clock runs fast). Per subject, the median
 over trials with at least 10 valid windows is used for correction.
 
-    python -m cnsp_datasets.datasets.jehn2025_base.drift <dir with jehn2025_nh, jehn2025_hi, jehn2025_ci downloads>
+    python -m cnsp_datasets.datasets.jehn2025_base.alignment.drift <dir with jehn2025_nh, jehn2025_hi, jehn2025_ci downloads>
 """
 from __future__ import annotations
 
@@ -17,13 +18,14 @@ import sys
 import h5py
 import numpy as np
 import pandas as pd
-from scipy.signal import butter, correlate, resample_poly, sosfiltfilt
+from scipy.signal import correlate, resample_poly, sosfiltfilt
 from scipy.stats import theilslopes
 
-OUT = os.path.join(os.path.dirname(__file__), "drift.csv")
+from cnsp_datasets.datasets.jehn2025_base.adaptor import DRIFT_CSV as OUT, MIN_WINDOWS
+from cnsp_datasets.datasets.jehn2025_base.alignment.xcorr import HOP, MAX_LAG, SOS as _SOS, WIN
+
 GROUPS = {"nh": "nh_dataset_1kHz.hdf5", "hi": "hi_dataset_1kHz.hdf5", "ci": "ci_dataset_1kHz.hdf5"}
-WIN, HOP, MAX_LAG, MIN_R, MIN_WINDOWS = 10_000, 5_000, 30, 0.1, 10
-_SOS = butter(4, [2, 200], "bp", fs=1000, output="sos")
+MIN_R = 0.1
 
 
 def _lag(y: np.ndarray, s: np.ndarray) -> tuple[float, float]:
@@ -72,13 +74,6 @@ def main(root: str) -> None:
     ok = d[d.n_windows >= MIN_WINDOWS]
     print(f"wrote {OUT}: {len(d)} trials, {len(ok)} with >= {MIN_WINDOWS} windows")
     print(ok.groupby("group")[["drift_ppm", "onset_ms"]].describe().round(2).T.to_string())
-
-
-def subject_drift(table: str = OUT) -> dict[str, float]:
-    """Median drift (as a fraction, not ppm) per subject code over trials with enough valid windows."""
-    d = pd.read_csv(table, dtype={"subject": str})
-    d = d[d.n_windows >= MIN_WINDOWS]
-    return (d.groupby("subject").drift_ppm.median() * 1e-6).to_dict()
 
 
 if __name__ == "__main__":

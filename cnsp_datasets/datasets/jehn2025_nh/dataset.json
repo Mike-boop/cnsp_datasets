@@ -20,5 +20,6 @@
   "stimuli": "competing speakers",
   "alignment_quality": "good",
   "validation_tier": "mlr",
-  "listening_hours": 21.0
+  "listening_hours": 21.0,
+  "participants": 28
 }
