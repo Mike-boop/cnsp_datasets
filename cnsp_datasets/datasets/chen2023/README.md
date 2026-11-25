@@ -105,8 +105,8 @@ validation subjects were held out from the scan.
 - **Missing runs (upstream):** 51 of 576 presentations are missing. `sub-400fb1b90f57` has only run-08 and
   `sub-520e215b49cf` only run-02. Runs are also missing for `sub-2bf97e558a62` (run-02), `sub-2224b4d06ea2` (run-05)
   and `sub-78f50f9a795e` (run-04). The README says that no one was excluded.
-- `events.tsv` misses one stimulus in 5 runs, so the adaptor uses `triggers.csv`, which is built from STI101 by
-  `triggers.py`.
+- `events.tsv` misses one stimulus in 5 runs, so the adaptor uses `alignment/triggers.csv`, which is built from STI101 by
+  `alignment/triggers.py`.
 - `sub-520e215b49cf`: the run's `meas_date` (2019-04-26) disagrees with `participants.tsv` (2019-04-10).
 - The vocoded stimuli of vocoded trials are approximations (clean wav or rebuild), not the presented sounds.
 

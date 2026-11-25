@@ -1,29 +1,22 @@
 """
 Build triggers.csv: one row per stimulus trigger on STI101 (codes 51-224 = condition base + stimulus number 1-24,
 authors' code c02_sens_coh_vocoding.m), read from the recordings rather than events.tsv, which misses some trials
-(notes.md, section 3). Run once on a download: python triggers.py <download dir>.
+(notes.md, section 3). The adaptor reads the table. Run once on a download:
+
+    python -m cnsp_datasets.datasets.chen2023.alignment.triggers <download dir>
 """
 from __future__ import annotations
 
 import glob
-import io
 import os
 import sys
 
 import mne
 import pandas as pd
 
+from cnsp_datasets.datasets.chen2023.adaptor import TRIGGERS_CSV as CSV, read_fif
+
 BASES = {50: "original", 80: "7chan", 110: "5chan", 140: "3chan", 170: "2chan", 200: "1chan"}
-CSV = os.path.join(os.path.dirname(__file__), "triggers.csv")
-
-
-def read_fif(fif: str) -> mne.io.BaseRaw:
-    """
-    The whole run, preloaded from one sequential read: MNE's many small reads take ~2 min per run on the network
-    storage, against ~10 s this way (notes.md, section 5).
-    """
-    with open(fif, "rb") as f:
-        return mne.io.read_raw_fif(io.BytesIO(f.read()), preload=True, verbose="ERROR")
 
 
 def run_triggers(fif: str) -> list[dict]:

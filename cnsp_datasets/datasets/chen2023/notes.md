@@ -14,7 +14,7 @@ Scripts: `tmp/review/scripts/chen2023_*.py`. That folder is temporary; the numbe
 1. 24 subjects, 525 trials (one per excerpt heard), 19.4 h. Clean audio is shipped, **the vocoded sounds are not**.
 2. Trial -> wav: STI101 code = condition base + wav number (authors' code), confirmed by response times and by no
    subject hearing a wav twice (section 3). **events.tsv misses 5 trials** and has no wav numbers: the adaptor uses
-   the trigger table `triggers.csv` built from STI101 by `triggers.py`.
+   the trigger table `alignment/triggers.csv` built from STI101 by `alignment/triggers.py`.
 3. Onset = trigger + **16 ms trigger-to-sound delay measured by the authors** (Black Box Toolkit v2, paper 2.2).
    With drift corrected, the 30-60 Hz TRF matches habersetzer2025 (audio-copy onsets) to +1 ms [0, 3].
 4. **Audio vs MEG clock drift of about +500 ppm**, measured from the MEG itself (no audio copy; section 7): best
@@ -204,3 +204,10 @@ Validation tier: **brainstem** with the default `drift_ppm=510` (`low` without d
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **poor**: STI101 trigger + 16 ms (authors' Black Box Toolkit); drift +510 ppm is brain-derived (30-60 Hz TRF-SNR scan), user-approved; no audio copy; brainstem with drift.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Stimulus audio (and the vocoded rebuild, which is RMS-matched to its input) as float32 in [-1, 1) (first channel,
+  `iohelpers.read_wav`; was the raw int16 samples).
+- Channels the FIF marks bad are kept and listed in `info["bads"]` (`pick_types` dropped them).
+- `triggers.py` and `triggers.csv` moved to `alignment/` (`python -m cnsp_datasets.datasets.chen2023.alignment.triggers`);
+  `read_fif` now lives in the adaptor.
