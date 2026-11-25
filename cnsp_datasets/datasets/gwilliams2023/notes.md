@@ -84,3 +84,11 @@ recording's sounds; `tmp/review/scripts/meg/meg_data_size.py`).
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **good**: Onset measured per sound on the audio copy MISC 009 (shipped triggers 44 ms early); drift -46 ppm from the audio copy corrected; brainstem tier, 30-250 Hz peak 35 ms, flat at negative lags.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Stimulus audio as float32 in [-1, 1) (`iohelpers.read_wav`; was the raw int16 samples).
+- Channels the KIT header marks bad are kept and listed in `info["bads"]` (`pick_types` dropped them).
+- `onset` is validated ("audio" or "trigger"; any other value used to mean "trigger").
+- TextGrid written by `iohelpers.textgrid` (was `broderick2019_natural.utils.multi_tier_dict_to_textgrid`): long
+  text format, xmin 0 (was the first onset), gaps filled, quotes escaped. Overlapping word or phoneme events within
+  a tier now raise (the old writer wrote them as they were); not yet checked on the events.
