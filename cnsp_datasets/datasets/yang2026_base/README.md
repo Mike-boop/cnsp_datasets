@@ -58,15 +58,15 @@ One condition per site (`conversation`); hours = wav duration x presentations.
   presentations.
 - Per presentation, the onset and the clock drift are measured on the audio copy (`alignment_method`
   `stimtrack_xcorr`: waveform cross-correlation with the wav in 10 s windows, positive peak, Theil-Sen line;
-  `drift.py` -> `drift.csv`). Window residual 0.014 ms (English) / 0.024 ms (Russian) (`jitter_ms`). A further
+  `alignment/drift.py` -> `alignment/drift.csv`). Window residual 0.014 ms (English) / 0.024 ms (Russian) (`jitter_ms`). A further
   **7.3 ms acoustic delay** is assumed for the 2.5 m tubes of the insert earphones (not in the electrical audio copy;
   the authors' delay settings are not shared): an assumption, not measured.
 - **Clock drift: English +538 ppm** (median +537.7, 537.05-538.73 ppm; the MEG counts ~1000.538 samples per audio
   second; without correction the end of a presentation is ~216 ms late), **Russian -0.76 ppm** (-1.02 to
   -0.42; 0.3 ms at the end). Corrected per presentation in the same interpolation that cuts the trial
   (`drift_correction="presentation"` default; `"site"` uses the site median, `None` turns it off).
-- `drift.py` uses its own positive-peak window fit: the shared `jehn2025_base.drift.trial_drift` (|xcorr| peak)
-  locked onto an inverted side lobe here (41 presentations ~2.4 samples / up to 10 ppm off).
+- `alignment/drift.py` uses the positive-peak window fit `jehn2025_base/alignment/xcorr.window_fit`: jehn2025's
+  `jehn2025_base.alignment.drift.trial_drift` (|xcorr| peak) locked onto an inverted side lobe here (41 presentations ~2.4 samples / up to 10 ppm off).
 - Checked on the standardised data: the audio copy matches the wav at a lag of -7.3 ms (the assumed tube delay)
   at the start and the end of the trials, with < 0.13 ppm residual drift (notes.md section 10).
 

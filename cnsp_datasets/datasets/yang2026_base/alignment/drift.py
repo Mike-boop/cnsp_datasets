@@ -47,7 +47,9 @@ def presentation_fits(fif: str, wav: np.ndarray, env_wav: np.ndarray, channel: s
     for pres, ref in enumerate(code3, 1):
         fit_end = FIT_END_S.get((os.path.basename(fif), pres))
         n = len(wav) if fit_end is None else round(fit_end * 1000)
-        ic, d0, _ = window_fit(env, env_wav[:n], int(ref), COARSE_LAG, MIN_R_ENV)
+        ic, d0, n_coarse = window_fit(env, env_wav[:n], int(ref), COARSE_LAG, MIN_R_ENV)
+        if n_coarse < 2:
+            raise ValueError(f"{fif} presentation {pres}: {n_coarse} envelope windows above r = {MIN_R_ENV}")
         start = int(ref + round(ic))
         on_meg_clock = make_interp_spline(np.arange(n), wav[:n], k=3)(np.arange(int(n * (1 + d0))) / (1 + d0))
         onset, resid, n_windows = window_fit(yf, on_meg_clock, start, MAX_LAG, MIN_R)

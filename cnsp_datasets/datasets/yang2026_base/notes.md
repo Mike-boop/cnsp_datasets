@@ -354,6 +354,7 @@ Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026
 - TextGrid written by `iohelpers.textgrid` (same intervals: MFA start times to the next start, `<sp>` empty;
   long text format) instead of the `textgrid` library.
 - `drift.py` and `drift.csv` moved to `alignment/` (`python -m cnsp_datasets.datasets.yang2026_base.alignment.drift`);
-  the window fit and band-pass shared with jehn2025 and kern2022 are in `jehn2025_base/alignment/xcorr.py`.
+  the window fit and band-pass shared with jehn2025 and kern2022 are in `jehn2025_base/alignment/xcorr.py`
+  (fewer than 2 envelope windows now raise a clear error instead of failing inside the fit).
 - Variants yang2026_en / yang2026_ru are subclasses; `site` is validated. Flat channels are added with
   `iohelpers.mark_bads` (same result).
