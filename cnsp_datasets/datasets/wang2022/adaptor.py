@@ -119,8 +119,10 @@ def annotation_files(root: str) -> dict:
 
 
 def merged_intervals(start, end, labels) -> list:
-    """(onset, offset, label) with zero-length tokens dropped and identical consecutive intervals merged (several
-    punctuation marks share one pause)."""
+    """
+    (onset, offset, label) with zero-length tokens dropped and identical consecutive intervals merged (several
+    punctuation marks share one pause).
+    """
     out: list = []
     for a, b, mark in zip(start, end, labels):
         if b <= a:

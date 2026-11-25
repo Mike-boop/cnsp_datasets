@@ -38,9 +38,8 @@ class Armeni2022Adaptor(BaseAdaptor):
     event; onset measured). Onsets as shipped: the authors already corrected each part's audio delay from the UADC003
     audio channel (checked: within +-2 ms). Channels: MEG, reference sensors, UADC003 (audio), UADC005-007 (EyeLink
     x, y, pupil); the paper's unstable channels of sub-003 ses-004 and any the CTF header marks bad are kept and
-    listed in info["bads"]. drift_correction=True (default)
-    resamples onto the audio clock (+5.7 ppm), in the same interpolation as the resampling. Stimuli: the wav as
-    shipped (float32) and, for story parts, a TextGrid (words, phones) from the events. See notes.md.
+    listed in info["bads"]. drift_correction=True (default) resamples onto the audio clock (+5.7 ppm), in the same
+    interpolation as the resampling. Stimuli: the wav as shipped (float32) and, for story parts, a TextGrid (words, phones) from the events. See notes.md.
     """
 
     def __init__(self, download_dir: str, sfreq: float | None = 1000, drift_correction: bool = True):

@@ -5,7 +5,7 @@ import logging
 import math
 import os
 from functools import lru_cache
-from typing import Iterable
+from typing import Callable, Iterable
 
 import mne
 import pandas as pd
@@ -145,7 +145,7 @@ def _montage() -> mne.channels.DigMontage:
 
 
 def _eeg_loader(vhdr: str, onset: float, n_out: int, drift: float, bads: list[str],
-                description: str):
+                description: str) -> Callable[[], mne.io.BaseRaw]:
     def _loader() -> mne.io.BaseRaw:
         raw = _read(vhdr)
         if raw.info["sfreq"] != FS or len(raw.ch_names) != 128:

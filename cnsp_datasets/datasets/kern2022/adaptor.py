@@ -103,8 +103,10 @@ def _read(ds: str) -> mne.io.BaseRaw:
 
 
 def wav_path(download_dir: str, code: int) -> str:
-    """Wav played for a UPPT001 code: 101-119 pieces, 1-3 test snippets. Channel 0 is the one played to both ears
-    (RunSingleTrial.m)."""
+    """
+    Wav played for a UPPT001 code: 101-119 pieces, 1-3 test snippets. Channel 0 is the one played to both ears
+    (RunSingleTrial.m).
+    """
     folder = "WavMain" if code > 100 else "WavTest"
     return os.path.join(download_dir, "Code", "MEGExperiment", folder, f"{code}.wav")
 

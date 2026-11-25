@@ -231,8 +231,10 @@ def _eeg_loader(fdt: str, labels: list, i0: int, n: int, n_present: int, bads: l
 
 
 def _trim(intervals: list) -> list:
-    """Intervals in order without overlaps, as the TextGrid writer of the first pass: one that ends before the
-    previous one is dropped, one that starts inside it starts at its end."""
+    """
+    Intervals in order without overlaps, as the TextGrid writer of the first pass: one that ends before the
+    previous one is dropped, one that starts inside it starts at its end.
+    """
     out, t = [], 0.0
     for a, b, text in intervals:
         if b <= t:
