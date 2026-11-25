@@ -1,0 +1,25 @@
+{
+  "name": "polonenko2021",
+  "title": "Polonenko & Maddox (2021) eLife peaky speech dataset (pilot + 3 experiments",
+  "visibility": "public",
+  "downloads": {
+    "polonenko2021": {
+      "source": "dryad",
+      "identifiers": [
+        "10.5061/dryad.12jm63xwd"
+      ],
+      "description": "Polonenko & Maddox (2021) eLife peaky speech dataset (pilot + 3 experiments; zips; Dryad needs DRYAD_TOKEN)",
+      "url": "https://datadryad.org/dataset/doi:10.5061/dryad.12jm63xwd"
+    }
+  },
+  "paper": {
+    "url": "https://elifesciences.org/articles/62329"
+  },
+  "modality": "EEG",
+  "system": "Brain Products BrainVision actiCHamp + EP-Preamp",
+  "stimuli": "natural",
+  "alignment_quality": "medium",
+  "validation_tier": "brainstem",
+  "participants": 22,
+  "listening_hours": 100.0
+}

@@ -1,0 +1,26 @@
+{
+  "name": "schueller2024",
+  "title": "Schueller et al. (2024) dataset",
+  "visibility": "public",
+  "downloads": {
+    "schueller2024": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.12793944",
+        "10.5281/zenodo.12794769",
+        "10.5281/zenodo.12794808"
+      ],
+      "description": "Schueller et al. (2024) dataset",
+      "url": "https://zenodo.org/records/12793944"
+    }
+  },
+  "paper": {
+    "url": "https://www.jneurosci.org/content/43/44/7429"
+  },
+  "modality": "MEG",
+  "stimuli": "competing speakers",
+  "alignment_quality": "good",
+  "validation_tier": "brainstem (MEG, Set1 only)",
+  "participants": 22,
+  "listening_hours": 6.8
+}

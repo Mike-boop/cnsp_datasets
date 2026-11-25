@@ -1,0 +1,26 @@
+{
+  "name": "kulasingham2020",
+  "title": "Kulasingham et al. (2020, NeuroImage) continuous MEG (KIT, TSPCA/SNS-denoised by the authors), 17 younger and 23 older adults, two 60 s stories x 3 in quiet (32 subjects are presacco2016's quiet blocks)",
+  "visibility": "public",
+  "downloads": {
+    "kulasingham2020": {
+      "source": "drum",
+      "identifiers": [
+        "da9293b8-cc3c-4965-8b4f-dd1bc91daca5"
+      ],
+      "description": "Kulasingham et al. (2020, NeuroImage) continuous MEG (KIT, TSPCA/SNS-denoised by the authors), 17 younger and 23 older adults, two 60 s stories x 3 in quiet (32 subjects are presacco2016's quiet blocks); split zips younger_meg/older (.z01-.z03 + .zip) are streamed through bsdtar by extract_archives",
+      "url": "https://drum.lib.umd.edu/items/da9293b8-cc3c-4965-8b4f-dd1bc91daca5",
+      "exclude": [
+        "ico-4.zip",
+        "vol-7-*.zip"
+      ]
+    }
+  },
+  "modality": "MEG",
+  "system": "KIT (157 ch)",
+  "stimuli": "natural",
+  "alignment_quality": "medium",
+  "validation_tier": "low (30-250 Hz passes; mlr fails)",
+  "participants": 40,
+  "listening_hours": 4.0
+}

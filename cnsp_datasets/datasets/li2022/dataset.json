@@ -1,0 +1,25 @@
+{
+  "name": "li2022",
+  "title": "Li et al. (2022, O-COCOSDA) ESAA Mandarin two-talker auditory attention EEG (BrainAmp 64 ch + ECG, 1000 Hz, 17 subjects x 32 trials)",
+  "visibility": "public",
+  "downloads": {
+    "li2022": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.7795585"
+      ],
+      "description": "Li et al. (2022, O-COCOSDA) ESAA Mandarin two-talker auditory attention EEG (BrainAmp 64 ch + ECG, 1000 Hz, 17 subjects x 32 trials); per-subject MATLAB files (S1..S17.zip), clean and HRTF stimulus wavs, and the authors' code",
+      "url": "https://zenodo.org/records/7795585"
+    }
+  },
+  "paper": {
+    "url": "https://ieeexplore.ieee.org/document/9997944"
+  },
+  "modality": "EEG",
+  "system": "BrainAmp (64 ch)",
+  "stimuli": "competing speakers",
+  "alignment_quality": "poor",
+  "validation_tier": "low",
+  "participants": 17,
+  "listening_hours": 10.87
+}

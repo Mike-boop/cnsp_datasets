@@ -1,0 +1,26 @@
+{
+  "name": "karunathilake2023",
+  "title": "Karunathilake et al. (2023, PNAS) MEG (KIT), clear vs noise-vocoded audiobook passages (PRE/CLEAN/POST), main + control study",
+  "visibility": "public",
+  "downloads": {
+    "karunathilake2023": {
+      "source": "dryad",
+      "identifiers": [
+        "10.5061/dryad.sbcc2frd6"
+      ],
+      "description": "Karunathilake et al. (2023, PNAS) MEG (KIT), clear vs noise-vocoded audiobook passages (PRE/CLEAN/POST), main + control study; raw MEG. MRI and authors' TRFs skipped (Dryad needs DRYAD_TOKEN)",
+      "url": "https://datadryad.org/dataset/doi:10.5061/dryad.sbcc2frd6",
+      "exclude": [
+        "mri.zip",
+        "TRFs.zip"
+      ]
+    }
+  },
+  "modality": "MEG",
+  "system": "KIT (157 ch)",
+  "stimuli": "degraded (vocoded); natural",
+  "alignment_quality": "medium",
+  "validation_tier": "brainstem (clear speech; vocoded low only)",
+  "participants": 39,
+  "listening_hours": 26.0
+}

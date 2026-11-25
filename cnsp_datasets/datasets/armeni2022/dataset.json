@@ -1,0 +1,30 @@
+{
+  "name": "armeni2022",
+  "title": "Armeni et al. (2022) 10-hour within-participant MEG narrative dataset (CTF 275, 3 participants x 10 sessions)",
+  "visibility": "public",
+  "downloads": {
+    "armeni2022": {
+      "source": "radboud_rdr",
+      "identifiers": [
+        "dccn/DSC_3011085.05_995_v1"
+      ],
+      "description": "Armeni et al. (2022) 10-hour within-participant MEG narrative dataset (CTF 275, 3 participants x 10 sessions); needs RADBOUD_USERNAME/RADBOUD_PASSWORD (Donders data use agreement); anatomy excluded",
+      "url": "https://doi.org/10.34973/5rpw-rn92",
+      "exclude": [
+        "*/anat/*",
+        "derivatives/*anatomy/*",
+        "derivatives/atlas/*"
+      ]
+    }
+  },
+  "paper": {
+    "url": "https://www.nature.com/articles/s41597-022-01382-7"
+  },
+  "modality": "MEG",
+  "system": "CTF (275 ch)",
+  "stimuli": "natural",
+  "alignment_quality": "good",
+  "validation_tier": "brainstem (MEG)",
+  "participants": 3,
+  "listening_hours": 30.0
+}

@@ -1,0 +1,25 @@
+{
+  "name": "fuglsang2018",
+  "title": "Fuglsang et al. (2018) dataset",
+  "visibility": "public",
+  "downloads": {
+    "fuglsang2018": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.1199011"
+      ],
+      "description": "Fuglsang et al. (2018) dataset",
+      "url": "https://zenodo.org/records/1199011"
+    }
+  },
+  "paper": {
+    "url": "https://www.sciencedirect.com/science/article/pii/S105381191730318X"
+  },
+  "modality": "EEG",
+  "system": "BioSemi (64 ch)",
+  "stimuli": "competing speakers",
+  "alignment_quality": "medium",
+  "validation_tier": "low (mlr without reverb)",
+  "participants": 29,
+  "listening_hours": 17.0
+}

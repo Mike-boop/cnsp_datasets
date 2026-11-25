@@ -1,0 +1,15 @@
+{
+  "name": "stoll2025",
+  "title": "Stoll et al. (2025) selective attention, subcortical and cortical EEG (3 experiments)",
+  "visibility": "public",
+  "downloads": {
+    "stoll2025": {
+      "source": "openneuro",
+      "identifiers": [
+        "10.18112/openneuro.ds006434.v1.2.0"
+      ],
+      "description": "Stoll et al. (2025) selective attention, subcortical and cortical EEG (3 experiments)",
+      "url": "https://openneuro.org/datasets/ds006434/versions/1.2.0"
+    }
+  }
+}

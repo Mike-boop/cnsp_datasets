@@ -1,0 +1,22 @@
+{
+  "name": "miran2020",
+  "title": "Miran et al. (2020, PLoS Comput Biol) at-will attention switching: KIT MEG, 1 subject (R2082), 3 x 90 s raw sensor epochs at 2 kHz (v7.3 mat), two Sleepy Hollow wavs",
+  "visibility": "public",
+  "downloads": {
+    "miran2020": {
+      "source": "drum",
+      "identifiers": [
+        "36f86b13-fefe-41b2-b6e6-236f87b170e3"
+      ],
+      "description": "Miran et al. (2020, PLoS Comput Biol) at-will attention switching: KIT MEG, 1 subject (R2082), 3 x 90 s raw sensor epochs at 2 kHz (v7.3 mat), two Sleepy Hollow wavs",
+      "url": "https://drum.lib.umd.edu/items/36f86b13-fefe-41b2-b6e6-236f87b170e3"
+    }
+  },
+  "modality": "MEG",
+  "system": "KIT (157 ch)",
+  "stimuli": "competing speakers",
+  "alignment_quality": "medium",
+  "validation_tier": "mlr",
+  "participants": 1,
+  "listening_hours": 0.07
+}

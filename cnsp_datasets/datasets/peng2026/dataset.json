@@ -1,0 +1,25 @@
+{
+  "name": "peng2026",
+  "title": "Peng et al. (2026) SoundBubble-EEG (EGI HydroCel GSN 128, 250 Hz), 30 listeners, two competing spatialised talkers in three scenes (Restaurant, TV, Meeting)",
+  "visibility": "public",
+  "downloads": {
+    "peng2026": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.19610628"
+      ],
+      "description": "Peng et al. (2026) SoundBubble-EEG (EGI HydroCel GSN 128, 250 Hz), 30 listeners, two competing spatialised talkers in three scenes (Restaurant, TV, Meeting); one BIDS zip (Sound_Bubble_BIDS.zip, 21.6 GB); version 19610628 pinned (concept 19610627)",
+      "url": "https://zenodo.org/records/19610628"
+    }
+  },
+  "paper": {
+    "url": "https://arxiv.org/abs/2610.09539"
+  },
+  "modality": "EEG",
+  "system": "EGI Geodesic Net Amps 400, 128 ch",
+  "stimuli": "competing speakers",
+  "alignment_quality": "medium",
+  "validation_tier": "low",
+  "participants": 30,
+  "listening_hours": 26.25
+}

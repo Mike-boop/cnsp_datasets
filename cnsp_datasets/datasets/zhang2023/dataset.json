@@ -1,0 +1,25 @@
+{
+  "name": "zhang2023",
+  "title": "Zhang, Yuan & Lu (Zenodo 2022",
+  "visibility": "public",
+  "downloads": {
+    "zhang2023": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.7253438"
+      ],
+      "description": "Zhang, Yuan & Lu (Zenodo 2022; ICASSP 2023) NJU auditory attention detection: two Mandarin news talkers over a loudspeaker array (14 azimuths, some moving), 21 participants x 28-32 trials; Emotiv EPOC Flex 32 ch, authors' preprocessed EEG only (1-32 Hz, 128 Hz, ICA, artefact segments spliced out of EEG and wavs together) with per-trial 16 kHz wavs, envelopes and a MATLAB table expinfo, one v7.3 .mat per participant (NJUNCA_preprocessed_arte_removed.zip, 11.0 GB) plus script.zip; shipped timing shows no envelope tracking in 17/21 (see datasets/zhang2023/notes.md); CC BY 4.0",
+      "url": "https://zenodo.org/records/7253438"
+    }
+  },
+  "paper": {
+    "url": "https://ieeexplore.ieee.org/document/10096819"
+  },
+  "modality": "EEG",
+  "system": "Emotiv Epoc Flex Saline",
+  "stimuli": "competing speakers",
+  "alignment_quality": "poor",
+  "validation_tier": "low (confident pairs only)",
+  "participants": 21,
+  "listening_hours": 13.8
+}

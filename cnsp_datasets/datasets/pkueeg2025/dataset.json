@@ -1,0 +1,26 @@
+{
+  "name": "pkueeg2025",
+  "title": "PKUEEG (2025)",
+  "visibility": "public",
+  "downloads": {
+    "pkueeg2025": {
+      "source": "openneuro",
+      "identifiers": [
+        "10.18112/openneuro.ds008834.v1.0.4"
+      ],
+      "description": "PKUEEG (2025)",
+      "url": "https://openneuro.org/datasets/ds008834/versions/1.0.4",
+      "exclude": [
+        "derivatives/preproc_*",
+        "derivatives/stimulus_features/*"
+      ]
+    }
+  },
+  "modality": "EEG",
+  "system": "NeuroScan (days 1-2) + Neuracle (day 3), 64 ch (57 common)",
+  "stimuli": "natural",
+  "alignment_quality": "poor",
+  "validation_tier": "low (pilot, 12 subjects)",
+  "participants": 25,
+  "listening_hours": 68.1
+}

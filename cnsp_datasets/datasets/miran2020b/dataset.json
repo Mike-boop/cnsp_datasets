@@ -1,0 +1,22 @@
+{
+  "name": "miran2020b",
+  "title": "Miran et al. (2020, PLoS Comput Biol) instructed attention switching: KIT MEG, 7 subjects, DSS-denoised sensor epochs at 200 Hz (2 conditions x 3 x 60 s), Sp1/Sp2 talker wavs (diotic mixture)",
+  "visibility": "public",
+  "downloads": {
+    "miran2020b": {
+      "source": "drum",
+      "identifiers": [
+        "d935265d-895c-4fc7-aec2-36dc7682d87d"
+      ],
+      "description": "Miran et al. (2020, PLoS Comput Biol) instructed attention switching: KIT MEG, 7 subjects, DSS-denoised sensor epochs at 200 Hz (2 conditions x 3 x 60 s), Sp1/Sp2 talker wavs (diotic mixture); one uncompressed zip",
+      "url": "https://drum.lib.umd.edu/items/d935265d-895c-4fc7-aec2-36dc7682d87d"
+    }
+  },
+  "modality": "MEG",
+  "system": "KIT (157 ch)",
+  "stimuli": "competing speakers",
+  "alignment_quality": "medium",
+  "validation_tier": "low",
+  "participants": 7,
+  "listening_hours": 0.7
+}

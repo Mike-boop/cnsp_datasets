@@ -7,20 +7,15 @@ import argparse
 import ast
 from importlib import import_module
 
+from cnsp_datasets import registry
+
 from cnsp_datasets.standardise.flat_sink import FlatSinkV1
 
 
 def get_adaptor_class(dataset_name):
-    """Return the ADAPTOR class of `cnsp_datasets.datasets.<dataset_name>.adaptor`."""
-    module_path = f"cnsp_datasets.datasets.{dataset_name}.adaptor"
-
-    try:
-        mod = import_module(module_path)
-    except ModuleNotFoundError as e:
-        raise ModuleNotFoundError(
-            f"Error finding adaptor for dataset{dataset_name}: could not find module path '{module_path}'. "
-            f"Please ensure that the dataset name is correct and that an adaptor module exists."
-        ) from e
+    """Return the ADAPTOR of the dataset's adaptor module (`<package>.<dataset_name>.adaptor`)."""
+    module_path = registry.adaptor_module(dataset_name)  # also searches $CNSP_DATASET_PACKAGES
+    mod = import_module(module_path)
 
     try:
         adaptor = getattr(mod, "ADAPTOR")

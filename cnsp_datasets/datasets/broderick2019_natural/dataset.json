@@ -1,0 +1,25 @@
+{
+  "name": "broderick2019_natural",
+  "title": "Broderick et al. (2019) Natural Speech dataset",
+  "visibility": "public",
+  "downloads": {
+    "broderick2019_natural": {
+      "source": "dryad",
+      "identifiers": [
+        "10.5061/dryad.070jc"
+      ],
+      "description": "Broderick et al. (2019) Natural Speech dataset",
+      "url": "https://osf.io/m5ezp/"
+    }
+  },
+  "paper": {
+    "url": "https://www.sciencedirect.com/science/article/pii/S0960982218301465"
+  },
+  "modality": "EEG",
+  "system": "BioSemi ActiveTwo (128 ch + 2 mastoids)",
+  "stimuli": "natural",
+  "alignment_quality": "medium",
+  "validation_tier": "low",
+  "participants": 19,
+  "listening_hours": 19.0
+}

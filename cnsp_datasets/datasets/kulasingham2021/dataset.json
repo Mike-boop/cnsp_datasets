@@ -1,0 +1,22 @@
+{
+  "name": "kulasingham2021",
+  "title": "Kulasingham et al. (2021, J Neurosci) MEG (KIT), 22 participants, two-talker mixtures of isochronous spoken sentences and arithmetic equations, attend one stream",
+  "visibility": "public",
+  "downloads": {
+    "kulasingham2021": {
+      "source": "drum",
+      "identifiers": [
+        "93067450-51d7-43c6-bb8f-53d4195db334"
+      ],
+      "description": "Kulasingham et al. (2021, J Neurosci) MEG (KIT), 22 participants, two-talker mixtures of isochronous spoken sentences and arithmetic equations, attend one stream",
+      "url": "https://drum.lib.umd.edu/items/93067450-51d7-43c6-bb8f-53d4195db334"
+    }
+  },
+  "modality": "MEG",
+  "system": "KIT (157 ch)",
+  "stimuli": "natural (artificial isochronous sentences)",
+  "alignment_quality": "medium",
+  "validation_tier": "low (ceiling at 200 Hz); attended > ignored 20/22",
+  "participants": 22,
+  "listening_hours": 9.68
+}

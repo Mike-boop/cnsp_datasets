@@ -1,0 +1,38 @@
+{
+  "name": "li2025",
+  "title": "Li et al. (2025, Sci Data) BABA: OPM-MEG (Quanmag, 64 ch) while watching a 25 min Chinese TV show with sound",
+  "visibility": "public",
+  "downloads": {
+    "li2025": {
+      "source": "openneuro",
+      "identifiers": [
+        "10.18112/openneuro.ds005346.v1.0.5"
+      ],
+      "description": "Li et al. (2025, Sci Data) BABA: OPM-MEG (Quanmag, 64 ch) while watching a 25 min Chinese TV show with sound; 30 participants (the fMRI half is not downloaded)",
+      "url": "https://openneuro.org/datasets/ds005346/versions/1.0.5",
+      "include": [
+        "*.json",
+        "*.tsv",
+        "README",
+        "CHANGES",
+        "sourcedata/*",
+        "sub-*/meg/*"
+      ],
+      "exclude": [
+        "derivatives/*",
+        "sub-*/func/*",
+        "sub-*/anat/*"
+      ]
+    }
+  },
+  "paper": {
+    "url": "https://doi.org/10.1038/s41597-025-06110-5"
+  },
+  "modality": "MEG",
+  "system": "Quanmag OPM-MEG, 64 radial magnetometers",
+  "stimuli": "natural (TV show with sound; multi-speaker Chinese speech)",
+  "alignment_quality": "poor",
+  "validation_tier": "low (r 0.0245, 90% subj)",
+  "participants": 30,
+  "listening_hours": 12.42
+}

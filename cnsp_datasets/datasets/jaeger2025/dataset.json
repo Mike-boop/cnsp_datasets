@@ -1,0 +1,15 @@
+{
+  "name": "jaeger2025",
+  "title": "Jaeger et al. (2025), German fairy tales: the release holds only TRF weights and prediction r (Data.zip 15.3 GB), analysis code and toolboxes, no EEG and no audio",
+  "visibility": "public",
+  "downloads": {
+    "jaeger2025": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.15518573"
+      ],
+      "description": "Jaeger et al. (2025), German fairy tales: the release holds only TRF weights and prediction r (Data.zip 15.3 GB), analysis code and toolboxes, no EEG and no audio; not incorporable (see datasets/jaeger2025/notes.md); version 15518573 pinned",
+      "url": "https://zenodo.org/records/15518573"
+    }
+  }
+}

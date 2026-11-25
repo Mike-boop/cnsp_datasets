@@ -1,0 +1,25 @@
+{
+  "name": "accou2023",
+  "title": "Accou et al. (2023) dataset",
+  "visibility": "public",
+  "downloads": {
+    "accou2023": {
+      "source": "dataverse",
+      "identifiers": [
+        "10.48804/K3VSND"
+      ],
+      "description": "Accou et al. (2023) dataset",
+      "url": "https://doi.org/10.48804/K3VSND"
+    }
+  },
+  "paper": {
+    "url": "https://www.mdpi.com/2306-5729/9/8/94"
+  },
+  "modality": "EEG",
+  "system": "BioSemi ActiveTwo (64 ch)",
+  "stimuli": "natural",
+  "alignment_quality": "good",
+  "validation_tier": "brainstem",
+  "participants": 85,
+  "listening_hours": 147.0
+}

@@ -1,0 +1,25 @@
+{
+  "name": "rogachev2024",
+  "title": "Rogachev et al. (2024) neural tracking in children: 52 children aged 3-8, 32-ch actiCHamp EEG shipped as the authors' preprocessed CND (1-15 Hz, bad channels interpolated, average reference), 4 Russian story wavs",
+  "visibility": "public",
+  "downloads": {
+    "rogachev2024": {
+      "source": "osf",
+      "identifiers": [
+        "c3agw"
+      ],
+      "description": "Rogachev et al. (2024) neural tracking in children: 52 children aged 3-8, 32-ch actiCHamp EEG shipped as the authors' preprocessed CND (1-15 Hz, bad channels interpolated, average reference), 4 Russian story wavs; no licence stated",
+      "url": "https://osf.io/c3agw/"
+    }
+  },
+  "paper": {
+    "url": "https://www.sciencedirect.com/science/article/abs/pii/S1389041724000305"
+  },
+  "modality": "EEG",
+  "system": "Brain Products actiCHamp",
+  "stimuli": "natural",
+  "alignment_quality": "medium",
+  "validation_tier": "low",
+  "participants": 52,
+  "listening_hours": 10.9
+}

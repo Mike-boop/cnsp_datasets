@@ -17,6 +17,8 @@ from fnmatch import fnmatch
 from pathlib import Path, PurePosixPath
 from urllib.parse import quote
 
+from cnsp_datasets.config import get_secret
+
 
 ## general utilities
 
@@ -190,9 +192,9 @@ def _dryad_token():
     are exchanged for a fresh short-lived token per run, so a restarted download never uses an expired one), or
     DRYAD_TOKEN, a token minted beforehand.
     """
-    client_id, secret = os.environ.get("DRYAD_CLIENT_ID"), os.environ.get("DRYAD_CLIENT_SECRET")
+    client_id, secret = get_secret("DRYAD_CLIENT_ID"), get_secret("DRYAD_CLIENT_SECRET")
     if not (client_id and secret):
-        return os.environ.get("DRYAD_TOKEN") or None
+        return get_secret("DRYAD_TOKEN")
     response = requests.post("https://datadryad.org/oauth/token", timeout=60, data={
         "grant_type": "client_credentials", "client_id": client_id, "client_secret": secret,
     })
@@ -659,10 +661,12 @@ def id_to_downloadables_radboud_rdr(id, rdr_server="https://webdav.data.ru.nl"):
     response.raise_for_status()
 
     headers = None
-    if os.environ.get("RADBOUD_USERNAME"):
-        if not os.environ.get("RADBOUD_PASSWORD"):
+    username = get_secret("RADBOUD_USERNAME")
+    if username:
+        password = get_secret("RADBOUD_PASSWORD")
+        if not password:
             raise ValueError("RADBOUD_USERNAME is set but RADBOUD_PASSWORD is not")
-        token = base64.b64encode(f"{os.environ['RADBOUD_USERNAME']}:{os.environ['RADBOUD_PASSWORD']}".encode())
+        token = base64.b64encode(f"{username}:{password}".encode())
         headers = {"Authorization": f"Basic {token.decode()}"}
 
     # each line is "<sha256> <path>"; split once so paths containing spaces survive
@@ -681,7 +685,7 @@ def id_to_downloadables_huggingface(repo):
     """
     repo, _, revision = repo.partition("@")
     revision = revision or "main"
-    token = os.environ.get("HF_TOKEN")
+    token = get_secret("HF_TOKEN")
     headers = {"Authorization": f"Bearer {token}"} if token else None
     url = f"https://huggingface.co/api/datasets/{repo}/tree/{revision}?recursive=true"
     files = []

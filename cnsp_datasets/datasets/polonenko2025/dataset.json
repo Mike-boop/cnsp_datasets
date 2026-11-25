@@ -1,0 +1,25 @@
+{
+  "name": "polonenko2025",
+  "title": "Polonenko & Maddox (2025) peaky speech with 1-5 talkers (peaky_snr)",
+  "visibility": "public",
+  "downloads": {
+    "polonenko2025": {
+      "source": "openneuro",
+      "identifiers": [
+        "10.18112/openneuro.ds005408.v1.0.1"
+      ],
+      "description": "Polonenko & Maddox (2025) peaky speech with 1-5 talkers (peaky_snr)",
+      "url": "https://openneuro.org/datasets/ds005408/versions/1.0.1"
+    }
+  },
+  "paper": {
+    "url": "https://www.eneuro.org/content/12/4/ENEURO.0561-24.2025"
+  },
+  "modality": "EEG",
+  "system": "Brain Products actiCHamp + EP-Preamp",
+  "stimuli": "competing speakers",
+  "alignment_quality": "good",
+  "validation_tier": "brainstem",
+  "participants": 25,
+  "listening_hours": 50.0
+}

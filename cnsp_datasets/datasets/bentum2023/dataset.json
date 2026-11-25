@@ -1,0 +1,25 @@
+{
+  "name": "bentum2023",
+  "title": "Bentum et al. (2023) dataset",
+  "visibility": "public",
+  "downloads": {
+    "bentum2023": {
+      "source": "radboud_rdr",
+      "identifiers": [
+        "dutch_eeg_speech_register_corpus_dsc_807_v1"
+      ],
+      "description": "Bentum et al. (2023) dataset",
+      "url": "https://doi.org/10.34973/97pv-jw72"
+    }
+  },
+  "paper": {
+    "url": "https://mirjamernestus.nl/Ernestus/DESRC/index.php"
+  },
+  "modality": "EEG",
+  "system": "Brain Products actiCHamp",
+  "stimuli": "natural",
+  "alignment_quality": "poor",
+  "validation_tier": "low",
+  "participants": 48,
+  "listening_hours": 208.0
+}

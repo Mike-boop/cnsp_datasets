@@ -1,0 +1,24 @@
+{
+  "name": "polonenko2026",
+  "title": "Polonenko & Eisenreich (2026) multiband peaky speech ABRs (3 experiments)",
+  "visibility": "public",
+  "downloads": {
+    "polonenko2026": {
+      "source": "openneuro",
+      "identifiers": [
+        "10.18112/openneuro.ds008065.v1.0.1"
+      ],
+      "description": "Polonenko & Eisenreich (2026) multiband peaky speech ABRs (3 experiments)",
+      "url": "https://openneuro.org/datasets/ds008065/versions/1.0.1"
+    }
+  },
+  "paper": {
+    "url": "https://journals.sagepub.com/doi/10.1177/23312165261465722"
+  },
+  "modality": "EEG",
+  "system": "Brain Products actiCHamp",
+  "stimuli": "natural",
+  "alignment_quality": "good",
+  "validation_tier": "brainstem",
+  "listening_hours": 130.0
+}

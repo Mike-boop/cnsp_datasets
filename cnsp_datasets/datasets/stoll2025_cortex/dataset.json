@@ -1,0 +1,6 @@
+{
+  "name": "stoll2025_cortex",
+  "title": "stoll2025_cortex",
+  "visibility": "public",
+  "notes": "variant of stoll2025: downloaded with download_dataset('stoll2025')"
+}

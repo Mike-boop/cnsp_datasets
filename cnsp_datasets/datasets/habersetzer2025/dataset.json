@@ -1,0 +1,28 @@
+{
+  "name": "habersetzer2025",
+  "title": "Habersetzer et al. (2025) MEG-SCANS",
+  "visibility": "public",
+  "downloads": {
+    "habersetzer2025": {
+      "source": "openneuro",
+      "identifiers": [
+        "10.18112/openneuro.ds006468.v1.1.2"
+      ],
+      "description": "Habersetzer et al. (2025) MEG-SCANS",
+      "url": "https://openneuro.org/datasets/ds006468/versions/1.1.2",
+      "exclude": [
+        "sub-*/anat/*",
+        "derivatives/sub-*"
+      ]
+    }
+  },
+  "paper": {
+    "url": "https://www.nature.com/articles/s41597-025-06397-4"
+  },
+  "modality": "MEG",
+  "system": "Elekta Neuromag TRIUX (306 ch)",
+  "stimuli": "degraded (speech in noise); natural",
+  "alignment_quality": "good",
+  "validation_tier": "brainstem (MEG, tSSS)",
+  "participants": 24
+}

@@ -1,0 +1,25 @@
+{
+  "name": "shan2024",
+  "title": "Shan et al. (2024) music vs speech ABRs (NEMAR mirror of OpenNeuro ds004356)",
+  "visibility": "public",
+  "downloads": {
+    "shan2024": {
+      "source": "nemar",
+      "identifiers": [
+        "on004356@v1.0.0"
+      ],
+      "description": "Shan et al. (2024) music vs speech ABRs (NEMAR mirror of OpenNeuro ds004356)",
+      "url": "https://nemar.org/dataset/on004356"
+    }
+  },
+  "paper": {
+    "url": "https://www.nature.com/articles/s41598-023-50438-0"
+  },
+  "modality": "EEG",
+  "system": "Brain Products (PyCorder, EP-Preamp ABR preamps)",
+  "stimuli": "music; natural",
+  "alignment_quality": "medium",
+  "validation_tier": "mlr",
+  "participants": 24,
+  "listening_hours": 35.0
+}

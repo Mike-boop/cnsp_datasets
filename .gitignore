@@ -18,3 +18,6 @@ data_campaign/archive/
 secrets.json
 urls.txt
 tmp/
+
+# local configuration (cnsp_datasets.config)
+paths.json

@@ -1,0 +1,25 @@
+{
+  "name": "broderick2019_cocktail",
+  "title": "Broderick et al. (2019) Cocktail Party dataset (same Dryad package as broderick2019_natural)",
+  "visibility": "public",
+  "downloads": {
+    "broderick2019_cocktail": {
+      "source": "dryad",
+      "identifiers": [
+        "10.5061/dryad.070jc"
+      ],
+      "description": "Broderick et al. (2019) Cocktail Party dataset (same Dryad package as broderick2019_natural)",
+      "url": "https://datadryad.org/dataset/doi:10.5061/dryad.070jc"
+    }
+  },
+  "paper": {
+    "url": "https://www.sciencedirect.com/science/article/pii/S0960982218301465"
+  },
+  "modality": "EEG",
+  "system": "BioSemi ActiveTwo (128 ch + 2 mastoids)",
+  "stimuli": "competing speakers",
+  "alignment_quality": "poor",
+  "validation_tier": "low",
+  "participants": 33,
+  "listening_hours": 11.0
+}

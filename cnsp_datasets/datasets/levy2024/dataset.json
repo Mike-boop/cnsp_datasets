@@ -1,0 +1,25 @@
+{
+  "name": "levy2024",
+  "title": "Levy et al. (2024) EEG, 49 participants, continuous speech (per-participant .mat files)",
+  "visibility": "public",
+  "downloads": {
+    "levy2024": {
+      "source": "osf",
+      "identifiers": [
+        "svjqg"
+      ],
+      "description": "Levy et al. (2024) EEG, 49 participants, continuous speech (per-participant .mat files)",
+      "url": "https://osf.io/svjqg/"
+    }
+  },
+  "paper": {
+    "url": "https://elifesciences.org/articles/103235"
+  },
+  "modality": "EEG",
+  "system": "BioSemi (64 ch)",
+  "stimuli": "natural",
+  "alignment_quality": "medium",
+  "validation_tier": "low",
+  "participants": 49,
+  "listening_hours": 17.5
+}

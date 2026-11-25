@@ -1,0 +1,33 @@
+{
+  "name": "kern2022",
+  "title": "Kern, Heilbron, de Lange & Spaak (2022) MEG music dataset (CTF 275, 35 participants, 19 monophonic synthesised pieces)",
+  "visibility": "public",
+  "downloads": {
+    "kern2022": {
+      "source": "radboud_rdr",
+      "identifiers": [
+        "dccn/DSC_3018045.02_116_v1"
+      ],
+      "description": "Kern, Heilbron, de Lange & Spaak (2022) MEG music dataset (CTF 275, 35 participants, 19 monophonic synthesised pieces); needs RADBOUD_USERNAME/RADBOUD_PASSWORD (Donders data use agreement); anatomy, source models, preprocessed data, eye tracking and the MCCC corpus excluded",
+      "url": "https://doi.org/10.34973/5qxw-nn97",
+      "exclude": [
+        "MEGData/sub*/mri/*",
+        "MEGData/MEGSource/*",
+        "MEGData/preproc/*",
+        "MEGData/eyetracker/*",
+        "MusicData/MCCC/*",
+        "Code/MusicAnalysis/MusicModels/*"
+      ]
+    }
+  },
+  "paper": {
+    "url": "https://doi.org/10.7554/eLife.80935"
+  },
+  "modality": "MEG",
+  "system": "CTF/VSM 275-ch axial gradiometer MEG",
+  "stimuli": "music",
+  "alignment_quality": "good",
+  "validation_tier": "brainstem (pilot 4; 30-250 Hz 3/4 subj)",
+  "participants": 35,
+  "listening_hours": 25.27
+}

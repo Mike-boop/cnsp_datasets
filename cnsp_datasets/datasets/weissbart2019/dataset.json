@@ -1,0 +1,25 @@
+{
+  "name": "weissbart2019",
+  "title": "Weissbart et al. (2019) dataset",
+  "visibility": "public",
+  "downloads": {
+    "weissbart2019": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.7775260"
+      ],
+      "description": "Weissbart et al. (2019) dataset",
+      "url": "https://zenodo.org/records/7775260"
+    }
+  },
+  "paper": {
+    "url": "https://direct.mit.edu/jocn/article-abstract/32/1/155/95401/Cortical-Tracking-of-Surprisal-during-Continuous"
+  },
+  "modality": "EEG",
+  "system": "Brain Products actiCHamp (64 ch)",
+  "stimuli": "natural",
+  "alignment_quality": "good",
+  "validation_tier": "brainstem",
+  "participants": 13,
+  "listening_hours": 9.0
+}

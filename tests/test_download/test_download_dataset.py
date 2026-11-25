@@ -177,7 +177,7 @@ def test_download_dataset_extra_filters(tmp_path, monkeypatch):
 def test_max_workers_capped_per_source(tmp_path, monkeypatch, source, requested, expected):
     import importlib
     dd = importlib.import_module("cnsp_datasets.download.download_dataset")
-    monkeypatch.setattr(dd, "load_registry", lambda path: {"x": dd.Dataset("x", source, ["id"], "")})
+    monkeypatch.setattr(dd, "load_registry", lambda path=None: {"x": dd.Dataset("x", source, ["id"], "")})
     monkeypatch.setattr(dd.Dataset, "resolve_downloadables", lambda self: [])
     workers = []
     monkeypatch.setattr(dd.DataDownloader, "__init__", lambda self, *a, **k: workers.append(k["max_workers"]))
@@ -192,7 +192,7 @@ def test_max_workers_capped_per_source(tmp_path, monkeypatch, source, requested,
 def test_read_timeout_per_source(tmp_path, monkeypatch, source, requested, expected):
     import importlib
     dd = importlib.import_module("cnsp_datasets.download.download_dataset")
-    monkeypatch.setattr(dd, "load_registry", lambda path: {"x": dd.Dataset("x", source, ["id"], "")})
+    monkeypatch.setattr(dd, "load_registry", lambda path=None: {"x": dd.Dataset("x", source, ["id"], "")})
     monkeypatch.setattr(dd.Dataset, "resolve_downloadables", lambda self: [])
     timeouts = []
     monkeypatch.setattr(dd.DataDownloader, "__init__", lambda self, *a, **k: timeouts.append(k["read_timeout"]))

@@ -8,6 +8,7 @@
 
 Exit code 2 blocks the tool call and shows stderr to Claude. The checks are heuristic.
 """
+import glob
 import json
 import os
 import re
@@ -15,7 +16,7 @@ import sys
 
 REVIEW = "/data_storage/gu08wuvu/datasets/tmp/review"
 ZENODO_FLAG = os.path.join(REVIEW, "ZENODO_BLOCKED")
-REGISTRIES = ("/home/gu08wuvu/cnsp_datasets/cnsp_datasets/download/dataset_registry.json",)
+DATASETS_DIR = "/home/gu08wuvu/cnsp_datasets/cnsp_datasets/datasets"  # one dataset.json per dataset folder
 
 # Only where the word starts a command (line start, after ; & | `, `$(`, `!`, or a shell keyword), so commit messages
 # and echoed text that merely mention these commands are not blocked.
@@ -31,14 +32,13 @@ def block(msg):
 
 def zenodo_datasets():
     names = set()
-    for path in REGISTRIES:
+    for path in glob.glob(os.path.join(DATASETS_DIR, "*", "dataset.json")):
         try:
             with open(path) as fh:
-                reg = json.load(fh)
-        except (OSError, ValueError):
+                downloads = json.load(fh).get("downloads") or {}
+        except (OSError, ValueError, AttributeError):
             continue
-        reg = reg.get("datasets", reg)
-        names |= {k for k, v in reg.items() if isinstance(v, dict) and v.get("source") == "zenodo"}
+        names |= {k for k, v in downloads.items() if isinstance(v, dict) and v.get("source") == "zenodo"}
     return names
 
 

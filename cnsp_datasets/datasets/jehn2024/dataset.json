@@ -1,0 +1,15 @@
+{
+  "name": "jehn2024",
+  "title": "Jehn et al. (2024) dataset",
+  "visibility": "public",
+  "downloads": {
+    "jehn2024": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.10980117"
+      ],
+      "description": "Jehn et al. (2024) dataset",
+      "url": "https://zenodo.org/records/10980117"
+    }
+  }
+}

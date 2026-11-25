@@ -1,0 +1,25 @@
+{
+  "name": "etard2019",
+  "title": "Etard et al. (2019) dataset",
+  "visibility": "public",
+  "downloads": {
+    "etard2019": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.7778289"
+      ],
+      "description": "Etard et al. (2019) dataset",
+      "url": "https://zenodo.org/records/7778289"
+    }
+  },
+  "paper": {
+    "url": "https://www.jneurosci.org/content/39/29/5750.abstract"
+  },
+  "modality": "EEG",
+  "system": "Brain Products actiCHamp (64 ch)",
+  "stimuli": "degraded (speech in noise); competing speakers",
+  "alignment_quality": "good",
+  "validation_tier": "brainstem",
+  "participants": 18,
+  "listening_hours": 31.0
+}

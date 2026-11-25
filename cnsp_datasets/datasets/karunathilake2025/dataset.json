@@ -1,0 +1,25 @@
+{
+  "name": "karunathilake2025",
+  "title": "Karunathilake et al. (2025, J Neurosci) MEG (KIT), TTS passages: narrative, scrambled words, nonwords, speech-modulated noise",
+  "visibility": "public",
+  "downloads": {
+    "karunathilake2025": {
+      "source": "dryad",
+      "identifiers": [
+        "10.5061/dryad.ht76hdrpf"
+      ],
+      "description": "Karunathilake et al. (2025, J Neurosci) MEG (KIT), TTS passages: narrative, scrambled words, nonwords, speech-modulated noise; raw MEG. Authors' TRFs skipped (Dryad needs DRYAD_TOKEN)",
+      "url": "https://datadryad.org/dataset/doi:10.5061/dryad.ht76hdrpf",
+      "exclude": [
+        "trfs.zip"
+      ]
+    }
+  },
+  "modality": "MEG",
+  "system": "KIT (157 ch)",
+  "stimuli": "degraded (noise, non-word, scrambled); natural",
+  "alignment_quality": "medium",
+  "validation_tier": "brainstem (pooled; noise condition low only)",
+  "participants": 30,
+  "listening_hours": 16.2
+}

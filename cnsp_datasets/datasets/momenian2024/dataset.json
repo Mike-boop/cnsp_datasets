@@ -1,0 +1,30 @@
+{
+  "name": "momenian2024",
+  "title": "Momenian et al. (2024) Le Petit Prince Hong Kong (EEG part)",
+  "visibility": "public",
+  "downloads": {
+    "momenian2024": {
+      "source": "openneuro",
+      "identifiers": [
+        "10.18112/openneuro.ds004718.v1.1.2"
+      ],
+      "description": "Momenian et al. (2024) Le Petit Prince Hong Kong (EEG part); v1.1.2 ships the sentence wavs as played (sourcedata/stimuli) and the trigger-sentence table",
+      "url": "https://openneuro.org/datasets/ds004718/versions/1.1.2",
+      "exclude": [
+        "sub-*/func/*",
+        "sub-*/anat/*",
+        "derivatives/*"
+      ]
+    }
+  },
+  "paper": {
+    "url": "https://www.nature.com/articles/s41597-024-03745-8"
+  },
+  "modality": "EEG",
+  "system": "Compumedics Neuroscan (64 ch)",
+  "stimuli": "natural",
+  "alignment_quality": "poor",
+  "validation_tier": "low",
+  "participants": 52,
+  "listening_hours": 17.3
+}

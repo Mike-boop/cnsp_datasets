@@ -1,0 +1,15 @@
+{
+  "name": "piazza2025_base",
+  "title": "Piazza et al. (2025) EEG (64 ch, CND, preprocessed 1-8 Hz at 100 Hz",
+  "visibility": "public",
+  "downloads": {
+    "piazza2025": {
+      "source": "osf",
+      "identifiers": [
+        "ba3p4"
+      ],
+      "description": "Piazza et al. (2025) EEG (64 ch, CND, preprocessed 1-8 Hz at 100 Hz; L2 learners BrainVision, native listeners BioSemi), stories in three speech registers in babble",
+      "url": "https://osf.io/ba3p4/"
+    }
+  }
+}

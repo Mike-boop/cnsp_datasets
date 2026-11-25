@@ -1,0 +1,20 @@
+{
+  "name": "yang2026_base",
+  "title": "Yang et al. (2026) dataset",
+  "visibility": "public",
+  "downloads": {
+    "yang2026": {
+      "source": "osf",
+      "identifiers": [
+        "qdzgh"
+      ],
+      "description": "Yang et al. (2026) dataset",
+      "url": "https://osf.io/qdzgh/",
+      "exclude": [
+        "*/anat/*",
+        "*/stimuli/visual/*.zip",
+        "checks-and-validation/*"
+      ]
+    }
+  }
+}

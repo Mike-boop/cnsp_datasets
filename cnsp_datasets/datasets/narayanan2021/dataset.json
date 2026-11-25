@@ -1,0 +1,24 @@
+{
+  "name": "narayanan2021",
+  "title": "Narayanan et al. (2021) dataset",
+  "visibility": "public",
+  "downloads": {
+    "narayanan2021": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.4518754"
+      ],
+      "description": "Narayanan et al. (2021) dataset"
+    }
+  },
+  "paper": {
+    "url": "https://iopscience.iop.org/article/10.1088/1741-2552/ac2629"
+  },
+  "modality": "EEG",
+  "system": "Compumedics Neuroscan SynAmps RT (255 ch)",
+  "stimuli": "competing speakers",
+  "alignment_quality": "medium",
+  "validation_tier": "low",
+  "participants": 24,
+  "listening_hours": 12.0
+}

@@ -1,0 +1,28 @@
+{
+  "name": "gwilliams2023",
+  "title": "Gwilliams et al. (2023) dataset",
+  "visibility": "public",
+  "downloads": {
+    "gwilliams2023": {
+      "source": "osf",
+      "identifiers": [
+        "ag3kj",
+        "hqvm3",
+        "u5327",
+        "dr4wy"
+      ],
+      "description": "Gwilliams et al. (2023) dataset",
+      "url": "https://osf.io/ag3kj/"
+    }
+  },
+  "paper": {
+    "url": "https://www.nature.com/articles/s41597-023-02752-5"
+  },
+  "modality": "MEG",
+  "system": "KIT (208 ch)",
+  "stimuli": "natural",
+  "alignment_quality": "good",
+  "validation_tier": "brainstem (MEG)",
+  "participants": 27,
+  "listening_hours": 54.0
+}

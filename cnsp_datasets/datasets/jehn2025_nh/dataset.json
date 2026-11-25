@@ -1,0 +1,24 @@
+{
+  "name": "jehn2025_nh",
+  "title": "Jehn et al. (2025) dataset, normal-hearing listeners (nh)",
+  "visibility": "public",
+  "downloads": {
+    "jehn2025_nh": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.17952231"
+      ],
+      "description": "Jehn et al. (2025) dataset, normal-hearing listeners (nh)",
+      "url": "https://zenodo.org/records/17952231"
+    }
+  },
+  "paper": {
+    "url": "https://iopscience.iop.org/article/10.1088/1741-2552/addb7b"
+  },
+  "modality": "EEG",
+  "system": "Brain Products actiCHamp (32 ch)",
+  "stimuli": "competing speakers",
+  "alignment_quality": "good",
+  "validation_tier": "mlr",
+  "listening_hours": 21.0
+}

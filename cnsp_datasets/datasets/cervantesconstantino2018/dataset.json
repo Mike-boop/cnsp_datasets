@@ -1,0 +1,15 @@
+{
+  "name": "cervantesconstantino2018",
+  "title": "Cervantes Constantino & Simon (2018) MEG (KIT), missing-speech restoration (poem verses with noise probes): the release holds only results (repetition-averaged z-scored DSS components, 50 Hz envelopes, decoders, TRFs",
+  "visibility": "public",
+  "downloads": {
+    "cervantesconstantino2018": {
+      "source": "drum",
+      "identifiers": [
+        "f3402619-3229-4b27-b4fb-3950f461dfda"
+      ],
+      "description": "Cervantes Constantino & Simon (2018) MEG (KIT), missing-speech restoration (poem verses with noise probes): the release holds only results (repetition-averaged z-scored DSS components, 50 Hz envelopes, decoders, TRFs; 1.3 GB), no sensor MEG, no single trials, no audio; not incorporable (see datasets/cervantesconstantino2018/notes.md)",
+      "url": "https://drum.lib.umd.edu/items/f3402619-3229-4b27-b4fb-3950f461dfda"
+    }
+  }
+}

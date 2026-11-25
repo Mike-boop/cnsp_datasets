@@ -1,0 +1,25 @@
+{
+  "name": "rotaru2024",
+  "title": "Rotaru et al. (2024, J Neural Eng) AV-GC-AAD: audiovisual gaze-controlled auditory attention decoding, two competing Flemish podcasts over insert phones (HRIR +-90 deg), one switch of sides at 5 min, conditions MovingVideo/MovingTargetNoise/NoVisuals/StaticVideo (FixedVideo), 2 x 10 min each",
+  "visibility": "public",
+  "downloads": {
+    "rotaru2024": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.11058711"
+      ],
+      "description": "Rotaru et al. (2024, J Neural Eng) AV-GC-AAD: audiovisual gaze-controlled auditory attention decoding, two competing Flemish podcasts over insert phones (HRIR +-90 deg), one switch of sides at 5 min, conditions MovingVideo/MovingTargetNoise/NoVisuals/StaticVideo (FixedVideo), 2 x 10 min each; 13 of 16 participants shared; authors' preprocessed BioSemi 64 + 4 EOG at 128 Hz (1-40 Hz) with per-trial metadata (1-s pulse triggers) and shipped envelopes, one .mat per participant (124-165 MB, 2.0 GB in total); no audio (copyright); v1 pinned; CC BY-SA 4.0",
+      "url": "https://zenodo.org/records/11058711"
+    }
+  },
+  "paper": {
+    "url": "https://iopscience.iop.org/article/10.1088/1741-2552/ad2214/meta"
+  },
+  "modality": "EEG",
+  "system": "BioSemi (64 ch)",
+  "stimuli": "competing speakers",
+  "alignment_quality": "poor",
+  "validation_tier": "low",
+  "participants": 13,
+  "listening_hours": 16.5
+}

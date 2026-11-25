@@ -1,0 +1,25 @@
+{
+  "name": "das2019",
+  "title": "Das et al. (2019) dataset",
+  "visibility": "public",
+  "downloads": {
+    "das2019": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.4004271"
+      ],
+      "description": "Das et al. (2019) dataset",
+      "url": "https://zenodo.org/records/4004271"
+    }
+  },
+  "paper": {
+    "url": "https://ieeexplore.ieee.org/document/7478117"
+  },
+  "modality": "EEG",
+  "system": "BioSemi ActiveTwo (64 ch)",
+  "stimuli": "competing speakers",
+  "alignment_quality": "poor",
+  "validation_tier": "low",
+  "participants": 16,
+  "listening_hours": 20.0
+}

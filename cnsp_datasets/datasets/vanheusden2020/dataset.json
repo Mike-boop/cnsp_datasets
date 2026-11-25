@@ -1,0 +1,25 @@
+{
+  "name": "vanheusden2020",
+  "title": "Van Heusden et al. (2020) EEG (BioSemi), hearing-impaired listeners aided and unaided, continuous speech",
+  "visibility": "public",
+  "downloads": {
+    "vanheusden2020": {
+      "source": "eprints",
+      "identifiers": [
+        "438737"
+      ],
+      "description": "Van Heusden et al. (2020) EEG (BioSemi), hearing-impaired listeners aided and unaided, continuous speech",
+      "url": "https://eprints.soton.ac.uk/id/eprint/438737/"
+    }
+  },
+  "paper": {
+    "url": "https://www.frontiersin.org/journals/human-neuroscience/articles/10.3389/fnhum.2020.00109/full"
+  },
+  "modality": "EEG",
+  "system": "BioSemi (32 ch)",
+  "stimuli": "natural",
+  "alignment_quality": "medium",
+  "validation_tier": "mlr",
+  "participants": 17,
+  "listening_hours": 14.2
+}

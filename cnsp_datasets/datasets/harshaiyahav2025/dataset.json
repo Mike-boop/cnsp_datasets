@@ -1,0 +1,25 @@
+{
+  "name": "harshaiyahav2025",
+  "title": "Har-Shai Yahav et al. (2025) dataset",
+  "visibility": "public",
+  "downloads": {
+    "harshaiyahav2025": {
+      "source": "osf",
+      "identifiers": [
+        "bzean"
+      ],
+      "description": "Har-Shai Yahav et al. (2025) dataset",
+      "url": "https://osf.io/bzean/"
+    }
+  },
+  "paper": {
+    "url": "https://www.eneuro.org/content/12/6/ENEURO.0132-24.2025"
+  },
+  "modality": "EEG",
+  "system": "BioSemi (64 ch)",
+  "stimuli": "competing speakers",
+  "alignment_quality": "medium",
+  "validation_tier": "low",
+  "participants": 23,
+  "listening_hours": 8.4
+}

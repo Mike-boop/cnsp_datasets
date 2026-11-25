@@ -1,0 +1,25 @@
+{
+  "name": "winchester2026",
+  "title": "Winchester et al. (2026, eLife RP108767) EEG (mBrainTrain Smarting, CND), 31 listeners, 32 MIDI-synthesised two-voice piano pieces (original, inverted, monophonic voices)",
+  "visibility": "public",
+  "downloads": {
+    "winchester2026": {
+      "source": "osf",
+      "identifiers": [
+        "bjdh6"
+      ],
+      "description": "Winchester et al. (2026, eLife RP108767) EEG (mBrainTrain Smarting, CND), 31 listeners, 32 MIDI-synthesised two-voice piano pieces (original, inverted, monophonic voices); stimuli shipped only as 125 Hz features (Hilbert envelopes, onsets, pitch), no wavs",
+      "url": "https://osf.io/bjdh6/"
+    }
+  },
+  "paper": {
+    "url": "https://doi.org/10.7554/eLife.108767.2"
+  },
+  "modality": "EEG",
+  "system": "mBrainTrain Smarting (24 ch, wireless)",
+  "stimuli": "music (polyphonic, 2-voice; also monophonic streams)",
+  "alignment_quality": "medium",
+  "validation_tier": "low (ceiling: 125 Hz envelopes)",
+  "participants": 31,
+  "listening_hours": 26.15
+}

@@ -1,0 +1,25 @@
+{
+  "name": "zhang2025",
+  "title": "Zhang et al. (2025) ear-EEG (cEEGrid + OpenBCI, 125 Hz), attention switching between talkers",
+  "visibility": "public",
+  "downloads": {
+    "zhang2025": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.17393865"
+      ],
+      "description": "Zhang et al. (2025) ear-EEG (cEEGrid + OpenBCI, 125 Hz), attention switching between talkers; version 17393865 pinned",
+      "url": "https://zenodo.org/records/17393865"
+    }
+  },
+  "paper": {
+    "url": "https://arxiv.org/abs/2510.19174"
+  },
+  "modality": "EEG",
+  "system": "cEEGrid + OpenBCI Cyton/Daisy",
+  "stimuli": "competing speakers",
+  "alignment_quality": "medium (under review: TRF weak)",
+  "validation_tier": "low",
+  "participants": 66,
+  "listening_hours": 27.4
+}

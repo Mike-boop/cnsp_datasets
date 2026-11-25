@@ -1,0 +1,25 @@
+{
+  "name": "fuglsang2020",
+  "title": "Fuglsang et al. (2020, J Neurosci) ds-eeg-snhl: selective attention to one of two Danish audiobooks (or one in quiet), 44 older listeners (22 hearing-impaired, 22 normal-hearing), BioSemi 64 + EXG (in-ear EEG in 19) at 512 Hz, BIDS",
+  "visibility": "public",
+  "downloads": {
+    "fuglsang2020": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.3618205"
+      ],
+      "description": "Fuglsang et al. (2020, J Neurosci) ds-eeg-snhl: selective attention to one of two Danish audiobooks (or one in quiet), 44 older listeners (22 hearing-impaired, 22 normal-hearing), BioSemi 64 + EXG (in-ear EEG in 19) at 512 Hz, BIDS; shipped 512 Hz envelopes only (no audio); one 34.9 GB tar; CC BY 4.0",
+      "url": "https://zenodo.org/records/3618205"
+    }
+  },
+  "paper": {
+    "url": "https://www.jneurosci.org/content/40/12/2562"
+  },
+  "modality": "EEG",
+  "system": "BioSemi ActiveTwo",
+  "stimuli": "competing speakers",
+  "alignment_quality": "medium",
+  "validation_tier": "mlr (scalp); low (ear-EEG)",
+  "participants": 44,
+  "listening_hours": 30.1
+}

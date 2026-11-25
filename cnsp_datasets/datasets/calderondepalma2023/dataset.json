@@ -1,0 +1,25 @@
+{
+  "name": "calderondepalma2023",
+  "title": "Calderon-De-Palma et al. (2023, Interspeech) EEG (BioSemi 64 ch, CND), audiobook with spectral/temporal modulation degradations, 13 participants",
+  "visibility": "public",
+  "downloads": {
+    "calderondepalma2023": {
+      "source": "osf",
+      "identifiers": [
+        "gx6rm"
+      ],
+      "description": "Calderon-De-Palma et al. (2023, Interspeech) EEG (BioSemi 64 ch, CND), audiobook with spectral/temporal modulation degradations, 13 participants",
+      "url": "https://osf.io/gx6rm/"
+    }
+  },
+  "paper": {
+    "url": "https://www.isca-archive.org/interspeech_2023/calderondepalma23_interspeech.pdf"
+  },
+  "modality": "EEG",
+  "system": "BioSemi (64 scalp electrodes)",
+  "stimuli": "degraded (spectral/temporal modulation degradation)",
+  "alignment_quality": "medium",
+  "validation_tier": "low (ceiling at 64 Hz)",
+  "participants": 13,
+  "listening_hours": 16.42
+}

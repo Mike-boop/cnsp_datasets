@@ -1,0 +1,22 @@
+{
+  "name": "karunathilake2023_aging",
+  "title": "Karunathilake et al. (2023) MEG (KIT), younger and older adults, continuous speech",
+  "visibility": "public",
+  "downloads": {
+    "karunathilake2023_aging": {
+      "source": "drum",
+      "identifiers": [
+        "91b2c409-8659-40fe-87dd-b701599b4841"
+      ],
+      "description": "Karunathilake et al. (2023) MEG (KIT), younger and older adults, continuous speech",
+      "url": "https://drum.lib.umd.edu/items/91b2c409-8659-40fe-87dd-b701599b4841"
+    }
+  },
+  "modality": "MEG",
+  "system": "KIT (157 ch)",
+  "stimuli": "natural",
+  "alignment_quality": "medium",
+  "validation_tier": "low",
+  "participants": 34,
+  "listening_hours": 17.0
+}

@@ -1,0 +1,30 @@
+{
+  "name": "diliberto2023",
+  "title": "Di Liberto et al. (2023, Nat Commun) EEG (EGI, preprocessed CND: 58 ch, 50 Hz), 47 infants at 4, 7 and 11 months (longitudinal) and 17 adults, 18 audio-visual nursery rhymes",
+  "visibility": "public",
+  "downloads": {
+    "diliberto2023": {
+      "source": "osf",
+      "identifiers": [
+        "mdnwg"
+      ],
+      "description": "Di Liberto et al. (2023, Nat Commun) EEG (EGI, preprocessed CND: 58 ch, 50 Hz), 47 infants at 4, 7 and 11 months (longitudinal) and 17 adults, 18 audio-visual nursery rhymes; shipped envelope and phonetic features only (no audio). Analysis code without its results and libraries",
+      "url": "https://osf.io/mdnwg/",
+      "exclude": [
+        "code/results/*",
+        "libs/*",
+        "code/*.asv"
+      ]
+    }
+  },
+  "paper": {
+    "url": "https://www.nature.com/articles/s41467-023-43490-x"
+  },
+  "modality": "EEG",
+  "system": "EGI Geodesic Sensor Net, GES 300 amplifier",
+  "stimuli": "natural (nursery rhymes)",
+  "alignment_quality": "medium",
+  "validation_tier": "low (all age groups)",
+  "participants": 64,
+  "listening_hours": 15.3
+}

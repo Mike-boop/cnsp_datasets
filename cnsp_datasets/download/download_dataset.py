@@ -1,13 +1,12 @@
 import json
-import importlib.resources as resources
 
 from typing import Dict,  List, Optional, Iterable, Callable, Any
 from dataclasses import dataclass, field
 from fnmatch import fnmatch
+from cnsp_datasets import registry as dataset_registry
 from cnsp_datasets.download import download_helpers
 from cnsp_datasets.download.data_downloader import DEFAULT_READ_TIMEOUT, DataDownloader
 
-REGISTRY_PATH = resources.files("cnsp_datasets.download").joinpath("dataset_registry.json")
 DEFAULT_MAX_WORKERS = 4  # parallel downloads per dataset; be polite to the repositories
 SOURCE_MAX_WORKERS = {
     "zenodo": 3,  # promised to the Zenodo moderators (2026-11-21); see PLAN.md section 7
@@ -27,7 +26,7 @@ def _filter(files, include=(), exclude=()):
     return [f for f in files if not any(fnmatch(f["name"], pat) for pat in exclude)]
 
 
-### First define a structure for the entries in dataset_registry.json
+### First define a structure for the download entries (the "downloads" of each dataset.json)
 
 @dataclass(frozen=True)
 class Dataset:
@@ -95,11 +94,18 @@ def _gather(getter: Callable[[str], Iterable[dict]], identifiers: List[str]) -> 
     return files
 
 
-### Now create a function to load dataset_registry.json into a dictionary of Dataset objects
+### Now create a function to load the download entries into a dictionary of Dataset objects
 
-def load_registry(path: str) -> Dict[str, Dataset]:
-    with open(path, "r", encoding="utf-8") as f:
-        registered_datasets = json.load(f)["datasets"]
+def load_registry(path: Optional[str] = None) -> Dict[str, Dataset]:
+    """
+    Download key -> Dataset: from every dataset.json (cnsp_datasets.registry) by default, or from a JSON file
+    {"datasets": {key: entry}} at `path`.
+    """
+    if path is None:
+        registered_datasets = dataset_registry.downloads()
+    else:
+        with open(path, "r", encoding="utf-8") as f:
+            registered_datasets = json.load(f)["datasets"]
 
     registry: Dict[str, Dataset] = {}
     for key, entry in registered_datasets.items():
@@ -126,7 +132,7 @@ def load_registry(path: str) -> Dict[str, Dataset]:
     return registry
 
 
-### Finally, create the main function to download a dataset by its name in dataset_registry.json
+### Finally, create the main function to download a dataset by its download key
 
 def download_dataset(
     dataset_name: str,
@@ -144,7 +150,7 @@ def download_dataset(
     Download a named dataset to a specified directory.
 
     Parameters:
-    - dataset_name (str): Name of the dataset as specified in dataset_registry.json.
+    - dataset_name (str): download key, as in the "downloads" of a dataset.json (usually the dataset name).
     - download_dir (str): Directory to download the dataset into.
     - max_workers (int): Number of parallel download workers (default and cap: SOURCE_MAX_WORKERS, else
       DEFAULT_MAX_WORKERS).
@@ -157,7 +163,7 @@ def download_dataset(
     - read_timeout (float): seconds a stalled transfer may wait for data (default SOURCE_READ_TIMEOUT, else
       DEFAULT_READ_TIMEOUT).
     """
-    registry: Dict[str, Dataset] = load_registry(REGISTRY_PATH)
+    registry: Dict[str, Dataset] = load_registry()
 
     if dataset_name not in registry:
         available = ", ".join(sorted(registry.keys()))

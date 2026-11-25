@@ -1,0 +1,25 @@
+{
+  "name": "chen2023",
+  "title": "Chen et al. (2023, NeuroImage) MEG (TRIUX, MaxFiltered), audiobook at six noise-vocoding levels, 24 participants",
+  "visibility": "public",
+  "downloads": {
+    "chen2023": {
+      "source": "gitlab_lfs",
+      "identifiers": [
+        "data.anc.plus.ac.at/bids-datasets/auditory/yc_audiobook_vocoding@0a5a02a22a3c41e2eba6fff3e2a25fdc1ddda6bf"
+      ],
+      "description": "Chen et al. (2023, NeuroImage) MEG (TRIUX, MaxFiltered), audiobook at six noise-vocoding levels, 24 participants; ANC BIDS (GitLab LFS), DOI 10.60817/v2fd-cq35, pinned to commit 0a5a02a2 (2026-10-21)",
+      "url": "https://bids-datasets.data-pages.anc.plus.ac.at/auditory/yc_audiobook_vocoding/"
+    }
+  },
+  "paper": {
+    "url": "https://doi.org/10.1016/j.neuroimage.2023.119894"
+  },
+  "modality": "MEG",
+  "system": "Elekta/MEGIN Neuromag TRIUX (306 ch: 204 planar gradiometers + 102 magnetometers)",
+  "stimuli": "degraded (noise vocoding: original, 7-, 5-, 3-, 2-, 1-channel; 6 levels)",
+  "alignment_quality": "poor",
+  "validation_tier": "brainstem (with 510 ppm drift, 4/4 subj)",
+  "participants": 24,
+  "listening_hours": 19.39
+}

@@ -1,0 +1,30 @@
+{
+  "name": "wang2025",
+  "title": "Wang et al. (2025) Le Petit Prince multi-talker (EEG part)",
+  "visibility": "public",
+  "downloads": {
+    "wang2025": {
+      "source": "openneuro",
+      "identifiers": [
+        "10.18112/openneuro.ds005345.v1.0.1"
+      ],
+      "description": "Wang et al. (2025) Le Petit Prince multi-talker (EEG part)",
+      "url": "https://openneuro.org/datasets/ds005345/versions/1.0.1",
+      "exclude": [
+        "sub-*/func/*",
+        "sub-*/anat/*",
+        "derivatives/*"
+      ]
+    }
+  },
+  "paper": {
+    "url": "https://www.nature.com/articles/s41597-025-05158-7"
+  },
+  "modality": "EEG",
+  "system": "Brain Products (BrainVision Recorder, 10-20 cap)",
+  "stimuli": "competing speakers; natural",
+  "alignment_quality": "poor",
+  "validation_tier": "low",
+  "participants": 26,
+  "listening_hours": 17.3
+}

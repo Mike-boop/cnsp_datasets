@@ -1,0 +1,25 @@
+{
+  "name": "wang2026",
+  "title": "Wang et al. (2026) AASD EEG, spontaneous attention switching between two Mandarin talkers",
+  "visibility": "public",
+  "downloads": {
+    "wang2026": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.17413336"
+      ],
+      "description": "Wang et al. (2026) AASD EEG, spontaneous attention switching between two Mandarin talkers; Stimuli Audio.zip, Processed EEG.zip, Original EEG.zip (12.9 GB); version 17413336 pinned",
+      "url": "https://zenodo.org/records/17413336"
+    }
+  },
+  "paper": {
+    "url": "https://www.nature.com/articles/s41597-026-07244-w"
+  },
+  "modality": "EEG",
+  "system": "Compumedics Neuroscan 64-ch (Curry 7), 10-20 layout",
+  "stimuli": "competing speakers",
+  "alignment_quality": "medium",
+  "validation_tier": "low",
+  "participants": 18,
+  "listening_hours": 18.6
+}

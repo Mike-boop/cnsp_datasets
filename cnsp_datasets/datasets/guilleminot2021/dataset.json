@@ -1,0 +1,24 @@
+{
+  "name": "guilleminot2021",
+  "title": "Guilleminot et al. (2021) dataset",
+  "visibility": "public",
+  "downloads": {
+    "guilleminot2021": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.5512578"
+      ],
+      "description": "Guilleminot et al. (2021) dataset",
+      "url": "https://zenodo.org/records/5512578"
+    }
+  },
+  "paper": {
+    "url": "https://www.pnas.org/doi/10.1073/pnas.2117000119"
+  },
+  "modality": "EEG",
+  "system": "Brain Products actiCHamp (64 ch)",
+  "stimuli": "degraded (speech in noise, plus vibrotactile stimulation)",
+  "alignment_quality": "good",
+  "validation_tier": "mlr",
+  "listening_hours": 25.3
+}

@@ -1,0 +1,22 @@
+{
+  "name": "brodbeck2018",
+  "title": "Brodbeck, Hong & Simon (2018, Curr Biol) MEG (KIT), two-talker cocktail party, attend one talker",
+  "visibility": "public",
+  "downloads": {
+    "brodbeck2018": {
+      "source": "drum",
+      "identifiers": [
+        "6ce1b090-3446-46d8-9582-f689afcd23de"
+      ],
+      "description": "Brodbeck, Hong & Simon (2018, Curr Biol) MEG (KIT), two-talker cocktail party, attend one talker; 26 participants",
+      "url": "https://drum.lib.umd.edu/items/6ce1b090-3446-46d8-9582-f689afcd23de"
+    }
+  },
+  "modality": "MEG",
+  "system": "KIT (157 ch)",
+  "stimuli": "competing speakers",
+  "alignment_quality": "medium",
+  "validation_tier": "low (ceiling at 100 Hz); attended > ignored 26/26",
+  "participants": 26,
+  "listening_hours": 10.4
+}

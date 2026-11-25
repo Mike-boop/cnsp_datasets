@@ -1,0 +1,24 @@
+{
+  "name": "straetmans2021",
+  "title": "Straetmans et al. (2021) mobile EEG (walking vs sitting), two competing speakers, attend one",
+  "visibility": "public",
+  "downloads": {
+    "straetmans2021": {
+      "source": "openneuro",
+      "identifiers": [
+        "10.18112/openneuro.ds003801.v1.0.0"
+      ],
+      "description": "Straetmans et al. (2021) mobile EEG (walking vs sitting), two competing speakers, attend one; 20 participants",
+      "url": "https://openneuro.org/datasets/ds003801/versions/1.0.0"
+    }
+  },
+  "paper": {
+    "url": "https://iopscience.iop.org/article/10.1088/1741-2552/ac42b5/meta"
+  },
+  "modality": "EEG",
+  "stimuli": "competing speakers",
+  "alignment_quality": "none",
+  "validation_tier": "none (untestable)",
+  "participants": 20,
+  "listening_hours": 10.83
+}

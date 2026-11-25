@@ -1,0 +1,28 @@
+{
+  "name": "deoisres2023",
+  "title": "Deoisres (2023) EEG (BioSemi 32 ch), continuous speech and speech-modulated noise in quiet and at 5 SNRs",
+  "visibility": "public",
+  "downloads": {
+    "deoisres2023": {
+      "source": "eprints",
+      "identifiers": [
+        "476402"
+      ],
+      "description": "Deoisres (2023) EEG (BioSemi 32 ch), continuous speech and speech-modulated noise in quiet and at 5 SNRs",
+      "url": "https://eprints.soton.ac.uk/id/eprint/476402/",
+      "exclude": [
+        "SIN_EEG_Da.rar"
+      ]
+    }
+  },
+  "paper": {
+    "url": "https://doi.org/10.5258/SOTON/D2578"
+  },
+  "modality": "EEG",
+  "system": "BioSemi ActiveTwo (32 ch)",
+  "stimuli": "degraded (speech in noise: speech-shaped modulated noise; speech at 5 SNR levels)",
+  "alignment_quality": "good",
+  "validation_tier": "mlr",
+  "participants": 22,
+  "listening_hours": 20.0
+}

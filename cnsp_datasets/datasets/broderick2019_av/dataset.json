@@ -1,0 +1,25 @@
+{
+  "name": "broderick2019_av",
+  "title": "Broderick et al. (2019) audiovisual speech-in-noise dataset (same Dryad package)",
+  "visibility": "public",
+  "downloads": {
+    "broderick2019_av": {
+      "source": "dryad",
+      "identifiers": [
+        "10.5061/dryad.070jc"
+      ],
+      "description": "Broderick et al. (2019) audiovisual speech-in-noise dataset (same Dryad package)",
+      "url": "https://datadryad.org/dataset/doi:10.5061/dryad.070jc"
+    }
+  },
+  "paper": {
+    "url": "https://www.sciencedirect.com/science/article/pii/S0960982218301465"
+  },
+  "modality": "EEG",
+  "system": "BioSemi ActiveTwo (128 ch + 2 mastoids)",
+  "stimuli": "degraded (speech in noise, audiovisual)",
+  "alignment_quality": "medium",
+  "validation_tier": "low",
+  "participants": 45,
+  "listening_hours": 15.75
+}

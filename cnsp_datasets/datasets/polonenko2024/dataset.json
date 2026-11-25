@@ -1,0 +1,24 @@
+{
+  "name": "polonenko2024",
+  "title": "Polonenko & Maddox (2024) peaky speech at shifted f0s (peaky_pitchshift)",
+  "visibility": "public",
+  "downloads": {
+    "polonenko2024": {
+      "source": "openneuro",
+      "identifiers": [
+        "10.18112/openneuro.ds005340.v1.0.4"
+      ],
+      "description": "Polonenko & Maddox (2024) peaky speech at shifted f0s (peaky_pitchshift)",
+      "url": "https://openneuro.org/datasets/ds005340/versions/1.0.4"
+    }
+  },
+  "paper": {
+    "url": "https://pubs.aip.org/asa/jel/article/4/11/114401/3319187/Fundamental-frequency-predominantly-drives-talker"
+  },
+  "modality": "EEG",
+  "system": "Brain Products BrainVision actiCHamp + EP-Preamp",
+  "stimuli": "natural (F0-manipulated)",
+  "alignment_quality": "good",
+  "validation_tier": "brainstem",
+  "listening_hours": 30.0
+}

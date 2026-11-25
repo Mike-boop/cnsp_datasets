@@ -1,0 +1,33 @@
+{
+  "name": "brodbeck2022",
+  "title": "Brodbeck et al. (2022) MEG (Appleseed audiobook), BIDS release with corrected events and 1000 Hz gammatone spectrograms (no audio: copyrighted). The 100 Hz gammatone pickles are skipped",
+  "visibility": "public",
+  "downloads": {
+    "brodbeck2022": {
+      "source": "openneuro",
+      "identifiers": [
+        "10.18112/openneuro.ds007870.v1.3.4"
+      ],
+      "description": "Brodbeck et al. (2022) MEG (Appleseed audiobook), BIDS release with corrected events and 1000 Hz gammatone spectrograms (no audio: copyrighted). The 100 Hz gammatone pickles are skipped",
+      "url": "https://openneuro.org/datasets/ds007870/versions/1.3.4",
+      "exclude": [
+        "stimuli/*-gammatone.pickle"
+      ]
+    },
+    "brodbeck2022_dryad": {
+      "source": "dryad",
+      "identifiers": [
+        "10.5061/dryad.nvx0k6dv0"
+      ],
+      "description": "Brodbeck et al. (2022) original Dryad release (same MEG FIF files, eelbrain predictors, make_clips.py)",
+      "url": "https://datadryad.org/dataset/doi:10.5061/dryad.nvx0k6dv0"
+    }
+  },
+  "modality": "MEG",
+  "system": "KIT (157 ch)",
+  "stimuli": "natural",
+  "alignment_quality": "medium",
+  "validation_tier": "low (mlr population only)",
+  "participants": 12,
+  "listening_hours": 9.3
+}

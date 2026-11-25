@@ -1,0 +1,26 @@
+{
+  "name": "varano2022",
+  "title": "Varano et al. (2022) dataset",
+  "visibility": "public",
+  "downloads": {
+    "varano2022": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.8298239",
+        "10.5281/zenodo.8298272"
+      ],
+      "description": "Varano et al. (2022) dataset",
+      "url": "https://zenodo.org/records/8298239"
+    }
+  },
+  "paper": {
+    "url": "https://www.sciencedirect.com/science/article/pii/S1053811925006573"
+  },
+  "modality": "EEG",
+  "system": "Brain Products actiCHamp (64 ch)",
+  "stimuli": "degraded (speech in noise, audiovisual)",
+  "alignment_quality": "medium",
+  "validation_tier": "low",
+  "participants": 24,
+  "listening_hours": 32.3
+}

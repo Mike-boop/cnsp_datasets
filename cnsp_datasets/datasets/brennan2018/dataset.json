@@ -1,0 +1,25 @@
+{
+  "name": "brennan2018",
+  "title": "Brennan et al. (2018) dataset (BIDS mirror on NEMAR",
+  "visibility": "public",
+  "downloads": {
+    "brennan2018": {
+      "source": "nemar",
+      "identifiers": [
+        "nm000180@v1.1.3"
+      ],
+      "description": "Brennan et al. (2018) dataset (BIDS mirror on NEMAR; the Deep Blue original bn999738r blocks scripted downloads)",
+      "url": "https://nemar.org/dataset/nm000180"
+    }
+  },
+  "paper": {
+    "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0207741"
+  },
+  "modality": "EEG",
+  "system": "Brain Products actiCHamp (61 ch)",
+  "stimuli": "natural",
+  "alignment_quality": "good",
+  "validation_tier": "brainstem",
+  "participants": 52,
+  "listening_hours": 9.0
+}

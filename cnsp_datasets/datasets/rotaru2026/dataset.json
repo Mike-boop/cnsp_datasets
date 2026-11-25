@@ -1,0 +1,25 @@
+{
+  "name": "rotaru2026",
+  "title": "Rotaru et al. (2026) KUL-AAD-NFB: closed-loop auditory attention decoding with neurofeedback, two competing Flemish podcasts over two loudspeakers (+-14 deg), conditions OL/CLV/CLA/psCLA (+ OL-CAL calibration for sub-11..19), 1 or 3 cued attention switches per 8-min trial",
+  "visibility": "public",
+  "downloads": {
+    "rotaru2026": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.20442638"
+      ],
+      "description": "Rotaru et al. (2026) KUL-AAD-NFB: closed-loop auditory attention decoding with neurofeedback, two competing Flemish podcasts over two loudspeakers (+-14 deg), conditions OL/CLV/CLA/psCLA (+ OL-CAL calibration for sub-11..19), 1 or 3 cued attention switches per 8-min trial; 11 of 19 participants shared (sub-09 two sessions); BioSemi 64-ch BDF at 1024 Hz with a 1-s sound-card pulse train in Status, authors' 64 Hz preprocessed .mat per trial (also holds stimulus names and attention labels; ~275 MB each), 33 wavs (stimuli.zip); eeg.zip 15.4 GB; version 20442638 pinned; CC BY 4.0 (audio: non-commercial use only)",
+      "url": "https://zenodo.org/records/20442638"
+    }
+  },
+  "paper": {
+    "url": "https://doi.org/10.64898/2026.04.28.721343"
+  },
+  "modality": "EEG",
+  "system": "BioSemi 64-ch",
+  "stimuli": "competing speakers",
+  "alignment_quality": "good",
+  "validation_tier": "mlr",
+  "participants": 11,
+  "listening_hours": 14.38
+}

@@ -1,0 +1,30 @@
+{
+  "name": "gao2024",
+  "title": "Gao et al. (2024) echoic speech, MEGIN TRIUX neo MEG: authors' tSSS-cleaned MEG at 100 Hz, cut into ~30 s story chunks (exp1/2/3_PreData zips, 51 listeners in 3 experiments, 48 shipped), chunk wavs incl. direct/echo components (Experiment_Stimuli.zip, 4.6 GB), condition orders (exp*_behave_result). Figure result files and analysis code skipped",
+  "visibility": "public",
+  "downloads": {
+    "gao2024": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.10472483"
+      ],
+      "description": "Gao et al. (2024) echoic speech, MEGIN TRIUX neo MEG: authors' tSSS-cleaned MEG at 100 Hz, cut into ~30 s story chunks (exp1/2/3_PreData zips, 51 listeners in 3 experiments, 48 shipped), chunk wavs incl. direct/echo components (Experiment_Stimuli.zip, 4.6 GB), condition orders (exp*_behave_result). Figure result files and analysis code skipped",
+      "url": "https://zenodo.org/records/10472483",
+      "exclude": [
+        "Fig*_data.mat",
+        "Fig*_new.m",
+        "tools.zip"
+      ]
+    }
+  },
+  "paper": {
+    "url": "https://journals.plos.org/plosbiology/article?id=10.1371/journal.pbio.3002498"
+  },
+  "modality": "MEG",
+  "system": "MEGIN TRIUX neo (306 ch)",
+  "stimuli": "degraded (echo)",
+  "alignment_quality": "medium",
+  "validation_tier": "low",
+  "participants": 48,
+  "listening_hours": 31.3
+}

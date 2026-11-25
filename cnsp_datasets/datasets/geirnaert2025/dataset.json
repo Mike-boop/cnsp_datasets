@@ -1,0 +1,25 @@
+{
+  "name": "geirnaert2025",
+  "title": "Geirnaert et al. (2025, Sci Rep) Ear-SAAD: simultaneous scalp (32 incl. EOG), around-ear (19) and in-ear (12) EEG, two Danish talkers, 15 participants x 60 min",
+  "visibility": "public",
+  "downloads": {
+    "geirnaert2025": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.16536441"
+      ],
+      "description": "Geirnaert et al. (2025, Sci Rep) Ear-SAAD: simultaneous scalp (32 incl. EOG), around-ear (19) and in-ear (12) EEG, two Danish talkers, 15 participants x 60 min; audio shipped; bids_dataset.zip (12.2 GB), preprocessedData.zip, experiment manual; version 16536441 pinned; CC BY-NC-SA 4.0",
+      "url": "https://zenodo.org/records/16536441"
+    }
+  },
+  "paper": {
+    "url": "https://www.nature.com/articles/s41598-025-25576-2"
+  },
+  "modality": "EEG",
+  "system": "scalp EEG (29 ch + 3 EOG) + around-ear (19 ch) + in-ear (12 ch)",
+  "stimuli": "competing speakers",
+  "alignment_quality": "medium",
+  "validation_tier": "low",
+  "participants": 15,
+  "listening_hours": 15.0
+}

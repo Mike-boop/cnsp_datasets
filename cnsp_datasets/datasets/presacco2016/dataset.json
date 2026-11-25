@@ -1,0 +1,26 @@
+{
+  "name": "presacco2016",
+  "title": "Presacco et al. (2016) MEG (KIT) and EEG, younger and older adults, speech in quiet and noise",
+  "visibility": "public",
+  "downloads": {
+    "presacco2016": {
+      "source": "drum",
+      "identifiers": [
+        "79afc7aa-560d-442d-b201-ab63e7f1e69f"
+      ],
+      "description": "Presacco et al. (2016) MEG (KIT) and EEG, younger and older adults, speech in quiet and noise",
+      "url": "https://drum.lib.umd.edu/items/79afc7aa-560d-442d-b201-ab63e7f1e69f",
+      "include": [
+        "*_MEG.zip",
+        "Stimuli.zip"
+      ]
+    }
+  },
+  "modality": "MEG",
+  "system": "KIT (157 ch) + EEG",
+  "stimuli": "natural",
+  "alignment_quality": "medium",
+  "validation_tier": "brainstem (30-250 Hz); mlr fails",
+  "participants": 46,
+  "listening_hours": 23.0
+}

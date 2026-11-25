@@ -1,0 +1,24 @@
+{
+  "name": "jehn2025_hi",
+  "title": "Jehn et al. (2025) dataset, hearing-impaired listeners with hearing aids (hi)",
+  "visibility": "public",
+  "downloads": {
+    "jehn2025_hi": {
+      "source": "zenodo",
+      "identifiers": [
+        "10.5281/zenodo.17927767"
+      ],
+      "description": "Jehn et al. (2025) dataset, hearing-impaired listeners with hearing aids (hi)",
+      "url": "https://zenodo.org/records/17927767"
+    }
+  },
+  "paper": {
+    "url": "https://iopscience.iop.org/article/10.1088/1741-2552/addb7b"
+  },
+  "modality": "EEG",
+  "system": "Brain Products actiCHamp (32 ch)",
+  "stimuli": "competing speakers",
+  "alignment_quality": "good",
+  "validation_tier": "mlr",
+  "listening_hours": 21.0
+}

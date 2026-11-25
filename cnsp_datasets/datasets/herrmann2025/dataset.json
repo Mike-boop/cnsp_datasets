@@ -1,0 +1,25 @@
+{
+  "name": "herrmann2025",
+  "title": "Herrmann (2025) dataset",
+  "visibility": "public",
+  "downloads": {
+    "herrmann2025": {
+      "source": "osf",
+      "identifiers": [
+        "p8nxq"
+      ],
+      "description": "Herrmann (2025) dataset",
+      "url": "https://osf.io/p8nxq/"
+    }
+  },
+  "paper": {
+    "url": "https://www.sciencedirect.com/science/article/pii/S019745802500096X"
+  },
+  "modality": "EEG",
+  "system": "BioSemi",
+  "stimuli": "degraded (speech in noise); natural",
+  "alignment_quality": "medium",
+  "validation_tier": "mlr",
+  "participants": 50,
+  "listening_hours": 34.7
+}
