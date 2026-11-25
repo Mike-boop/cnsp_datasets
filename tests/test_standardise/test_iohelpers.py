@@ -103,3 +103,9 @@ def test_sorted_glob_skips_hidden(tmp_path):
 def test_textgrid_clip_overlaps():
     text = io.textgrid({"w": [(0, 1, "a"), (0.5, 2, "b"), (1.2, 1.5, "inside")]}, on_overlap="clip")
     assert "xmin = 1.0" in text and "inside" not in text
+
+
+def test_read_wav_expect_channels(tmp_path):
+    soundfile.write(tmp_path / "s.wav", np.zeros((10, 2)), 8000)
+    with pytest.raises(ValueError, match="2 channels, expected 1"):
+        io.read_wav(str(tmp_path / "s.wav"), expect_channels=1)

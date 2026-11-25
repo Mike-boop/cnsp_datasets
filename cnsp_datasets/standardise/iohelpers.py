@@ -32,14 +32,15 @@ def to_float32(x: np.ndarray) -> np.ndarray:
 
 
 def read_wav(path: str, channel: int | None = None, collapse_identical: bool = False,
-             expect_fs: float | None = None) -> Tuple[np.ndarray, int]:
+             expect_fs: float | None = None, expect_channels: int | None = None) -> Tuple[np.ndarray, int]:
     """
     A wav (or any file soundfile reads: flac, ogg, aiff) as float32 (n_channels, n_times) in [-1, 1), and its
     rate. Integer PCM of any width is scaled by its full range; float files are kept as stored.
 
     channel: keep only this channel (e.g. li2022 stores the two talkers as left/right). collapse_identical: a
     multichannel file whose channels are all identical (mono stored as stereo) becomes one channel; differing
-    channels are kept (and logged), never averaged. expect_fs: raise if the file's rate differs.
+    channels are kept (and logged), never averaged. expect_fs: raise if the file's rate differs. expect_channels:
+    raise unless the result has this many channels (e.g. 1 for a mono stimulus).
     """
     import soundfile  # imported here: only audio adaptors need it
 
@@ -56,6 +57,8 @@ def read_wav(path: str, channel: int | None = None, collapse_identical: bool = F
             data = data[:1]
         else:
             log.info("%s: channels differ, kept all %d", path, data.shape[0])
+    if expect_channels is not None and data.shape[0] != expect_channels:
+        raise ValueError(f"{path}: {data.shape[0]} channels, expected {expect_channels}")
     return np.ascontiguousarray(data), int(fs)
 
 
