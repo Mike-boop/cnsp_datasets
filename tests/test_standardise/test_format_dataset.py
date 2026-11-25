@@ -18,7 +18,7 @@ def test_parse_adaptor_opt_rejects_malformed(opt):
         fd.parse_adaptor_opt(opt)
 
 
-def test_format_dataset_passes_adaptor_kwargs_to_the_constructor(monkeypatch):
+def test_format_dataset_passes_adaptor_kwargs_to_the_constructor(monkeypatch, tmp_path):
     seen = {}
 
     class Adaptor:
@@ -36,8 +36,9 @@ def test_format_dataset_passes_adaptor_kwargs_to_the_constructor(monkeypatch):
             seen["record"] = record
 
     monkeypatch.setattr(fd, "get_adaptor_class", lambda name: Adaptor)
-    fd.format_dataset("x", "dl", "out", sinker_handle=Sink, adaptor_kwargs={"onset": None})
-    assert seen == {"download_dir": "dl", "onset": None, "save_directory": "out", "record": "record"}
+    out = str(tmp_path / "out")
+    fd.format_dataset("x", "dl", out, sinker_handle=Sink, adaptor_kwargs={"onset": None})
+    assert seen == {"download_dir": "dl", "onset": None, "save_directory": out, "record": "record"}
 
 
 def test_main_parses_repeated_adaptor_opts(monkeypatch):

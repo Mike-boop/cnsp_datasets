@@ -48,6 +48,13 @@ class BaseAdaptor(ABC):
         return path
 
     @staticmethod
-    def sorted_glob(root: str | os.PathLike, pattern: str) -> list[str]:
-        """Sorted glob (the file system's order is arbitrary)."""
-        return sorted(str(p) for p in Path(root).glob(pattern))
+    def sorted_glob(root: str | os.PathLike, pattern: str, hidden: bool = False) -> list[str]:
+        """
+        Sorted glob (the file system's order is arbitrary). Like glob.glob, files and folders whose name starts
+        with "." (e.g. macOS "._*" resource forks) are skipped unless hidden=True (Path.glob returns them).
+        """
+        paths = sorted(Path(root).glob(pattern))
+        if not hidden:
+            root = Path(root)
+            paths = [p for p in paths if not any(part.startswith(".") for part in p.relative_to(root).parts)]
+        return [str(p) for p in paths]

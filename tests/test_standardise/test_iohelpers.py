@@ -88,3 +88,13 @@ def test_base_adaptor_checks(tmp_path):
         A(tmp_path, mode="z")
     with pytest.raises(FileNotFoundError):
         A(tmp_path).path("missing")
+
+
+def test_sorted_glob_skips_hidden(tmp_path):
+    for name in ("b.wav", "a.wav", "._a.wav"):
+        (tmp_path / name).write_text("")
+    (tmp_path / ".cache").mkdir()
+    (tmp_path / ".cache" / "c.wav").write_text("")
+    names = [p.rsplit("/", 1)[1] for p in BaseAdaptor.sorted_glob(tmp_path, "**/*.wav")]
+    assert names == ["a.wav", "b.wav"]
+    assert len(BaseAdaptor.sorted_glob(tmp_path, "**/*.wav", hidden=True)) == 4
