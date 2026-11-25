@@ -348,6 +348,8 @@ Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026
 - yang2026_ru: **good**: Onset fitted on the audio copy MISC005 (9.1 ms after code 3); drift -0.73 ppm corrected; +7.3 ms tube delay assumed; brainstem (tSSS); EEG not validated.
 
 ## Restructure 2026-11-25 (not yet re-validated on data)
+- dataset.json: yang2026_en / yang2026_ru get title, modality, system, participants (20 / 15), listening_hours (18.07
+  / 6.87), stimuli, alignment grade, paper and licence (size section).
 - Stimulus audio: wav channel 0 as float32 in [-1, 1) (`iohelpers.read_wav`; was the raw int16 samples).
 - TextGrid written by `iohelpers.textgrid` (same intervals: MFA start times to the next start, `<sp>` empty;
   long text format) instead of the `textgrid` library.

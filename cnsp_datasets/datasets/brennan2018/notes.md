@@ -7,6 +7,7 @@ segment's rectified audio, else from the first word in events.tsv (only for subj
 with the stimtrack within 0.1 s wherever both exist). STATUS.md: alignment `good`, tier brainstem.
 
 ## Restructure 2026-11-25 (not yet re-validated on data)
+- dataset.json: participants 45 (was 52; the NEMAR mirror holds 45 of the 49, see top of this file).
 - A segment whose onset falls before the start of the recording is skipped and logged; before, the onset was
   clipped to 0, which shifted that trial's EEG against its stimulus. Only software onsets can be negative.
 - A recording that ends before its segment is logged (the trial is still shorter, as before).

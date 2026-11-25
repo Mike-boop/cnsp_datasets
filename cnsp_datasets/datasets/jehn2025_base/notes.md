@@ -47,6 +47,8 @@ Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026
 - jehn2025_ci: **good**: As jehn2025_nh; ci 127 aux has no stimulus (unverified), ci 121 side unverified; ci 118-122 ~18 ppm; drift off by default; 'brainstem' is the CI artefact.
 
 ## Restructure 2026-11-25 (not yet re-validated on data)
+- dataset.json: participants added to the variants: nh 28, hi 29, ci 24 (top of this file); jehn2024 gets modality,
+  stimuli and a note.
 - CI channels in `taken_out_indices` are kept and listed in `info["bads"]` (were dropped by `pick(exclude="bads")`).
 - Stimulus audio is float32 (integer samples scaled to [-1, 1); float samples unchanged).
 - `drift.py` and `drift.csv` moved to `alignment/`; the window constants and band-pass shared with yang2026 and

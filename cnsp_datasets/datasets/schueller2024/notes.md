@@ -101,6 +101,7 @@ Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026
 **good**: Authors' cut by xcorr with the MEG audio channel; release onset within 0.2-1.1 ms of the raw stimtrack (participant 1); drift +8.46 ppm from the stimtrack, per participant; +6 ms tube delay (Zenodo text) applied; brainstem tier (Set1).
 
 ## Restructure 2026-11-25 (not yet re-validated on data)
+- dataset.json: participants 58, listening_hours 35.6 (were 22 / 6.8, Set1 only; all three Zenodo sets).
 - Stimulus audio as float32 in [-1, 1) (`iohelpers.read_wav`, first channel as before; was the raw int16 samples).
 - Drift rows are matched to a run by meas_date compared as UTC timestamps (was string equality of
   `str(meas_date)`); raw folders with the same date must hold identical fits (P42 / `P42_zweiter Versuch` do; one

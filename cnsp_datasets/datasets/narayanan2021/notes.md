@@ -60,6 +60,7 @@ Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026
 **medium**: Onset = first pulse of the 1 s trigger train (coincidence with sound onset undocumented, no stimtrack); pulse-clock drift (-10/-16.8 ppm) corrected; DNN -5/-9 ms plausible for two talkers; low tier.
 
 ## Restructure 2026-11-25 (not yet re-validated on data)
+- dataset.json: participants 30, listening_hours 13.2 (were 24 / 12.0; size line in this file).
 - Trials are `ceil(wav samples * 1000 / 44100)` EEG samples long, the span of the wav (part 1: 394000), one sample
   fewer than before: `round(duration * sfreq) + 1` was an off-by-one (nothing in the alignment needs the extra
   sample; the onset and drift are unchanged).

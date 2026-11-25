@@ -367,6 +367,7 @@ Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026
 **poor**: Software sentence triggers (~7 ms jitter), no stimtrack; DNN -21 ms and TRF +23/+26 ms later documented, not applied; trigger latency vs older listeners 'not separable'; low tier.
 
 ## Restructure 2026-11-25 (not yet re-validated on data)
+- dataset.json: participants 51, listening_hours 15.78 (were 52 / 17.3; size section, after the truncated files).
 - TextGrid written by `iohelpers.textgrid` (was a hand-rolled writer): same intervals (overlaps trimmed as before),
   times at full precision instead of 6 decimals, quotes escaped.
 - Audio through `iohelpers.read_wav` ((L + R) / 2, float32 / 32768: unchanged values); bad channels with
