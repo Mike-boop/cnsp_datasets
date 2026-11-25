@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-import glob
 import os
 from functools import lru_cache
 from typing import Callable, Iterable
 
-import soundfile as sf
 from mne import create_info
 from mne.channels import make_standard_montage
 from mne.io import BaseRaw, RawArray
 from pymatreader import read_mat
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import audio_loader
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -30,7 +30,7 @@ NOTES = ("Shipped preprocessed by the authors (CND, MNE 1.5): 1-15 Hz zero-phase
          "Channel positions are standard_1020 templates.")
 
 
-class Rogachev2024Adaptor:
+class Rogachev2024Adaptor(BaseAdaptor):
     """
     Rogachev & Sysoeva 2024 (OSF c3agw, CND): 52 Russian-speaking children aged 3-8 hear three stories (hedgehogs,
     "Brick and Wax", "The Golden Duck", or the wombat story instead of the last for the first 7 children); 8 children
@@ -40,9 +40,10 @@ class Rogachev2024Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = os.path.join(download_dir, "dataCND")
         self.audio_dir = os.path.join(download_dir, "stimuli")
-        files = glob.glob(f"{self.root}/dataParticipant_NP*.mat")
+        files = self.sorted_glob(self.root, "dataParticipant_NP*.mat")
         self.subjects = sorted(os.path.basename(f).removeprefix("dataParticipant_").removesuffix(".mat") for f in files)
 
     def parse(self) -> Iterable[TrialRecord]:
@@ -55,20 +56,11 @@ class Rogachev2024Adaptor:
                                          reference=REFERENCE, licence=LICENCE, shipped_trial_index=idx)
                 yield TrialRecord(
                     subject=int(sid[2:]), session=1, trial=idx + 1, condition="story", ns_type="eeg",
-                    stimulus=StimulusRecord("audio", name, _audio_loader(os.path.join(self.audio_dir, f"{name}.wav")),
+                    stimulus=StimulusRecord("audio", name, audio_loader(os.path.join(self.audio_dir, f"{name}.wav"),
+                                                                       expect_fs=AUDIO_FS),
                                             is_attended=True),
                     neural_data_fn=_eeg_loader(path, idx, description),
                 )
-
-
-def _audio_loader(path: str) -> Callable[[], dict]:
-    """44.1 kHz stereo wav as 2 x n float32, as shipped."""
-    def _loader() -> dict:
-        x, fs = sf.read(path, dtype="float32")
-        if fs != AUDIO_FS:
-            raise ValueError(f"{path}: expected {AUDIO_FS} Hz")
-        return {"fs": AUDIO_FS, "data": x.T}
-    return _loader
 
 
 def _eeg_loader(path: str, idx: int, description: str) -> Callable[[], BaseRaw]:

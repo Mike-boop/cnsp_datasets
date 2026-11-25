@@ -1,18 +1,23 @@
 from __future__ import annotations
 
 import csv
+import logging
 import math
 import os
 from typing import Callable, Iterable
 
 import mne
 import numpy as np
+import soundfile
 from mne.io import BaseRaw
 from pymatreader import read_mat
-from scipy.io import wavfile
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import mark_bads, read_wav
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
+
+log = logging.getLogger(__name__)
 
 TASK = "AttendedSpeakerParadigmOwnName"
 AUDIO_DIR = os.path.join("stimuli_v1.1.1", "stimuli")  # holtze2021_audio (v1.1.1; removed upstream later)
@@ -29,7 +34,8 @@ NOTES = ("Onset = StartTrigger as shipped (LSL marker stream, the authors' const
 # cEEGrid (OpenNeuro ds004015, registry holtze2021_ceegrid): one around-ear file per trial (notes 12-14)
 GRID_TASK = "AttendedSpeakerParadigmcEEGridAttention"
 GRID_NS_TYPE = "around-ear-eeg"
-GRID_ONSETS = os.path.join(os.path.dirname(__file__), "ceegrid_onsets.csv")  # Holtze half: lag vs the scalp file
+# Holtze half: lag of the cEEGrid behind the scalp file per block (alignment/scalp_vs_ceegrid*.py)
+GRID_ONSETS = os.path.join(os.path.dirname(__file__), "alignment", "ceegrid_onsets.csv")
 # Jaeger half: Holtze-half median lag + (88 - 54) - (102 - 70) ms (cap delays and the authors' cEEGrid shifts, notes 13)
 JAEGER_EXTRA_MS = (88 - 54) - (102 - 70)
 # block-onset jitter (ms): scalp markers ~7 (notes 7); Jaeger half adds the between-session SD of the transferred lag
@@ -61,7 +67,7 @@ PRESENTATION = {"holtze2021": "earphones, HRIR-spatialised at +-30 deg (beamform
                 "jaeger2020": "free-field loudspeakers at +-45 deg, 1.1 m, 70 dB SPL, equal level"}
 
 
-class Holtze2021Adaptor:
+class Holtze2021Adaptor(BaseAdaptor):
     """
     Holtze et al. 2021 (OpenNeuro ds003516): attend one of two talkers (left/right, the same side throughout);
     the participant's own name is inserted 10 times per block in the ignored talker in blocks 2-5.
@@ -75,23 +81,27 @@ class Holtze2021Adaptor:
     (Jaeger: `attend-<side>-freefield`, blocks 1-5; subject = 100 + maj number). Name onsets are `own_name`
     annotations. See notes.md.
 
-    ceegrid_dir: the ds004015 download (None: `<download_dir>/ds004015` if it exists, else scalp only).
+    ceegrid_dir: the ds004015 download (None: `<download_dir>/ds004015` if it exists, else scalp only, with a
+    warning; a directory passed explicitly must exist).
     ceegrid_onset: 'scalp' (default: cEEGrid onsets carried over from the concurrent scalp recording, notes 13) or
     'shipped' (ds004015's StartTriggers, which contain the authors' N1-based shift).
     """
 
     def __init__(self, download_dir: str, ceegrid_dir: str | None = None, ceegrid_onset: str = "scalp"):
+        super().__init__(download_dir)
         self.root = download_dir
         with open(os.path.join(download_dir, "participants.tsv"), newline="") as f:
             self.participants = list(csv.DictReader(f, delimiter="\t"))
         quest = read_mat(os.path.join(download_dir, "stimuli", "name_quest.mat"))["name_quest"]
         self.name_len = dict(zip(np.ravel(quest["subj"]).astype(int), np.ravel(quest["len"]) / 1000))
         self.duration = {b: _block_duration(download_dir, b) for b in range(1, 6)}
-        if ceegrid_onset not in ("scalp", "shipped"):
-            raise ValueError(f"ceegrid_onset {ceegrid_onset!r} is not 'scalp' or 'shipped'")
+        self.choice("ceegrid_onset", ceegrid_onset, ("scalp", "shipped"))
         if ceegrid_dir is None:
             ceegrid_dir = os.path.join(download_dir, "ds004015")
-            ceegrid_dir = ceegrid_dir if os.path.isdir(ceegrid_dir) else None
+            if not os.path.isdir(ceegrid_dir):
+                log.warning("%s not found: scalp EEG only (no cEEGrid files; pass ceegrid_dir for the ds004015 "
+                            "download)", ceegrid_dir)
+                ceegrid_dir = None
         elif not os.path.isdir(ceegrid_dir):
             raise FileNotFoundError(f"ceegrid_dir {ceegrid_dir} does not exist")
         self.grid = _GridSource(ceegrid_dir, ceegrid_onset == "shipped") if ceegrid_dir else None
@@ -232,7 +242,7 @@ def _env(root: str, s: int, b: int) -> str:
 def _block_duration(root: str, b: int) -> float:
     """Block duration (s): the envelope length (= wav duration rounded up to whole 500 Hz samples)."""
     n_env = {len(_read_env(_env(root, s, b), s)) for s in (1, 2)}
-    n_wav = len(wavfile.read(_wav(root, b), mmap=True)[1])
+    n_wav = soundfile.info(_wav(root, b)).frames
     if n_env != {math.ceil(n_wav * ENV_FS / AUDIO_FS)}:
         raise ValueError(f"block {b}: envelope lengths {n_env} do not match the wav ({n_wav} samples)")
     return n_env.pop() / ENV_FS
@@ -260,23 +270,24 @@ def _eeg_loader(path: str, start: float, duration: float, names: np.ndarray, nam
         if highpass is not None:
             with raw.info._unlock():
                 raw.info["highpass"] = highpass
-        raw.info["bads"] = list(bads)
+        mark_bads(raw, bads)
         raw.info["description"] = description
         return raw
     return _loader
 
 
 def _audio_loader(path: str, channel: int) -> Callable[[], dict]:
+    """One channel (0 = left story, 1 = right) of a 32 kHz stereo block wav, float32 in [-1, 1)."""
     def _loader() -> dict:
-        fs, x = wavfile.read(path, mmap=True)
-        if fs != AUDIO_FS or x.dtype != np.int16 or x.shape[1] != 2:
-            raise ValueError(f"{path}: expected 32 kHz stereo int16")
-        return {"fs": fs, "data": (x[:, channel] / 32768.0).astype(np.float32)[None, :]}
+        x, fs = read_wav(path, expect_fs=AUDIO_FS)
+        if x.shape[0] != 2:
+            raise ValueError(f"{path}: expected stereo")
+        return {"fs": fs, "data": x[channel:channel + 1]}
     return _loader
 
 
 def _env_loader(path: str, s: int) -> Callable[[], dict]:
-    return lambda: {"fs": ENV_FS, "data": _read_env(path, s)[None, :]}
+    return lambda: {"fs": ENV_FS, "data": _read_env(path, s).astype(np.float32)[None, :]}
 
 
 def _read_env(path: str, s: int) -> np.ndarray:

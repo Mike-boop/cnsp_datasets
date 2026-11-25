@@ -1,6 +1,6 @@
 {
   "name": "das2019",
-  "title": "Das et al. (2019) dataset",
+  "title": "Das et al. (2019) KU Leuven AAD dataset: EEG (BioSemi 64 ch, shipped at 128 Hz), attend one of two competing talkers (dry/HRTF), 16 participants",
   "visibility": "public",
   "downloads": {
     "das2019": {

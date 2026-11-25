@@ -41,3 +41,9 @@ offsets (PLAN.md section 8). Evidence: `tmp/review/timing.md`, `tmp/review/dnn_o
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **poor**: Same CND pipeline as natural; DNN -45 ms (CI -57..-40) documented, not applied; notes: maybe attention latency, 'unresolved'; low tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- BaseAdaptor. EEG through the shared `broderick2019_natural/cnd.read_eeg` (same values; mastoids M1/M2 when the
+  file has `mastoids`, orientation decided by the channel count; see broderick2019_natural/notes.md).
+- Word TextGrids through `iohelpers.textgrid` (long format, xmin 0, gaps filled, quotes escaped; overlapping words
+  now raise).

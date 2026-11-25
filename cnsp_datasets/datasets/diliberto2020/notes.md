@@ -159,3 +159,8 @@ stimulus, ~1 s after). Presentation order not shipped.
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **medium**: Authors' epochs, onset at sample 513 per the readme (trigger unknown); wavs match the shipped envelope at lag 0; 30-60 Hz TRF 22-47 ms, nothing at negative lags; mlr tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- BaseAdaptor; `stimulus` checked with `choice`; bads through `iohelpers.mark_bads` (strict); 64 Hz features through
+  `iohelpers.array_loader`. Wavs through `iohelpers.read_wav` (soundfile, int16 / 32768 as before, so the same
+  float32 values; any PCM width is now accepted, stereo and the length check still required).

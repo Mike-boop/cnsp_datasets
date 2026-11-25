@@ -223,3 +223,6 @@ Coherence is above the surrogate up to ~15 Hz (the authors' 1-20 Hz filter), att
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **medium**: Authors' CND trials, no triggers/audio; DNN -15.6 ms attributed to competing-speech response latency, not a cut error; lag sweep peaks at 0; low tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- BaseAdaptor only (no other change).

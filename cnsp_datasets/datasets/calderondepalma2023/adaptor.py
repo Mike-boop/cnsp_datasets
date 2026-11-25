@@ -10,6 +10,8 @@ from mne.channels import make_standard_montage
 from mne.io import BaseRaw, RawArray
 from pymatreader import read_mat
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import array_loader, mark_bads
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -26,7 +28,7 @@ NOTES = ("CND release: EEG downsampled by the authors from 1024 to 64 Hz, otherw
          "channel names and mastoid sides inferred (BioSemi 64 order).")
 
 
-class CalderonDePalma2023Adaptor:
+class CalderonDePalma2023Adaptor(BaseAdaptor):
     """
     Calderon De Palma et al. 2023 (OSF gx6rm, CND): 13 subjects x 25 audiobook snippets (~3 min), each in one of
     five conditions (Clean, Temporal60/80, Spectral60/80 modulation low-pass). 64 BioSemi channels + mastoids at
@@ -35,6 +37,7 @@ class CalderonDePalma2023Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = os.path.join(download_dir, ROOT)
         self.subjects = [s for s in range(1, 30) if os.path.exists(self._path("Sub", s))]
 
@@ -59,7 +62,7 @@ class CalderonDePalma2023Adaptor:
                 )
                 yield TrialRecord(
                     subject=sub, session=1, trial=int(order[idx]), condition=name.split("_", 1)[1], ns_type="eeg",
-                    stimulus=StimulusRecord("audio", name, _env_loader(env), is_attended=True, feature_name=FEATURE),
+                    stimulus=StimulusRecord("audio", name, array_loader(env, FS), is_attended=True, feature_name=FEATURE),
                     neural_data_fn=self._eeg_loader(sub, idx, description),
                 )
 
@@ -96,7 +99,7 @@ class CalderonDePalma2023Adaptor:
             info = create_info(montage.ch_names + MASTOIDS, float(FS), types)
             raw = RawArray(1e-6 * data, info, verbose="ERROR")  # shipped in µV
             raw.set_montage(montage)  # template positions
-            raw.info["bads"] = list(BADS.get(sub, []))
+            mark_bads(raw, BADS.get(sub, []))
             raw.info["description"] = description
             return raw
         return _loader
@@ -105,10 +108,6 @@ class CalderonDePalma2023Adaptor:
 def _names(stim: dict) -> list[str]:
     """Stimulus names `s<kk>_<condition>` of a subject's trials, in shipped order."""
     return [f"s{int(k):02d}_{stim['condNames'][c - 1]}" for k, c in zip(stim["stimIdxs"], stim["condIdxs"])]
-
-
-def _env_loader(env: np.ndarray) -> Callable[[], dict]:
-    return lambda: {"fs": FS, "data": env[None, :]}
 
 
 @lru_cache(maxsize=1)

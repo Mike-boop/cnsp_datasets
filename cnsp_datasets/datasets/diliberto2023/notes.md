@@ -194,3 +194,6 @@ filters the records by `condition`; average reference, bads none) as well as the
 **medium**: trigger source unknown and onsets are the authors' epochs (kept, no correction); every age group
 passes the low tier (r above circular-shift and mismatch nulls) with a plausible adult TRF peak (180 ms) and no
 evidence of an offset, but the TRFs are too weak to verify the latency closely, and drift is not measurable.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- BaseAdaptor only (no other change).

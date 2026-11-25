@@ -29,3 +29,8 @@ One trial per story (condition `natural`); stimuli: the audio and its word/phone
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **good**: Stimtrack onsets (Sound channel) in the BIDS rebuild, agree with the authors' onsets.mat to 1 ms; drift 1.2 ppm not corrected; DNN +3.4 ms; brainstem tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- BaseAdaptor. Audio through `iohelpers.audio_loader` (first channel, float32; same scaling as before).
+- Bads from `channels.tsv` through `iohelpers.mark_bads` (strict: a listed EEG channel missing from the recording
+  now raises instead of being skipped; `Sound` is dropped from the data and from the list).

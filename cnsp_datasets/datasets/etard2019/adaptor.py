@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import glob
 import os
 import re
 from typing import Iterable
@@ -9,12 +8,13 @@ import numpy as np
 import pandas as pd
 from mne.channels import make_standard_montage
 from mne.io import BaseRaw, read_raw_brainvision
-from scipy.io import wavfile
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import read_wav
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 
-class Etard2019Adaptor:
+class Etard2019Adaptor(BaseAdaptor):
     """
     Etard et al. 2019 (Reichenbach lab) in its BIDS version (built by make_bids.py from the original record, Zenodo
     7086209): 63-channel EEG at 1 kHz plus the `Sound` stimtrack, one BrainVision recording per run; English
@@ -28,6 +28,9 @@ class Etard2019Adaptor:
       - attended: the speech; in Dutch runs with the run's own English sentences added (both normalised to the same
         RMS by the authors and summed when played);
       - unattended (noise runs): the babble (`*_babble`) or the competing speaker (`*_distractor`).
+    Stimulus names are `<condition>_part_<run>_<role>`, plus `_at<offset>ms` (each stream's offset from the trial
+    start, joined by '+') when a stream does not start at the trial start: the padding is part of the content, and
+    one name must always mean one content (notes.md).
     lb/mb/hb = low/medium/high babble level, i.e. high/medium/low SNR (measured per run, `snr_db`).
     """
 
@@ -45,12 +48,8 @@ class Etard2019Adaptor:
     }
     _SESSION = {"english": 1, "dutch": 2}
 
-    def __init__(self, download_dir: str):
-        self.download_dir = download_dir
-
     def parse(self) -> Iterable[TrialRecord]:
-        pattern = os.path.join(self.download_dir, "sub-*", "ses-*", "eeg", "*_events.tsv")
-        for events_path in sorted(glob.glob(pattern)):
+        for events_path in self.sorted_glob(self.download_dir, "sub-*/ses-*/eeg/*_events.tsv"):
             m = re.search(r"sub-(\d+)_ses-(\w+)_task-(\w+)_run-(\d+)_events", os.path.basename(events_path))
             subject, ses, task, run = int(m.group(1)), m.group(2), m.group(3), int(m.group(4))
             condition = self._COND_MAP[(ses, task)]
@@ -59,12 +58,15 @@ class Etard2019Adaptor:
             start = int(streams["sample"].min())
             stop = int((streams["sample"] + (streams.duration * 1000).round()).max()) + 1
             prefix = f"{condition}_part_{run}"
-            stimuli = [StimulusRecord(modality="audio", name=f"{prefix}_story", is_attended=True, feature_name="audio",
-                                      data_fn=self._audio_loader(streams, ["speech", "english_track"], start))]
+            kinds = ["speech", "english_track"]
+            stimuli = [StimulusRecord(modality="audio", name=_name(f"{prefix}_story", streams, kinds, start),
+                                      is_attended=True, feature_name="audio",
+                                      data_fn=self._audio_loader(streams, kinds, start))]
             for kind, role in (("babble", "babble"), ("competing", "distractor")):
                 if kind in streams.index:
-                    stimuli.append(StimulusRecord(modality="audio", name=f"{prefix}_{role}", is_attended=False,
-                                                  feature_name="audio", data_fn=self._audio_loader(streams, [kind], start)))
+                    name = _name(f"{prefix}_{role}", streams, [kind], start)
+                    stimuli.append(StimulusRecord(modality="audio", name=name, is_attended=False, feature_name="audio",
+                                                  data_fn=self._audio_loader(streams, [kind], start)))
             yield TrialRecord(
                 subject=subject,
                 session=self._SESSION[ses],
@@ -77,19 +79,22 @@ class Etard2019Adaptor:
 
     def _audio_loader(self, streams: pd.DataFrame, kinds: list[str], start: int):
         """Sum of the given streams, each placed at its onset relative to the trial start (sample at 1 kHz)."""
-        parts = [(os.path.join(self.download_dir, "stimuli", streams.loc[k, "stim_file"]),
-                  int(streams.loc[k, "sample"]) - start) for k in kinds if k in streams.index]
+        parts = [(os.path.join(self.download_dir, "stimuli", streams.loc[k, "stim_file"]), offset_ms)
+                 for k, offset_ms in _offsets(streams, kinds, start)]
 
         def _loader() -> dict:
             out, fs = np.zeros(0), None
             for path, offset_ms in parts:
-                fs, x = wavfile.read(path)
+                x, rate = read_wav(path)  # float32 as written by make_bids (44.1 kHz mono)
+                if x.shape[0] != 1 or fs not in (None, rate):
+                    raise ValueError(f"{path}: expected mono at {fs or rate} Hz")
+                fs, x = rate, x[0]
                 pad = int(round(offset_ms * fs / 1000))
                 n = pad + len(x)
                 if len(out) < n:
                     out = np.concatenate([out, np.zeros(n - len(out))])
                 out[pad:n] += x
-            return {"fs": int(fs), "data": out[None, :]}
+            return {"fs": fs, "data": out[None, :].astype(np.float32)}
 
         return _loader
 
@@ -104,6 +109,17 @@ class Etard2019Adaptor:
             return raw
 
         return _loader
+
+
+def _offsets(streams: pd.DataFrame, kinds: list[str], start: int) -> list[tuple[str, int]]:
+    """(kind, onset in ms (1 kHz samples) relative to the trial start) of the given streams present in the run."""
+    return [(k, int(streams.loc[k, "sample"]) - start) for k in kinds if k in streams.index]
+
+
+def _name(base: str, streams: pd.DataFrame, kinds: list[str], start: int) -> str:
+    """Stimulus name: `base`, plus `_at<ms>[+<ms>]` when a stream is padded (the padding is part of the content)."""
+    offsets = [off for _, off in _offsets(streams, kinds, start)]
+    return base if not any(offsets) else f"{base}_at{'+'.join(map(str, offsets))}ms"
 
 
 ADAPTOR = Etard2019Adaptor

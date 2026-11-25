@@ -195,3 +195,8 @@ with `scripts/piazza2025_run.sh`. Results in `R/piazza2025/validation_<group>[_<
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 - piazza2025_l1l: **medium**: Authors' 100 Hz epochs at the PsychoPy (software) start trigger; per-subject TRFs peak 0-270 ms, flat at negative lags; drift not estimable; low tier.
 - piazza2025_l2l: **medium**: As piazza2025_l1l; low tier (21/25).
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- BaseAdaptor; `group` checked with `choice`; piazza2025_l1l / _l2l are subclasses (`Piazza2025L1LAdaptor`,
+  `Piazza2025L2LAdaptor`) instead of `functools.partial`. Wavs through `iohelpers.read_wav` (int16 / 32768 as
+  before; mono still required); L2A envelopes through `iohelpers.array_loader`.

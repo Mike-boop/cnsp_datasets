@@ -323,8 +323,8 @@ Evidence in `/data_storage/gu08wuvu/datasets/tmp/review/holtze2021/{validation,d
     moves ~2.5 ms against the scalp; with the onset taken as the block's median window lag (~block centre) the error
     is <= 1.3 ms at the block edges. **Not corrected** (below the ~7 ms marker jitter; the scalp's own drift vs the
     audio is not corrected either).
-- **Holtze half: onset = ds004015 StartTrigger + this block's lag** (`ceegrid_onsets.csv`, written by
-  `scalp_vs_ceegrid_summary.py`; columns: ids, StartTriggers of both files, lag, whole-block lag, peak z, window SD,
+- **Holtze half: onset = ds004015 StartTrigger + this block's lag** (`alignment/ceegrid_onsets.csv`, written by
+  `alignment/scalp_vs_ceegrid_summary.py` from `alignment/scalp_vs_ceegrid.py`; columns: ids, StartTriggers of both files, lag, whole-block lag, peak z, window SD,
   drifts). This carries the scalp onset (validated, medium) over to the cEEGrid clock, i.e. both files of a trial
   share one stimulus timeline. Derived from the two recordings, not from a brain response: on by default (hardware
   rule).
@@ -430,3 +430,17 @@ Grade under the CLAUDE.md rule (weakest part decides); scalp accepted by the use
 Evidence line: "scalp: software markers with the authors' 102 ms delay, validated (low tier, DNN -7.9 ms, no
 correction); cEEGrid: carried onto the scalp timeline by cross-correlating the concurrent recordings (-37 ms, IQR
 4 ms), Jaeger by the same lag plus the paper's constants."
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- BaseAdaptor; `ceegrid_onset` checked with `choice`.
+- `ceegrid_onsets.csv` moved to `alignment/`, with the scripts that make it (`alignment/scalp_vs_ceegrid.py`,
+  `alignment/scalp_vs_ceegrid_summary.py`, moved from the temporary review scripts; paths are now arguments, the
+  computation is unchanged):
+
+      python -m cnsp_datasets.datasets.holtze2021.alignment.scalp_vs_ceegrid <ds003516> <ds004015> <work> 1 2 3 ...
+      python -m cnsp_datasets.datasets.holtze2021.alignment.scalp_vs_ceegrid_summary <work>
+
+- Without `ceegrid_dir` and without `<download_dir>/ds004015`, a warning is logged (was silent) and only the scalp
+  files are produced; an explicit `ceegrid_dir` that does not exist still raises.
+- cEEGrid bads through `iohelpers.mark_bads` (strict). Wavs through `iohelpers.read_wav` (channel 0 / 1 of the
+  stereo block wav, int16 / 32768 as before); onset envelopes are float32 (were float64).

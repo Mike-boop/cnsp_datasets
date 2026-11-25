@@ -11,6 +11,8 @@ from mne import create_info
 from mne.io import BaseRaw, RawArray
 from pymatreader import read_mat
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import array_loader, mark_bads
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -26,7 +28,7 @@ NOTES = ("CND release: raw Smarting EEG epochs (no filter, no re-reference; refe
          "Hilbert envelopes of the wav as played and, for two-voice variants, of each voice. Drift not measurable.")
 
 
-class Winchester2026Adaptor:
+class Winchester2026Adaptor(BaseAdaptor):
     """
     Winchester et al. 2026 (OSF bjdh6, CND): 31 subjects x 32 MIDI-synthesised piano pieces, each in one of six
     variants (Original, Inverted, or one voice alone: <Original|Inverted>_Mono_<Left|Right>). 24 Smarting
@@ -36,6 +38,7 @@ class Winchester2026Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = os.path.join(download_dir, ROOT)
         self.subjects = [s for s in range(1, 41) if os.path.exists(self._path("Sub", s))]
 
@@ -60,7 +63,7 @@ class Winchester2026Adaptor:
                     "sw_trigger", TRIGGER, NOTES, validation_tier="low", piece=piece, variant=variant,
                     shipped_trial_index=idx, stimulus_samples=len(envelopes[names[0]]),
                 )
-                stimuli = [StimulusRecord("audio", n, _env_loader(envelopes[n]), is_attended=i == 0,
+                stimuli = [StimulusRecord("audio", n, array_loader(envelopes[n], STIM_FS), is_attended=i == 0,
                                           feature_name=FEATURE) for i, n in enumerate(names)]
                 yield TrialRecord(
                     subject=sub, session=1, trial=position, condition=variant, ns_type="eeg", stimulus=stimuli,
@@ -114,7 +117,7 @@ class Winchester2026Adaptor:
             info = create_info(labels, float(eeg["fs"]), types)
             raw = RawArray(1e-6 * np.asarray(eeg["data"][idx]).T, info, verbose="ERROR")  # shipped in µV
             raw.set_montage("standard_1020")  # template positions
-            raw.info["bads"] = list(BADS.get(sub, []))
+            mark_bads(raw, BADS.get(sub, []))
             raw.info["description"] = description
             return raw
         return _loader
@@ -146,10 +149,6 @@ def _voices(variant: str) -> tuple[str, ...]:
 def _name(variant: str, piece: int) -> str:
     """Stimulus name, e.g. `Original_Mono_Left_07`."""
     return f"{variant}_{piece:02d}"
-
-
-def _env_loader(env: np.ndarray) -> Callable[[], dict]:
-    return lambda: {"fs": STIM_FS, "data": env[None, :]}
 
 
 @lru_cache(maxsize=1)

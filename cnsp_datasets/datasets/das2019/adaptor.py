@@ -1,22 +1,21 @@
-# nsptools/adapters/das2019.py
 from __future__ import annotations
 
 import os
-import glob
 from functools import lru_cache
-from typing import Iterable, Callable, Any, Dict
+from typing import Any, Callable, Dict, Iterable
 
 import numpy as np
-from pymatreader import read_mat
-from scipy.io import wavfile
 from mne import create_info
-from mne.io import RawArray, BaseRaw
 from mne.channels import make_standard_montage
+from mne.io import BaseRaw, RawArray
+from pymatreader import read_mat
 
-from cnsp_datasets.standardise.trial_record import TrialRecord, StimulusRecord
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import audio_loader
+from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 
-class Das2019Adapter:
+class Das2019Adapter(BaseAdaptor):
     """
     Adapter for the Das (2019) EEG dataset.
 
@@ -30,6 +29,7 @@ class Das2019Adapter:
       - Determine attended/unattended stories from 'attended_ear' + 'stimuli' fields.
       - Emit two stimuli (attended/unattended) with feature_name='audio'.
       - Provide a lazy EEG loader that returns an mne.RawArray using header Fs & ch labels.
+      - Audio: the first channel of the wav, float32 in [-1, 1).
 
     Notes:
       - Trials are 1-based, in recorded order (TrialID).
@@ -39,8 +39,9 @@ class Das2019Adapter:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = download_dir
-        self._mat_files = sorted(glob.glob(os.path.join(download_dir, "S*.mat")))
+        self._mat_files = self.sorted_glob(download_dir, "S*.mat")
         if not self._mat_files:
             raise FileNotFoundError(f"No subject .mat files found under {download_dir!r}")
 
@@ -52,7 +53,7 @@ class Das2019Adapter:
     def parse(self) -> Iterable[TrialRecord]:
         for mat_path in self._mat_files:
             subj_num = self._subject_number(mat_path)
-            data = self._read_subject(mat_path) 
+            data = self._read_subject(mat_path)
             trials = data["trials"]  # list of dict-like
 
             for j, tr in enumerate(trials):
@@ -131,9 +132,9 @@ class Das2019Adapter:
             if eeg.ndim != 2:
                 raise ValueError(f"Unexpected EEG shape for trial {trial_index}: {eeg.shape}")
 
-            # If labels count mismatches, fall back to generic names
             if len(ch_names) != eeg.shape[0]:
-                ch_names = [f"EEG{i+1:02d}" for i in range(eeg.shape[0])]
+                raise ValueError(f"{mat_path} trial {trial_index}: {len(ch_names)} channel labels for "
+                                 f"{eeg.shape[0]} channels")
 
             info = create_info(ch_names=ch_names, sfreq=Fs, ch_types="eeg")
             info.set_montage(make_standard_montage("biosemi64"))
@@ -144,25 +145,16 @@ class Das2019Adapter:
     def _make_audio_loader(self, story_name_no_ext: str) -> Callable[[], Dict[str, Any]]:
         """
         Returns a loader that finds '<story>.wav' (dry) under stimuli/ and returns
-        {'fs': int, 'data': (1, T)}.
+        {'fs': int, 'data': float32 (1, T)} (first channel).
         """
         wav_basename = f"{story_name_no_ext}.wav"
-        wav_path = self._audio_index.get(wav_basename)
-        if wav_path is None:
-            # try a best-effort search each call if not in index
-            cand = glob.glob(os.path.join(self.root, "stimuli", "**", wav_basename), recursive=True)
-            if cand:
-                wav_path = cand[0]
-                self._audio_index[wav_basename] = wav_path
+        wav_path = self._audio_index.get(wav_basename)  # the index holds every wav under stimuli/
+        if wav_path is not None:
+            return audio_loader(wav_path, channel=0)
 
-        def _loader() -> Dict[str, Any]:
-            if wav_path is None or not os.path.exists(wav_path):
-                raise FileNotFoundError(f"Audio not found for story '{story_name_no_ext}': expected '{wav_basename}'")
-            fs, x = wavfile.read(wav_path)
-            if x.ndim == 2:
-                x = x[:, 0]  # mono
-            return {"fs": int(fs), "data": np.asarray(x, dtype=float)[None, :]}
-        return _loader
+        def _missing() -> Dict[str, Any]:
+            raise FileNotFoundError(f"Audio not found for story '{story_name_no_ext}': expected '{wav_basename}'")
+        return _missing
 
     # ----------------------------- Helpers -----------------------------
 
@@ -181,15 +173,14 @@ class Das2019Adapter:
         return clean.replace("-", "_")
 
     def _build_audio_index(self) -> Dict[str, str]:
-        """
-        Index all dry WAVs under stimuli/ for quick lookup.
-        """
+        """Basename -> path of every wav under stimuli/ (any depth); a basename found twice raises."""
         index: Dict[str, str] = {}
-        for p in glob.glob(os.path.join(self.root, "stimuli", "**", "*dry.wav"), recursive=True):
-            index[os.path.basename(p)] = p
-        # also index any plain .wav (in case you already have cleaned names without 'dry')
-        for p in glob.glob(os.path.join(self.root, "stimuli", "**", "*.wav"), recursive=True):
-            index.setdefault(os.path.basename(p), p)
+        for p in self.sorted_glob(os.path.join(self.root, "stimuli"), "**/*.wav"):
+            name = os.path.basename(p)
+            if name in index:
+                raise ValueError(f"two stimulus files named {name}: {index[name]} and {p}")
+            index[name] = p
         return index
+
 
 ADAPTOR = Das2019Adapter

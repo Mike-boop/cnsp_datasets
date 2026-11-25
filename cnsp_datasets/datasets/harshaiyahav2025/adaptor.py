@@ -11,6 +11,7 @@ from mne.channels import make_standard_montage
 from mne.io import BaseRaw, RawArray
 from pymatreader import read_mat
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -27,7 +28,7 @@ NOTES = ("Shipped preprocessed by the authors: linked-mastoid reference, ICA, in
 POST_SWITCH = "First trial after the talker switch; excluded in the paper."
 
 
-class HarshaiYahav2025Adaptor:
+class HarshaiYahav2025Adaptor(BaseAdaptor):
     """
     Har-shai Yahav et al. 2025 (OSF bzean, CND): attend an audiovisual lecture (front) and ignore a competing
     audio-only lecture (left); target and non-target lectures swap at half-time. 23 subjects x 40-41 trials at
@@ -41,6 +42,7 @@ class HarshaiYahav2025Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = os.path.join(download_dir, "dataCND")
         self.subjects = [s for s in range(1, 25) if os.path.exists(self._sub_path(s))]
 

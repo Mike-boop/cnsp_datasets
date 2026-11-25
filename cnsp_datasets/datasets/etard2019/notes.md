@@ -33,3 +33,14 @@ I think we no longer have textgrids, but transcripts are definitely available on
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **good**: Stimtrack (Sound channel, 672 runs) in the BIDS rebuild; triggers coincide with it to 1 ms; drift 0.8 ppm, not corrected; noise DNN offsets are response latency; brainstem tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- BaseAdaptor; sorted glob.
+- **Stimulus names are unique per content.** Each stimulus is zero-padded to start at the trial start, and the
+  padding is the stream's measured offset from the earliest stream of the run (e.g. the speech 1 s after the
+  babble in English noise runs). The sinks save each stimulus name once, so two subjects with different offsets
+  under one name would silently share the first subject's padding. Names are now
+  `<condition>_part_<run>_<role>` when every stream starts at the trial start, else with `_at<ms>[+<ms>]` (the
+  offsets of the summed streams, in 1 kHz samples), e.g. `sin_highSNR_part_1_story_at1000ms`.
+- Audio through `iohelpers.read_wav` (the float32 wavs of the BIDS version are unchanged); the summed stimulus is
+  float32 (was float64); mono and one rate per sum are checked.

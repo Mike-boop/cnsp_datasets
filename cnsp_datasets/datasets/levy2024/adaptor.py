@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import glob
-import os
 import re
 from functools import lru_cache
 from typing import Callable, Iterable
@@ -10,6 +8,7 @@ import mne
 import numpy as np
 from scipy.io import loadmat
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -40,7 +39,7 @@ EVENTS_NOTE = (" Event annotations as shipped, but their schedule matches neithe
                "lesson (notes.md 3): do not trust them.")
 
 
-class Levy2024Adaptor:
+class Levy2024Adaptor(BaseAdaptor):
     """
     Levy et al. 2024 (OSF svjqg): attend a virtual teacher in a VR classroom, with distractor sound-events in
     lessons 1-22 ('events') and none in lessons 23-30 ('quiet'). 49 adults (24 AD(H)D, 25 control) x 30 lessons,
@@ -51,8 +50,13 @@ class Levy2024Adaptor:
     """
 
     def __init__(self, download_dir: str):
-        paths = glob.glob(os.path.join(download_dir, "dataSub*.mat"))
-        self.paths = {int(re.search(r"dataSub(\d+)\.mat$", p).group(1)): p for p in paths}
+        super().__init__(download_dir)
+        self.paths = {}
+        for p in self.sorted_glob(download_dir, "dataSub*.mat"):
+            sub = int(re.search(r"dataSub(\d+)\.mat$", p).group(1))
+            if sub in self.paths:  # e.g. dataSub7.mat and dataSub07.mat
+                raise ValueError(f"subject {sub}: {self.paths[sub]} and {p}")
+            self.paths[sub] = p
 
     def parse(self) -> Iterable[TrialRecord]:
         for sub in sorted(self.paths):
@@ -76,9 +80,9 @@ class Levy2024Adaptor:
                 )
 
     def _env_loader(self, sub: int, k: int) -> Callable[[], dict]:
-        """Envelope as shipped (bit-identical across subjects per lesson)."""
+        """Envelope as shipped (bit-identical across subjects per lesson), as float32."""
         path = self.paths[sub]
-        return lambda: {"fs": ENV_FS, "data": np.atleast_1d(_read_meta(path)[0].data[k]).astype(float)[None, :]}
+        return lambda: {"fs": ENV_FS, "data": np.atleast_1d(_read_meta(path)[0].data[k]).astype(np.float32)[None, :]}
 
     def _eeg_loader(self, sub: int, k: int, lesson: int, extra: dict) -> Callable[[], mne.io.BaseRaw]:
         path = self.paths[sub]
