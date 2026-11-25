@@ -352,7 +352,7 @@ is temporary; every number that explains a choice is copied here.
   section-level triggers (mostly only the first), and a ~164 ppm clock drift.
 
 ## 13. Adaptor (standardiser, 2026-11-22)
-- `adaptor.py` reads `onsets.csv` (a copy of the explorer's `proposed_onsets.csv`: one row per participant and
+- `adaptor.py` reads `alignment/onsets.csv` (a copy of the explorer's `proposed_onsets.csv`: one row per participant and
   position with group, condition, onset in s from the first sample, onset source and the explorer's r_f/r_m). The
   adaptor checks the position-1 onset against the first `S 11`/`S 31` marker of each `.vmrk`.
 - sub-26 is read through a patched header copy in a temporary directory (absolute `DataFile`/`MarkerFile`); the
@@ -446,3 +446,13 @@ subject's live channels (64, or 33 for the 10 dead-channel subjects).
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **poor**: Software triggers for section 1, the rest from a timeline; drift +164 ppm brain-derived applied; DNN ~-200 ms documented, 'mostly timing'; low tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- `onsets.csv` moved to `alignment/`. The script that made it (the explorer's `proposed_onsets.csv`) was in
+  `tmp/review/` and is not in the repository.
+- sub-26's patched BrainVision header is kept in a temporary directory for the life of the process (before, the
+  directory was deleted right after the lazy raw was opened; MNE 1.9 only re-reads the `.eeg`, which the patched
+  header names by absolute path, so this worked but relied on MNE internals).
+- Dead channels marked with `iohelpers.mark_bads` (strict); skipped sections are logged (were printed).
+- TextGrid written by `iohelpers.textgrid` (was the `textgrid` library): same intervals, long text format.
+- Audio through `iohelpers.read_wav` (float32 / 32768: unchanged values).

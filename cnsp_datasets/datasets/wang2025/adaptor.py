@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import io
+import logging
 import math
 import os
 import re
@@ -9,18 +9,20 @@ from functools import lru_cache
 from typing import Callable, Iterable
 
 import mne
-import numpy as np
 import pandas as pd
-import textgrid
+import soundfile
 from mne.channels import make_standard_montage
-from scipy.io import wavfile
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
+from cnsp_datasets.standardise.iohelpers import mark_bads, read_wav, textgrid
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
+log = logging.getLogger(__name__)
+
 AUDIO_FS = 44100
-ONSETS = os.path.join(os.path.dirname(__file__), "onsets.csv")  # notes.md sections 3 and 6
+ONSETS = os.path.join(os.path.dirname(__file__), "alignment", "onsets.csv")  # notes.md sections 3 and 6
 DRIFT = 164e-6  # pooled within-section EEG lag slope, 32 sections / 18 subjects (notes.md section 7)
 JITTER_MS = 4.1  # residual SD of the S 31-S 33 timeline fit (notes.md section 7)
 TIMELINE_SD_MS = {2: 19.3, 3: 31.4, 4: 40.2}  # cross-subject SD of the trigger timeline per position
@@ -53,25 +55,25 @@ CONF_NOTE = " Group A/B call has {} confidence (weak single-talker tracking)."
 WORDS_NOTE = "words: upstream word_information.csv (centiseconds, 10 ms precision), relative to the wav start"
 
 
-class Wang2025Adaptor:
+class Wang2025Adaptor(BaseAdaptor):
     """
     Wang et al. 2025, Le Petit Prince multi-talker, EEG part (OpenNeuro ds005345 v1.0.1): 26 Mandarin listeners,
     one BrainAmp recording each (64 EEG channels, 500 Hz kept, original reference) with four continuously played
     ~10-min sections: two mixed-talker (`mixed`), then `single-female` and `single-male` in group order.
 
-    Trial = section (1-4, presentation position). Onsets from `onsets.csv` (triggers or trigger timeline);
+    Trial = section (1-4, presentation position). Onsets from `alignment/onsets.csv` (triggers or trigger timeline);
     drift_correction (default +164 ppm, None = off) is applied with the onset in one interpolation. Stimuli: the
     shipped 44.1 kHz wavs (mixed: `mix` as played plus `single_female` and `single_male`, none attended; single:
-    the talker's wav, attended) and `words` TextGrids for the single wavs. See notes.md.
+    the talker's wav, attended; float32) and `words` TextGrids for the single wavs. See notes.md.
     """
 
     def __init__(self, download_dir: str, drift_correction: float | None = DRIFT):
+        super().__init__(download_dir)
         self.root = download_dir
         self.drift = drift_correction or 0.0
         self.onsets = pd.read_csv(ONSETS, keep_default_na=False)
-        self.n_audio = {s: len(wavfile.read(self._wav(s), mmap=True)[1]) for s in ("mix", "single_female",
-                                                                                   "single_male")}
-        part = pd.read_csv(os.path.join(download_dir, "participants.tsv"), sep="\t")
+        self.n_audio = {s: soundfile.info(self._wav(s)).frames for s in ("mix", "single_female", "single_male")}
+        part = pd.read_csv(self.path("participants.tsv"), sep="\t")
         self.participants = part.set_index("participant_id").to_dict("index")
 
     def parse(self) -> Iterable[TrialRecord]:
@@ -84,7 +86,7 @@ class Wang2025Adaptor:
             p = self.participants[sub]
             for r in rows.itertuples():
                 if r.condition == "n/a":
-                    print(f"wang2025: {sub} position {r.pos} skipped (recording truncated upstream)")
+                    log.info("wang2025: %s position %s skipped (recording truncated upstream)", sub, r.pos)
                     continue
                 method = "sw_trigger" if r.source in TRIGGERED else "onset_only"
                 n_out = math.ceil(max(self.n_audio[s] for s in STIMULI[r.condition]) * 500 / AUDIO_FS)
@@ -129,23 +131,10 @@ class Wang2025Adaptor:
 
         def _loader() -> str:
             w = pd.read_csv(path)
-            tier = textgrid.IntervalTier("words", 0, xmax)
-            for on, off, word in zip(w.onset / 100, w.offset / 100, w.word):
-                tier.add(on, min(off, xmax), word)
-            tg = textgrid.TextGrid(maxTime=xmax)
-            tg.append(tier)
-            f = _Buffer()
-            tg.write(f)
-            return f.getvalue()
+            return textgrid({"words": [(on, min(off, xmax), str(word))
+                                       for on, off, word in zip(w.onset / 100, w.offset / 100, w.word)]}, xmax=xmax)
 
         return _loader
-
-
-class _Buffer(io.StringIO):
-    """StringIO that survives TextGrid.write closing it."""
-
-    def close(self):
-        pass
 
 
 def _first_marker(vmrk: str) -> tuple[str, int]:
@@ -157,29 +146,38 @@ def _first_marker(vmrk: str) -> tuple[str, int]:
 
 def _audio_loader(path: str) -> Callable[[], dict]:
     def _loader() -> dict:
-        fs, x = wavfile.read(path)
-        if fs != AUDIO_FS or x.dtype != np.int16 or x.ndim != 1:
+        info = soundfile.info(path)
+        if info.samplerate != AUDIO_FS or info.subtype != "PCM_16" or info.channels != 1:
             raise ValueError(f"{path}: expected 44.1 kHz mono int16")
-        return {"fs": AUDIO_FS, "data": (x / 32768.0).astype(np.float32)[None, :]}
+        return {"fs": AUDIO_FS, "data": read_wav(path)[0]}
 
     return _loader
 
 
+_PATCHED: dict = {}  # vhdr -> TemporaryDirectory holding its patched copy, kept for the life of the process
+
+
+def patched_header(vhdr: str) -> str:
+    """A copy of a broken header (sub-26) whose DataFile/MarkerFile point to the files next to it (absolute)."""
+    if vhdr not in _PATCHED:
+        with open(vhdr, encoding="utf-8") as f:
+            text = f.read()
+        stem = os.path.abspath(vhdr)[:-5]
+        text = re.sub(r"(?m)^DataFile=.*$", lambda _: f"DataFile={stem}.eeg", text)
+        text = re.sub(r"(?m)^MarkerFile=.*$", lambda _: f"MarkerFile={stem}.vmrk", text)
+        tmp = tempfile.TemporaryDirectory(prefix="wang2025_")
+        with open(os.path.join(tmp.name, os.path.basename(vhdr)), "w", encoding="utf-8") as f:
+            f.write(text)
+        _PATCHED[vhdr] = tmp
+    return os.path.join(_PATCHED[vhdr].name, os.path.basename(vhdr))
+
+
 @lru_cache(maxsize=1)
 def _read(vhdr: str) -> mne.io.BaseRaw:
-    """Lazy BrainVision reader; a broken header (sub-26) is read through a temporary copy with fixed file names."""
-    if int(os.path.basename(vhdr)[4:6]) not in BROKEN_HEADER:
-        return mne.io.read_raw_brainvision(vhdr, preload=False, verbose="ERROR")
-    with open(vhdr, encoding="utf-8") as f:
-        text = f.read()
-    stem = vhdr[:-5]
-    text = re.sub(r"(?m)^DataFile=.*$", lambda _: f"DataFile={stem}.eeg", text)
-    text = re.sub(r"(?m)^MarkerFile=.*$", lambda _: f"MarkerFile={stem}.vmrk", text)
-    with tempfile.TemporaryDirectory() as tmp:
-        patched = os.path.join(tmp, os.path.basename(vhdr))
-        with open(patched, "w", encoding="utf-8") as f:
-            f.write(text)
-        return mne.io.read_raw_brainvision(patched, preload=False, verbose="ERROR")
+    """Lazy BrainVision reader; a broken header (sub-26) is read through a patched copy (patched_header)."""
+    if int(os.path.basename(vhdr)[4:6]) in BROKEN_HEADER:
+        vhdr = patched_header(vhdr)
+    return mne.io.read_raw_brainvision(vhdr, preload=False, verbose="ERROR")
 
 
 def _eeg_loader(vhdr: str, onset: float, n_out: int, drift: float, truncated: bool, bads: list,
@@ -193,7 +191,7 @@ def _eeg_loader(vhdr: str, onset: float, n_out: int, drift: float, truncated: bo
             raise ValueError(f"{vhdr}: recording ends {n_out - out.n_times} samples before the stimulus")
         out.set_montage(make_standard_montage("standard_1005"), verbose="ERROR")
         out.set_meas_date(None)  # recording PC clock wrong (2010); date in the metadata
-        out.info["bads"] = list(bads)
+        mark_bads(out, bads)
         out.info["description"] = description
         return out
 
