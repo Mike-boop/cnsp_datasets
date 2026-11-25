@@ -30,15 +30,15 @@ from typing import Dict, List, Sequence
 
 import numpy as np
 from scipy import stats
+
+from cnsp_datasets.standardise.clock import to_audio_clock  # noqa: F401 (re-exported)
 from scipy.io import wavfile
-from scipy.interpolate import make_interp_spline
 
 # blocks with larger discrepancies have marker problems, not drift
 MAX_INACC_SAMPLES = 1000
 
 # quintic spline: amplitude error ~0.04% at 200 Hz and ~1% at 300 Hz for 1 kHz data
 # (linear interpolation loses ~14% at 200 Hz)
-SPLINE_ORDER = 5
 
 
 @dataclass(frozen=True)
@@ -152,24 +152,6 @@ def estimate_drift(timings: List[BlockTiming], marker_offset: float | None = Non
 def estimate_drift_from_xml(xml_root: str, marker_offset: float | None = None, corpus_dirs: tuple = ()) -> DriftEstimate:
     """estimate_drift over every block in the dataset's XML_INFO directory (cached); see read_block_timings."""
     return estimate_drift(read_block_timings(xml_root, corpus_dirs), marker_offset)
-
-
-def to_audio_clock(data: np.ndarray, drift: float) -> np.ndarray:
-    """
-    Resample EEG (n_channels, n_times) from the EEG clock onto the audio clock.
-
-    The EEG clock counts (1 + drift) samples per audio sample, so output sample k is taken
-    at EEG position k * (1 + drift) by spline interpolation. Sample 0 is unchanged (the
-    block onset marker is the anchor). With drift > 0 the output is slightly shorter than
-    the input; the last output sample stays within the input, so nothing is extrapolated.
-    """
-    n = data.shape[1]
-    if drift == 0 or n < SPLINE_ORDER + 1:
-        return data
-    n_out = int(np.floor((n - 1) / (1 + drift))) + 1
-    positions = np.arange(n_out) * (1 + drift)
-    spline = make_interp_spline(np.arange(n), data, k=SPLINE_ORDER, axis=1)
-    return spline(positions).astype(data.dtype, copy=False)
 
 
 def _group(timings: List[BlockTiming]) -> Dict[str, List[BlockTiming]]:

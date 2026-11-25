@@ -16,11 +16,11 @@ from typing import Iterable
 import mne
 import numpy as np
 import pandas as pd
-import scipy.interpolate
 from mne import create_info
 from mne.channels import make_standard_montage
 from mne.io import BaseRaw, RawArray, read_raw_bdf
 
+from cnsp_datasets.standardise.clock import resample_on_audio_clock
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 mne.set_log_level("CRITICAL")
@@ -63,7 +63,7 @@ def biosemi_trigger_processing_fn(trigger: np.ndarray) -> np.ndarray:
 def default_drift_correction(brain_data: np.ndarray, brain_trigger_indices: np.ndarray, brain_fs: int,
                              stimulus_trigger_indices: np.ndarray, stimulus_fs: int) -> np.ndarray:
     """
-    Linearly resample the EEG between its first and last trigger to the stimulus' first-to-last trigger duration
+    Resample the EEG between its first and last trigger to the stimulus' first-to-last trigger duration
     (the stimulus triggers start on its first sample). One missing EEG
     trigger is repaired as in the authors' code.
     """
@@ -88,12 +88,15 @@ def default_drift_correction(brain_data: np.ndarray, brain_trigger_indices: np.n
             f"Trigger correction failed: EEG {len(brain_trigger_indices)} vs Stim {len(stimulus_trigger_indices)}"
         )
 
+    # the EEG between its first and last trigger spans the stimulus' first-to-last trigger interval; read it on the
+    # audio clock with the package resampler (was a linear interpolation mapping [first, last) onto the whole
+    # output, one sample short; see notes.md)
     stim_duration = (stimulus_trigger_indices[-1] - stimulus_trigger_indices[0]) / stimulus_fs
-    eeg_segment = brain_data[:, brain_trigger_indices[0]:brain_trigger_indices[-1]]
-    target_times = np.linspace(0, 1, int(round(stim_duration * brain_fs)))
-    interpolator = scipy.interpolate.interp1d(np.linspace(0, 1, eeg_segment.shape[1]), eeg_segment, kind="linear",
-                                              axis=1, fill_value="extrapolate")
-    return interpolator(target_times)
+    first, last = int(brain_trigger_indices[0]), int(brain_trigger_indices[-1])
+    n_out = int(round(stim_duration * brain_fs))
+    drift = (last - first) / (stim_duration * brain_fs) - 1
+    return resample_on_audio_clock(lambda a, b: brain_data[:, a:b], brain_data.shape[1], brain_fs, first, n_out,
+                                   drift, label="accou2023 EEG")
 
 
 def first_pulses(brain_trigger_indices: np.ndarray, stimulus_trigger_indices: np.ndarray, brain_fs: float,

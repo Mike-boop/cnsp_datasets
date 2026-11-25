@@ -22,11 +22,10 @@ from typing import Dict, List, Sequence, Tuple
 import h5py
 import mne
 import numpy as np
-from scipy.interpolate import make_interp_spline
-from scipy.signal import firwin, oaconvolve
+
+from cnsp_datasets.standardise.clock import resample_on_audio_clock
 
 TUBE_DELAY = 11 * 25.4e-3 / 343.0  # s, 11-inch ER-2 tubes (authors' code: 0.81 ms)
-SPLINE_ORDER = 5
 PAD = 0.05  # s of EEG kept on both sides of a trial while filtering (filter edges)
 
 
@@ -113,42 +112,24 @@ def recording_sfreq(vhdr: str) -> float:
     return _raw(vhdr).info["sfreq"]
 
 
-def _antialias(sfreq: float, sfreq_out: float) -> np.ndarray:
-    """Low-pass FIR (Kaiser, as scipy.signal.resample_poly) for decimating sfreq -> sfreq_out."""
-    factor = sfreq / sfreq_out
-    half = int(np.ceil(10 * factor))
-    return firwin(2 * half + 1, 1 / factor, window=("kaiser", 5.0))
-
-
 def load_trial(vhdr: str, onset: float, duration: float, sfreq_out: float | None = None, drift: float = 0.0,
                picks: List[str] | None = None) -> mne.io.RawArray:
     """
-    One trial of a BrainVision recording on the audio clock.
+    One trial of a BrainVision recording on the audio clock (cnsp_datasets.standardise.clock).
 
     onset: trial start in EEG samples (may be fractional, e.g. marker + tube delay); duration: seconds.
     sfreq_out: output rate (None keeps the native rate; never upsampled). drift: see module docstring (0 = off).
+    Raises if the trial runs outside the recording.
     """
     raw = _raw(vhdr)
     sfreq = raw.info["sfreq"]
     sfreq_out = sfreq if sfreq_out is None else min(sfreq_out, sfreq)
-    step = sfreq / sfreq_out
     n_out = int(np.ceil(round(duration * sfreq_out, 6)))
-    pad = int(np.ceil(PAD * sfreq)) if sfreq_out < sfreq else SPLINE_ORDER + 1
-    first = int(np.floor(onset)) - pad
-    last = int(np.ceil(onset + (n_out - 1) * step * (1 + drift))) + pad + 1
-    if first < 0 or last > raw.n_times:
-        raise ValueError(f"trial [{first}, {last}) runs outside {vhdr} ({raw.n_times} samples)")
     picks = raw.ch_names if picks is None else picks
-    data = raw.get_data(picks=picks, start=first, stop=last)
-    if sfreq_out < sfreq:
-        data = oaconvolve(data, _antialias(sfreq, sfreq_out)[None, :], mode="same", axes=1)
-    positions = onset - first + np.arange(n_out) * step * (1 + drift)
-    if np.allclose(positions, np.round(positions)):
-        data = data[:, np.round(positions).astype(int)]
-    else:
-        data = make_interp_spline(np.arange(data.shape[1]), data, k=SPLINE_ORDER, axis=1)(positions)
+    data = resample_on_audio_clock(lambda a, b: raw.get_data(picks=picks, start=a, stop=b), raw.n_times, sfreq,
+                                   onset, n_out, drift, sfreq_out, strict=True, label=vhdr)
     info = mne.create_info(picks, sfreq_out, "eeg")
-    return mne.io.RawArray(data.astype(np.float32), info, verbose="ERROR")
+    return mne.io.RawArray(data, info, verbose="ERROR")
 
 
 def expyfun_loader(path: str, key: str, fs_key: str | None = "fs", fs: int | None = None, invert: bool = False):

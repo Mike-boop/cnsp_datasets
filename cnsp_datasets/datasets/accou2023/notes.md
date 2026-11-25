@@ -41,6 +41,11 @@ podcasts), one BIDS run per stimulus. Authors' code: github.com/exporl/auditory-
   amplitude x0.97 at 100 Hz, x0.88 at 200 Hz, x0.77 at 300 Hz (sqrt((2 + cos w) / 3), signal and noise alike);
   30-300 Hz TRF SNR, per-subject SNR and 1024 Hz coherence unchanged, no timing difference. Kept linear; an option
   for either is planned (PLAN.md section 8).
+- **2026-11-25 (restructure, not yet re-validated on data):** the resampling now uses the package resampler
+  (`standardise/clock.py`, quintic spline), as every other dataset (user: one resampler). The mapping also changed:
+  the authors' code maps EEG samples [first, last) of the trigger span onto the whole output (one sample short);
+  now the trigger span (last - first samples) maps onto the stimulus' first-to-last trigger duration exactly.
+  Expect the amplitude differences above (spline vs linear); re-check in the second pass.
 - Use the trigger file events.tsv names: audiobook_2_2's experiment played `t_audiobook_2_1` with it (both after
   1 s of silence, so the onset holds); those trials have 29 s of EEG after the speech. The trigger tracks of
   audiobook_6_1, audiobook_6_2 and audiobook_1_artefact end 0.3-0.6 s before the audio.
