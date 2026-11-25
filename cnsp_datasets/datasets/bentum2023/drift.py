@@ -30,9 +30,9 @@ from typing import Dict, List, Sequence
 
 import numpy as np
 from scipy import stats
+from scipy.io import wavfile
 
 from cnsp_datasets.standardise.clock import to_audio_clock  # noqa: F401 (re-exported)
-from scipy.io import wavfile
 
 # blocks with larger discrepancies have marker problems, not drift
 MAX_INACC_SAMPLES = 1000
@@ -65,9 +65,14 @@ class DriftEstimate:
 
 @lru_cache(maxsize=8)
 def wav_index(directory: str) -> Dict[str, str]:
-    """{wav stem: path} for every .wav under directory (recursive)."""
-    paths = glob.glob(os.path.join(directory, "**", "*.wav"), recursive=True)
-    return {os.path.splitext(os.path.basename(p))[0]: p for p in paths}
+    """{wav stem: path} for every .wav under directory (recursive); a stem found twice raises."""
+    index: Dict[str, str] = {}
+    for p in sorted(glob.glob(os.path.join(glob.escape(directory), "**", "*.wav"), recursive=True)):
+        stem = os.path.splitext(os.path.basename(p))[0]
+        if stem in index:
+            raise ValueError(f"{stem}.wav is in {directory} twice: {index[stem]}, {p}")
+        index[stem] = p
+    return index
 
 
 @lru_cache(maxsize=None)

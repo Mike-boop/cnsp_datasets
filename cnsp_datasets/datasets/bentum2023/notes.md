@@ -26,3 +26,16 @@ Included by default (from 2026-11-19). The authors excluded them from their anal
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **poor**: Software onset/end markers (~17 ms grid); marker-based drift 33 ppm corrected (hardware-like, logs confirm); DNN offset -68 ms in all conditions documented, not applied, read as playback latency (timing error).
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Corpus audio directories: `ifadv_dir` / `sdc_dir` arguments, else the paths `CNSP_IFADV_DIR` / `CNSP_CGN_DIR`
+  (environment variable or `paths.json`, `cnsp_datasets.config.get_path`); the local `config.json` is no longer read.
+  Skipped blocks are logged (were printed).
+- TextGrid written by `iohelpers.textgrid` (was `broderick2019_natural.utils.multi_tier_dict_to_textgrid`): long
+  text format, xmin 0 (was the earliest onset), gaps filled with empty intervals, quotes escaped. An interval that
+  overlaps the previous one in its tier starts at the previous one's end (dropped if nothing is left; logged, as a
+  warning above 20 ms); the old writer wrote overlaps as they were. Whether the XML has overlaps is not yet checked.
+- Audio via `iohelpers.read_wav`: integers scaled by 32768 (was 32767); dialogue channels still mixed by the mean.
+- Bad channels from `rejected_channels` are renamed like the channels (e.g. `FT10` -> `HEOG_right`) before being
+  marked (an unknown name is logged); before, a renamed channel's bad flag was silently lost.
+- `wav_index` raises if a corpus directory holds two wavs with the same name (was: the last one found won).
