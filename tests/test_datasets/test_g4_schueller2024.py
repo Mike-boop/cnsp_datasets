@@ -28,3 +28,25 @@ def test_duplicate_folders():
     assert subject_rows(_table(), when).folder.tolist() == ["P2"]
     with pytest.raises(ValueError, match="different drifts"):
         subject_rows(_table(drift_b=5.0), when)
+
+
+def test_fallback_logged(monkeypatch, caplog):
+    import mne
+    import numpy as np
+
+    from cnsp_datasets.datasets.schueller2024 import adaptor as mod
+
+    monkeypatch.setattr(mod, "_drift_table", _table)
+    mod._log_fallback.cache_clear()
+    raw = mne.io.RawArray(np.zeros((1, 10)), mne.create_info(1, 1000.0), verbose="ERROR")
+    adaptor = mod.Schueller2024Adaptor("unused")
+    raw.set_meas_date(dt.datetime(2023, 1, 13, 16, 7, 38, tzinfo=dt.timezone.utc))
+    assert adaptor.drift_of(raw) == pytest.approx(7.5e-6)
+    assert not caplog.records
+    raw.set_meas_date(dt.datetime(2020, 1, 1, tzinfo=dt.timezone.utc))
+    with caplog.at_level("WARNING"):
+        assert adaptor.drift_of(raw) == pytest.approx(8.5e-6)  # median of 7, 8, 9, 9
+        adaptor.drift_of(raw)
+    assert sum("no raw-data drift" in r.getMessage() for r in caplog.records) == 1
+    assert mod.Schueller2024Adaptor("unused", drift="dataset").drift_of(raw) == pytest.approx(8.5e-6)
+    assert mod.Schueller2024Adaptor("unused", drift=None).drift_of(raw) == 0.0
