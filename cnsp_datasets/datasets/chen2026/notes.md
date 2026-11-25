@@ -395,11 +395,11 @@ extended search for the rest. Scripts `reclassify_z2.py`, `ext_scan.py`, `timing
   values; an earlier double rounding gave sub-03 0.5458 vs 0.5457), `listener_latency_rsd_ms` (robust SD of the
   per-chapter latencies about the median, 14-33 ms; used as `jitter_ms` for median-based trials), `rule`, `rule_z`,
   `latency_se_ms`, odd/even `halves_*`, `peak_ratio`, decoder values.
-- `timing.py` recomputes the t0 part from events.tsv + the reader json and checks it against `timing.csv` (file,
+- `alignment/trigger_fit.py` (was `timing.py`) recomputes the t0 part from events.tsv + the reader json and checks it against `timing.csv` (file,
   t0 within 0.01 ms, ROWS found, event count, residual SD; exit 1 on a mismatch): all 281 match (max difference
   0.005 ms). Trigger slope max |d| 28.9 ppm over files > 2 min (meaningless for drift, same clock). The latency
-  columns come from the EEG analysis scripts, now in the repo under `timing/` (README there: run order, inputs, outputs,
-  rule; paths via environment variables in `timing/settings.py`). Re-running the light steps (t0 table, analysis,
+  columns come from the EEG analysis scripts, now in the repo under `alignment/` (README there: run order, inputs, outputs,
+  rule; paths via environment variables in `alignment/settings.py`). Re-running the light steps (t0 table, analysis,
   re-classification, v2 table, make_timing_csv) on the stored scans reproduced `timing.csv` byte for byte (2026-11-23).
 - Adaptor options: `latency` = `chapter` (default) | `option_b` | `listener_median`; `drift_ppm` (default 0; the
   +16 ppm estimate is in the provenance as `drift_ppm`, applied only if passed); `audio_dir` (default
@@ -447,7 +447,7 @@ standardised_v2`, `standardised_trigger_v2`, `validation_{chapter,trigger}_v2/` 
 - **Onsets: option B** is the adaptor default (`latency="option_b"`): the listener median, except chapters whose EEG
   estimate deviates by more than max(40 ms, 3 SE) from it (39 of 281 chapters: 01 10, 02 4, 03 6, 04 4, 05 1, 06 7,
   07 6, 08 1). Every subject/trial's t0, option-B latency, onset and source are logged in `onsets_optionB.csv`
-  (`timing/make_logs.py`). `latency="chapter"` (the z >= 2 per-chapter rule) and `"listener_median"` stay available.
+  (`alignment/make_logs.py`). `latency="chapter"` (the z >= 2 per-chapter rule) and `"listener_median"` stay available.
 - Why (comparison over all 8 listeners, `tmp/review/chen2026/scripts/timing_compare.py`, outputs in
   `tmp/review/chen2026/timing_compare/`): held-out halves test (latency from the odd 30-s blocks, decoder r on the
   even ones, and vice versa), mean over chapters: option B 0.113, z >= 2 rule 0.110, listener median 0.107,
@@ -526,3 +526,11 @@ mapping above stays.
   clock is stamped).
 - The json ROWS/ROWE timeline replayed to listeners is on the reader's EEG clock, which drifts ~+190 ppm against the
   reader's audio; ROWS markers in the listener EEG therefore slide against the speech by up to ~0.1 s per chapter.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- The `timing/` folder (latency pipeline) and `timing.py` (now `alignment/trigger_fit.py`) are folded into
+  `alignment/`, together with `timing.csv`, `drift.csv` and `onsets_optionB.csv`; `TIMING_CSV`, `BADS_JSON` and
+  `reader_of` live in the adaptor. `bads.py` and `bads.json` stay in the dataset folder.
+- Bad channels from bads.json are added with `iohelpers.mark_bads` (strict: a name missing from the recording raises).
+- Audio through `iohelpers.read_wav` (first channel, float32 / 32768: unchanged values); the "absent from the
+  release" message is logged instead of printed.

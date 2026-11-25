@@ -17,7 +17,7 @@ recordings of *The Little Prince* (27 chapters) and *Garnett Dream* (9 or 8 sect
   multimodal semantic alignment and neural decoding during reading and listening. *Sci Data* 13:148.
   doi:10.1038/s41597-025-06466-8
 - **Code (authors):** https://github.com/ncclab-sustech/ChineseEEG-2 (read, not run). The latency pipeline used
-  here is in `timing/` (see its README).
+  here is in `alignment/` (see its README).
 
 ## Size
 **8 participants, 24.72 h in total; 3.09 h per participant on average (2.92-3.26 h).**
@@ -51,14 +51,14 @@ recordings of *The Little Prince* (27 chapters) and *Garnett Dream* (9 or 8 sect
   - The listening script replays the reader's ROWS/ROWE line timeline relative to the moment playback was
     *requested*.
   - Per chapter, t0 = the intercept of a fit of these events to the reader's json timeline (residual SD 1.9-4.4 ms;
-    all 281 chapters matched; `timing.py` reproduces t0 from `events.tsv`).
+    all 281 chapters matched; `alignment/trigger_fit.py` reproduces t0 from `events.tsv`).
   - CH markers are unreliable (some missing, some renumbered) and are not used.
 - **The sound starts ~0.5 s after t0**, and the delay varies by chapter. It is the playback-side output latency of
   `sd.play()`, which the triggers cannot see.
   - **Listener medians:** 504-581 ms.
   - **Late chapters:** most chapters lie within ±30 ms of their listener's median, but a few start 0.1-1.0 s later.
   - **Estimation:** the latency was estimated from the EEG with a leave-one-chapter-out backward decoder, plus the
-    accou2023 DNN where the decoder was weak (`timing/`, `timing.csv`).
+    accou2023 DNN where the decoder was weak (`alignment/`, `alignment/timing.csv`).
 - **Default onset: t0 + option-B latency** (`latency="option_b"`, user decision 2026-11-23). This is the listener
   median, except for chapters whose own estimate deviates by more than max(40 ms, 3 SE). 39 of the 281 chapters use
   their own value.
