@@ -1,6 +1,6 @@
 {
   "name": "harshaiyahav2025",
-  "title": "Har-Shai Yahav et al. (2025) dataset",
+  "title": "Har-shai Yahav et al. (2025, eNeuro) EEG (BioSemi 64 ch, CND, preprocessed 1-20 Hz at 100 Hz): attend an audiovisual lecture, ignore a competing audio-only lecture; envelopes only",
   "visibility": "public",
   "downloads": {
     "harshaiyahav2025": {

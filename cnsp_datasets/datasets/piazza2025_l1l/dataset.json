@@ -1,6 +1,17 @@
 {
   "name": "piazza2025_l1l",
-  "title": "piazza2025_l1l",
+  "title": "Piazza et al. (2025) native English listeners (BioSemi 64 ch, CND 1-8 Hz at 100 Hz): stories in three speech registers in babble",
   "visibility": "public",
-  "notes": "variant of piazza2025: downloaded with download_dataset('piazza2025')"
+  "notes": "variant of piazza2025: downloaded with download_dataset('piazza2025')",
+  "paper": {
+    "url": "https://doi.org/10.1162/imag_a_00539"
+  },
+  "licence": "unknown (OSF node has none; the article's CC BY 4.0 covers the article only)",
+  "modality": "EEG",
+  "stimuli": "degraded (speech registers in +16 dB babble)",
+  "alignment_quality": "medium",
+  "validation_tier": "low",
+  "participants": 25,
+  "system": "BioSemi ActiveTwo (64 ch)",
+  "listening_hours": 16.93
 }

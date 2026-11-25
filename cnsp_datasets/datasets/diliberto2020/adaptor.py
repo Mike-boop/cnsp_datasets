@@ -9,8 +9,9 @@ from mne import create_info
 from mne.channels import make_standard_montage
 from mne.io import BaseRaw, RawArray
 from pymatreader import read_mat
-from scipy.io import wavfile
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import array_loader, mark_bads, read_wav
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -38,7 +39,7 @@ STIM_NOTES = {
 TIERS = {"audio": "mlr", "envelope": "low"}  # audio: MLR peaks 22-47 ms, brainstem nominal only; 64 Hz: low only
 
 
-class DiLiberto2020Adaptor:
+class DiLiberto2020Adaptor(BaseAdaptor):
     """
     Di Liberto et al. 2020 (Dryad g1jwstqmh, CND): 20 subjects (1-10 non-musicians, 11-20 pianists) x 30 trials =
     10 MIDI-synthesised Bach piano pieces x 3 repetitions. 64 BioSemi channels + mastoids at 512 Hz. Stimulus
@@ -49,9 +50,9 @@ class DiLiberto2020Adaptor:
     """
 
     def __init__(self, download_dir: str, stimulus: str = "audio", note_features: bool = False):
-        if stimulus not in STIM_NOTES:
-            raise ValueError(f"stimulus must be one of {sorted(STIM_NOTES)}")
-        self.stimulus, self.wav = stimulus, os.path.join(download_dir, WAV)
+        super().__init__(download_dir)
+        self.stimulus = self.choice("stimulus", stimulus, STIM_NOTES)
+        self.wav = os.path.join(download_dir, WAV)
         if stimulus == "audio" and not os.path.exists(self.wav.format(1)):
             raise FileNotFoundError(f"{self.wav.format(1)} missing: download registry entry diliberto2020_audio")
         self.root = os.path.join(download_dir, ROOT)
@@ -76,7 +77,7 @@ class DiLiberto2020Adaptor:
                     group="musician" if sub > 10 else "non-musician", shipped_trial_index=idx,
                     feature_samples_64hz=n_stim,
                 )
-                stimuli = [StimulusRecord("audio", name, _feature_loader(stim["data"][row][idx]), is_attended=True,
+                stimuli = [StimulusRecord("audio", name, array_loader(stim["data"][row][idx], STIM_FS), is_attended=True,
                                           feature_name=feature) for row, feature in self.features.items()]
                 if self.stimulus == "audio":
                     loader = _wav_loader(self.wav.format(piece), n_stim)
@@ -107,16 +108,10 @@ class DiLiberto2020Adaptor:
             info = create_info(labels + MASTOIDS, float(EEG_FS), ["eeg"] * len(labels) + ["misc"] * 2)
             raw = RawArray(LSB * data, info, verbose="ERROR")
             raw.set_montage(make_standard_montage("biosemi64"))  # template positions
-            raw.info["bads"] = list(BADS.get(sub, []))
+            mark_bads(raw, BADS.get(sub, []))
             raw.info["description"] = description
             return raw
         return _loader
-
-
-def _feature_loader(x) -> Callable[[], dict]:
-    """Loader of one 64 Hz feature as a 1 x n float32 array."""
-    data = np.asarray(x, dtype=np.float32)[None, :]
-    return lambda: {"fs": STIM_FS, "data": data}
 
 
 def _wav_loader(path: str, n_stim: int) -> Callable[[], dict]:
@@ -125,13 +120,13 @@ def _wav_loader(path: str, n_stim: int) -> Callable[[], dict]:
 
 @lru_cache(maxsize=10)
 def _read_wav(path: str, n_stim: int) -> np.ndarray:
-    """44.1 kHz stereo int16 wav as 2 x n float32 in +-1; checks ceil(n * 64 / fs) == n_stim (notes section 4)."""
-    fs, x = wavfile.read(path)
-    if fs != AUDIO_FS or x.dtype != np.int16 or x.ndim != 2:
-        raise ValueError(f"{path}: expected 44.1 kHz stereo int16")
-    if int(np.ceil(len(x) * STIM_FS / fs)) != n_stim:
+    """44.1 kHz stereo wav as 2 x n float32 in [-1, 1); checks ceil(n * 64 / fs) == n_stim (notes section 4)."""
+    x, fs = read_wav(path, expect_fs=AUDIO_FS)
+    if x.shape[0] != 2:
+        raise ValueError(f"{path}: expected stereo")
+    if int(np.ceil(x.shape[1] * STIM_FS / fs)) != n_stim:
         raise ValueError(f"{path}: length does not match the shipped {STIM_FS} Hz features")
-    return (x.T / 32768.0).astype(np.float32)
+    return x
 
 
 @lru_cache(maxsize=1)

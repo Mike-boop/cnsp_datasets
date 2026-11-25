@@ -10,6 +10,7 @@ from mne.channels import make_dig_montage
 from mne.io import BaseRaw, RawArray
 from pymatreader import read_mat
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -34,7 +35,7 @@ NOTES = ("REPETITION-AVERAGED: each trial is the authors' average of the 2-3 pre
 FEATURES = {0: "spectrogram", 1: "envelope_derivative", 2: "phonetic_features"}
 
 
-class DiLiberto2023Adaptor:
+class DiLiberto2023Adaptor(BaseAdaptor):
     """
     Di Liberto et al. 2023 (OSF mdnwg, CND): 47 infants at 4, 7 and 11 months (subjects 1-47, sessions 1-3) and 17
     adults (subjects 101-117) watch 18 audio-visual nursery rhymes. 58 EGI channels at 50 Hz, preprocessed and
@@ -45,6 +46,7 @@ class DiLiberto2023Adaptor:
     """
 
     def __init__(self, download_dir: str, phonetic_features: bool = True):
+        super().__init__(download_dir)
         self.root = os.path.join(download_dir, ROOT)
         self.rows = [0, 1, 2] if phonetic_features else [0, 1]
 

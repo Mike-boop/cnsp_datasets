@@ -362,3 +362,7 @@ offsets are documented, not applied**; the adaptor is unchanged and the README s
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **medium**: Authors' trials at the Unity speech-onset marker, no stimtrack; DNN -9.2/-7.1 ms (vs weissbart +3.4) documented, possibly Unity output latency, unverified; low tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- BaseAdaptor; sorted glob, and two files of one subject number now raise. Envelopes are float32 (were float64,
+  same values up to float32 precision).

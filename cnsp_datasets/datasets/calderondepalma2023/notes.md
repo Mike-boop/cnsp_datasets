@@ -178,3 +178,7 @@ Reviewer findings applied (envelopes from memory, one name helper, fs checks onc
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **medium**: Authors' 64 Hz cut at a software (Presentation) trigger; xcorr peaks +16..+219 ms; DNN +2.5 ms; low tier (GFP above null from -140 ms, likely 64 Hz smoothing).
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- BaseAdaptor; bads through `iohelpers.mark_bads` (strict: an unknown name raises); envelopes through
+  `iohelpers.array_loader` (float32, unchanged values).

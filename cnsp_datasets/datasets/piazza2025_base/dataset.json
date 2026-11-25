@@ -1,6 +1,6 @@
 {
   "name": "piazza2025_base",
-  "title": "Piazza et al. (2025) EEG (64 ch, CND, preprocessed 1-8 Hz at 100 Hz",
+  "title": "Piazza et al. (2025) EEG (64 ch, CND, preprocessed 1-8 Hz at 100 Hz): stories in three speech registers in babble, L2 learners and native listeners (shared code of piazza2025_l1l / _l2l)",
   "visibility": "public",
   "downloads": {
     "piazza2025": {

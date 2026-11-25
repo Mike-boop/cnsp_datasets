@@ -10,8 +10,9 @@ from mne import create_info
 from mne.channels import make_standard_montage
 from mne.io import BaseRaw, RawArray
 from pymatreader import read_mat
-from scipy.io import wavfile
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import array_loader, read_wav
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -45,7 +46,7 @@ ORDER_UNKNOWN = ("Channel order unknown: no shipped labelling fits this subject'
                  "named E01-E64 in file order, without positions.")
 
 
-class Piazza2025Adaptor:
+class Piazza2025Adaptor(BaseAdaptor):
     """
     Piazza et al. 2025 (OSF ba3p4, CND): three stories, each in five ~3 min parts, heard once per participant in one
     of three speech registers (L2A, NDS, Slow-NDS; Latin square). Two groups with different EEG systems, standardised
@@ -58,7 +59,8 @@ class Piazza2025Adaptor:
     """
 
     def __init__(self, download_dir: str, group: str):
-        self.group = GROUPS[group]
+        super().__init__(download_dir)
+        self.group = GROUPS[self.choice("group", group, GROUPS)]
         self.root = os.path.join(download_dir, "data_CND", self.group["folder"])
         self.audio_dir = os.path.join(download_dir, "STIMULI", "Audio")
         self.subjects = [s for s in range(1, N_SUBJECTS + 1) if os.path.exists(self._eeg_path(s))]
@@ -111,8 +113,7 @@ class Piazza2025Adaptor:
     def _stimulus(self, key: tuple, envelopes: dict) -> StimulusRecord:
         story, register, part = key
         if register == "L2A":  # no wav shipped
-            env = envelopes[key]
-            return StimulusRecord("audio", f"{story}_{register}_p{part}", lambda: {"fs": FS, "data": env[None, :]},
+            return StimulusRecord("audio", f"{story}_{register}_p{part}", array_loader(envelopes[key], FS),
                                   is_attended=True, feature_name="envelope")
         name = f"{story}_{register}_p{part}_16dB"
         return StimulusRecord("audio", name, _audio_loader(os.path.join(self.audio_dir, name + ".wav")),
@@ -170,10 +171,10 @@ def _design(eeg_len: list[int], lengths: dict[tuple, int]) -> tuple[list[tuple],
 
 def _audio_loader(path: str) -> Callable[[], dict]:
     def _loader() -> dict:
-        fs, x = wavfile.read(path)
-        if fs != AUDIO_FS or x.dtype != np.int16 or x.ndim != 1:
-            raise ValueError(f"{path}: expected 44.1 kHz mono int16")
-        return {"fs": AUDIO_FS, "data": (x / 32768.0).astype(np.float32)[None, :]}
+        x, fs = read_wav(path, expect_fs=AUDIO_FS)
+        if x.shape[0] != 1:
+            raise ValueError(f"{path}: expected mono")
+        return {"fs": fs, "data": x}
     return _loader
 
 

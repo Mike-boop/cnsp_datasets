@@ -123,3 +123,7 @@ centred on 0 (median +2 ms) in the children with significant tracking.
 2. Word onsets: carry the manual word-onset times as an unlabelled `words` tier? Default: no (labels cannot be
    paired with the transcript; the stim files remain in the download).
 3. Raw BrainVision files would allow higher tiers; they are not shared. Default: none (low tier only).
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- BaseAdaptor; sorted glob; wavs through `iohelpers.audio_loader` (soundfile float32, both stereo channels kept, as
+  before; 44.1 kHz checked).

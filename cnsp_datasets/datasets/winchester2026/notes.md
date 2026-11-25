@@ -127,3 +127,7 @@ as played and of each voice, MIDI note onsets, model surprisal/entropy). No audi
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **medium**: Authors' epochs at a software trigger (Presentation to Smarting); no audio; per-trial best lag +1 ms, nothing at negative lags; low tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- BaseAdaptor; bads through `iohelpers.mark_bads` (strict); envelopes through `iohelpers.array_loader` (float32,
+  unchanged values).
