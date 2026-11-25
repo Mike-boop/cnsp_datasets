@@ -61,8 +61,9 @@ Audio only (as shipped). No transcripts or word alignments in the release.
   itself; see section 7.
 
 ## 7. Drift (alignment/drift.py, alignment/drift.csv)
-- Measured on the non-public raw recordings (`drift.py`: stimtrack `EXT 004` resampled to 1 kHz, chapter onset by
-  cross-correlation, `jehn2025_base.drift.trial_drift`: 2-200 Hz, 10 s windows every 5 s, Theil-Sen). `drift.csv`:
+- Measured on the non-public raw recordings (`alignment/drift.py`: stimtrack `EXT 004` resampled to 1 kHz, chapter
+  onset by cross-correlation, `jehn2025_base.alignment.drift.trial_drift`: 2-200 Hz, 10 s windows every 5 s,
+  Theil-Sen). `alignment/drift.csv`:
   one row per raw recording x chapter (61 recordings, 610 chapters; `trial` as in the adaptor), with the recording's
   meas_date.
 - Result: **+8.46 ppm** median (6.3-10.5 per chapter; participant medians 7.1-9.8, rising over the months of

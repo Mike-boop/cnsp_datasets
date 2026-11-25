@@ -401,7 +401,7 @@ extended search for the rest. Scripts `reclassify_z2.py`, `ext_scan.py`, `timing
   columns come from the EEG analysis scripts, now in the repo under `alignment/` (README there: run order, inputs, outputs,
   rule; paths via environment variables in `alignment/settings.py`). Re-running the light steps (t0 table, analysis,
   re-classification, v2 table, make_timing_csv) on the stored scans reproduced `timing.csv` byte for byte (2026-11-23).
-- Adaptor options: `latency` = `chapter` (default) | `option_b` | `listener_median`; `drift_ppm` (default 0; the
+- Adaptor options: `latency` = `option_b` (default) | `chapter` | `listener_median`; `drift_ppm` (default 0; the
   +16 ppm estimate is in the provenance as `drift_ppm`, applied only if passed); `audio_dir` (default
   `<download>/ChineseEEG-2_audio`, the holtze2021_audio layout: download or link the chen2026_audio entry there).
   With drift 0 the onset is rounded to the nearest sample (<= 0.5 ms, below the latency SEs), so the native 1000 Hz

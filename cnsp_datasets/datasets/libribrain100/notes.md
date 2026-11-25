@@ -22,10 +22,10 @@ Findings that explain `adaptor.py`. Review scripts and results: `tmp/review/libr
      sub-0 now: extend it to any subject with raw FIF (and keep the h5 path as fallback).
   2. Full sessions for sub-13-32: nothing to change in the adaptor if they arrive as h5 with the same naming
      (without `desc-...`); check `_meg_file`'s glob.
-  3. Sherlock8 audio: run `python -m cnsp_datasets.datasets.libribrain100.wavmap <download>` (add
-     `LibriBrain2/Sherlock8` to `wavmap.BOOKS`), then `segalign` for sessions that do not map linearly, remove
-     Sherlock8 from the adaptor's `NO_AUDIO`, rerun the annotation TRF test (`tmp/review/scripts/meg/annot_trf.py`)
-     on a few sessions, and re-standardise.
+  3. Sherlock8 audio: run `python -m cnsp_datasets.datasets.libribrain100.alignment.wavmap <download>` (add
+     `LibriBrain2/Sherlock8` to `alignment/wavmap.py:BOOKS`), then `alignment/segalign.py` for sessions that do
+     not map linearly, remove Sherlock8 from the adaptor's `NO_AUDIO`, rerun the annotation TRF test
+     (`tmp/review/scripts/meg/annot_trf.py`) on a few sessions, and re-standardise.
   4. Update the README (Size, What is provided, Caveats) and the data size.
 
 ## 1. Source

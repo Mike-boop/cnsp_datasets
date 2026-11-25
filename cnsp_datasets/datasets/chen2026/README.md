@@ -23,7 +23,7 @@ recordings of *The Little Prince* (27 chapters) and *Garnett Dream* (9 or 8 sect
 **8 participants, 24.72 h in total; 3.09 h per participant on average (2.92-3.26 h).**
 - **Per story:** Garnett Dream 12.47 h and Little Prince 12.25 h. A complete listener has Little Prince 1.54 h and
   Garnett Dream 1.49 h (f1 group) or 1.71 h (m1 group).
-- The figures come from the wav durations in `timing.csv` (`notes.md` section 8). `data_size.py` was not run
+- The figures come from the wav durations in `alignment/timing.csv` (`notes.md` section 8). `data_size.py` was not run
   because the standardised data were deleted.
 - The 0.45 h of chapters missing from the release are excluded (see Caveats).
 - Chapters last 38 s-20.4 min. A full standardisation is about 48 GB.
@@ -65,8 +65,8 @@ recordings of *The Little Prince* (27 chapters) and *Garnett Dream* (9 or 8 sect
   - Each trial's t0, latency, onset and source are in `onsets_optionB.csv`.
   - Why option B was chosen is in `notes.md` section 6e (held-out-halves test, r 0.113 vs 0.110 per-chapter and
     0.107 listener median).
-- **Drift:** about +16 ppm from the EEG (pooled), **not applied**. Every listener's 95% CI includes 0 (`drift.csv`).
-  The provenance records `drift_ppm` 16 and `drift_corrected_ppm` 0. The trigger fit cannot measure drift, because
+- **Drift:** about +16 ppm from the EEG (pooled), **not applied**. Every listener's 95% CI includes 0
+  (`alignment/drift.csv`). The provenance records `drift_ppm` 16 and `drift_corrected_ppm` 0. The trigger fit cannot measure drift, because
   the triggers and their timestamps share one PC clock.
 - **Jitter:** about 3.3 ms SD per trigger event. The sidecar's `jitter_ms` is the latency SE, or the listener's
   robust spread (14-33 ms) for trials that use the median.
@@ -79,7 +79,7 @@ recordings of *The Little Prince* (27 chapters) and *Garnett Dream* (9 or 8 sect
 - **Audio:** `download_dataset("chen2026_audio", <dir>/ChineseEEG-2_audio)`, from Hugging Face. Whether it needs
   a token (`HF_TOKEN`, `secrets.json` key `hf`) was not recorded.
 - `Chen2026Adaptor(download_dir, latency="option_b", drift_ppm=0.0, audio_dir=None)`.
-  - `latency` selects the column of `timing.csv`:
+  - `latency` selects the column of `alignment/timing.csv`:
     - `"option_b"` (default);
     - `"chapter"` (each chapter's own EEG estimate where z >= 2);
     - `"listener_median"` (t0 + listener median, the closest to trigger-only timing).

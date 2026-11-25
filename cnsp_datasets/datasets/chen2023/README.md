@@ -37,7 +37,7 @@ participants have 0.88 h each. Two participants have only one run each (3 trials
   - **Other setup:** two subjects (`sub-5551a7b45438`, `sub-400fb1b90f57`) have EOG002, EOG004, ECG003, EEG010 and
     EEG060 instead.
   - **Dropped:** internal active shielding, SYS201, and STI channels. The triggers are in the repo's
-    `triggers.csv`.
+    `alignment/triggers.csv`.
   - **No audio copy** is in the recording.
 - **Subjects** are numbered 1-24 in the order of their sorted BIDS ids. The original id is in each trial's
   provenance (`original_subject`).

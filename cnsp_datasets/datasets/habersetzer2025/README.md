@@ -45,8 +45,8 @@ and played continuously in two ~9 min runs.
   from undescribed measurements), < 1 sample; not verified.
 - **Clock drift: +485 ppm** (the MEG counts 1000.485 samples per audio second; 484.99-485.15 ppm in all 94 runs,
   confirmed by the triggers): without correction the end of a run is ~270 ms late. Corrected per run in the same
-  interpolation that cuts the trial (`drift.py` -> `drift.csv`; `drift_correction="run"` default, `"dataset"`
-  uses the median +485.07 ppm, `None` turns it off).
+  interpolation that cuts the trial (`alignment/drift.py` -> `alignment/drift.csv`; `drift_correction="run"`
+  default, `"dataset"` uses the median +485.07 ppm, `None` turns it off).
 - Checked on the standardised data: MISC001 matches the wav at lag -0.4 ms (the assumed acoustic delay) at the
   start and the end of the runs, constant to < 0.03 ms over 9 min (4 trials checked, notes.md section 10).
 
