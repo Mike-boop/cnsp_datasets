@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import glob
 import os
 import re
 from functools import lru_cache
@@ -10,8 +9,9 @@ import mne
 import numpy as np
 import scipy.io as sio
 
-from cnsp_datasets.datasets.simon_base.common import REFERENCE, audio_loader, find_one
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
+from cnsp_datasets.standardise.iohelpers import audio_loader, mark_bads
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
@@ -19,6 +19,7 @@ FS = 100
 AUDIO_FS = 48000
 LINE_FREQ = 50.0
 N_CHUNKS = 27  # per segment file: story chunks (3s-2..3s)-(1..9)
+REFERENCE = "not applicable (MEG)"
 DRIFT_PPM = 490  # trigger duration - wav = 2.5 ms + 490 ppm x length, 3888 chunks (notes.md, section 7)
 # order_sub[s] = condition of segment s (notes.md, section 3)
 CONDITIONS = {
@@ -52,7 +53,7 @@ NOTES = ("Authors' preprocessed MEG (tSSS, downsampled to 100 Hz; paper Methods)
          "stimulus, its direct-sound and echo components follow.")
 
 
-class Gao2024Adaptor:
+class Gao2024Adaptor(BaseAdaptor):
     """
     Gao et al. 2024 (PLoS Biol, Zenodo 10472483): MEGIN TRIUX neo MEG at 100 Hz (authors' tSSS), a Chinese story
     with or without an echo in 3 experiments, one ~13 min segment per condition. One trial per story chunk
@@ -60,15 +61,19 @@ class Gao2024Adaptor:
     """
 
     def __init__(self, download_dir: str, drift_correction: bool = True):
+        super().__init__(download_dir)
         self.root = download_dir
-        self.drift = DRIFT_PPM * 1e-6 if drift_correction else 0.0
+        self.drift = DRIFT_PPM * 1e-6 if self.choice("drift_correction", drift_correction, (True, False)) else 0.0
 
     def parse(self) -> Iterable[TrialRecord]:
-        stim_root = find_one(os.path.join(self.root, "**", "Experiment_Stimuli"))
+        stim_root = self._find_one("**/Experiment_Stimuli")
         names, types = _channels()
         for exp in CONDITIONS:
-            behave = find_one(os.path.join(self.root, "**", f"exp{exp}_behave_result"))
-            paths = glob.glob(os.path.join(self.root, "**", f"exp{exp}_PreData_*", "sub*_*.mat"), recursive=True)
+            behave = self._find_one(f"**/exp{exp}_behave_result")
+            paths = self.sorted_glob(self.root, f"**/exp{exp}_PreData_*/sub*_*.mat")
+            keys = [_sub_seg(p) for p in paths]
+            if len(set(keys)) != len(keys):
+                raise ValueError(f"experiment {exp}: a subject-segment file appears twice under {self.root}")
             for path in sorted(paths, key=_sub_seg):
                 sub, seg = _sub_seg(path)
                 cond = int(_order(os.path.join(behave, f"sub_{sub}.mat"))[seg - 1])
@@ -76,7 +81,7 @@ class Gao2024Adaptor:
                     chunk = f"{3 * seg - 2 + i // 9}-{i % 9 + 1}"
                     stimuli = [StimulusRecord("audio", f"{prefix}_{chunk}",
                                               audio_loader(os.path.join(stim_root, pattern.format(chunk) + ".wav"),
-                                                           AUDIO_FS), is_attended=j == 0)
+                                                           expect_fs=AUDIO_FS), is_attended=j == 0)
                                for j, (prefix, pattern) in enumerate(STIMULI[exp, cond])]
                     description = provenance(
                         "sw_trigger", TRIGGER_TYPE, NOTES, drift_ppm=DRIFT_PPM, validation_tier="low",
@@ -89,6 +94,13 @@ class Gao2024Adaptor:
                         subject=100 * exp + sub, session=1, trial=(seg - 1) * N_CHUNKS + i + 1,
                         condition=CONDITIONS[exp][cond], ns_type="meg", stimulus=stimuli,
                         neural_data_fn=_meg_loader(path, i, names, types, self.drift, description))
+
+    def _find_one(self, pattern: str) -> str:
+        """The single match of a glob under the download."""
+        hits = self.sorted_glob(self.root, pattern)
+        if len(hits) != 1:
+            raise FileNotFoundError(f"expected one match for {pattern} under {self.root}, found {hits}")
+        return hits[0]
 
 
 def _sub_seg(path: str) -> tuple[int, int]:
@@ -130,8 +142,8 @@ def _meg_loader(path: str, i: int, names: list[str], types: list[str], drift: fl
         info = mne.create_info(ch_names, FS, ch_types)  # mag coil 3024, grad 3012 (Vectorview/TRIUX)
         with info._unlock():
             info["line_freq"] = LINE_FREQ
-        info["bads"] = [n for n, s in zip(ch_names, data.std(1)) if s == 0]
         raw = mne.io.RawArray(data, info, verbose="ERROR")
+        mark_bads(raw, [n for n, s in zip(ch_names, data.std(1)) if s == 0])
         if drift:
             raw = crop_on_audio_clock(raw, 0, raw.n_times, drift)
         raw.info["description"] = description

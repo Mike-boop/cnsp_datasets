@@ -201,3 +201,8 @@ stimulus): 179 trials, 3.0 h (0.17 h per participant; S5 9 trials). Whole record
   stereo channels contain them).
 - S8-S11 heard only 30 distinct stimuli (each twice); S12-S18 two complementary halves; not described in the paper.
 - Extensive gel bridging in most recordings.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor subclasses BaseAdaptor; wavs read with iohelpers.read_wav (float32, same /32768 scaling; rate and 60-s
+  stereo shape checked); bads via iohelpers.mark_bads (strict); StimList.xlsx rows that give one trigger code two
+  different wavs now raise (was: the last one won).
