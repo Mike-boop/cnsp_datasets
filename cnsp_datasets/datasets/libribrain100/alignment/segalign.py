@@ -26,6 +26,7 @@ import pandas as pd
 
 from cnsp_datasets.datasets.libribrain100.adaptor import SEGMAP_CSV as OUT, read_wavmap, segments
 from cnsp_datasets.datasets.libribrain100.alignment.wavmap import BOOKS, FS, envelope, word_mask
+
 WIN, HOP, SEARCH, R_MIN = 30, 10, 1.5, 0.3
 SESSION_R_MIN = 0.5  # sessions whose median local r is lower are left out (wrong or missing wav)
 LOCAL, FINE = 10, 0.15
@@ -119,7 +120,6 @@ def main(download_dir: str) -> None:
                   f"median local r {d.r_local.median():.2f}", flush=True)
     pd.concat(rows).to_csv(OUT, index=False, float_format="%.4f")
     print(f"wrote {OUT}")
-
 
 
 if __name__ == "__main__":

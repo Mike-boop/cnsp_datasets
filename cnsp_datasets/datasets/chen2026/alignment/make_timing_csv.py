@@ -1,5 +1,5 @@
-"""Build the repo's chen2026/alignment/timing.csv from timing_table_v2.csv (+ halves from align/z2/reclass.csv, the accepted
-extended-search estimate from align/z2/ext_results.csv, trigger-fit details from t0_table.csv).
+"""Build the repo's chen2026/alignment/timing.csv from timing_table_v2.csv (+ halves from align/z2/reclass.csv, the
+accepted extended-search estimate from align/z2/ext_results.csv, trigger-fit details from t0_table.csv).
 usage: make_timing_csv.py [out.csv]   (default: timing.csv next to this script)"""
 import os, sys  # noqa: E401
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))

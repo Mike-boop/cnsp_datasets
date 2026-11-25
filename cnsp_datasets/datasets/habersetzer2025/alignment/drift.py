@@ -4,9 +4,9 @@ next to this file, which the adaptor reads (notes.md section 6).
 
 Per run: the 1 s triggers (events.tsv, sent on the sound-card clock) give the trigger clock (Theil-Sen slope of the
 trigger samples, `trig_ppm`). The wav (1 kHz, 2-200 Hz) is put on that clock and
-jehn2025_base.alignment.drift.trial_drift cross-correlates it with MISC001 from the first trigger on (10 s windows every 5 s, Theil-Sen): intercept =
-`onset_ms` (audio copy after the first trigger, MEG samples), slope = residual drift. `drift_ppm` = trig_ppm +
-residual: > 0, the MEG clock runs fast relative to the audio clock.
+jehn2025_base.alignment.drift.trial_drift cross-correlates it with MISC001 from the first trigger on (10 s windows
+every 5 s, Theil-Sen): intercept = `onset_ms` (audio copy after the first trigger, MEG samples), slope = residual
+drift. `drift_ppm` = trig_ppm + residual: > 0, the MEG clock runs fast relative to the audio clock.
 
     python -m cnsp_datasets.datasets.habersetzer2025.alignment.drift <download dir>
 """

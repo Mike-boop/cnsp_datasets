@@ -23,6 +23,7 @@ from scipy.io import wavfile
 from scipy.stats import theilslopes
 
 from cnsp_datasets.datasets.libribrain100.adaptor import WAVMAP_CSV as OUT
+
 FS = 100
 SCALES = (1.0,)
 BOOKS = [f"LibriBrain/Sherlock{i}" for i in range(1, 8)] + ["LibriBrain2/Sherlock9"]
@@ -93,7 +94,6 @@ def main(download_dir: str) -> None:
     d = pd.DataFrame(rows).sort_values(["task", "session"])
     d.to_csv(OUT, index=False, float_format="%.8g")
     print(f"wrote {OUT}: {len(d)} sessions")
-
 
 
 if __name__ == "__main__":

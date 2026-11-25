@@ -102,7 +102,6 @@ def _read(ds: str) -> mne.io.BaseRaw:
     return mne.io.read_raw_ctf(ds, preload=False, verbose="ERROR")
 
 
-
 def wav_path(download_dir: str, code: int) -> str:
     """Wav played for a UPPT001 code: 101-119 pieces, 1-3 test snippets. Channel 0 is the one played to both ears
     (RunSingleTrial.m)."""
