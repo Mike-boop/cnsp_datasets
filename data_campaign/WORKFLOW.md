@@ -36,14 +36,20 @@ Several agents (and the main session) can share one worktree and its git index.
 - **One writer for the records.** Only the main session edits `STATUS.md`, `HANDOVER.md` and the spreadsheet.
 - **Merge main → dev only when no agent is committing**, and afterwards check that the branch-only datasets survived.
 
+Code conventions (adaptor base class, shared I/O, resampler, bads, logging, precomputed `alignment/`
+tables): `ENGINEERING.md`.
+
 ## 1. Download
-- **Registry entry.** Add `<d>` to the dataset registry on `dev` and check that the downloader supports its source.
+- **Registry entry.** Create `cnsp_datasets/datasets/<d>/dataset.json` on `dev` (schema: `cnsp_datasets/registry.py`;
+  its `downloads` hold the source, identifiers and include/exclude patterns) and check that the downloader supports
+  the source.
   - Add a missing source to `cnsp_datasets/download/`, with a test: all downloading code lives in the repo.
-  - If the source needs a key, ask the user to put it in `secrets.json`. Manual downloading is the worst case.
+  - If the source needs a key, ask the user to put it in `secrets.json` under its environment-variable name (read
+    with `cnsp_datasets.config.get_secret`). Manual downloading is the worst case.
 - **Check the listing first** (API metadata), before downloading anything:
   - stimuli: are the audio (or at least envelopes) in the release? Some releases ship none (straetmans2021);
   - total size, against `du -s --block-size=1G /data_storage/gu08wuvu/datasets/tmp`;
-  - the registry's `exclude`/`include` patterns, to skip MRI and anything not needed.
+  - the `exclude`/`include` patterns in `dataset.json`, to skip MRI and anything not needed.
 - **Run it in the background.** Use `scripts/download_retry.sh <d>` (resumable, `WORKERS` env, default 2), or
   `download_dataset(..., skip_existing=True, read_timeout=...)` under `nohup`. The output goes to `R/<d>/download/`.
 - **Respect the limits.** Zenodo: ≤ 3 workers, ≤ 1-2 datasets per day, logged in `HANDOVER.md`. DRUM/SciDB are

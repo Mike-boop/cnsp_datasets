@@ -24,8 +24,9 @@ As needed:
 - **Branches.**
   - `main`: public, reviewed datasets plus all infrastructure (docs, `.claude/`, `data_campaign/`).
   - `dev`: main + new and experimental datasets.
-  - `internal`: main + non-public datasets.
-  - Infrastructure changes go on `main` first and are then merged into `dev`/`internal`.
+  - Non-public datasets are not on any branch here: they live in the private repo `/home/gu08wuvu/cnsp_datasets_fau`
+    (found through `CNSP_DATASET_PACKAGES=cnsp_datasets_fau.datasets`).
+  - Infrastructure changes go on `main` first and are then merged into `dev`.
   - After a merge, check that the branch-only datasets survived: git rename detection once silently deleted
     `jehn2024`.
 - **Scratch.** `/data_storage/gu08wuvu/datasets/tmp/review/<dataset>/` (`download/`, `standardised/`, `validation/`,
@@ -36,7 +37,12 @@ As needed:
   are git-ignored.
 - **Scripts.** Reusable ones are in `data_campaign/scripts/`. One-off, per-dataset ones go in
   `tmp/review/scripts/`, never in the session scratchpad.
-- **Credentials.** `secrets.json` (git-ignored; older keys are in `tmp/api_keys.json`). Never print them.
+- **Credentials.** `secrets.json` (git-ignored; older keys are in `tmp/api_keys.json`), read through
+  `cnsp_datasets.config.get_secret(NAME)` (environment variable first). Local corpus paths: `paths.json` /
+  `get_path`. Never print them.
+- **Dataset metadata and code conventions.** `cnsp_datasets/datasets/<name>/dataset.json` (registry, downloads,
+  catalogue fields); conventions for adaptors, shared helpers, logging and precomputed `alignment/` tables:
+  `data_campaign/ENGINEERING.md`. Non-public datasets: the private repo `cnsp_datasets_fau`.
 
 ## Running code
 - **Python.** Use `/home/gu08wuvu/cnsp_datasets/.venv/bin/python -I`, and in scripts

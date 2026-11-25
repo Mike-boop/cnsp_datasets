@@ -14,7 +14,7 @@ numpy = "2.2.5"
 requests = "^2.32"
 httpx = ">=0.27"
 tqdm = "4.67.1"
-mne = "1.9.0"
+mne = "1.9.0"  # pinned: li2025 and libribrain100 use raw._raw_extras (tests/test_mne_private_api.py)
 pandas = "2.2.3"
 scikit-learn = "1.6.1"
 scipy = "1.15.2"
