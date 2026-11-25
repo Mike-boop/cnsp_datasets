@@ -1,6 +1,6 @@
 {
   "name": "brennan2018",
-  "title": "Brennan et al. (2018) dataset (BIDS mirror on NEMAR",
+  "title": "Brennan et al. (2018) dataset (BIDS mirror on NEMAR)",
   "visibility": "public",
   "downloads": {
     "brennan2018": {
@@ -20,6 +20,6 @@
   "stimuli": "natural",
   "alignment_quality": "good",
   "validation_tier": "brainstem",
-  "participants": 52,
+  "participants": 45,
   "listening_hours": 9.0
 }
