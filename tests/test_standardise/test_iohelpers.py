@@ -71,7 +71,7 @@ def test_textgrid_fills_gaps_and_escapes():
     text = io.textgrid({"words": [(0.5, 1.0, 'say "hi"'), (1.2, 2.0, "x")]}, xmax=3.0)
     assert 'text = "say ""hi"""' in text and "intervals: size = 5" in text and 'File type = "ooTextFile"' in text
     with pytest.raises(ValueError, match="overlaps"):
-        io.textgrid({"w": [(0, 1, "a"), (0.5, 2, "b")]})
+        io.textgrid({"w": [(0, 1, "a"), (0.5, 2, "b")]}, on_overlap="raise")
 
 
 def test_base_adaptor_checks(tmp_path):
@@ -100,9 +100,11 @@ def test_sorted_glob_skips_hidden(tmp_path):
     assert len(BaseAdaptor.sorted_glob(tmp_path, "**/*.wav", hidden=True)) == 4
 
 
-def test_textgrid_clip_overlaps():
-    text = io.textgrid({"w": [(0, 1, "a"), (0.5, 2, "b"), (1.2, 1.5, "inside")]}, on_overlap="clip")
+def test_textgrid_clips_overlaps_with_a_warning_by_default(caplog):
+    with caplog.at_level("WARNING", logger="cnsp_datasets"):
+        text = io.textgrid({"w": [(0, 1, "a"), (0.5, 2, "b"), (1.2, 1.5, "inside")]})
     assert "xmin = 1.0" in text and "inside" not in text
+    assert "overlaps the previous one" in caplog.text and "dropped" in caplog.text
 
 
 def test_read_wav_expect_channels(tmp_path):

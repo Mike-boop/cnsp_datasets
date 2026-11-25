@@ -49,6 +49,6 @@ revised adaptors; the "Deferred" list is work agreed but not yet done.
 - maddox_base `load_trial` drops channel info (all channels typed "eeg", no montage); revisit with the family.
 - Remaining duplicated loaders (CND `.mat` readers, Broderick trio) beyond what the restructure migrated.
 - A shared "basename -> path index that raises on duplicates" helper (das2019 and fuglsang2018 have the same code).
-- Second pass, Broderick trio: word TextGrids now raise on overlapping intervals; check
-  `np.any(onset[1:] < offset[:-1])` in the Run*.mat files first, and pass `on_overlap="clip"` if needed.
+- Second pass: overlapping word timings (upstream; Broderick trio, nguyen2025, guilleminot2021, ...) are clipped
+  with a warning in standardise.log (iohelpers.textgrid default, user 2026-11-25); look at those warnings.
 - Keep for now: `datasets.tsv`, `urls.txt`, README to-do list.

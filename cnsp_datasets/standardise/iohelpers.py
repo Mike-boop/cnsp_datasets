@@ -183,12 +183,14 @@ def _quote(text: str) -> str:
 
 
 def textgrid(tiers: Mapping[str, Sequence[Tuple[float, float, str]]], xmax: float | None = None,
-             xmin: float = 0.0, fill_gaps: bool = True, on_overlap: str = "raise") -> str:
+             xmin: float = 0.0, fill_gaps: bool = True, on_overlap: str = "clip") -> str:
     """
     A Praat TextGrid (long text format) of interval tiers {name: [(onset_s, offset_s, label), ...]}. Gaps between
     intervals (and before the first / after the last, up to xmin / xmax) are filled with empty intervals, as
-    Praat requires. xmax defaults to the latest offset. on_overlap: "raise" (default) or "clip" (an interval that
-    starts before the previous one ends starts at that end instead; logged), for hand-made word timings.
+    Praat requires. xmax defaults to the latest offset. Overlapping intervals (upstream word timings often
+    overlap; an interval tier cannot) are clipped by default: the later one starts where the earlier one ends, one
+    lying wholly inside the previous one is dropped, and each case is logged as a warning (standardisation log).
+    on_overlap="raise" raises instead.
     """
     if on_overlap not in ("raise", "clip"):
         raise ValueError(f"on_overlap={on_overlap!r}: expected 'raise' or 'clip'")
@@ -203,7 +205,8 @@ def textgrid(tiers: Mapping[str, Sequence[Tuple[float, float, str]]], xmax: floa
             if a < t - 1e-9:
                 if on_overlap == "raise":
                     raise ValueError(f"tier {name!r}: interval ({a}, {b}) overlaps the previous one")
-                log.info("tier %r: interval (%s, %s) %r clipped to start at %s", name, a, b, label, t)
+                log.warning("tier %r: interval (%s, %s) %r overlaps the previous one; clipped to start at %s",
+                            name, a, b, label, t)
                 a = t
                 if b <= a:
                     log.warning("tier %r: interval %r lies inside the previous one; dropped", name, label)
