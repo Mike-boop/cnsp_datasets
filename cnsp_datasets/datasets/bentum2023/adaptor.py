@@ -1,27 +1,27 @@
 from __future__ import annotations
 
-import json
-import os
 import glob
+import logging
+import os
 import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List
+from typing import Any, Callable, Dict, Iterable, List, Tuple
 
 import numpy as np
-from scipy.io import wavfile
 from mne import Annotations
 from mne.channels import make_standard_montage
 from mne.io import BaseRaw, RawArray, read_raw_brainvision
 
-from cnsp_datasets.standardise.trial_record import TrialRecord, StimulusRecord
-from cnsp_datasets.datasets.broderick2019_natural.utils import multi_tier_dict_to_textgrid
-from cnsp_datasets.datasets.bentum2023.drift import (estimate_drift_from_xml, file_starts_ms, to_audio_clock,
-                                                     wav_duration_ms, wav_index)
+from cnsp_datasets.config import get_path
+from cnsp_datasets.datasets.bentum2023.drift import estimate_drift_from_xml, file_starts_ms, wav_duration_ms, wav_index
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.clock import to_audio_clock
+from cnsp_datasets.standardise.iohelpers import mark_bads, read_wav, textgrid
+from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
-
-CONFIG_PATH = Path(__file__).with_name("config.json")
+log = logging.getLogger(__name__)
 
 DRIFT_MODES = ("recording", "global", None)
 
@@ -46,22 +46,24 @@ CHANNEL_RENAMES = {
 EOG_CHANNELS = ["VEOG_high", "VEOG_low", "HEOG_left", "HEOG_right"]
 MISC_CHANNELS = ["A2"]  # right mastoid, treated as an EXG electrode
 
-# corpus field in the XML -> config key holding that corpus' audio directory
+# corpus field in the XML -> (adaptor argument, config path name) giving that corpus' audio directory
 CORPUS_DIRS = {
-    "IFADV": "ifadv_dir",
-    "CGN": "sdc_dir",
+    "IFADV": ("ifadv_dir", "CNSP_IFADV_DIR"),
+    "CGN": ("sdc_dir", "CNSP_CGN_DIR"),
 }
+OVERLAP_WARN_S = 0.02  # TextGrid intervals overlapping the previous one by more than this are logged as warnings
 
 
-class Bentum2023Adapter:
+class Bentum2023Adapter(BaseAdaptor):
     """
     Adapter for the Dutch EEG Speech Register Corpus (Bentum et al., 2023).
 
     The EEG is public, but the stimuli are not: they come from the IFADV corpus
     (spontaneous dialogues, DVA*.wav) and the Spoken Dutch Corpus / CGN (news and
     read-aloud stories, fn*.wav), which must be obtained separately. Their locations
-    are read from config.json next to this file ("ifadv_dir", "sdc_dir"), or can be
-    passed directly. Blocks whose corpus directory is not configured are skipped.
+    are passed as ifadv_dir / sdc_dir or configured as the paths CNSP_IFADV_DIR /
+    CNSP_CGN_DIR (environment variable or paths.json; cnsp_datasets.config.get_path).
+    Blocks whose corpus directory is not configured are skipped (logged).
 
     Expected layout:
       <download_dir>/
@@ -79,7 +81,8 @@ class Bentum2023Adapter:
       - Channels flagged in rejected_channels are marked bad; artefact spans become
         BAD_artefact annotations.
       - Stimuli: "audio" (mono, the dialogue's two speaker channels mixed) and
-        "textgrid" (word/phone tiers per speaker, in block time).
+        "textgrid" (word/phone tiers per speaker, in block time; an interval overlapping the
+        previous one in its tier starts at the previous one's end, logged).
       - The stimulus name is the block's wav_filename without the "_60db" suffix. IFADV blocks
         are the corpus files (DVA7B.wav). CGN blocks are built here from the corpus fn*.wav
         files listed in the block's fids, as the authors did: news blocks (N02003_4) join
@@ -112,20 +115,16 @@ class Bentum2023Adapter:
         drift_correction: str | None = "recording",
         marker_offset: float | None = None,
     ):
+        super().__init__(download_dir)
         self.root = download_dir
-        self.xml_root = os.path.join(download_dir, "XML_INFO")
-        if not os.path.isdir(self.xml_root):
-            raise FileNotFoundError(f"No XML_INFO directory found under {download_dir!r}")
+        self.xml_root = self.path("XML_INFO")
 
-        config = self._read_config()
-        self.corpus_dirs = {
-            "IFADV": ifadv_dir or config.get("ifadv_dir") or None,
-            "CGN": sdc_dir or config.get("sdc_dir") or None,
-        }
+        given = {"IFADV": ifadv_dir, "CGN": sdc_dir}
+        dirs = {corpus: given[corpus] or get_path(name) for corpus, (_, name) in CORPUS_DIRS.items()}
+        self.corpus_dirs = {corpus: str(d) if d else None for corpus, d in dirs.items()}
         self.exclude_usability = set(exclude_usability)
 
-        if drift_correction not in DRIFT_MODES:
-            raise ValueError(f"drift_correction must be one of {DRIFT_MODES}, got {drift_correction!r}")
+        self.choice("drift_correction", drift_correction, DRIFT_MODES)
         self.drift_correction = drift_correction
         corpus_dirs = tuple(sorted((k, v) for k, v in self.corpus_dirs.items() if v))
         self.drift = estimate_drift_from_xml(self.xml_root, marker_offset, corpus_dirs) if drift_correction else None
@@ -180,7 +179,7 @@ class Bentum2023Adapter:
 
         for reason, n in sorted(skipped.items()):
             unit = "participants" if reason.startswith("participant") else "blocks"
-            print(f"[Bentum2023Adapter] skipped {n} {unit}: {reason}")
+            log.warning("bentum2023: skipped %d %s: %s", n, unit, reason)
 
     # ----------------------------- Lazy loaders -----------------------------
 
@@ -225,7 +224,8 @@ class Bentum2023Adapter:
             # channels, so EOG (placed around the eye, not at their cap positions) and A2 are
             # left unpositioned. verbose silences the notice about skipping A2.
             out.set_montage(make_standard_montage("standard_1020"), on_missing="raise", verbose="ERROR")
-            out.info["bads"] = [ch for ch in bads if ch in out.ch_names]
+            # names as in the recording header, renamed like the channels; unknown names are logged
+            mark_bads(out, [CHANNEL_RENAMES.get(ch, ch) for ch in bads], strict=False)
 
             # EEG sample positions -> audio-clock seconds
             eeg_fs = sfreq * (1 + drift)
@@ -250,13 +250,11 @@ class Bentum2023Adapter:
             for i, fid in enumerate(fids):
                 if fid not in index:
                     raise FileNotFoundError(f"'{fid}.wav' ({corpus}) not found under {self.corpus_dirs[corpus]!r}")
-                fs_i, x = wavfile.read(index[fid])
+                x, fs_i = read_wav(index[fid])
                 if fs is not None and fs_i != fs:
                     raise ValueError(f"{block['name']}: sample rates differ between {fids}")
                 fs = fs_i
-                x = x.astype(np.float32) / np.iinfo(x.dtype).max if x.dtype.kind == "i" else x.astype(np.float32)
-                if x.ndim == 2:
-                    x = x.mean(axis=1)  # dialogues: one speaker per channel
+                x = x.mean(axis=0)  # dialogues: one speaker per channel, mixed; mono files unchanged
                 if i:
                     parts.append(np.zeros(round(gaps_s[i - 1] * fs), dtype=np.float32))
                 parts.append(x)
@@ -265,7 +263,7 @@ class Bentum2023Adapter:
 
     def _make_textgrid_loader(self, words_path: str, block: Dict[str, str]) -> Callable[[], str]:
         def _loader() -> str:
-            tiers: Dict[str, Dict[str, List]] = defaultdict(lambda: {"item": [], "onset_s": [], "offset_s": []})
+            tiers: Dict[str, List[Tuple[float, float, str]]] = defaultdict(list)
             # word st/et are relative to the word's file; the file's onset in the block comes from the exact
             # durations of the files before it (the XML's fid_st are rounded to whole ms per file)
             starts = dict(zip((int(v) for v in self._split(block["fid_st"])), self._file_starts_ms(block) / 1000))
@@ -277,18 +275,15 @@ class Bentum2023Adapter:
                 w_off = file_offset + float(word.findtext("et"))
                 w_st_sample = int(word.findtext("st_sample"))
 
-                tier = tiers[f"words-{sid}"]
-                tier["item"].append(word.findtext("word_utf8_nocode"))
-                tier["onset_s"].append(w_on)
-                tier["offset_s"].append(w_off)
+                tiers[f"words-{sid}"].append((w_on, w_off, word.findtext("word_utf8_nocode")))
 
                 for ph in word.iterfind("phoneme_word/phoneme"):
-                    tier = tiers[f"phones-{sid}"]
-                    tier["item"].append(ph.findtext("ipa"))
-                    tier["onset_s"].append(w_on + (int(ph.findtext("st_sample")) - w_st_sample) / 1000)
-                    tier["offset_s"].append(w_on + (int(ph.findtext("et_sample")) - w_st_sample) / 1000)
+                    tiers[f"phones-{sid}"].append((w_on + (int(ph.findtext("st_sample")) - w_st_sample) / 1000,
+                                                   w_on + (int(ph.findtext("et_sample")) - w_st_sample) / 1000,
+                                                   ph.findtext("ipa")))
 
-            return multi_tier_dict_to_textgrid(dict(sorted(tiers.items())))
+            return textgrid({name: trim_overlaps(ivs, f"{block['name']} {name}")
+                             for name, ivs in sorted(tiers.items())})
         return _loader
 
     # ----------------------------- Helpers -----------------------------
@@ -297,7 +292,8 @@ class Bentum2023Adapter:
         if block["usability"] in self.exclude_usability:
             return f"usability '{block['usability']}'"
         if not self.corpus_dirs.get(block["corpus"]):
-            return f"no audio directory configured for corpus {block['corpus']} ({CORPUS_DIRS[block['corpus']]})"
+            arg, name = CORPUS_DIRS[block["corpus"]]
+            return f"no audio directory configured for corpus {block['corpus']} ({arg} or {name})"
         missing = [
             fn for fn in (block["vhdr_fn"], block["vmrk_fn"], block["eeg_fn"])
             if not os.path.exists(os.path.join(self.root, fn))
@@ -307,7 +303,7 @@ class Bentum2023Adapter:
         return None
 
     def _participant_dirs(self) -> List[str]:
-        dirs = glob.glob(os.path.join(self.xml_root, "PP*"))
+        dirs = glob.glob(os.path.join(self.xml_root, "PP*"))  # sorted below
         return sorted(dirs, key=lambda d: int(os.path.basename(d)[2:]))
 
     def _read_session_numbers(self, pp_dir: str) -> Dict[str, int]:
@@ -332,12 +328,23 @@ class Bentum2023Adapter:
         return file_starts_ms(durations, [int(v) for v in self._split(block["fid_st"])],
                               [int(v) for v in self._split(block["fid_et"])])
 
-    @staticmethod
-    def _read_config() -> Dict[str, Any]:
-        if not CONFIG_PATH.exists():
-            return {}
-        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
+
+def trim_overlaps(intervals: List[Tuple[float, float, str]], label: str = "tier") -> List[Tuple[float, float, str]]:
+    """
+    Intervals sorted by onset; one that starts before the previous one ends starts at that end instead (dropped
+    if nothing is left), as a TextGrid tier cannot overlap. Overlaps above OVERLAP_WARN_S are logged as warnings.
+    """
+    out: List[Tuple[float, float, str]] = []
+    for a, b, text in sorted(intervals, key=lambda iv: (iv[0], iv[1])):
+        if out and a < out[-1][1]:
+            overlap = out[-1][1] - a
+            (log.warning if overlap > OVERLAP_WARN_S else log.debug)(
+                "%s: %r overlaps the previous interval by %.3f s; trimmed", label, text, overlap)
+            a = out[-1][1]
+            if a >= b:
+                continue
+        out.append((a, b, text))
+    return out
 
 
 @lru_cache(maxsize=4)

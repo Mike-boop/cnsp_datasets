@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import glob
+import logging
 import os
-from typing import Any, Callable, Dict, Iterable
+from typing import Callable, Dict, Iterable
 
 import mne
 import numpy as np
@@ -10,16 +11,25 @@ import pandas as pd
 from mne.channels import make_standard_montage
 from mne.io import BaseRaw
 from scipy.fft import irfft, next_fast_len, rfft
-from scipy.io import wavfile
 from scipy.signal import butter, resample_poly, sosfiltfilt
 
-from cnsp_datasets.datasets.broderick2019_natural.utils import multi_tier_dict_to_textgrid
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import audio_loader, read_wav, textgrid
+from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
+
+log = logging.getLogger(__name__)
 
 FS = 500
 STIMTRACK = ("Aux5", "AUD")
 MIN_QUALITY = 10  # stimtrack peak height in robust SDs of the cross-correlation; below it, use the software onset
 MAX_DISAGREEMENT_S = 0.1  # software onsets are dropped for a subject if any differs this much from the stimtrack
+SOFTWARE_JITTER_MS = 3.0  # software onsets vs the stimtrack: ~5 ms late, ~3 ms MAD-SD per segment (docstring)
+NOTES = ("Continuous recording re-hosted without segment triggers; one trial per audio segment. Onset from the "
+         "stimtrack (Aux5/AUD, an envelope of the presented audio) by cross-correlation with the segment's full-wave "
+         "rectified audio, else from the first word onset in events.tsv (E-Prime triggers + the authors' delay "
+         "correction; ~5 ms late, ~3 ms jitter against the stimtrack). Onset rounded to the nearest EEG sample; no "
+         "drift correction.")
 
 
 def _band(x: np.ndarray) -> np.ndarray:
@@ -43,7 +53,7 @@ def _xcorr_peak(track: np.ndarray, feat: np.ndarray) -> tuple[float, float]:
     return i + frac, float(quality)
 
 
-class Brennan2018Adaptor:
+class Brennan2018Adaptor(BaseAdaptor):
     """
     Brennan & Hale (2019) "Alice" EEG, from the BIDS mirror on NEMAR (nm000180, 45 of the 49 participants;
     sub-XXX is the original SXX).
@@ -64,19 +74,21 @@ class Brennan2018Adaptor:
     after segment 1 and events.tsv labels segment k+1 as segment k, so their software onsets are a segment off. The
     subjects relying on software onsets (sub-005/009/022/023/038) have correctly labelled segments (their onset
     spacing matches the stimtrack-derived spacing to 20 ms).
-    Segments with neither are skipped. The method is stored in raw.info["description"].
+    Segments with neither, or whose onset is before the start of the recording, are skipped and logged. The method
+    is stored in raw.info["description"] (standardise.provenance JSON).
 
-    Channels: 60 scalp EEG ('eeg', easycap-M10 positions), VEOG ('eog'), the stimtrack ('misc').
+    Channels: 60 scalp EEG ('eeg', easycap-M10 positions), VEOG ('eog'), the stimtrack ('misc'). Audio: float32.
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = download_dir
-        self.words = pd.read_csv(os.path.join(download_dir, "sourcedata", "AliceChapterOne-EEG.csv"))
+        self.words = pd.read_csv(self.path("sourcedata", "AliceChapterOne-EEG.csv"))
         self.durations, self.templates = {}, {}
         for seg in range(1, 13):
-            fs, a = wavfile.read(self._wav_path(seg))
-            self.durations[seg] = len(a) / fs
-            self.templates[seg] = _band(resample_poly(np.abs(a.astype(float)), FS, fs))
+            a, fs = read_wav(self._wav_path(seg))  # mono
+            self.durations[seg] = a.shape[1] / fs
+            self.templates[seg] = _band(resample_poly(np.abs(a[0].astype(float)), FS, fs))
 
     # --------------------------- Public API ---------------------------
 
@@ -84,7 +96,11 @@ class Brennan2018Adaptor:
         for vhdr in sorted(glob.glob(os.path.join(self.root, "sub-*", "eeg", "*_eeg.vhdr"))):
             subject = int(os.path.basename(vhdr).split("_")[0].replace("sub-", ""))
             onsets = self._segment_onsets(vhdr)
-            for seg, (onset, method) in onsets.items():
+            for seg, (onset, method, quality) in onsets.items():
+                if onset < 0:
+                    log.warning("brennan2018: %s segment %d skipped: onset %.3f s is before the recording starts",
+                                os.path.basename(vhdr), seg, onset)
+                    continue
                 name = f"DownTheRabbitHoleFinal_SoundFile{seg}"
                 stimuli = [
                     StimulusRecord("audio", name, self._make_audio_loader(seg), True, feature_name="audio"),
@@ -97,15 +113,15 @@ class Brennan2018Adaptor:
                     condition="natural",
                     ns_type="eeg",
                     stimulus=stimuli,
-                    neural_data_fn=self._make_eeg_loader(vhdr, onset, self.durations[seg], method),
+                    neural_data_fn=self._make_eeg_loader(vhdr, onset, self.durations[seg], method, quality, seg),
                     structural_data_fn=None,
                     behavioural_data_fn=None,
                 )
 
     # ------------------------ Alignment ------------------------
 
-    def _segment_onsets(self, vhdr: str) -> Dict[int, tuple[float, str]]:
-        """Onset (s) and method of each segment that can be placed."""
+    def _segment_onsets(self, vhdr: str) -> Dict[int, tuple]:
+        """Onset (s), method and stimtrack xcorr quality (None: software onset) of each segment that can be placed."""
         raw = mne.io.read_raw_brainvision(vhdr, preload=False, verbose="ERROR")
         track = raw.get_data(picks=[c for c in raw.ch_names if c in STIMTRACK])[0]
         usable = track.std() > 0  # flat in sub-005 and sub-038
@@ -119,14 +135,18 @@ class Brennan2018Adaptor:
             if usable:
                 pos, quality = _xcorr_peak(track, self.templates[seg])
                 if quality > MIN_QUALITY:
-                    onsets[seg] = (pos / FS, f"stimtrack (xcorr quality {quality:.0f})")
+                    onsets[seg] = (pos / FS, f"stimtrack (xcorr quality {quality:.0f})", quality)
 
         # software onsets are only trusted if they agree with the stimtrack wherever both exist (they are a
         # whole segment off in subjects whose recording starts after segment 1)
         if any(abs(software[s] - onsets[s][0]) > MAX_DISAGREEMENT_S for s in software if s in onsets):
             software = {}
         for seg, sw in software.items():
-            onsets.setdefault(seg, (sw, "software (events.tsv)"))
+            onsets.setdefault(seg, (sw, "software (events.tsv)", None))
+        missing = sorted(set(range(1, 13)) - set(onsets))
+        if missing:
+            log.info("brennan2018: %s segments %s skipped: neither a stimtrack nor a trusted software onset",
+                     os.path.basename(vhdr), missing)
         return dict(sorted(onsets.items()))
 
     def _software_onsets(self, events_tsv: str) -> Dict[int, float]:
@@ -139,28 +159,38 @@ class Brennan2018Adaptor:
 
     # ------------------------ Lazy loaders ------------------------
 
-    def _make_eeg_loader(self, vhdr: str, onset_s: float, duration_s: float, method: str) -> Callable[[], BaseRaw]:
+    def _make_eeg_loader(self, vhdr: str, onset_s: float, duration_s: float, method: str, quality: float | None,
+                         seg: int) -> Callable[[], BaseRaw]:
+        stimtrack = quality is not None
+        description = provenance(
+            "stimtrack_xcorr" if stimtrack else "sw_trigger",
+            "hardware (stimtrack Aux5/AUD)" if stimtrack else "software (E-Prime, via events.tsv word onsets)",
+            NOTES, jitter_ms=None if stimtrack else SOFTWARE_JITTER_MS, segment=seg, onset_s=round(onset_s, 4),
+            validation_tier="brainstem", alignment=method,
+            xcorr_quality=None if quality is None else round(quality, 1))
+
         def _loader() -> BaseRaw:
             raw = mne.io.read_raw_brainvision(vhdr, preload=False, verbose="ERROR")
+            if onset_s + duration_s > raw.times[-1]:
+                log.warning("brennan2018: %s segment %d: the recording ends %.3f s before the segment does",
+                            os.path.basename(vhdr), seg, onset_s + duration_s - raw.times[-1])
             tmax = min(onset_s + duration_s, raw.times[-1])
-            raw.crop(max(onset_s, 0.0), tmax, include_tmax=False).load_data(verbose="ERROR")
+            raw.crop(onset_s, tmax, include_tmax=False).load_data(verbose="ERROR")
             types = {c: "misc" if c in STIMTRACK else "eog" if c == "VEOG" else "eeg" for c in raw.ch_names}
             raw.set_channel_types(types, verbose="ERROR")
             raw.set_montage(make_standard_montage("easycap-M10"), match_case=False, on_missing="ignore")
-            raw.info["description"] = f"segment onset {onset_s:.4f} s in the continuous recording; alignment: {method}"
+            raw.info["description"] = description
             return raw
         return _loader
 
-    def _make_audio_loader(self, seg: int) -> Callable[[], Dict[str, Any]]:
-        def _loader() -> Dict[str, Any]:
-            fs, a = wavfile.read(self._wav_path(seg))
-            return {"fs": int(fs), "data": (a.astype(np.float32) / 32768.0)[None, :]}
-        return _loader
+    def _make_audio_loader(self, seg: int) -> Callable[[], dict]:
+        return audio_loader(self._wav_path(seg))
 
     def _make_textgrid_loader(self, seg: int) -> Callable[[], str]:
         w = self.words[self.words.Segment == seg]
-        tier = {"item": w.Word.tolist(), "onset_s": w.onset.tolist(), "offset_s": w.offset.tolist()}
-        return lambda: multi_tier_dict_to_textgrid({"words": tier})
+        tiers = {"words": list(zip(w.onset, w.offset, w.Word.astype(str)))}
+        xmax = max([self.durations[seg], *w.offset])  # the segment's audio (or its last word, if later)
+        return lambda: textgrid(tiers, xmax=xmax)
 
     def _wav_path(self, seg: int) -> str:
         return os.path.join(self.root, "stimuli", f"DownTheRabbitHoleFinal_SoundFile{seg}.wav")

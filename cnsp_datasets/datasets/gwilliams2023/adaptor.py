@@ -10,11 +10,12 @@ from typing import Iterable
 import mne
 import numpy as np
 import pandas as pd
-from scipy.io import wavfile
+import soundfile
 from scipy.signal import butter, correlate, hilbert, resample_poly, sosfiltfilt
 
-from cnsp_datasets.datasets.broderick2019_natural.utils import multi_tier_dict_to_textgrid
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
+from cnsp_datasets.standardise.iohelpers import audio_loader, read_wav, textgrid
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 FS_MEG = 1000
@@ -24,7 +25,7 @@ SEARCH = 0.5           # s: onset search around the trigger
 _ENV = butter(4, [2, 40], "bandpass", fs=FS_MEG, output="sos")
 
 
-class Gwilliams2023Adaptor:
+class Gwilliams2023Adaptor(BaseAdaptor):
     """
     MEG-MASC (Gwilliams et al. 2023, OSF ag3kj + hqvm3 + u5327 + dr4wy): 27 subjects, 1-2 sessions, four
     synthesised stories (task 0-3), each split into ~3 min wavs. KIT 208-channel MEG (+16 reference sensors),
@@ -33,16 +34,17 @@ class Gwilliams2023Adaptor:
     onset="audio" (default): each sound's onset is measured on the audio copy (MISC 009) by envelope
     cross-correlation within +-0.5 s of its trigger; the shipped `sound` events (trigger) are ~44 ms early.
     onset="trigger" uses the events as shipped. drift_correction=True (default) resamples the MEG onto the audio
-    clock (-46 ppm). Stimuli: the wav as shipped and a TextGrid (words, phones) from the events. See notes.md.
+    clock (-46 ppm). Channels: MEG, reference sensors (bads kept and listed), MISC 009. Stimuli: the wav as shipped
+    (float32) and a TextGrid (words, phones) from the events. See notes.md.
     """
 
     def __init__(self, download_dir: str, onset: str = "audio", drift_correction: bool = True):
-        self.download_dir = download_dir
-        self.onset = onset
+        super().__init__(download_dir)
+        self.onset = self.choice("onset", onset, ("audio", "trigger"))
         self.drift = DRIFT_PPM * 1e-6 if drift_correction else 0.0
 
     def parse(self) -> Iterable[TrialRecord]:
-        participants = pd.read_csv(os.path.join(self.download_dir, "participants.tsv"), sep="\t")
+        participants = pd.read_csv(self.path("participants.tsv"), sep="\t")
         order = {r.participant_id: ast.literal_eval(r.task_order) for r in participants.itertuples()}
         for sub in sorted(order):
             for ses_dir in sorted(glob.glob(os.path.join(self.download_dir, sub, "ses-*"))):
@@ -80,21 +82,12 @@ class Gwilliams2023Adaptor:
         return os.path.join(self.download_dir, "stimuli", "audio", f"{name}.wav")
 
     def _stimuli(self, name: str, words: list) -> list:
-        path = self._wav(name)
-
-        def _audio():
-            fs, x = wavfile.read(path)
-            return {"fs": fs, "data": x[None, :]}
-
         def _textgrid():
-            tiers = {}
-            for kind, tier, key in (("word", "words", "word"), ("phoneme", "phones", "phoneme")):
-                rows = [r for r in words if r["kind"] == kind]
-                tiers[tier] = dict(item=[str(r[key]) for r in rows], onset_s=[r["start"] for r in rows],
-                                   offset_s=[r["start"] + r["duration"] for r in rows])
-            return multi_tier_dict_to_textgrid(tiers)
+            return textgrid({tier: [(r["start"], r["start"] + r["duration"], str(r[key]))
+                                    for r in words if r["kind"] == kind]
+                             for kind, tier, key in (("word", "words", "word"), ("phoneme", "phones", "phoneme"))})
 
-        return [StimulusRecord("audio", name, _audio, True, feature_name="audio"),
+        return [StimulusRecord("audio", name, audio_loader(self._wav(name)), True, feature_name="audio"),
                 StimulusRecord("audio", name, _textgrid, True, feature_name="textgrid")]
 
     def _meg_loader(self, con: str, trigger: float, name: str):
@@ -105,7 +98,7 @@ class Gwilliams2023Adaptor:
             if self.onset == "audio":
                 onset += measure_lag(con, trigger, self._wav(name)) * FS_MEG
             n_out = math.ceil(n * FS_MEG / fs)
-            picks = mne.pick_types(raw.info, meg=True, ref_meg=True, misc=False).tolist() + \
+            picks = mne.pick_types(raw.info, meg=True, ref_meg=True, misc=False, exclude=[]).tolist() + \
                 [raw.ch_names.index(AUDIO_CH)]
             return crop_on_audio_clock(raw, onset, n_out, self.drift, picks=picks)
 
@@ -124,14 +117,13 @@ def _audio_channel_envelope(con: str) -> np.ndarray:
 
 @lru_cache(maxsize=64)
 def _wav_envelope(path: str) -> np.ndarray:
-    fs, x = wavfile.read(path)
-    x = x[:, 0] if x.ndim == 2 else x
-    return sosfiltfilt(_ENV, np.abs(hilbert(resample_poly(x.astype(float), FS_MEG, fs))))
+    x, fs = read_wav(path, channel=0)  # scaled to [-1, 1): the lag (argmax) is unchanged
+    return sosfiltfilt(_ENV, np.abs(hilbert(resample_poly(x[0].astype(float), FS_MEG, fs))))
 
 
 def _wav_info(path: str):
-    fs, x = wavfile.read(path, mmap=True)
-    return fs, len(x)
+    info = soundfile.info(path)
+    return info.samplerate, info.frames
 
 
 def measure_lag(con: str, trigger: float, wav: str) -> float:

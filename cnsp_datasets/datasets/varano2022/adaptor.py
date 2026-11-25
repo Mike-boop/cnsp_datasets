@@ -5,11 +5,11 @@ import os
 import re
 from typing import Any, Callable, Dict, Iterable
 
-import numpy as np
 import pandas as pd
 from mne.io import BaseRaw, read_raw_fif
-from scipy.io import wavfile
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import audio_loader
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
 PAD_S = 1.995  # EEG kept before and after each stimulus in the split trial files
@@ -31,7 +31,7 @@ STANDARDISED_COND = {
 }
 
 
-class Varano2022Adaptor:
+class Varano2022Adaptor(BaseAdaptor):
     """
     Adaptor for Varano et al. 2022 (AVbook audiovisual speech in noise, 1 kHz EEG, 19 subjects x 55 trials).
 
@@ -45,12 +45,12 @@ class Varano2022Adaptor:
         F/<part>.TextGrid.
     The speech starts 1.995 s into each file (as in the authors' aligned envelopes, data_2020/.../stim_dwnspl); the
     shipped files have no stimtrack, so this onset is nominal. The audio is not cut to the trial: mismatched AV
-    trials end with the shorter video, so their EEG is shorter than the audio. V0 and mismatched AV trials get a 'visual' stimulus: the speech
-    of the story part shown in the video (not played).
+    trials end with the shorter video, so their EEG is shorter than the audio. V0 and mismatched AV trials get a
+    'visual' stimulus: the speech of the story part shown in the video (not played). Audio: wav channel 0, float32.
     """
 
     def __init__(self, download_dir: str):
-        self.download_dir = download_dir
+        super().__init__(download_dir)
         self._eeg_files = sorted(glob.glob(os.path.join(download_dir, "data_2020", "split_trials", "unprocessed",
                                                         "raw", "sub*.fif")))
 
@@ -110,14 +110,8 @@ class Varano2022Adaptor:
         return _loader
 
     def _make_audio_loader(self, part: str) -> Callable[[], Dict[str, Any]]:
-        """AVbook/A/<part>.wav (whole; not cut to the trial)."""
-        wav_path = os.path.join(self.download_dir, "AVbook", "A", f"{part}.wav")
-
-        def _loader() -> Dict[str, Any]:
-            fs, x = wavfile.read(wav_path)
-            x = x[:, 0] if x.ndim == 2 else x
-            return {"fs": int(fs), "data": np.asarray(x, dtype=float)[None, :]}
-        return _loader
+        """AVbook/A/<part>.wav (whole; not cut to the trial), first channel."""
+        return audio_loader(os.path.join(self.download_dir, "AVbook", "A", f"{part}.wav"), channel=0)
 
     def _make_tg_loader(self, part: str) -> Callable[[], str]:
         tg_path = os.path.join(self.download_dir, "F", f"{part}.TextGrid")

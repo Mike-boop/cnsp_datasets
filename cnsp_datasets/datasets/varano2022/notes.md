@@ -43,3 +43,8 @@ detection, per the readme and `EEG_stimuli/code`).
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **medium**: Nominal onset 1.995 s into the authors' split files (authors' aligned stimuli agree 113/113), no stimtrack shipped; DNN -12..-27 ms = response latency in noise (guilleminot gives the same with measured onsets); low tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- dataset.json: participants 19 (was 24; 19 subjects in the release).
+- Stimulus audio: wav channel 0 as float32 in [-1, 1) (`iohelpers.read_wav`; was the raw integer samples as
+  float64). The 'visual' stimulus (speech of the part shown) uses the same loader.

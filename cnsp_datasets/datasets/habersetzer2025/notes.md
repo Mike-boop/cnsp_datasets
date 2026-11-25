@@ -268,3 +268,11 @@ Results: `validation.json` (this folder). Scripts (tmp, will be deleted):
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **good**: Hardware trigger box on the sound card's S/PDIF + MISC001 audio copy per run (+2.61 ms); drift +485 ppm from the audio copy corrected; +0.4 ms acoustic delay assumed; brainstem (tSSS).
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- dataset.json: listening_hours 13.82 added (size section).
+- Stimulus audio as float32 in [-1, 1) (`iohelpers.read_wav`; was the raw int16 samples).
+- Channels the FIF marks bad are kept and listed in `info["bads"]` together with MEG2143 and MEG1112
+  (`pick_types` used to drop FIF bads, then `info["bads"]` was overwritten with the two fixed ones). The
+  provenance field `bads` still lists the two fixed ones only.
+- `drift.py` and `drift.csv` moved to `alignment/` (`python -m cnsp_datasets.datasets.habersetzer2025.alignment.drift`).

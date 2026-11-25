@@ -12,7 +12,7 @@ it starts.
    running median is replaced by that median. Segments in stretches without good windows (> 30 s from one) get no
    audio. Sessions whose median local r is below 0.5 are left out.
 
-    python -m cnsp_datasets.datasets.libribrain100.segalign <download dir>
+    python -m cnsp_datasets.datasets.libribrain100.alignment.segalign <download dir>
 """
 from __future__ import annotations
 
@@ -24,9 +24,9 @@ import sys
 import numpy as np
 import pandas as pd
 
-from cnsp_datasets.datasets.libribrain100.wavmap import FS, envelope, word_mask
+from cnsp_datasets.datasets.libribrain100.adaptor import SEGMAP_CSV as OUT, read_wavmap, segments
+from cnsp_datasets.datasets.libribrain100.alignment.wavmap import BOOKS, FS, envelope, word_mask
 
-OUT = os.path.join(os.path.dirname(__file__), "segmap.csv")
 WIN, HOP, SEARCH, R_MIN = 30, 10, 1.5, 0.3
 SESSION_R_MIN = 0.5  # sessions whose median local r is lower are left out (wrong or missing wav)
 LOCAL, FINE = 10, 0.15
@@ -68,8 +68,6 @@ def refine(m: np.ndarray, env: np.ndarray, t: float, lag: float) -> tuple[float,
 
 
 def align_session(events: pd.DataFrame, wav: str) -> pd.DataFrame:
-    from cnsp_datasets.datasets.libribrain100.adaptor import segments  # adaptor imports this module's table
-
     m, env = word_mask(events), envelope(wav)
     curve = lag_curve(m, env)
     good = curve[curve.r >= R_MIN]
@@ -93,11 +91,9 @@ def align_session(events: pd.DataFrame, wav: str) -> pd.DataFrame:
 
 
 def main(download_dir: str) -> None:
-    from cnsp_datasets.datasets.libribrain100 import wavmap
-
-    linear = wavmap.read()
+    linear = read_wavmap()
     rows = []
-    for book in wavmap.BOOKS:
+    for book in BOOKS:
         task = book.split("/")[1]
         wavs = sorted(glob.glob(f"{download_dir}/{book}/stimuli/audio/*.wav"))
         for f in sorted(glob.glob(f"{download_dir}/{book}/derivatives/events/sub-0_*.tsv")):
@@ -124,10 +120,6 @@ def main(download_dir: str) -> None:
                   f"median local r {d.r_local.median():.2f}", flush=True)
     pd.concat(rows).to_csv(OUT, index=False, float_format="%.4f")
     print(f"wrote {OUT}")
-
-
-def read() -> pd.DataFrame:
-    return pd.read_csv(OUT) if os.path.exists(OUT) else pd.DataFrame(columns=["task", "session", "src_start"])
 
 
 if __name__ == "__main__":

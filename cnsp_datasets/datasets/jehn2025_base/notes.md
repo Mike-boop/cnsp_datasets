@@ -23,10 +23,10 @@ Cross-correlating them with the shipped stimuli (2-200 Hz, first and last 30 s o
 - Conditions `<natural|competing>_<fR|fL>_<group>`; subjects numbered within group.
 - Stimuli: target (attended) and, in competing trials, the distractor stream (`<story>_<part>_target` /
   `_distractor`; distractor parts are different recordings from the same story's targets).
-- CI: channels removed at the magnet position (`taken_out_indices`) are dropped.
+- CI: channels removed at the magnet position (`taken_out_indices`) are kept and listed in `info["bads"]`.
 
 ## Drift correction (optional, off by default)
-`drift.py` writes the per-trial aux-channel estimates to `drift.csv`; `drift_correction="subject"` resamples each
+`alignment/drift.py` writes the per-trial aux-channel estimates to `alignment/drift.csv`; `drift_correction="subject"` resamples each
 trial's EEG to the audio clock with the subject's median drift (trials with >= 10 valid windows; `to_audio_clock`,
 anchored at the trial onset). Default `None` leaves the EEG as shipped.
 
@@ -45,3 +45,13 @@ Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026
 - jehn2025_nh: **good**: Authors' cut at onset, verified by aux loudspeaker recordings (within ~2 ms); drift 26.7 ppm measured on aux, correction optional and off by default (3-5 ms per trial); mlr tier.
 - jehn2025_hi: **good**: As jehn2025_nh (aux check within ~2 ms; hi 201 ~18 ppm); drift correction off by default; mlr tier.
 - jehn2025_ci: **good**: As jehn2025_nh; ci 127 aux has no stimulus (unverified), ci 121 side unverified; ci 118-122 ~18 ppm; drift off by default; 'brainstem' is the CI artefact.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- dataset.json: participants added to the variants: nh 28, hi 29, ci 24 (top of this file); jehn2024 gets modality,
+  stimuli and a note.
+- CI channels in `taken_out_indices` are kept and listed in `info["bads"]` (were dropped by `pick(exclude="bads")`).
+- Stimulus audio is float32 (integer samples scaled to [-1, 1); float samples unchanged).
+- `drift.py` and `drift.csv` moved to `alignment/`; the window constants and band-pass shared with yang2026 and
+  kern2022 are in `alignment/xcorr.py`. The adaptor reads the table only.
+- A subject code whose first digit is not 1/2/3 raises (was silently `nh`); variants are subclasses.
+- jehn2024 is now a subclass of this adaptor.

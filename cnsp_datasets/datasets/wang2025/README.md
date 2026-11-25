@@ -60,7 +60,7 @@ Only 16 participants (10.7 h) have all 64 channels working; the other 10 have 33
   the reverse (group B, 8; sub-15 unknown). The paper's Table S2 run order does not match the EEG (agreement at
   chance, 21 vs 25; probably the fMRI order, unverified). Group calls are low-confidence for sub-05 and medium for
   sub-09, sub-10 and sub-23 (`group_confidence`).
-- **Onsets** (`onsets.csv`, from the explorer's analysis, notes.md sections 3 and 6): section 1 at the first
+- **Onsets** (`alignment/onsets.csv`, from the explorer's analysis, notes.md sections 3 and 6): section 1 at the first
   marker (`S 11`, or `S 31` in six recordings); sections 2-3 at `S 32`/`S 33` where present, otherwise at the
   first marker + 735.07 / 1470.14 s (trigger timeline of the six `S 3x` recordings); section 4 at the first marker +
   2192.2 s (group A) or 2196.2 s (B), confirmed by EEG envelope tracking. `S 34` is ~0.95 s late and ignored.

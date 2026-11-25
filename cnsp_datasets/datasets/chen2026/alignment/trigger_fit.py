@@ -1,6 +1,6 @@
 """
 Playback-request time t0 of every PassiveListening chapter, from the ROWS/ROWE triggers, and a check of the t0
-column of timing.csv (notes.md sections 6 and 6b).
+column of timing.csv next to this file (notes.md sections 6 and 6b).
 
 The listening script replayed each reader's EEG line timeline (events_data.json in the audio repo) as ROWS/ROWE
 triggers from the moment sd.play() was requested. Per run file and json chapter: offset = mode of all (EEG ROWS - json
@@ -13,7 +13,7 @@ rows (ReadingAloud-only) are dropped.
 The sound latency after t0 (latency_s, latency_optionB_s, listener_median_s in timing.csv) is estimated from the EEG
 (decoder and DNN scans; notes.md 6b-6c) and is not recomputed here.
 
-    python -m cnsp_datasets.datasets.chen2026.timing <chen2026 download dir> [audio dir]
+    python -m cnsp_datasets.datasets.chen2026.alignment.trigger_fit <chen2026 download dir> [audio dir]
 """
 from __future__ import annotations
 
@@ -26,13 +26,9 @@ import sys
 import numpy as np
 import pandas as pd
 
-TIMING_CSV = os.path.join(os.path.dirname(__file__), "timing.csv")
+from cnsp_datasets.datasets.chen2026.adaptor import TIMING_CSV, reader_of
+
 TOL, MIN_FRAC, KEEP_FRAC, MIN_ROWS = 0.030, 0.5, 0.8, 10
-
-
-def reader_of(sub: str) -> str:
-    """Listeners 01-04 heard reader f1, 05-08 reader m1 (notes.md section 3)."""
-    return "f1" if int(sub) <= 4 else "m1"
 
 
 def json_chapters(audio_dir: str, story: str, reader: str) -> list[tuple[np.ndarray, np.ndarray]]:

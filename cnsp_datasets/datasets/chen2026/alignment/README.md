@@ -1,7 +1,7 @@
-# chen2026 latency pipeline: how `../timing.csv` was made
+# chen2026 latency pipeline: how `timing.csv` (this folder) was made
 
 The adaptor's onset is `t0 + latency`. `t0` (the `sd.play()` request time) comes from the ROWS/ROWE triggers and is
-recomputed and checked by `../timing.py`. The sound latency (~0.5 s, varying per playback call, up to 1.6 s) is not in
+recomputed and checked by `trigger_fit.py`. The sound latency (~0.5 s, varying per playback call, up to 1.6 s) is not in
 the triggers and was estimated from the EEG by the scripts in this folder (notes.md sections 6b-6d). They are the
 analysis scripts as run on 2026-11-23, kept so that `timing.csv` can be reproduced from code; they are not library code
 and are not imported by the adaptor. Only the paths were changed (now in `settings.py`); the as-run versions read the
@@ -34,8 +34,8 @@ DNN steps.
 | 7 | `reclassify_z2.py` | step 3 | `align/z2/reclass.csv`, `fail_z2.csv` (chapters for step 8), `sub-XX_passes.png` |
 | 8 | `ext_scan.py <sub>` | step 7, cache, classifier | `align/ext/` (decoder and DNN, latency -1..+8 s) |
 | 9 | `timing_v2.py` | steps 5-8 | `timing_table_v2.csv`, `timing_v2_overview.png`, `align/z2/ext_results.csv`, `sub-XX_ext_curves.png` |
-| 10 | `make_timing_csv.py [out]` | steps 1, 7, 9 | `../timing.csv` (default) |
-| 11 | `make_logs.py` | `../timing.csv`, step 5 summaries | `../onsets_optionB.csv`, `../drift.csv` |
+| 10 | `make_timing_csv.py [out]` | steps 1, 7, 9 | `timing.csv` (default) |
+| 11 | `make_logs.py` | `timing.csv`, step 5 summaries | `onsets_optionB.csv`, `drift.csv` |
 | (check) | `timing_compare.py <WORK> <out>` | timing table v2, decoder half curves, cache | passes / held-out / TRF comparison of the timing rules (basis of the option-B decision, notes 6e) |
 
 `fail_z2.csv` lists every chapter that fails the full decoder rule below, with the reason (`why`). Steps 2-5 and 8

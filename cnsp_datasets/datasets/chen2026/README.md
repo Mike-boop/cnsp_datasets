@@ -17,13 +17,13 @@ recordings of *The Little Prince* (27 chapters) and *Garnett Dream* (9 or 8 sect
   multimodal semantic alignment and neural decoding during reading and listening. *Sci Data* 13:148.
   doi:10.1038/s41597-025-06466-8
 - **Code (authors):** https://github.com/ncclab-sustech/ChineseEEG-2 (read, not run). The latency pipeline used
-  here is in `timing/` (see its README).
+  here is in `alignment/` (see its README).
 
 ## Size
 **8 participants, 24.72 h in total; 3.09 h per participant on average (2.92-3.26 h).**
 - **Per story:** Garnett Dream 12.47 h and Little Prince 12.25 h. A complete listener has Little Prince 1.54 h and
   Garnett Dream 1.49 h (f1 group) or 1.71 h (m1 group).
-- The figures come from the wav durations in `timing.csv` (`notes.md` section 8). `data_size.py` was not run
+- The figures come from the wav durations in `alignment/timing.csv` (`notes.md` section 8). `data_size.py` was not run
   because the standardised data were deleted.
 - The 0.45 h of chapters missing from the release are excluded (see Caveats).
 - Chapters last 38 s-20.4 min. A full standardisation is about 48 GB.
@@ -51,22 +51,22 @@ recordings of *The Little Prince* (27 chapters) and *Garnett Dream* (9 or 8 sect
   - The listening script replays the reader's ROWS/ROWE line timeline relative to the moment playback was
     *requested*.
   - Per chapter, t0 = the intercept of a fit of these events to the reader's json timeline (residual SD 1.9-4.4 ms;
-    all 281 chapters matched; `timing.py` reproduces t0 from `events.tsv`).
+    all 281 chapters matched; `alignment/trigger_fit.py` reproduces t0 from `events.tsv`).
   - CH markers are unreliable (some missing, some renumbered) and are not used.
 - **The sound starts ~0.5 s after t0**, and the delay varies by chapter. It is the playback-side output latency of
   `sd.play()`, which the triggers cannot see.
   - **Listener medians:** 504-581 ms.
   - **Late chapters:** most chapters lie within ±30 ms of their listener's median, but a few start 0.1-1.0 s later.
   - **Estimation:** the latency was estimated from the EEG with a leave-one-chapter-out backward decoder, plus the
-    accou2023 DNN where the decoder was weak (`timing/`, `timing.csv`).
+    accou2023 DNN where the decoder was weak (`alignment/`, `alignment/timing.csv`).
 - **Default onset: t0 + option-B latency** (`latency="option_b"`, user decision 2026-11-23). This is the listener
   median, except for chapters whose own estimate deviates by more than max(40 ms, 3 SE). 39 of the 281 chapters use
   their own value.
   - Each trial's t0, latency, onset and source are in `onsets_optionB.csv`.
   - Why option B was chosen is in `notes.md` section 6e (held-out-halves test, r 0.113 vs 0.110 per-chapter and
     0.107 listener median).
-- **Drift:** about +16 ppm from the EEG (pooled), **not applied**. Every listener's 95% CI includes 0 (`drift.csv`).
-  The provenance records `drift_ppm` 16 and `drift_corrected_ppm` 0. The trigger fit cannot measure drift, because
+- **Drift:** about +16 ppm from the EEG (pooled), **not applied**. Every listener's 95% CI includes 0
+  (`alignment/drift.csv`). The provenance records `drift_ppm` 16 and `drift_corrected_ppm` 0. The trigger fit cannot measure drift, because
   the triggers and their timestamps share one PC clock.
 - **Jitter:** about 3.3 ms SD per trigger event. The sidecar's `jitter_ms` is the latency SE, or the listener's
   robust spread (14-33 ms) for trials that use the median.
@@ -79,7 +79,7 @@ recordings of *The Little Prince* (27 chapters) and *Garnett Dream* (9 or 8 sect
 - **Audio:** `download_dataset("chen2026_audio", <dir>/ChineseEEG-2_audio)`, from Hugging Face. Whether it needs
   a token (`HF_TOKEN`, `secrets.json` key `hf`) was not recorded.
 - `Chen2026Adaptor(download_dir, latency="option_b", drift_ppm=0.0, audio_dir=None)`.
-  - `latency` selects the column of `timing.csv`:
+  - `latency` selects the column of `alignment/timing.csv`:
     - `"option_b"` (default);
     - `"chapter"` (each chapter's own EEG estimate where z >= 2);
     - `"listener_median"` (t0 + listener median, the closest to trigger-only timing).

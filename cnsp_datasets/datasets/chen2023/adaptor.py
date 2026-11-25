@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import io
 import math
 import os
 from functools import lru_cache
@@ -8,15 +9,16 @@ from typing import Iterable
 import mne
 import numpy as np
 import pandas as pd
-from scipy.io import wavfile
 
-from cnsp_datasets.datasets.chen2023.triggers import read_fif
 from cnsp_datasets.datasets.chen2023.vocoder import vocode
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
 from cnsp_datasets.standardise.clock import crop_on_audio_clock
+from cnsp_datasets.standardise.iohelpers import read_wav
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
 
-TRIGGERS_CSV = os.path.join(os.path.dirname(__file__), "triggers.csv")  # from triggers.py (STI101 codes)
+# from alignment/triggers.py (STI101 codes)
+TRIGGERS_CSV = os.path.join(os.path.dirname(__file__), "alignment", "triggers.csv")
 SFREQ = 1000.0
 SOUND_DELAY_MS = 16.0  # trigger-to-sound delay measured by the authors (Black Box Toolkit v2; paper section 2.2)
 # audio clock vs MEG clock, estimated from the MEG itself (30-60 Hz TRF SNR peak over 350-650 ppm, 12 subjects: 510.5,
@@ -38,7 +40,7 @@ NOTES = ("MEGIN TRIUX, MaxFilter 2.2.15 SSS applied by the authors (as shipped).
          + LICENCE)
 
 
-class Chen2023Adaptor:
+class Chen2023Adaptor(BaseAdaptor):
     """
     Chen et al. (2023, NeuroImage), ANC dataset yc_audiobook_vocoding: 24 subjects, MEGIN TRIUX 306-channel MEG at
     1000 Hz (SSS applied), Goethe's "Das Maerchen" in 24 excerpts (16-194 s), each heard at most once per subject in
@@ -51,16 +53,15 @@ class Chen2023Adaptor:
       "rebuild": an n-channel vocoded rebuild (vocoder.py, fixed seed per stimulus and n). Only the band envelopes
                  match the presented sound, not the noise fine structure (notes.md, section 4).
       None: vocoded trials are skipped.
+    Audio is the wav's first channel (L = R) as float32. Channels the FIF marks bad are kept and listed.
     drift_ppm: MEG samples per audio sample - 1, in ppm, corrected in the crop (default DATA_DRIFT_PPM = 510,
       estimated from the MEG and approved by the user; 0 = no correction; notes.md, section 7).
     """
 
     def __init__(self, download_dir: str, vocoded: str | None = "clean", sound_delay_ms: float = SOUND_DELAY_MS,
                  drift_ppm: float = DATA_DRIFT_PPM):
-        if vocoded not in ("clean", "rebuild", None):
-            raise ValueError(f"vocoded must be 'clean', 'rebuild' or None, not {vocoded!r}")
-        self.download_dir = download_dir
-        self.vocoded = vocoded
+        super().__init__(download_dir)
+        self.vocoded = self.choice("vocoded", vocoded, ("clean", "rebuild", None))
         self.sound_delay_ms = sound_delay_ms
         self.drift_ppm = drift_ppm
         self.table = pd.read_csv(TRIGGERS_CSV)
@@ -98,24 +99,33 @@ class Chen2023Adaptor:
             )
 
 
+def read_fif(fif: str) -> mne.io.BaseRaw:
+    """
+    The whole run, preloaded from one sequential read: MNE's many small reads take ~2 min per run on the network
+    storage, against ~10 s this way (notes.md, section 5).
+    """
+    with open(fif, "rb") as f:
+        return mne.io.read_raw_fif(io.BytesIO(f.read()), preload=True, verbose="ERROR")
+
+
 @lru_cache(maxsize=1)
 def _read(fif: str) -> mne.io.BaseRaw:
     """The run with MEG, EOG, ECG and EEG channels (EEG retyped misc), cached for the run's three trials."""
     raw = read_fif(fif)
     if raw.info["sfreq"] != SFREQ:
         raise ValueError(f"{fif}: {raw.info['sfreq']} Hz, expected {SFREQ}")
-    raw.pick(np.concatenate([mne.pick_types(raw.info, meg=True),  # MEG first, then the peripherals
-                             mne.pick_types(raw.info, meg=False, eog=True, ecg=True, eeg=True)]))
-    eeg = [raw.ch_names[i] for i in mne.pick_types(raw.info, meg=False, eeg=True)]
+    raw.pick(np.concatenate([mne.pick_types(raw.info, meg=True, exclude=[]),  # MEG first, then the peripherals
+                             mne.pick_types(raw.info, meg=False, eog=True, ecg=True, eeg=True, exclude=[])]))
+    eeg = [raw.ch_names[i] for i in mne.pick_types(raw.info, meg=False, eeg=True, exclude=[])]
     raw.set_channel_types(dict.fromkeys(eeg, "misc"), on_unit_change="ignore")
     return raw
 
 
 @lru_cache(maxsize=1)
 def _wav(path: str) -> tuple[int, np.ndarray]:
-    """Sample rate and first channel of a stimulus wav (dual mono: L = R in every file)."""
-    fs, x = wavfile.read(path)
-    return fs, x[:, 0]
+    """Sample rate and first channel (float32) of a stimulus wav (dual mono: L = R in every file)."""
+    x, fs = read_wav(path, channel=0)
+    return fs, x[0]
 
 
 def _meg_loader(fif: str, onset: float, wav: str, drift: float, description: str):

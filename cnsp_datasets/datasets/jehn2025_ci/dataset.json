@@ -20,5 +20,6 @@
   "stimuli": "competing speakers",
   "alignment_quality": "good",
   "validation_tier": "brainstem",
-  "listening_hours": 18.0
+  "listening_hours": 18.0,
+  "participants": 24
 }

@@ -1,19 +1,32 @@
 from __future__ import annotations
 
 import os
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
+
 import h5py
 import numpy as np
-
+import pandas as pd
 from mne import create_info
-from mne.io import RawArray, read_info, BaseRaw
+from mne.io import BaseRaw, RawArray, read_info
 
-from typing import Iterable, Callable, Any, Dict, List, Optional, Tuple
-from cnsp_datasets.datasets.bentum2023.drift import to_audio_clock
-from cnsp_datasets.datasets.jehn2025_base.drift import subject_drift
-from cnsp_datasets.standardise.trial_record import TrialRecord, StimulusRecord
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.clock import to_audio_clock
+from cnsp_datasets.standardise.iohelpers import mark_bads, to_float32
+from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
+
+DRIFT_CSV = os.path.join(os.path.dirname(__file__), "alignment", "drift.csv")  # from alignment/drift.py
+MIN_WINDOWS = 10  # trials with fewer valid xcorr windows are left out of the subject median
+GROUPS = {"1": "ci", "2": "hi", "3": "nh"}  # first digit of the subject code
 
 
-class Jehn2025Adaptor:
+def subject_drift(table: str = DRIFT_CSV) -> dict[str, float]:
+    """Median drift (as a fraction, not ppm) per subject code over trials with enough valid windows."""
+    d = pd.read_csv(table, dtype={"subject": str})
+    d = d[d.n_windows >= MIN_WINDOWS]
+    return (d.groupby("subject").drift_ppm.median() * 1e-6).to_dict()
+
+
+class Jehn2025Adaptor(BaseAdaptor):
     """
     Adaptor for the Jehn 2025 datasets that yields TrialRecord objects.
 
@@ -40,16 +53,19 @@ class Jehn2025Adaptor:
       - Onsets: the aux channels match the shipped stimuli to ~2 ms at trial start (the offset depends on the
         stimulus file). The EEG is not drift-corrected: the aux channels drift by ~26.7 ppm (~18 ppm for ci 118-122
         and hi 201) relative to the stimuli. The aux channels of ci 127 do not contain the stimulus.
+      - CI channels removed at the magnet position (`taken_out_indices`) are kept and listed in info["bads"].
+
+    Class attributes parametrise the archive (jehn2024 subclasses this adaptor with its own).
     """
 
     SWAPPED_SIDES = {"103", "305", "306"}
+    NAME_SUFFIX = {"attended": "_target", "distractor": "_distractor"}
 
     SESSION = 1
     FS_EEG = 1000
     FS_ENV = 1000
     FS_AUDIO = 48000
     INFO_FIF_PATH = os.path.join(os.path.dirname(__file__), "info_1000.fif")
-
 
     def __init__(
         self,
@@ -58,15 +74,12 @@ class Jehn2025Adaptor:
         drift_correction: Optional[str] = None,
     ):
         """drift_correction: None or "subject" (resample each trial onto the stimulus clock with the subject's median
-        drift from drift.csv; the trial onset is the anchor)."""
-        if drift_correction not in (None, "subject"):
-            raise ValueError(f"drift_correction must be None or 'subject', got {drift_correction!r}")
-        self.download_dir = download_dir
+        drift from alignment/drift.csv; the trial onset is the anchor)."""
+        super().__init__(download_dir)
+        self.choice("drift_correction", drift_correction, (None, "subject"))
         self._drift = subject_drift() if drift_correction else {}
 
-        self.h5_path = os.path.join(download_dir, h5_fname)
-        if not os.path.exists(self.h5_path):
-            raise FileNotFoundError(f"HDF5 archive not found: {self.h5_path}")
+        self.h5_path = self.path(h5_fname)
 
         # Discover codes once
         self._stim_codes, self._sub_codes = self._get_codes(self.h5_path)
@@ -98,32 +111,28 @@ class Jehn2025Adaptor:
                 # Build stimuli list:
                 #  - attended audio
                 #  - if competing: also distractor audio
-                stimuli: List[StimulusRecord] = []
-
-                att_name = f"{att_story}_{part}_target"
-                stimuli.append(
+                stimuli: List[StimulusRecord] = [
                     StimulusRecord(
                         modality="audio",
-                        name=att_name,
+                        name=f"{att_story}_{part}{self.NAME_SUFFIX['attended']}",
                         data_fn=self._make_audio_loader(stim_code, role="attended", feature="audio"),
                         is_attended=True,
                         feature_name="audio",
                     )
-                )
+                ]
 
                 if condition == "competing":
-                    dis_name = f"{ign_story}_{part}_distractor"
                     stimuli.append(
                         StimulusRecord(
                             modality="audio",
-                            name=dis_name,
+                            name=f"{ign_story}_{part}{self.NAME_SUFFIX['distractor']}",
                             data_fn=self._make_audio_loader(stim_code, role="distractor", feature="audio"),
                             is_attended=False,
                             feature_name="audio",
                         )
                     )
 
-                # Lazy EEG loader (per-trial dataset), mark CI missing channels as bad
+                # Lazy EEG loader (per-trial dataset), CI missing channels marked bad
                 neural_fn = self._make_eeg_loader(sub_code=sub_code, trial=trial, group=group)
 
                 yield TrialRecord(
@@ -142,22 +151,17 @@ class Jehn2025Adaptor:
 
     def _make_eeg_loader(self, sub_code: str, trial: int, group: str) -> Callable[[], BaseRaw]:
         """
-        Loads EEG [31 x T] for a given subject code and trial, sets `info.bads` for CI.
+        Loads EEG [31 x T] for a given subject code and trial; CI channels taken out are kept and marked bad.
         """
         def _loader() -> BaseRaw:
             with h5py.File(self.h5_path, "r") as f:
                 node = f[f"eeg/{sub_code}/{trial}"]
                 data = to_audio_clock(np.array(node[:31], dtype=float), self._drift.get(sub_code, 0.0))
-                # Copy base Info so we can mutate 'bads' per subject
-                info = self._base_info.copy()
-
-                if group == "ci":
-                    taken_key = f"eeg/{sub_code}/taken_out_indices"
-                    if taken_key in f:
-                        missing = np.array(f[taken_key][:], dtype=int).tolist()
-                        info["bads"] = [info["ch_names"][i] for i in missing]
-                raw = RawArray(data, info, verbose="ERROR")
-                raw.pick(picks="eeg", exclude="bads")  # drop missing channels so they don’t mess up processing later
+                raw = RawArray(data, self._base_info.copy(), verbose="ERROR")
+                taken_key = f"eeg/{sub_code}/taken_out_indices"
+                if group == "ci" and taken_key in f:
+                    missing = np.array(f[taken_key][:], dtype=int).tolist()
+                    mark_bads(raw, [raw.ch_names[i] for i in missing])
                 return raw
         return _loader
 
@@ -165,11 +169,9 @@ class Jehn2025Adaptor:
         """
         role: 'attended' | 'distractor'
         feature: 'audio' (wav) | 'env' (envelope)
-        Returns dict {"fs": <float>, "data": np.ndarray[1, T]}.
+        Returns dict {"fs": <int>, "data": float32 np.ndarray[1, T]} (integer samples scaled to [-1, 1)).
         """
-        assert role in ("attended", "distractor")
-        assert feature in ("audio", "env")
-        ds_key = f"stimulus_files/{stim_code}/{role}_{'wav' if feature=='audio' else 'env'}"
+        ds_key = f"stimulus_files/{stim_code}/{role}_{'wav' if feature == 'audio' else 'env'}"
 
         fs = self.FS_AUDIO if feature == "audio" else self.FS_ENV
 
@@ -178,10 +180,7 @@ class Jehn2025Adaptor:
                 if ds_key not in f:
                     raise KeyError(f"Missing stimulus dataset: '{ds_key}'")
                 x = f[ds_key][:]
-            x = np.asarray(x)
-            if x.ndim == 1:
-                x = x[None, :]
-            return {"fs": fs, "data": x}
+            return {"fs": fs, "data": np.atleast_2d(to_float32(x))}
         return _loader
 
     # ---------------------------- Helpers -----------------------------
@@ -196,10 +195,9 @@ class Jehn2025Adaptor:
         """
         Returns (group, participant_number) where group in {'ci','hi','nh'}.
         """
-        g = int(code[0])
-        group = "ci" if g == 1 else ("hi" if g == 2 else "nh")
-        participant = int(code[1:])
-        return group, participant
+        if code[:1] not in GROUPS:
+            raise ValueError(f"subject code {code!r}: first digit not in {sorted(GROUPS)} (ci/hi/nh)")
+        return GROUPS[code[0]], int(code[1:])
 
     def _parse_stim_code(self, stim_code: str) -> Tuple[str, str, str, int]:
         """
@@ -223,25 +221,19 @@ class Jehn2025Adaptor:
             key = f"eeg/{sub_code}/{trial}"
             if key not in f:
                 return None
-            node = f[key]
-            stim = node.attrs.get("stimulus", None)
+            stim = f[key].attrs.get("stimulus", None)
             if stim is None:
                 return None
             # ensure str
             if isinstance(stim, (bytes, np.bytes_)):
-                stim = stim.decode("utf-8")
-            else:
-                stim = str(stim)
-            return stim
+                return stim.decode("utf-8")
+            return str(stim)
 
-    def _make_info(self, info_fif_path: Optional[str] = os.path.join(os.path.dirname(__file__), "info_125.fif")) -> Dict:
+    def _make_info(self, info_fif_path: str):
         """
-        Create a 31-channel EEG Info. If an info.fif is provided and readable,
-        we use its channel names + montage, but force `sfreq` to `fs_eeg`.
-        Otherwise fall back to a standard montage with generic names.
+        A 31-channel EEG Info with the channel names and montage of `info_fif_path`, at FS_EEG.
         """
-        info = read_info(info_fif_path)
-        ch_names = info["ch_names"][:31]
-        new_info = create_info(ch_names=ch_names, sfreq=self.FS_EEG, ch_types="eeg")
+        info = read_info(info_fif_path, verbose="ERROR")
+        new_info = create_info(ch_names=info["ch_names"][:31], sfreq=self.FS_EEG, ch_types="eeg")
         new_info.set_montage(info.get_montage())
         return new_info

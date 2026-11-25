@@ -15,7 +15,7 @@ AUDIO = os.environ.get("CHEN2026_AUDIO") or os.path.join(DOWNLOAD, "ChineseEEG-2
 WORK = os.environ.get("CHEN2026_WORK", "chen2026_timing_work")
 ALIGN = os.path.join(WORK, "align")
 MODEL = os.environ.get("CHEN2026_DNN", "")
-TIMING_CSV = os.path.join(HERE, os.pardir, "timing.csv")
+TIMING_CSV = os.path.join(HERE, "timing.csv")
 if REPO not in sys.path:
     sys.path.append(REPO)
 

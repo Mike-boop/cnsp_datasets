@@ -1,6 +1,16 @@
 {
   "name": "yang2026_ru",
-  "title": "yang2026_ru",
+  "title": "Yang et al. (2026) dataset, Russian site",
   "visibility": "public",
-  "notes": "variant of yang2026: downloaded with download_dataset('yang2026')"
+  "notes": "variant of yang2026: downloaded with download_dataset('yang2026')",
+  "modality": "MEG",
+  "system": "Elekta Neuromag VectorView (MRC CBU Cambridge), simultaneous EEG",
+  "participants": 15,
+  "listening_hours": 6.87,
+  "stimuli": "podcast conversation",
+  "alignment_quality": "good",
+  "paper": {
+    "doi": "10.1038/s41597-026-06579-8"
+  },
+  "licence": "CC-BY-4.0"
 }

@@ -8,7 +8,7 @@ give lags; the map is valid up to the first of three consecutive windows whose l
 a Theil-Sen line through the valid windows gives k and c. Sessions without a match, or with a scale k != 1 (a
 spurious match), are left out.
 
-    python -m cnsp_datasets.datasets.libribrain100.wavmap <download dir>
+    python -m cnsp_datasets.datasets.libribrain100.alignment.wavmap <download dir>
 """
 from __future__ import annotations
 
@@ -22,7 +22,8 @@ import pandas as pd
 from scipy.io import wavfile
 from scipy.stats import theilslopes
 
-OUT = os.path.join(os.path.dirname(__file__), "wavmap.csv")
+from cnsp_datasets.datasets.libribrain100.adaptor import WAVMAP_CSV as OUT
+
 FS = 100
 SCALES = (1.0,)
 BOOKS = [f"LibriBrain/Sherlock{i}" for i in range(1, 8)] + ["LibriBrain2/Sherlock9"]
@@ -93,10 +94,6 @@ def main(download_dir: str) -> None:
     d = pd.DataFrame(rows).sort_values(["task", "session"])
     d.to_csv(OUT, index=False, float_format="%.8g")
     print(f"wrote {OUT}: {len(d)} sessions")
-
-
-def read() -> pd.DataFrame:
-    return pd.read_csv(OUT).set_index(["task", "session"])
 
 
 if __name__ == "__main__":

@@ -2,18 +2,24 @@ from __future__ import annotations
 
 import csv
 import glob
+import logging
 import os
 from typing import Callable, Iterable
 
 import numpy as np
 import pandas as pd
+import soundfile
 from mne import create_info
 from mne.channels import make_standard_montage
 from mne.io import BaseRaw, RawArray
-from scipy.io import loadmat, wavfile
+from scipy.io import loadmat
 
+from cnsp_datasets.standardise.adaptor import BaseAdaptor
+from cnsp_datasets.standardise.iohelpers import mark_bads, read_wav, textgrid
 from cnsp_datasets.standardise.provenance import provenance
 from cnsp_datasets.standardise.trial_record import StimulusRecord, TrialRecord
+
+log = logging.getLogger(__name__)
 
 SENT_DIR = os.path.join("sourcedata", "stimuli", "audio_files_segmented_by_sentence")
 WORDS = os.path.join("sourcedata", "annotation", "lppHK_timing_word_information.xlsx")
@@ -41,7 +47,7 @@ WORD_NOTE = ("words: upstream onset/offset (interpolated within most sentences) 
              "5 words with offset < onset dropped; sentences: the placed sentence wavs.")
 
 
-class Momenian2024Adaptor:
+class Momenian2024Adaptor(BaseAdaptor):
     """
     Momenian et al. 2024, Le Petit Prince Hong Kong, EEG part (OpenNeuro ds004718 v1.1.2): 51 older Cantonese
     listeners hear the story in four ~5-min Parts, one sentence wav at a time (535 sentences, one trigger each).
@@ -54,10 +60,11 @@ class Momenian2024Adaptor:
     """
 
     def __init__(self, download_dir: str):
+        super().__init__(download_dir)
         self.root = download_dir
         self.sentences = {p: _sentence_table(download_dir, p) for p in PARTS}
         self.words = _word_table(download_dir, self.sentences)
-        with open(os.path.join(download_dir, "participants.tsv"), newline="") as f:
+        with open(self.path("participants.tsv"), newline="") as f:
             self.participants = {r["participant_id"][4:]: r for r in csv.DictReader(f, delimiter="\t")}
 
     def parse(self) -> Iterable[TrialRecord]:
@@ -77,7 +84,7 @@ class Momenian2024Adaptor:
                 place = _placement(onsets, table["n"].to_numpy()[:len(onsets)], (pid, p) in STOP_AT)
                 n_eeg = int(np.ceil(place["n_audio"] * EEG_FS / AUDIO_FS))
                 if onsets[0] + n_eeg > n_present:
-                    print(f"momenian2024: {pid} Part {p} skipped, .fdt truncated upstream")
+                    log.info("momenian2024: %s Part %s skipped, .fdt truncated upstream", pid, p)
                     continue
                 kept = table.iloc[:len(place["start"])]
                 name = f"{pid}_part{p}"
@@ -129,7 +136,7 @@ class Momenian2024Adaptor:
                 for on, off, text in zip(a + w["on"], a + w["off"], w["word"]):
                     if on < b:
                         word_iv.append((on, min(off, b), text))
-            return _textgrid_text([("words", word_iv), ("sentences", sents)], place["n_audio"] / AUDIO_FS)
+            return textgrid({"words": _trim(word_iv), "sentences": _trim(sents)}, xmax=place["n_audio"] / AUDIO_FS)
         return _loader
 
 
@@ -137,7 +144,7 @@ def _sentence_table(root: str, p: int) -> pd.DataFrame:
     """Sentences of Part p in presentation order: id, trigger code, wav path and length (samples)."""
     paths = sorted(glob.glob(os.path.join(root, SENT_DIR, f"Part {p}", "*.wav")))
     ids = [os.path.basename(x)[:-4] for x in paths]
-    n = [len(wavfile.read(x, mmap=True)[1]) for x in paths]
+    n = [soundfile.info(x).frames for x in paths]
     return pd.DataFrame({"id": ids, "code": [i.split(".")[1].lstrip("0") for i in ids], "path": paths, "n": n})
 
 
@@ -199,10 +206,11 @@ def _placement(onsets: np.ndarray, n: np.ndarray, stopped: bool) -> dict:
 
 
 def _read_mono(path: str) -> np.ndarray:
-    fs, x = wavfile.read(path)
-    if fs != AUDIO_FS or x.dtype != np.int16 or x.ndim != 2:
+    """(L + R) / 2 of a stereo int16 sentence wav, float32."""
+    info = soundfile.info(path)
+    if info.samplerate != AUDIO_FS or info.subtype != "PCM_16" or info.channels != 2:
         raise ValueError(f"{path}: expected 44.1 kHz stereo int16")
-    return x.mean(1) / 32768.0
+    return read_wav(path)[0].mean(axis=0)
 
 
 def _eeg_loader(fdt: str, labels: list, i0: int, n: int, n_present: int, bads: list,
@@ -216,33 +224,24 @@ def _eeg_loader(fdt: str, labels: list, i0: int, n: int, n_present: int, bads: l
         raw = RawArray(data, info, verbose="ERROR")
         raw.set_montage(make_standard_montage("standard_1005"), match_case=False, on_missing="ignore",
                        verbose="ERROR")
-        raw.info["bads"] = bads
+        mark_bads(raw, bads)
         raw.info["description"] = description
         return raw
     return _loader
 
 
-def _textgrid_text(tiers: list, xmax: float) -> str:
-    """Praat long-format TextGrid; [(name, [(xmin, xmax, text), ...]), ...], gaps filled with empty intervals."""
-    out = ['File type = "ooTextFile"', 'Object class = "TextGrid"', "", "xmin = 0", f"xmax = {xmax:.6f}",
-           "tiers? <exists>", f"size = {len(tiers)}", "item []:"]
-    for i, (name, intervals) in enumerate(tiers, 1):
-        filled, t = [], 0.0
-        for a, b, text in intervals:
-            if b <= t:
-                continue
-            if a > t:
-                filled.append((t, a, ""))
-            filled.append((max(a, t), b, text))
-            t = b
-        if t < xmax:
-            filled.append((t, xmax, ""))
-        out += [f"    item [{i}]:", '        class = "IntervalTier"', f'        name = "{name}"', "        xmin = 0",
-                f"        xmax = {xmax:.6f}", f"        intervals: size = {len(filled)}"]
-        for j, (a, b, text) in enumerate(filled, 1):
-            out += [f"        intervals [{j}]:", f"            xmin = {a:.6f}", f"            xmax = {b:.6f}",
-                    f'            text = "{text}"']
-    return "\n".join(out) + "\n"
+def _trim(intervals: list) -> list:
+    """
+    Intervals in order without overlaps, as the TextGrid writer of the first pass: one that ends before the
+    previous one is dropped, one that starts inside it starts at its end.
+    """
+    out, t = [], 0.0
+    for a, b, text in intervals:
+        if b <= t:
+            continue
+        out.append((max(a, t), b, text))
+        t = b
+    return out
 
 
 ADAPTOR = Momenian2024Adaptor

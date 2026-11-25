@@ -37,7 +37,7 @@ participants have 0.88 h each. Two participants have only one run each (3 trials
   - **Other setup:** two subjects (`sub-5551a7b45438`, `sub-400fb1b90f57`) have EOG002, EOG004, ECG003, EEG010 and
     EEG060 instead.
   - **Dropped:** internal active shielding, SYS201, and STI channels. The triggers are in the repo's
-    `triggers.csv`.
+    `alignment/triggers.csv`.
   - **No audio copy** is in the recording.
 - **Subjects** are numbered 1-24 in the order of their sorted BIDS ids. The original id is in each trial's
   provenance (`original_subject`).
@@ -105,8 +105,8 @@ validation subjects were held out from the scan.
 - **Missing runs (upstream):** 51 of 576 presentations are missing. `sub-400fb1b90f57` has only run-08 and
   `sub-520e215b49cf` only run-02. Runs are also missing for `sub-2bf97e558a62` (run-02), `sub-2224b4d06ea2` (run-05)
   and `sub-78f50f9a795e` (run-04). The README says that no one was excluded.
-- `events.tsv` misses one stimulus in 5 runs, so the adaptor uses `triggers.csv`, which is built from STI101 by
-  `triggers.py`.
+- `events.tsv` misses one stimulus in 5 runs, so the adaptor uses `alignment/triggers.csv`, which is built from STI101 by
+  `alignment/triggers.py`.
 - `sub-520e215b49cf`: the run's `meas_date` (2019-04-26) disagrees with `participants.tsv` (2019-04-10).
 - The vocoded stimuli of vocoded trials are approximations (clean wav or rebuild), not the presented sounds.
 

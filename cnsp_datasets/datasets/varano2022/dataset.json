@@ -21,6 +21,6 @@
   "stimuli": "degraded (speech in noise, audiovisual)",
   "alignment_quality": "medium",
   "validation_tier": "low",
-  "participants": 24,
+  "participants": 19,
   "listening_hours": 32.3
 }

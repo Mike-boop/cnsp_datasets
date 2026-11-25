@@ -1,4 +1,4 @@
-"""Step 1: t0 of every chapter from the ROWS/ROWE trigger fit (../timing.py:t0_table), with the columns the later
+"""Step 1: t0 of every chapter from the ROWS/ROWE trigger fit (trigger_fit.py:t0_table), with the columns the later
 steps read, plus each wav's duration and the EEG left after it.
 usage: t0_table.py   -> <WORK>/t0_table.csv"""
 import os, sys  # noqa: E401
@@ -9,7 +9,8 @@ import re  # noqa: E402
 
 from scipy.io import wavfile  # noqa: E402
 
-from cnsp_datasets.datasets.chen2026.timing import reader_of, t0_table  # noqa: E402
+from cnsp_datasets.datasets.chen2026.adaptor import reader_of  # noqa: E402
+from cnsp_datasets.datasets.chen2026.alignment.trigger_fit import t0_table  # noqa: E402
 
 df = t0_table(settings.DOWNLOAD, settings.AUDIO)
 df["run"] = df.file.map(lambda f: re.search(r"run-(\d+)", f).group(1))

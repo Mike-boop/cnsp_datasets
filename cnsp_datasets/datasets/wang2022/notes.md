@@ -363,3 +363,12 @@ re-run (user: close the dataset). `validation_tier` stays mlr (validated); brain
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **poor**: Software trigger + 39.5 ms (paper, sound sensor) - 21 ms read from the 30-250 Hz TRF; drift 500 ppm = MEG-derived (trigger estimate 486, CI 420-535); no audio copy; mlr tier (validated with the old onset).
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- dataset.json: listening_hours 60.48 (was 72.0; size section).
+- Stimulus audio as float32 in [-1, 1) (`iohelpers.read_wav`; was the raw int16 samples).
+- Channels the FIF marks bad are kept and listed in `info["bads"]` (`pick_types` dropped them; none are marked
+  in the shipped files, which are tSSS-reconstructed).
+- TextGrid written by `iohelpers.textgrid` (was the `textgrid` library): same intervals (zero-length tokens dropped,
+  identical intervals merged), long text format, xmax = wav duration.
+- An annotation file found twice under `derivatives/annotations` raises (was: the last one found won).

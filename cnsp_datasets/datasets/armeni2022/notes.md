@@ -97,3 +97,11 @@ defaults: 1000 Hz, +5.7 ppm drift); results and figure `tmp/review/armeni2022/va
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **good**: Shipped wav_onset = trigger + authors' per-part UADC003 delay; re-check vs UADC003 -0.1 +- 0.8 ms (196 parts); drift +5.73 ppm from the audio copy corrected; brainstem tier (stimulus artefact near 0 ms).
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Stimulus audio as float32 in [-1, 1) (`iohelpers.read_wav`; was the raw int16 samples).
+- Channels the CTF header marks bad are kept and listed in `info["bads"]` (`pick_types` dropped them, and
+  `info["bads"]` was then overwritten with the paper's list); a listed bad sensor missing from the recording raises.
+- TextGrid written by `iohelpers.textgrid` (was `broderick2019_natural.utils.multi_tier_dict_to_textgrid`): long
+  text format, xmin 0 (was the first onset), gaps filled with empty intervals, quotes escaped. Overlapping
+  annotations within a tier now raise (the old writer wrote them as they were); not yet checked on the events.

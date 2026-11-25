@@ -24,5 +24,6 @@
   "stimuli": "degraded (speech in noise); natural",
   "alignment_quality": "good",
   "validation_tier": "brainstem (MEG, tSSS)",
-  "participants": 24
+  "participants": 24,
+  "listening_hours": 13.82
 }

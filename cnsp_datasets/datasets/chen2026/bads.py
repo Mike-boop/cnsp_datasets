@@ -1,9 +1,9 @@
 """
-Bad channels per participant (notes.md section 6d): in every chapter file of timing.csv, a channel is flagged when
-its 1-40 Hz SD is more than BAD_RATIO times or less than 1/BAD_RATIO of the median SD over E1-E128; a participant's
-bad channels are those flagged in >= MIN_FRAC of their chapters (flags in single chapters come and go with the
-impedances, and the validator needs one channel set per participant). Writes bads.json next to this file, which
-the adaptor reads.
+Bad channels per participant (notes.md section 6d): in every chapter file of alignment/timing.csv, a channel is
+flagged when its 1-40 Hz SD is more than BAD_RATIO times or less than 1/BAD_RATIO of the median SD over E1-E128;
+a participant's bad channels are those flagged in >= MIN_FRAC of their chapters (flags in single chapters come and
+go with the impedances, and the validator needs one channel set per participant). Writes bads.json next to this
+file, which the adaptor reads.
 
     python -m cnsp_datasets.datasets.chen2026.bads <chen2026 download dir>
 """
@@ -19,9 +19,8 @@ import numpy as np
 import pandas as pd
 from scipy.signal import butter, sosfiltfilt
 
-from cnsp_datasets.datasets.chen2026.timing import TIMING_CSV
+from cnsp_datasets.datasets.chen2026.adaptor import BADS_JSON, TIMING_CSV
 
-BADS_JSON = os.path.join(os.path.dirname(__file__), "bads.json")
 BAD_RATIO, MIN_FRAC = 5.0, 0.2
 
 

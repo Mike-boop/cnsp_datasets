@@ -3,12 +3,12 @@ Audio onset and sound-card vs MEG clock drift of every audiobook run, from the a
 next to this file, which the adaptor reads (notes.md section 6).
 
 Per run: the 1 s triggers (events.tsv, sent on the sound-card clock) give the trigger clock (Theil-Sen slope of the
-trigger samples, `trig_ppm`). The wav (1 kHz, 2-200 Hz) is put on that clock and jehn2025_base.drift.trial_drift
-cross-correlates it with MISC001 from the first trigger on (10 s windows every 5 s, Theil-Sen): intercept =
-`onset_ms` (audio copy after the first trigger, MEG samples), slope = residual drift. `drift_ppm` = trig_ppm +
-residual: > 0, the MEG clock runs fast relative to the audio clock.
+trigger samples, `trig_ppm`). The wav (1 kHz, 2-200 Hz) is put on that clock and
+jehn2025_base.alignment.drift.trial_drift cross-correlates it with MISC001 from the first trigger on (10 s windows
+every 5 s, Theil-Sen): intercept = `onset_ms` (audio copy after the first trigger, MEG samples), slope = residual
+drift. `drift_ppm` = trig_ppm + residual: > 0, the MEG clock runs fast relative to the audio clock.
 
-    python -m cnsp_datasets.datasets.habersetzer2025.drift <download dir>
+    python -m cnsp_datasets.datasets.habersetzer2025.alignment.drift <download dir>
 """
 from __future__ import annotations
 
@@ -24,10 +24,9 @@ from scipy.io import wavfile
 from scipy.signal import resample_poly, sosfiltfilt
 from scipy.stats import theilslopes
 
-from cnsp_datasets.datasets.habersetzer2025.adaptor import audiobook_events
-from cnsp_datasets.datasets.jehn2025_base.drift import _SOS, trial_drift
-
-OUT = os.path.join(os.path.dirname(__file__), "drift.csv")
+from cnsp_datasets.datasets.habersetzer2025.adaptor import DRIFT_CSV as OUT, audiobook_events
+from cnsp_datasets.datasets.jehn2025_base.alignment.drift import trial_drift
+from cnsp_datasets.datasets.jehn2025_base.alignment.xcorr import SOS as _SOS
 
 
 def run_drift(fif: str, download_dir: str) -> dict:

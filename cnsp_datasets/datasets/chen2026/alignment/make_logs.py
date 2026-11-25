@@ -1,11 +1,11 @@
 """
 Write the two timing logs kept next to the adaptor (step 11, after make_timing_csv.py):
-  ../onsets_optionB.csv  one row per listener x chapter: t0 (trigger fit), the option-B latency used by the adaptor
+  onsets_optionB.csv     one row per listener x chapter: t0 (trigger fit), the option-B latency used by the adaptor
                          by default, the resulting onset, and whether it is the chapter's own estimate or the listener
                          median (with the estimate's SE and the listener spread).
-  ../drift.csv           the EEG drift estimates per listener (Theil-Sen over decoder windows, 95% CI; per-listener
+  drift.csv              the EEG drift estimates per listener (Theil-Sen over decoder windows, 95% CI; per-listener
                          joint_fit value and SE) and the pooled values. Documented only: drift is NOT applied.
-Inputs: ../timing.csv and $CHEN2026_WORK/align/summary/sub-XX.json (analyse_timing.py).
+Inputs: timing.csv and $CHEN2026_WORK/align/summary/sub-XX.json (analyse_timing.py).
 usage: python -I make_logs.py
 """
 import glob
@@ -31,7 +31,7 @@ def main() -> None:
         "source": per.map({True: "chapter estimate (deviates > max(40 ms, 3 SE))", False: "listener median"}),
         "chapter_estimate_s": t["latency_s"], "chapter_rule": t["rule"], "chapter_se_ms": t["latency_se_ms"],
         "listener_median_s": t["listener_median_s"], "listener_rsd_ms": t["listener_latency_rsd_ms"]})
-    o.to_csv(os.path.join(HERE, os.pardir, "onsets_optionB.csv"), index=False)
+    o.to_csv(os.path.join(HERE, "onsets_optionB.csv"), index=False)
     rows = []
     for f in sorted(glob.glob(os.path.join(ALIGN, "summary", "sub-*.json"))):
         d = json.load(open(f))
@@ -49,7 +49,7 @@ def main() -> None:
                                 "listener's CI includes 0 and sub-05/08 sit near 0, so it is not a reliable "
                                 "measurement; any drift is small (<= ~20 ms at the end of the longest chapter)")
     dr["n_chapters"] = dr["n_chapters"].astype("Int64")
-    dr.to_csv(os.path.join(HERE, os.pardir, "drift.csv"), index=False)
+    dr.to_csv(os.path.join(HERE, "drift.csv"), index=False)
     print(f"{len(o)} onsets ({int(per.sum())} chapter estimates), {len(dr)} drift rows")
 
 
