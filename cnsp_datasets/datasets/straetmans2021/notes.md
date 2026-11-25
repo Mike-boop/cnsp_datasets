@@ -173,3 +173,6 @@ narrative start/stop markers only. Neural data are raw (DC, unfiltered, original
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **none**: No stimulus shipped (software LSL markers, Android latency uncorrected); sanity checks only.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- Adaptor subclasses BaseAdaptor; bads via iohelpers.mark_bads (strict). No stimulus, no other change.

@@ -38,9 +38,9 @@ ONSET_METHOD = {
          "(alignment/match_groups.py)"}
 # keep the thresholds in sync with alignment/subject_delays.py (MIN_R, MAX_MAD, AMBIG_R, AMBIG_S, PART_WINDOW)
 SUBJECT_METHOD = ("brain-based, per subject (alignment/subject_delays.py, alignment/onset.csv): shift (0..1.9 s) "
-                  "at which the subject's uncorrected 0.5-8 Hz envelope TRF (lags -1.5..2.5 s) best matches group A's "
-                  "corrected TRF (space-time r, lags -0.2..0.6 s); group delay if the match r < 0.15 or the 5 parts' delays "
-                  "(each matched within +-0.3 s of the whole-recording delay) scatter (MAD > 50 ms); "
+                  "at which the subject's uncorrected 0.5-8 Hz envelope TRF (lags -1.5..2.5 s) best matches group "
+                  "A's corrected TRF (space-time r, lags -0.2..0.6 s); group delay if the match r < 0.15 or the 5 "
+                  "parts' delays (each matched within +-0.3 s of the whole-recording delay) scatter (MAD > 50 ms); "
                   "onset_ambiguous if a second match peak > 100 ms away comes within 0.15 of the best r. "
                   "Circular (template from the same data); held-out test in notes.md section 7.")
 # Brain-based clock drift, pooled over subjects (notes.md section 7), corrected by default (user decision 2026-11-23).

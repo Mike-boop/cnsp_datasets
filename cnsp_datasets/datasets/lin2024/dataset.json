@@ -1,5 +1,6 @@
 {
   "name": "lin2024",
-  "title": "lin2024",
-  "visibility": "public"
+  "title": "Lin et al. (2024) SCUT auditory spatial attention EEG (Zenodo 11541114): not incorporated, no stimulus audio released",
+  "visibility": "public",
+  "notes": "explored and dropped (user, 2026-11-24): no stimulus audio or envelopes; notes.md only, no adaptor"
 }
