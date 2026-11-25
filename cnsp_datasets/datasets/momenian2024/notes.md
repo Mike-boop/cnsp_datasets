@@ -365,3 +365,9 @@ Average reference (62 scalp channels), regressor = the placed-sentence track. **
 ## Alignment grade
 Grade under the CLAUDE.md rule (weakest part decides), accepted by the user 2026-11-24.
 **poor**: Software sentence triggers (~7 ms jitter), no stimtrack; DNN -21 ms and TRF +23/+26 ms later documented, not applied; trigger latency vs older listeners 'not separable'; low tier.
+
+## Restructure 2026-11-25 (not yet re-validated on data)
+- TextGrid written by `iohelpers.textgrid` (was a hand-rolled writer): same intervals (overlaps trimmed as before),
+  times at full precision instead of 6 decimals, quotes escaped.
+- Audio through `iohelpers.read_wav` ((L + R) / 2, float32 / 32768: unchanged values); bad channels with
+  `iohelpers.mark_bads` (strict); skipped Parts are logged (were printed).
